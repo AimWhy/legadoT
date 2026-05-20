@@ -116,6 +116,24 @@
       display: none;
     }
 
+    #toolbar::after {
+      content: "";
+      position: sticky;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 24px;
+      flex-shrink: 0;
+      background: linear-gradient(to right, transparent, var(--toolbar-bg) 70%);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    #toolbar.overflowing::after {
+      opacity: 1;
+    }
+
     .btn {
       border: 1px solid var(--border);
       background: var(--bg);
@@ -143,6 +161,10 @@
       min-width: 28px;
     }
 
+    .btn-gap {
+      margin-left: 6px;
+    }
+
     #editor-container {
       position: relative;
       flex: 1;
@@ -163,9 +185,75 @@
       height: 100%;
     }
 
-    .cm-panels.cm-panels-top {
-      border-bottom: 1px solid var(--border);
+    .cm-panels { display: none !important; }
+
+    #search-panel {
+      position: absolute;
+      top: 4px;
+      right: 8px;
+      left: 8px;
       background: var(--toolbar-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+      padding: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      z-index: 55;
+      font-size: 12px;
+    }
+    #search-panel.show { display: flex; }
+    .search-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .search-row input[type="text"] {
+      flex: 1;
+      min-width: 0;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      height: 28px;
+    }
+    .search-row input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+    .search-toggle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--gutter-text);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: bold;
+      user-select: none;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .search-toggle.on {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--active-line);
+    }
+    .search-info {
+      font-size: 11px;
+      color: var(--gutter-text);
+      white-space: nowrap;
+      min-width: 44px;
+      text-align: center;
+      flex-shrink: 0;
     }
 
     #format-options {
@@ -180,10 +268,24 @@
       display: none;
       z-index: 30;
       font-size: 13px;
+      min-width: 140px;
     }
 
     #format-options.show {
       display: block;
+    }
+
+    #format-options .opt-group-title {
+      font-size: 11px;
+      color: var(--gutter-text);
+      margin: 6px 0 4px;
+      padding-bottom: 2px;
+      border-bottom: 1px solid var(--border);
+      user-select: none;
+    }
+
+    #format-options .opt-group-title:first-child {
+      margin-top: 0;
     }
 
     #format-options .opt {
@@ -194,6 +296,7 @@
       cursor: pointer;
       user-select: none;
       white-space: nowrap;
+      padding: 3px 0;
     }
 
     #format-options input[type="checkbox"] {
@@ -338,15 +441,16 @@
       font-size: 12px;
     }
     #curl-body {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+      display: flex;
+      flex-direction: column;
       gap: 6px;
       padding: 8px;
       overflow: auto;
       flex: 1;
     }
     .curl-text {
-      min-height: 120px;
+      min-height: 80px;
+      flex: 1;
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 6px;
@@ -357,33 +461,135 @@
       color: var(--text);
       resize: none;
     }
+    #regex-panel {
+      position: absolute;
+      left: 8px;
+      right: 8px;
+      top: 44px;
+      max-height: 65%;
+      display: none;
+      flex-direction: column;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      z-index: 50;
+      overflow: hidden;
+    }
+    #regex-panel.show { display: flex; }
+    #regex-header {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 8px; border-bottom: 1px solid var(--border);
+      background: var(--toolbar-bg); font-size: 12px;
+    }
+    #regex-header .spacer { flex: 1; }
+    .regex-flag {
+      border: 1px solid var(--border); background: var(--bg);
+      color: var(--text); padding: 2px 6px; border-radius: 3px;
+      font-size: 12px; cursor: pointer; user-select: none;
+    }
+    .regex-flag.on {
+      border-color: var(--accent); color: var(--accent);
+      background: var(--active-line);
+    }
+    #regex-body {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 8px; overflow: auto; flex: 1;
+    }
+    #regex-body label { font-size: 12px; color: var(--gutter-text); }
+    .regex-row {
+      display: flex; gap: 6px; align-items: flex-start;
+    }
+    .regex-row .regex-input { flex: 1; }
+    .regex-flags-inline {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3px;
+      padding-top: 4px; flex-shrink: 0;
+    }
+    .regex-input {
+      width: 100%; border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 8px; font-size: 13px; line-height: 1.4;
+      background: var(--bg); color: var(--text);
+      font-family: inherit; resize: vertical;
+    }
+    #regex-pattern { min-height: 32px; }
+    #regex-sample { min-height: 64px; }
+    #regex-result {
+      flex: 1; min-height: 48px; max-height: 120px; overflow: auto;
+      font-size: 12px; line-height: 1.5; white-space: pre-wrap;
+      word-break: break-all; color: var(--text);
+      border: 1px solid var(--border); border-radius: 4px;
+      padding: 6px 8px; background: var(--active-line);
+    }
+    .regex-match { color: var(--accent); }
+    .regex-error { color: #e06c75; }
+    .tb-icon {
+      width: 18px; height: 18px;
+      vertical-align: middle;
+      pointer-events: none;
+    }
+    .panel-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 0;
+    }
+    .panel-btn:active { opacity: 0.6; }
+    .panel-btn svg {
+      width: 14px; height: 14px;
+      pointer-events: none;
+    }
   </style>
 </head>
 
 <body>
   <div id="toolbar">
-    <button id="undoBtn" class="btn">撤销</button>
-    <button id="redoBtn" class="btn">重做</button>
-    <button id="wrapBtn" class="btn">换行</button>
-    <button id="formatBtn" class="btn">格式化</button>
-    <button id="formatOptionsBtn" class="btn btn-icon" title="格式化选项">
-      ▾
+    <button id="undoBtn" class="btn btn-icon" title="撤销">
+      <svg class="tb-icon" viewBox="0 0 18 18"><path d="M5 3.5L1.5 7 5 10.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M2.5 7H11a4 4 0 010 8H9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
-    <button id="searchToggleBtn" class="btn">🔍</button>
-    <button id="curlToggleBtn" class="btn">curl</button>
-    <button id="logToggleBtn" class="btn">日志</button>
+    <button id="redoBtn" class="btn btn-icon" title="重做">
+      <svg class="tb-icon" viewBox="0 0 18 18"><path d="M13 3.5l3.5 3.5-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M15.5 7H7a4 4 0 000 8h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <button id="searchToggleBtn" class="btn btn-icon btn-gap" title="搜索">
+      <svg class="tb-icon" viewBox="0 0 18 18"><circle cx="7.5" cy="7.5" r="4.5" fill="none" stroke="currentColor" stroke-width="1.8"/><line x1="11" y1="11" x2="15.5" y2="15.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <button id="wrapBtn" class="btn btn-icon" title="自动换行">
+      <svg class="tb-icon" viewBox="0 0 18 18"><path d="M2 4.5h12.5a2 2 0 010 4H10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M11.5 6.5L9.5 8.5l2 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="2" y1="13.5" x2="9" y2="13.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <button id="formatBtn" class="btn btn-icon btn-gap" title="格式化">
+      <svg class="tb-icon" viewBox="0 0 18 18"><line x1="2" y1="4" x2="16" y2="4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="9" x2="16" y2="9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="14" x2="13" y2="14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <button id="formatOptionsBtn" class="btn btn-icon" title="格式化选项">
+      <svg class="tb-icon" viewBox="0 0 18 18"><line x1="2" y1="5" x2="16" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="13" x2="16" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="6" cy="5" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="13" r="2" fill="var(--bg)" stroke="currentColor" stroke-width="1.5"/></svg>
+    </button>
+    <button id="regexToggleBtn" class="btn btn-icon btn-gap" title="正则测试">
+      <svg class="tb-icon" viewBox="0 0 18 18"><text x="1" y="13.5" fill="currentColor" font-size="13" font-weight="bold" font-family="monospace">.*</text></svg>
+    </button>
+    <button id="curlToggleBtn" class="btn btn-icon" title="curl 转换">
+      <svg class="tb-icon" viewBox="0 0 18 18"><rect x="1.5" y="2.5" width="15" height="13" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M5 9l2.5-2.5M5 9l2.5 2.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><line x1="9" y1="11.5" x2="13" y2="11.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+    <button id="logToggleBtn" class="btn btn-icon" title="日志">
+      <svg class="tb-icon" viewBox="0 0 18 18"><rect x="2" y="2" width="14" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><line x1="5" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="9.5" x2="11" y2="9.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="5" y1="13" x2="9" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
   </div>
 
   <div id="format-options">
+    <div class="opt-group-title">编辑器</div>
     <label class="opt">
-      <input id="wrapElementsToggle" type="checkbox" checked />
-      <span>元素换行</span>
-    </label>
-    <label class="opt">
-      <span>缩进</span>
-      <select id="indentSizeSelect">
-        <option value="2" selected>2</option>
-        <option value="4">4</option>
+      <span>主题</span>
+      <select id="themeSelect">
+        <option value="auto" selected>系统</option>
+        <option value="light">浅色</option>
+        <option value="dark">深色</option>
+        <option value="sepia">护眼</option>
+        <option value="nord">极夜</option>
       </select>
     </label>
     <label class="opt">
@@ -396,6 +602,14 @@
         <option value="16">16</option>
       </select>
     </label>
+    <div class="opt-group-title">格式化</div>
+    <label class="opt">
+      <span>缩进</span>
+      <select id="indentSizeSelect">
+        <option value="2" selected>2</option>
+        <option value="4">4</option>
+      </select>
+    </label>
     <label class="opt">
       <span>宽度</span>
       <select id="printWidthSelect">
@@ -405,14 +619,8 @@
       </select>
     </label>
     <label class="opt">
-      <span>主题</span>
-      <select id="themeSelect">
-        <option value="auto" selected>系统</option>
-        <option value="light">浅色</option>
-        <option value="dark">深色</option>
-        <option value="sepia">护眼</option>
-        <option value="nord">极夜</option>
-      </select>
+      <input id="wrapElementsToggle" type="checkbox" checked />
+      <span>元素换行</span>
     </label>
     <label class="opt">
       <input id="singleQuoteToggle" type="checkbox" />
@@ -428,9 +636,15 @@
     <div id="log-header">
       <span>日志</span>
       <span class="spacer"></span>
-      <button id="logCopyBtn" class="btn btn-icon">复制</button>
-      <button id="logClearBtn" class="btn btn-icon">清空</button>
-      <button id="logCloseBtn" class="btn btn-icon">×</button>
+      <button id="logCopyBtn" class="panel-btn" title="复制">
+        <svg viewBox="0 0 16 16"><rect x="5" y="5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M11 3H4.5A1.5 1.5 0 003 4.5V11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button id="logClearBtn" class="panel-btn" title="清空">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="2" y="2" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button id="logCloseBtn" class="panel-btn" title="关闭">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <pre id="log-body"></pre>
   </div>
@@ -443,10 +657,18 @@
         <option value="analyze-to-curl">AnalyzeUrl → curl</option>
       </select>
       <span class="spacer"></span>
-      <button id="curlConvertBtn" class="btn btn-icon">转换</button>
-      <button id="curlCopyBtn" class="btn btn-icon">复制</button>
-      <button id="curlClearBtn" class="btn btn-icon">清空</button>
-      <button id="curlCloseBtn" class="btn btn-icon">×</button>
+      <button id="curlConvertBtn" class="panel-btn" title="转换">
+        <svg viewBox="0 0 16 16"><path d="M4 6l3-3 3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 10l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" transform="translate(0 -4)"/></svg>
+      </button>
+      <button id="curlCopyBtn" class="panel-btn" title="复制">
+        <svg viewBox="0 0 16 16"><rect x="5" y="5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M11 3H4.5A1.5 1.5 0 003 4.5V11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button id="curlClearBtn" class="panel-btn" title="清空">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="2" y="2" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button id="curlCloseBtn" class="panel-btn" title="关闭">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <div id="curl-body">
       <textarea id="curl-input" class="curl-text" placeholder="粘贴 curl 或 AnalyzeUrl"></textarea>
@@ -454,7 +676,68 @@
     </div>
   </div>
 
+  <div id="regex-panel">
+    <div id="regex-header">
+      <span>正则测试</span>
+      <span class="spacer"></span>
+      <button id="regexCopyBtn" class="panel-btn" title="复制">
+        <svg viewBox="0 0 16 16"><rect x="5" y="5" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M11 3H4.5A1.5 1.5 0 003 4.5V11" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </button>
+      <button id="regexClearBtn" class="panel-btn" title="清空">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><rect x="2" y="2" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button id="regexCloseBtn" class="panel-btn" title="关闭">
+        <svg viewBox="0 0 16 16"><line x1="4" y1="8" x2="12" y2="8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div id="regex-body">
+      <label>正则表达式</label>
+      <div class="regex-row">
+        <textarea id="regex-pattern" class="regex-input" placeholder="输入正则，如 (\w+)\s*=\s*(.+)" spellcheck="false"></textarea>
+        <div class="regex-flags-inline">
+          <button id="regexFlagG" class="regex-flag on">g</button>
+          <button id="regexFlagI" class="regex-flag">i</button>
+          <button id="regexFlagM" class="regex-flag">m</button>
+          <button id="regexFlagS" class="regex-flag">s</button>
+        </div>
+      </div>
+      <label>测试文本</label>
+      <textarea id="regex-sample" class="regex-input" placeholder="输入要测试的文本" spellcheck="false"></textarea>
+      <label>匹配结果</label>
+      <pre id="regex-result">等待输入…</pre>
+    </div>
+  </div>
+
   <div id="editor-container">
+    <div id="search-panel">
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="搜索" spellcheck="false" />
+        <button id="searchCaseBtn" class="search-toggle" title="区分大小写">Aa</button>
+        <button id="searchRegexBtn" class="search-toggle" title="正则表达式">.*</button>
+        <button id="searchWordBtn" class="search-toggle" title="全字匹配">
+          <svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 11h3M11 11h3M5 11c0-3 1.5-6 3-6s3 3 3 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+        <span id="searchInfo" class="search-info"></span>
+        <button id="searchPrevBtn" class="panel-btn" title="上一个">
+          <svg viewBox="0 0 16 16"><path d="M4 10l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="searchNextBtn" class="panel-btn" title="下一个">
+          <svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="searchCloseBtn" class="panel-btn" title="关闭">
+          <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="search-row">
+        <input type="text" id="replaceInput" placeholder="替换" spellcheck="false" />
+        <button id="replaceBtn" class="panel-btn" title="替换">
+          <svg viewBox="0 0 16 16"><path d="M3 8h8M9 5l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="replaceAllBtn" class="panel-btn" title="全部替换">
+          <svg viewBox="0 0 16 16"><path d="M3 5h8M9 2l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11h8M9 8l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
     <div id="editor"></div>
   </div>
 
@@ -611,7 +894,7 @@
         const TOAST_MS = 1500;
         const LONG_LINE_SCROLL_LIMIT = 2000;
         const LINT_DELAY = 800;
-        const LINT_MAX_SIZE = 50000;
+        const LINT_MAX_SIZE = 20000;
 
         const dom = {
           editorHost: $("editor"),
@@ -646,6 +929,30 @@
           trailingCommaToggle: $("trailingCommaToggle"),
           formatOptions: $("format-options"),
           syntaxStatus: $("syntax-status"),
+          regexPanel: $("regex-panel"),
+          regexPattern: $("regex-pattern"),
+          regexSample: $("regex-sample"),
+          regexResult: $("regex-result"),
+          regexToggleBtn: $("regexToggleBtn"),
+          regexCopyBtn: $("regexCopyBtn"),
+          regexClearBtn: $("regexClearBtn"),
+          regexCloseBtn: $("regexCloseBtn"),
+          regexFlagG: $("regexFlagG"),
+          regexFlagI: $("regexFlagI"),
+          regexFlagM: $("regexFlagM"),
+          regexFlagS: $("regexFlagS"),
+          searchPanel: $("search-panel"),
+          searchInput: $("searchInput"),
+          replaceInput: $("replaceInput"),
+          searchCaseBtn: $("searchCaseBtn"),
+          searchRegexBtn: $("searchRegexBtn"),
+          searchWordBtn: $("searchWordBtn"),
+          searchInfo: $("searchInfo"),
+          searchPrevBtn: $("searchPrevBtn"),
+          searchNextBtn: $("searchNextBtn"),
+          searchCloseBtn: $("searchCloseBtn"),
+          replaceBtn: $("replaceBtn"),
+          replaceAllBtn: $("replaceAllBtn"),
         };
 
         const CM = window.CodeMirrorBundle;
@@ -673,7 +980,6 @@
           indentUnit,
           foldGutter,
           highlightSelectionMatches,
-          openSearchPanel,
           autocompletion,
           closeCompletion,
           closeBrackets,
@@ -822,7 +1128,11 @@
                 borderRight: "1px solid var(--border)",
                 "-webkit-user-select": "none",
                 userSelect: "none",
+                pointerEvents: "none",
                 contain: "layout style paint",
+              },
+              ".cm-gutters .cm-foldGutter, .cm-gutters .cm-foldPlaceholder": {
+                pointerEvents: "auto",
               },
               ".cm-activeLine": { backgroundColor: "var(--active-line)" },
               ".cm-selectionBackground": {
@@ -1473,6 +1783,20 @@
           });
         });
 
+        (function checkToolbarOverflow() {
+          const toolbar = $("toolbar");
+          if (!toolbar) return;
+          function update() {
+            toolbar.classList.toggle("overflowing", toolbar.scrollWidth > toolbar.clientWidth);
+          }
+          update();
+          if (typeof ResizeObserver === "function") {
+            new ResizeObserver(update).observe(toolbar);
+          } else {
+            window.addEventListener("resize", update);
+          }
+        })();
+
         const syncAutoTheme = () => {
           if (themeMode !== "auto") return;
           view.dispatch({ effects: themeComp.reconfigure(makeTheme()) });
@@ -1641,13 +1965,17 @@
           return formatted.replace(/\r?\n$/, "");
         }
 
+        let isFormatting = false;
+
         async function formatCode() {
+          if (isFormatting) return;
           const raw = getCode();
           const text = raw.trim();
           if (!text) return;
           if (!(await preparePrettier(true))) {
             return;
           }
+          isFormatting = true;
           showToast("格式化中...");
           await new Promise(requestAnimationFrame);
           try {
@@ -1677,6 +2005,8 @@
           } catch (e) {
             appendLog("error", errMsg(e));
             showToast("格式化失败");
+          } finally {
+            isFormatting = false;
           }
         }
 
@@ -1776,59 +2106,161 @@
           formatOptions.classList.toggle("show");
         });
         document.addEventListener("click", (e) => {
-          if (!formatOptions.classList.contains("show")) return;
           const target = e.target;
-          if (
-            (target instanceof Element && target.closest("#format-options")) ||
-            (target instanceof Element && target.closest("#formatOptionsBtn"))
-          ) {
-            return;
+          if (!(target instanceof Element)) return;
+
+          if (formatOptions.classList.contains("show") &&
+              !target.closest("#format-options") &&
+              !target.closest("#formatOptionsBtn")) {
+            formatOptions.classList.remove("show");
           }
-          formatOptions.classList.remove("show");
+          if (dom.logPanel.classList.contains("show") &&
+              !target.closest("#log-panel") &&
+              !target.closest("#logToggleBtn")) {
+            dom.logPanel.classList.remove("show");
+            isLogOpen = false;
+          }
+          if (dom.curlPanel.classList.contains("show") &&
+              !target.closest("#curl-panel") &&
+              !target.closest("#curlToggleBtn")) {
+            dom.curlPanel.classList.remove("show");
+          }
+          if (dom.regexPanel.classList.contains("show") &&
+              !target.closest("#regex-panel") &&
+              !target.closest("#regexToggleBtn")) {
+            dom.regexPanel.classList.remove("show");
+          }
         });
 
-        bindClick(dom.searchToggleBtn, () => {
-          if (typeof openSearchPanel === "function") {
-            openSearchPanel(view);
-            requestAnimationFrame(() => {
-              bindSearchPanelHandlers();
-              focusSearchInput();
-            });
-          } else {
-            showToast("搜索模块未加载");
-          }
-        });
+        // ========== 自定义搜索替换 ==========
+        const searchState = { matches: [], current: -1, caseSensitive: false, useRegex: false, wholeWord: false };
 
-        function focusSearchInput() {
-          const panel = view && view.dom ? view.dom.querySelector(".cm-search") : null;
-          if (!panel) return false;
-          const input = panel.querySelector("input");
-          if (!input) return false;
+        function performSearch(selectClosest) {
+          const query = dom.searchInput.value;
+          const doc = getCode();
+          searchState.matches = [];
+          searchState.current = -1;
+          if (!query) { updateSearchInfo(); return; }
           try {
-            input.focus({ preventScroll: true });
-          } catch (e) {
-            input.focus();
+            let regex;
+            if (searchState.useRegex) {
+              const flags = searchState.caseSensitive ? "g" : "gi";
+              regex = new RegExp(query, flags);
+            } else {
+              const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const flags = searchState.caseSensitive ? "g" : "gi";
+              const pattern = searchState.wholeWord ? "\\b" + escaped + "\\b" : escaped;
+              regex = new RegExp(pattern, flags);
+            }
+            let match;
+            while ((match = regex.exec(doc)) !== null) {
+              searchState.matches.push({ from: match.index, to: match.index + match[0].length });
+              if (searchState.matches.length > 10000) break;
+              if (!match[0].length) { regex.lastIndex++; }
+            }
+          } catch (e) { /* invalid regex */ }
+          if (searchState.matches.length > 0 && selectClosest !== false) {
+            const pos = view.state.selection.main.from;
+            let closest = 0;
+            for (let i = 0; i < searchState.matches.length; i++) {
+              if (searchState.matches[i].from >= pos) { closest = i; break; }
+              closest = i;
+            }
+            searchState.current = closest;
+            selectMatch(closest);
           }
-          return true;
+          updateSearchInfo();
         }
 
-        function bindSearchPanelHandlers() {
-          const panel = view && view.dom ? view.dom.querySelector(".cm-search") : null;
-          if (!panel || panel.dataset.focusGuard === "1") return;
-          panel.dataset.focusGuard = "1";
-          const guard = (e) => {
-            const target = e.target instanceof Element ? e.target : null;
-            if (target && target.closest("button")) {
-              setTimeout(focusSearchInput, 0);
-            }
-          };
-          panel.addEventListener("pointerdown", guard, true);
-          panel.addEventListener("touchstart", guard, true);
-          panel.addEventListener("mousedown", guard, true);
-          panel.addEventListener("click", () => {
-            focusSearchInput();
-          }, true);
+        function selectMatch(index) {
+          if (index < 0 || index >= searchState.matches.length) return;
+          const m = searchState.matches[index];
+          view.dispatch({
+            selection: { anchor: m.from, head: m.to },
+            effects: EditorView.scrollIntoView(m.from, { y: "center" }),
+          });
         }
+
+        function searchNext() {
+          if (!searchState.matches.length) return;
+          searchState.current = (searchState.current + 1) % searchState.matches.length;
+          selectMatch(searchState.current);
+          updateSearchInfo();
+        }
+
+        function searchPrev() {
+          if (!searchState.matches.length) return;
+          searchState.current = (searchState.current - 1 + searchState.matches.length) % searchState.matches.length;
+          selectMatch(searchState.current);
+          updateSearchInfo();
+        }
+
+        function replaceCurrent() {
+          if (searchState.current < 0 || !searchState.matches.length) return;
+          const m = searchState.matches[searchState.current];
+          const replaceText = dom.replaceInput.value;
+          view.dispatch({ changes: { from: m.from, to: m.to, insert: replaceText } });
+          performSearch(true);
+        }
+
+        function replaceAllMatches() {
+          if (!searchState.matches.length) return;
+          const replaceText = dom.replaceInput.value;
+          const changes = searchState.matches.slice().reverse().map(m => ({ from: m.from, to: m.to, insert: replaceText }));
+          view.dispatch({ changes });
+          showToast("已替换 " + changes.length + " 处");
+          performSearch(false);
+        }
+
+        function updateSearchInfo() {
+          if (!dom.searchInput.value) { dom.searchInfo.textContent = ""; }
+          else if (searchState.matches.length === 0) { dom.searchInfo.textContent = "无结果"; }
+          else { dom.searchInfo.textContent = (searchState.current + 1) + "/" + searchState.matches.length; }
+        }
+
+        function openCustomSearch() {
+          dom.searchPanel.classList.add("show");
+          const sel = view.state.selection.main;
+          if (!sel.empty && sel.to - sel.from < 200) {
+            dom.searchInput.value = view.state.sliceDoc(sel.from, sel.to);
+          }
+          dom.searchInput.focus();
+          dom.searchInput.select();
+          if (dom.searchInput.value) performSearch(true);
+        }
+
+        function closeCustomSearch() {
+          dom.searchPanel.classList.remove("show");
+          searchState.matches = [];
+          searchState.current = -1;
+          dom.searchInfo.textContent = "";
+          view.focus();
+        }
+
+        bindClick(dom.searchToggleBtn, openCustomSearch);
+        bindClick(dom.searchCloseBtn, closeCustomSearch);
+        bindClick(dom.searchNextBtn, searchNext);
+        bindClick(dom.searchPrevBtn, searchPrev);
+        bindClick(dom.replaceBtn, replaceCurrent);
+        bindClick(dom.replaceAllBtn, replaceAllMatches);
+
+        dom.searchInput.addEventListener("input", () => performSearch(true));
+        dom.searchInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); e.shiftKey ? searchPrev() : searchNext(); }
+          if (e.key === "Escape") { e.preventDefault(); closeCustomSearch(); }
+        });
+        dom.replaceInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); replaceCurrent(); }
+          if (e.key === "Escape") { e.preventDefault(); closeCustomSearch(); }
+        });
+
+        [["searchCaseBtn", "caseSensitive"], ["searchRegexBtn", "useRegex"], ["searchWordBtn", "wholeWord"]].forEach(([id, key]) => {
+          bindClick(dom[id], () => {
+            searchState[key] = !searchState[key];
+            dom[id].classList.toggle("on", searchState[key]);
+            performSearch(true);
+          });
+        });
 
         function bindClick(el, handler) {
           el.onclick = handler;
@@ -1897,6 +2329,92 @@
             appendLog("error", "复制失败: " + errMsg(e));
             showToast("复制失败");
           }
+        });
+
+        const regexFlags = { g: true, i: false, m: false, s: false };
+        const regexFlagEls = {
+          g: dom.regexFlagG, i: dom.regexFlagI,
+          m: dom.regexFlagM, s: dom.regexFlagS,
+        };
+
+        function updateRegexFlags() {
+          Object.keys(regexFlagEls).forEach((f) => {
+            regexFlagEls[f].classList.toggle("on", regexFlags[f]);
+          });
+        }
+
+        function buildRegexFlags() {
+          return Object.entries(regexFlags)
+            .filter(([, v]) => v).map(([k]) => k).join("");
+        }
+
+        function runRegex() {
+          const pattern = dom.regexPattern ? dom.regexPattern.value : "";
+          const sample = dom.regexSample ? dom.regexSample.value : "";
+          const result = dom.regexResult;
+          if (!result) return;
+          if (!pattern) { result.innerHTML = ""; return; }
+          try {
+            const re = new RegExp(pattern, buildRegexFlags());
+            const matches = [...sample.matchAll(re)];
+            if (!matches.length) {
+              result.innerHTML = '<span class="regex-error">无匹配</span>';
+              return;
+            }
+            const lines = [];
+            matches.forEach((m, idx) => {
+              let line = `<span class="regex-match">#${idx + 1}:</span> <b>${escHtml(m[0])}</b>`;
+              if (m.length > 1) {
+                const groups = [];
+                for (let i = 1; i < m.length; i++) {
+                  if (m[i] != null) groups.push(`${i}: ${escHtml(m[i])}`);
+                }
+                if (groups.length) line += `  [${groups.join(", ")}]`;
+              }
+              if (m.index != null) line += `  (位置 ${m.index})`;
+              lines.push(line);
+            });
+            result.innerHTML = lines.join("\n");
+          } catch (e) {
+            result.innerHTML = '<span class="regex-error">正则错误: ' + escHtml(e.message) + '</span>';
+          }
+        }
+
+        function escHtml(s) {
+          return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function onRegexInput() { runRegex(); }
+
+        dom.regexPattern && dom.regexPattern.addEventListener("input", onRegexInput);
+        dom.regexSample && dom.regexSample.addEventListener("input", onRegexInput);
+
+        Object.keys(regexFlagEls).forEach((f) => {
+          regexFlagEls[f] && regexFlagEls[f].addEventListener("click", () => {
+            regexFlags[f] = !regexFlags[f];
+            updateRegexFlags();
+            runRegex();
+          });
+        });
+
+        bindClick(dom.regexToggleBtn, () => {
+          dom.regexPanel.classList.toggle("show");
+          if (dom.regexPanel.classList.contains("show")) {
+            runRegex();
+            if (dom.regexPattern) dom.regexPattern.focus();
+          }
+        });
+        bindClick(dom.regexCloseBtn, () => dom.regexPanel.classList.remove("show"));
+        bindClick(dom.regexClearBtn, () => {
+          if (dom.regexPattern) dom.regexPattern.value = "";
+          if (dom.regexSample) dom.regexSample.value = "";
+          if (dom.regexResult) dom.regexResult.innerHTML = "等待输入…";
+        });
+        bindClick(dom.regexCopyBtn, async () => {
+          const text = dom.regexPattern ? dom.regexPattern.value : "";
+          if (!text) { showToast("没有可复制内容"); return; }
+          try { await copyToClipboard(text); showToast("已复制"); }
+          catch (e) { showToast("复制失败"); }
         });
 
         bindClick(dom.logToggleBtn, () => {
@@ -2074,11 +2592,8 @@
         function b64ToUtf8(b64) {
           try {
             const bin = window.atob(b64);
-            if (window.TextDecoder) {
-              const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-              return new TextDecoder("utf-8").decode(bytes);
-            }
-            return decodeURIComponent(escape(bin));
+            const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+            return new TextDecoder("utf-8").decode(bytes);
           } catch (e) {
             return "";
           }
