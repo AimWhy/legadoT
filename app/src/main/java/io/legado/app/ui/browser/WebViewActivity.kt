@@ -35,6 +35,7 @@ import io.legado.app.model.Download
 import io.legado.app.ui.association.OnLineImportActivity
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.utils.ACache
+import io.legado.app.utils.applyCompatibilitySettings
 import io.legado.app.utils.gone
 import io.legado.app.utils.invisible
 import io.legado.app.utils.keepScreenOn
@@ -43,6 +44,7 @@ import io.legado.app.utils.openUrl
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setDarkeningAllowed
 import io.legado.app.utils.startActivity
+import io.legado.app.utils.toWebViewRequestHeaders
 import io.legado.app.utils.toggleSystemBar
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
@@ -73,7 +75,7 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
             initWebView(url, headerMap)
             val html = viewModel.html
             if (html.isNullOrEmpty()) {
-                binding.webView.loadUrl(url, headerMap)
+                binding.webView.loadUrl(url, headerMap.toWebViewRequestHeaders())
             } else {
                 binding.webView.loadDataWithBaseURL(url, html, "text/html", "utf-8", url)
             }
@@ -173,11 +175,8 @@ class WebViewActivity : VMBaseActivity<ActivityWebViewBinding, WebViewModel>() {
             javaScriptEnabled = true
             builtInZoomControls = true
             displayZoomControls = false
-            headerMap[AppConst.UA_NAME]?.let {
-                userAgentString = it
-            }
         }
-        AppCookieManager.applyToWebView(url)
+        binding.webView.applyCompatibilitySettings(url, headerMap)
         binding.webView.setOnLongClickListener {
             val hitTestResult = binding.webView.hitTestResult
             if (hitTestResult.type == WebView.HitTestResult.IMAGE_TYPE ||

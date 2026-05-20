@@ -9,6 +9,8 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.Window
 import android.widget.PopupWindow
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
@@ -29,7 +31,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import splitties.systemservices.layoutInflater
 import splitties.systemservices.windowManager
-import kotlin.math.abs
 
 /**
  * 键盘帮助浮窗
@@ -69,13 +70,9 @@ class KeyboardToolPop(
     }
 
     override fun onGlobalLayout() {
-        val rect = Rect()
-        // 获取当前页面窗口的显示范围
-        rootView.getWindowVisibleDisplayFrame(rect)
-        val screenHeight = windowManager.windowSize.heightPixels
-        val keyboardHeight = screenHeight - rect.bottom // 输入法的高度
+        val keyboardHeight = resolveKeyboardHeight()
         val preShowing = mIsSoftKeyBoardShowing
-        if (abs(keyboardHeight) > screenHeight / 5) {
+        if (keyboardHeight > 0) {
             mIsSoftKeyBoardShowing = true // 超过屏幕五分之一则表示弹出了输入法
             rootView.setPadding(0, 0, 0, initialPadding + contentView.measuredHeight)
             if (!isShowing) {
@@ -88,6 +85,20 @@ class KeyboardToolPop(
                 dismiss()
             }
         }
+    }
+
+    private fun resolveKeyboardHeight(): Int {
+        ViewCompat.getRootWindowInsets(rootView)?.let { windowInsets ->
+            if (windowInsets.isVisible(WindowInsetsCompat.Type.ime())) {
+                return windowInsets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            }
+            return 0
+        }
+        val rect = Rect()
+        rootView.getWindowVisibleDisplayFrame(rect)
+        val screenHeight = windowManager.windowSize.heightPixels
+        val keyboardHeight = screenHeight - rect.bottom
+        return if (keyboardHeight > screenHeight / 5) keyboardHeight else 0
     }
 
     private fun initRecyclerView() {

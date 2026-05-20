@@ -19,6 +19,8 @@ import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.model.Debug
+import io.legado.app.utils.applyCompatibilitySettings
+import io.legado.app.utils.toWebViewRequestHeaders
 import io.legado.app.utils.runOnUI
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Runnable
@@ -100,7 +102,7 @@ class BackstageWebView(
                 else -> if (headerMap == null) {
                     webView.loadUrl(url!!)
                 } else {
-                    webView.loadUrl(url!!, headerMap)
+                    webView.loadUrl(url!!, headerMap.toWebViewRequestHeaders())
                 }
             }
         } catch (e: Exception) {
@@ -115,8 +117,8 @@ class BackstageWebView(
         settings.javaScriptEnabled = true
         settings.domStorageEnabled = true
         settings.blockNetworkImage = true
-        settings.userAgentString = headerMap?.get(AppConst.UA_NAME) ?: AppConfig.userAgent
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
+        webView.applyCompatibilitySettings(url, headerMap)
         if (!tag.isNullOrBlank()) {
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {

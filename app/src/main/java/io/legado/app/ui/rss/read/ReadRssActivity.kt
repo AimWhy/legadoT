@@ -34,7 +34,8 @@ import io.legado.app.constant.AppLog
 import io.legado.app.data.entities.RssSource
 import io.legado.app.databinding.ActivityRssReadBinding
 import io.legado.app.help.config.AppConfig
-import io.legado.app.help.http.CookieManager
+import android.webkit.CookieManager
+import io.legado.app.help.http.CookieStore
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
@@ -46,6 +47,7 @@ import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.rss.favorites.RssFavoritesDialog
 import io.legado.app.utils.ACache
 import io.legado.app.utils.NetworkUtils
+import io.legado.app.utils.applyCompatibilitySettings
 import io.legado.app.utils.gone
 import io.legado.app.utils.invisible
 import io.legado.app.utils.isTrue
@@ -60,6 +62,7 @@ import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.splitNotBlank
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.textArray
+import io.legado.app.utils.toWebViewRequestHeaders
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.toggleSystemBar
 import io.legado.app.utils.viewbindingdelegate.viewBinding
@@ -290,8 +293,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
                 upJavaScriptEnable()
                 val url = NetworkUtils.getAbsoluteURL(it.origin, it.link)
                 val html = viewModel.clHtml(content)
-                binding.webView.settings.userAgentString =
-                    viewModel.headerMap[AppConst.UA_NAME] ?: AppConfig.userAgent
+                binding.webView.applyCompatibilitySettings(url, viewModel.headerMap)
                 if (viewModel.rssSource?.loadWithBaseUrl == true) {
                     binding.webView
                         .loadDataWithBaseURL(url, html, "text/html", "utf-8", url)//不想用baseUrl进else
@@ -303,9 +305,8 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
         }
         viewModel.urlLiveData.observe(this) {
             upJavaScriptEnable()
-            CookieManager.applyToWebView(it.url)
-            binding.webView.settings.userAgentString = it.getUserAgent()
-            binding.webView.loadUrl(it.url, it.headerMap)
+            binding.webView.applyCompatibilitySettings(it.url, it.headerMap)
+            binding.webView.loadUrl(it.url, it.headerMap.toWebViewRequestHeaders())
         }
     }
 
@@ -448,6 +449,10 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
 
         override fun onPageFinished(view: WebView, url: String) {
             super.onPageFinished(view, url)
+            val cookieManager = CookieManager.getInstance()
+            url.let {
+                CookieStore.setCookie(it, cookieManager.getCookie(it))
+            }
             view.title?.let { title ->
                 if (title != url
                     && title != view.url

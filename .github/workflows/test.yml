@@ -189,7 +189,7 @@ jobs:
         run: |
           cat > $GITHUB_WORKSPACE/release.md <<'EOF'
           ## 更新日志
-          - ${{ steps.commit_msg.outputs.msg }}
+          ${{ steps.commit_msg.outputs.msg }}
 
           EOF
       - uses: actions/download-artifact@v4

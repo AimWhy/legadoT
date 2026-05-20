@@ -24,10 +24,12 @@ import io.legado.app.databinding.FragmentWebViewLoginBinding
 import io.legado.app.help.http.CookieStore
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.utils.NetworkUtils
+import io.legado.app.utils.applyCompatibilitySettings
 import io.legado.app.utils.gone
 import io.legado.app.utils.longSnackbar
 import io.legado.app.utils.openUrl
 import io.legado.app.utils.snackbar
+import io.legado.app.utils.toWebViewRequestHeaders
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 
 class WebViewLoginFragment : BaseFragment(R.layout.fragment_web_view_login) {
@@ -74,9 +76,6 @@ class WebViewLoginFragment : BaseFragment(R.layout.fragment_web_view_login) {
             builtInZoomControls = true
             javaScriptEnabled = true
             displayZoomControls = false
-            viewModel.headerMap[AppConst.UA_NAME]?.let {
-                userAgentString = it
-            }
         }
         val cookieManager = CookieManager.getInstance()
         binding.webView.webViewClient = object : WebViewClient() {
@@ -146,7 +145,8 @@ class WebViewLoginFragment : BaseFragment(R.layout.fragment_web_view_login) {
     private fun loadUrl(source: BaseSource) {
         val loginUrl = source.loginUrl ?: return
         val absoluteUrl = NetworkUtils.getAbsoluteURL(source.getKey(), loginUrl)
-        binding.webView.loadUrl(absoluteUrl, viewModel.headerMap)
+        binding.webView.applyCompatibilitySettings(absoluteUrl, viewModel.headerMap)
+        binding.webView.loadUrl(absoluteUrl, viewModel.headerMap.toWebViewRequestHeaders())
     }
 
     override fun onDestroy() {
