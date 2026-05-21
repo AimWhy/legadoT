@@ -76,6 +76,7 @@ object Backup {
             "keyboardAssists.json",
             "dictRule.json",
             "servers.json",
+            "autoTask.json",
             DirectLinkUpload.ruleFileName,
             ReadBookConfig.configFileName,
             ReadBookConfig.shareConfigFileName,
@@ -147,6 +148,7 @@ object Backup {
         writeListToJson(appDb.httpTTSDao.all, "httpTTS.json", backupPath)
         writeListToJson(appDb.keyboardAssistsDao.all, "keyboardAssists.json", backupPath)
         writeListToJson(appDb.dictRuleDao.all, "dictRule.json", backupPath)
+        writeListToJson(appDb.autoTaskRuleDao.all, "autoTask.json", backupPath)
         GSON.toJson(appDb.serverDao.all).let { json ->
             aes.runCatching {
                 encryptBase64(json)
@@ -205,6 +207,14 @@ object Backup {
         val paths = arrayListOf(*backupFileNames)
         for (i in 0 until paths.size) {
             paths[i] = backupPath + File.separator + paths[i]
+        }
+        // 加入书架封面
+        appCtx.externalFiles.getFile("covers").takeIf { it.exists() }?.let {
+            paths.add(it.absolutePath)
+        }
+        // 加入阅读背景图
+        appCtx.externalFiles.getFile("bg").takeIf { it.exists() }?.let {
+            paths.add(it.absolutePath)
         }
         FileUtils.delete(zipFilePath)
         FileUtils.delete(zipFilePath.replace("tmp_", ""))

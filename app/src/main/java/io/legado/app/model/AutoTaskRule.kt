@@ -1,9 +1,14 @@
 package io.legado.app.model
 
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 import java.util.UUID
 
+@Entity(tableName = "auto_task_rules")
 data class AutoTaskRule(
+    @PrimaryKey
     @SerializedName("id")
     var id: String = UUID.randomUUID().toString(),
     @SerializedName("name")

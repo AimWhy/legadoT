@@ -33,6 +33,8 @@ import io.legado.app.help.config.LocalConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.config.ThemeConfig
 import io.legado.app.model.BookCover
+import io.legado.app.model.AutoTask
+import io.legado.app.model.AutoTaskRule
 import io.legado.app.model.localBook.LocalBook
 import io.legado.app.utils.ACache
 import io.legado.app.utils.FileUtils
@@ -126,13 +128,31 @@ object Restore {
             appDb.bookDao.insert(*newBooks.toTypedArray())
         }
         fileToListT<Bookmark>(path, "bookmark.json")?.let {
-            appDb.bookmarkDao.insert(*it.toTypedArray())
+            kotlin.runCatching {
+                appDb.bookmarkDao.insert(*it.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复书签出错\n${it.localizedMessage}", it)
+            }
         }
         fileToListT<BookGroup>(path, "bookGroup.json")?.let {
-            appDb.bookGroupDao.insert(*it.toTypedArray())
+            kotlin.runCatching {
+                appDb.bookGroupDao.insert(*it.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复分组出错\n${it.localizedMessage}", it)
+            }
         }
-        fileToListT<BookSource>(path, "bookSource.json")?.let {
-            appDb.bookSourceDao.insert(*it.toTypedArray())
+        fileToListT<BookSource>(path, "bookSource.json")?.let { sources ->
+            sources.forEach { source ->
+                kotlin.runCatching {
+                    if (appDb.bookSourceDao.getBookSource(source.bookSourceUrl) != null) {
+                        appDb.bookSourceDao.update(source)
+                    } else {
+                        appDb.bookSourceDao.insert(source)
+                    }
+                }.onFailure {
+                    AppLog.put("恢复书源 ${source.bookSourceName} 出错\n${it.localizedMessage}", it)
+                }
+            }
         } ?: run {
             val bookSourceFile = File(path, "bookSource.json")
             if (bookSourceFile.exists()) {
@@ -140,43 +160,101 @@ object Restore {
                 ImportOldData.importOldSource(json)
             }
         }
-        fileToListT<RssSource>(path, "rssSources.json")?.let {
-            appDb.rssSourceDao.insert(*it.toTypedArray())
+        fileToListT<RssSource>(path, "rssSources.json")?.let { sources ->
+            sources.forEach { source ->
+                kotlin.runCatching {
+                    if (appDb.rssSourceDao.has(source.sourceUrl)) {
+                        appDb.rssSourceDao.update(source)
+                    } else {
+                        appDb.rssSourceDao.insert(source)
+                    }
+                }.onFailure {
+                    AppLog.put("恢复订阅源 ${source.sourceName} 出错\n${it.localizedMessage}", it)
+                }
+            }
         }
         fileToListT<RssStar>(path, "rssStar.json")?.let {
-            appDb.rssStarDao.insert(*it.toTypedArray())
+            it.forEach { star ->
+                kotlin.runCatching {
+                    if (appDb.rssStarDao.get(star.origin, star.link) == null) {
+                        appDb.rssStarDao.insert(star)
+                    }
+                }.onFailure {
+                    AppLog.put("恢复RSS收藏出错\n${it.localizedMessage}", it)
+                }
+            }
         }
         fileToListT<ReplaceRule>(path, "replaceRule.json")?.let {
-            appDb.replaceRuleDao.insert(*it.toTypedArray())
+            kotlin.runCatching {
+                appDb.replaceRuleDao.insert(*it.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复替换规则出错\n${it.localizedMessage}", it)
+            }
         }
         fileToListT<SearchKeyword>(path, "searchHistory.json")?.let {
-            appDb.searchKeywordDao.insert(*it.toTypedArray())
+            it.forEach { keyword ->
+                kotlin.runCatching {
+                    appDb.searchKeywordDao.insert(keyword)
+                }.onFailure { /* 忽略重复 */ }
+            }
         }
         fileToListT<RuleSub>(path, "sourceSub.json")?.let {
-            appDb.ruleSubDao.insert(*it.toTypedArray())
+            kotlin.runCatching {
+                appDb.ruleSubDao.insert(*it.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复订阅源规则出错\n${it.localizedMessage}", it)
+            }
         }
         fileToListT<TxtTocRule>(path, "txtTocRule.json")?.let {
-            appDb.txtTocRuleDao.insert(*it.toTypedArray())
+            kotlin.runCatching {
+                appDb.txtTocRuleDao.insert(*it.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复TXT目录规则出错\n${it.localizedMessage}", it)
+            }
         }
         fileToListT<HttpTTS>(path, "httpTTS.json")?.let {
-            appDb.httpTTSDao.insert(*it.toTypedArray())
+            kotlin.runCatching {
+                appDb.httpTTSDao.insert(*it.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复TTS配置出错\n${it.localizedMessage}", it)
+            }
         }
         fileToListT<DictRule>(path, "dictRule.json")?.let {
-            appDb.dictRuleDao.insert(*it.toTypedArray())
+            kotlin.runCatching {
+                appDb.dictRuleDao.insert(*it.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复字典规则出错\n${it.localizedMessage}", it)
+            }
         }
         fileToListT<KeyboardAssist>(path, "keyboardAssists.json")?.let {
-            appDb.keyboardAssistsDao.insert(*it.toTypedArray())
+            it.forEach { assist ->
+                kotlin.runCatching {
+                    appDb.keyboardAssistsDao.insert(assist)
+                }.onFailure { /* 忽略重复 */ }
+            }
+        }
+        fileToListT<AutoTaskRule>(path, "autoTask.json")?.let {
+            kotlin.runCatching {
+                appDb.autoTaskRuleDao.insert(*it.toTypedArray())
+                AutoTask.refreshSchedule()
+            }.onFailure {
+                AppLog.put("恢复定时任务出错\n${it.localizedMessage}", it)
+            }
         }
         fileToListT<ReadRecord>(path, "readRecord.json")?.let {
             it.forEach { readRecord ->
                 //判断是不是本机记录
                 if (readRecord.deviceId != androidId) {
-                    appDb.readRecordDao.insert(readRecord)
+                    kotlin.runCatching {
+                        appDb.readRecordDao.insert(readRecord)
+                    }
                 } else {
                     val time = appDb.readRecordDao
                         .getReadTime(readRecord.deviceId, readRecord.bookName)
                     if (time == null || time < readRecord.readTime) {
-                        appDb.readRecordDao.insert(readRecord)
+                        kotlin.runCatching {
+                            appDb.readRecordDao.insert(readRecord)
+                        }
                     }
                 }
             }
@@ -281,6 +359,28 @@ object Restore {
             hideStatusBar = appCtx.getPrefBoolean(PreferKey.hideStatusBar)
             hideNavigationBar = appCtx.getPrefBoolean(PreferKey.hideNavigationBar)
             autoReadSpeed = appCtx.getPrefInt(PreferKey.autoReadSpeed, 46)
+        }
+        // 恢复书架封面
+        File(path, "covers").takeIf { it.exists() && it.isDirectory }?.let { coversDir ->
+            val targetDir = appCtx.externalFiles.getFile("covers")
+            kotlin.runCatching {
+                FileUtils.delete(targetDir)
+                targetDir.mkdirs()
+                coversDir.copyRecursively(targetDir, overwrite = true)
+            }.onFailure {
+                AppLog.put("恢复封面出错\n${it.localizedMessage}", it)
+            }
+        }
+        // 恢复阅读背景图
+        File(path, "bg").takeIf { it.exists() && it.isDirectory }?.let { bgDir ->
+            val targetDir = appCtx.externalFiles.getFile("bg")
+            kotlin.runCatching {
+                FileUtils.delete(targetDir)
+                targetDir.mkdirs()
+                bgDir.copyRecursively(targetDir, overwrite = true)
+            }.onFailure {
+                AppLog.put("恢复背景图出错\n${it.localizedMessage}", it)
+            }
         }
         appCtx.toastOnUi(R.string.restore_success)
         withContext(Main) {

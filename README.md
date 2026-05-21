@@ -64,6 +64,12 @@ Legado is a free and open source novel reader for Android.
 
 自动化
 * 定时任务支持：cron 表达式驱动脚本执行，支持 refreshToc / notify 动作
+* 定时任务数据采用 Room 存储，与书源同级管理
+
+备份/恢复
+* 定时任务纳入备份范围，支持完整备份与恢复
+* 恢复操作增加去重处理，重复导入不再报错
+* 备份支持书架封面和阅读背景图
 
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
