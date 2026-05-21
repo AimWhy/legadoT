@@ -93,6 +93,12 @@ data class BookSource(
     var ruleToc: TocRule? = null,
     // 正文页规则
     var ruleContent: ContentRule? = null,
+    // 是否监听事件来执行回调规则
+    @ColumnInfo(defaultValue = "0")
+    var eventListener: Boolean = false,
+    // 由书源控制的自定义按钮
+    @ColumnInfo(defaultValue = "0")
+    var customButton: Boolean = false,
     // 段评规则
     var ruleReview: ReviewRule? = null
 ) : Parcelable, BaseSource {

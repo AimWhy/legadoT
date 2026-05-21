@@ -23,6 +23,7 @@ import io.legado.app.utils.toastOnUi
 class AudioPlayViewModel(application: Application) : BaseViewModel(application) {
     val titleData = MutableLiveData<String>()
     val coverData = MutableLiveData<String>()
+    val customBtnData = MutableLiveData<Boolean>()
 
     fun initData(intent: Intent) = AudioPlay.apply {
         execute {
@@ -44,6 +45,7 @@ class AudioPlayViewModel(application: Application) : BaseViewModel(application) 
         }
         titleData.postValue(book.name)
         coverData.postValue(book.getDisplayCover())
+        customBtnData.postValue(AudioPlay.bookSource?.customButton == true)
         if (book.tocUrl.isEmpty() && !loadBookInfo(book)) {
             return
         }
@@ -103,6 +105,7 @@ class AudioPlayViewModel(application: Application) : BaseViewModel(application) 
             appDb.bookChapterDao.insert(*toc.toTypedArray())
             AudioPlay.upDurChapter()
         }.onFinally {
+            customBtnData.postValue(source.customButton)
             postEvent(EventBus.SOURCE_CHANGED, book.bookUrl)
         }
     }

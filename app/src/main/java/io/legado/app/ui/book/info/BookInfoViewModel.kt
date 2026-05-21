@@ -34,6 +34,7 @@ import io.legado.app.model.BookCover
 import io.legado.app.model.ReadBook
 import io.legado.app.model.ReadManga
 import io.legado.app.model.AutoTask
+import io.legado.app.model.SourceCallBack
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.localBook.LocalBook
 import io.legado.app.model.webBook.WebBook
@@ -466,6 +467,9 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
             inBookshelf = true
         }.onSuccess {
             success?.invoke()
+            SourceCallBack.callBackBook(
+                SourceCallBack.ADD_BOOK_SHELF, bookSource, bookData.value
+            )
         }
     }
 
@@ -480,6 +484,9 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
     fun delBook(deleteOriginal: Boolean = false, success: (() -> Unit)? = null) {
         execute {
             bookData.value?.let {
+                SourceCallBack.callBackBook(
+                    SourceCallBack.DEL_BOOK_SHELF, bookSource, it
+                )
                 AutoTask.delete(AutoTask.bookTaskId(it.bookUrl))
                 it.delete()
                 inBookshelf = false

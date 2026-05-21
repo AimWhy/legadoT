@@ -3,7 +3,6 @@ package io.legado.app.ui.book.info
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -22,6 +21,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityBookInfoBinding
+import io.legado.app.databinding.DialogBookAutoTaskBinding
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.addType
@@ -40,9 +40,10 @@ import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.getPrimaryTextColor
-import io.legado.app.model.BookCover
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
+import io.legado.app.model.BookCover
+import io.legado.app.model.SourceCallBack
 import io.legado.app.model.remote.RemoteBookWebDav
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.audio.AudioPlayActivity
@@ -63,12 +64,12 @@ import io.legado.app.ui.widget.dialog.VariableDialog
 import io.legado.app.ui.widget.dialog.WaitDialog
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.ConvertUtils
-import io.legado.app.databinding.DialogBookAutoTaskBinding
 import io.legado.app.utils.FileDoc
 import io.legado.app.utils.GSON
 import io.legado.app.utils.StartActivityContract
 import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.dpToPx
+import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.gone
 import io.legado.app.utils.longToastOnUi
 import io.legado.app.utils.openFileUri
@@ -79,7 +80,6 @@ import io.legado.app.utils.startActivity
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
-import io.legado.app.utils.fromJsonObject
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -152,6 +152,7 @@ class BookInfoActivity :
     private var chapterChanged = false
     private val waitDialog by lazy { WaitDialog(this) }
     private var editMenuItem: MenuItem? = null
+    private var menuCustomBtn: MenuItem? = null
     private val book get() = viewModel.getBook(false)
 
     override val binding by viewBinding(ActivityBookInfoBinding::inflate)
@@ -167,9 +168,7 @@ class BookInfoActivity :
         binding.flAction.applyNavigationBarPadding()
         binding.tvShelf.setTextColor(getPrimaryTextColor(ColorUtils.isColorLight(bottomBackground)))
         binding.tvToc.text = getString(R.string.toc_s, getString(R.string.loading))
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
-            binding.tvIntro.revealOnFocusHint = false
-        }
+        binding.tvIntro.revealOnFocusHint = false
         viewModel.bookData.observe(this) { showBook(it) }
         viewModel.chapterListData.observe(this) { upLoading(false, it) }
         viewModel.waitDialogData.observe(this) { upWaitDialogStatus(it) }
@@ -180,6 +179,9 @@ class BookInfoActivity :
     override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.book_info, menu)
         editMenuItem = menu.findItem(R.id.menu_edit)
+        menuCustomBtn = menu.findItem(R.id.menu_custom_btn).also {
+            it.isVisible = viewModel.bookSource?.customButton == true
+        }
         return super.onCompatCreateOptionsMenu(menu)
     }
 
@@ -217,11 +219,25 @@ class BookInfoActivity :
                 }
             }
 
+            R.id.menu_custom_btn -> {
+                viewModel.getBook()?.let { book ->
+                    SourceCallBack.callBackBtn(
+                        this, SourceCallBack.CLICK_CUSTOM_BUTTON,
+                        viewModel.bookSource, book, null
+                    )
+                }
+            }
+
             R.id.menu_share_it -> {
-                viewModel.getBook()?.let {
-                    val bookJson = GSON.toJson(it)
-                    val shareStr = "${it.bookUrl}#$bookJson"
-                    shareWithQr(shareStr, it.name)
+                viewModel.getBook()?.let { book ->
+                    val bookJson = GSON.toJson(book)
+                    val shareStr = "${book.bookUrl}#$bookJson"
+                    SourceCallBack.callBackBtn(
+                        this, SourceCallBack.CLICK_SHARE_BOOK,
+                        viewModel.bookSource, book, null, 0, shareStr
+                    ) {
+                        shareWithQr(shareStr, book.name)
+                    }
                 }
             }
 
@@ -243,12 +259,23 @@ class BookInfoActivity :
             R.id.menu_top -> viewModel.topBook()
             R.id.menu_set_source_variable -> setSourceVariable()
             R.id.menu_set_book_variable -> setBookVariable()
-            R.id.menu_copy_book_url -> viewModel.getBook()?.bookUrl?.let {
-                sendToClip(it)
+            R.id.menu_copy_book_url -> viewModel.getBook()?.let { book ->
+                SourceCallBack.callBackBtn(
+                    this, SourceCallBack.CLICK_COPY_BOOK_URL,
+                    viewModel.bookSource, book, null, 0, book.bookUrl
+                ) {
+                    sendToClip(book.bookUrl)
+                }
             }
 
-            R.id.menu_copy_toc_url -> viewModel.getBook()?.tocUrl?.let {
-                sendToClip(it)
+            R.id.menu_copy_toc_url -> viewModel.getBook()?.let { book ->
+                val tocUrl = book.tocUrl
+                SourceCallBack.callBackBtn(
+                    this, SourceCallBack.CLICK_COPY_TOC_URL,
+                    viewModel.bookSource, book, null, 0, tocUrl
+                ) {
+                    sendToClip(tocUrl)
+                }
             }
 
             R.id.menu_can_update -> {
@@ -263,7 +290,16 @@ class BookInfoActivity :
                 }
             }
 
-            R.id.menu_clear_cache -> viewModel.clearCache()
+            R.id.menu_clear_cache -> {
+                viewModel.getBook()?.let { book ->
+                    SourceCallBack.callBackBtn(
+                        this, SourceCallBack.CLICK_CLEAR_CACHE,
+                        viewModel.bookSource, book, null
+                    ) {
+                        viewModel.clearCache()
+                    }
+                } ?: viewModel.clearCache()
+            }
             R.id.menu_log -> showDialogFragment<AppLogDialog>()
             R.id.menu_split_long_chapter -> {
                 upLoading(true)
@@ -350,6 +386,7 @@ class BookInfoActivity :
         tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
         tvIntro.text = book.getDisplayIntro()
         llToc?.visible(!book.isWebFile)
+        menuCustomBtn?.isVisible = viewModel.bookSource?.customButton == true
         upTvBookshelf()
         upKinds(book)
         upGroup(book.group)
@@ -371,7 +408,31 @@ class BookInfoActivity :
                 lbKind.gone()
             } else {
                 lbKind.visible()
-                lbKind.setLabels(kinds)
+                val source = viewModel.bookSource
+                lbKind.setLabels(
+                    kinds,
+                    { kind ->
+                        source?.let {
+                            SourceCallBack.callBackBtn(
+                                this@BookInfoActivity,
+                                SourceCallBack.CLICK_BOOK_LABEL,
+                                source, book, null, result = kind
+                            ) {
+                                SearchActivity.start(this@BookInfoActivity, kind)
+                            }
+                        }
+                    },
+                    { kind ->
+                        source?.let {
+                            SourceCallBack.callBackBtn(
+                                this@BookInfoActivity,
+                                SourceCallBack.LONG_CLICK_BOOK_LABEL,
+                                source, book, null, result = kind
+                            )
+                        }
+                        true
+                    }
+                )
             }
         }
     }
@@ -513,17 +574,51 @@ class BookInfoActivity :
         }
         tvAuthor.setOnClickListener {
             viewModel.getBook(false)?.let { book ->
-                startActivity<SearchActivity> {
-                    putExtra("key", book.author)
+                SourceCallBack.callBackBtn(
+                    this@BookInfoActivity, SourceCallBack.CLICK_AUTHOR,
+                    viewModel.bookSource, book, null, 0, book.getRealAuthor()
+                ) {
+                    startActivity<SearchActivity> {
+                        putExtra("key", book.author)
+                    }
                 }
             }
         }
-        tvName.setOnClickListener {
+        tvAuthor.setOnLongClickListener {
             viewModel.getBook(false)?.let { book ->
-                startActivity<SearchActivity> {
-                    putExtra("key", book.name)
+                SourceCallBack.callBackBtn(
+                    this@BookInfoActivity,
+                    SourceCallBack.LONG_CLICK_AUTHOR,
+                    viewModel.bookSource, book, null, result = book.author
+                ) {
+                    SearchActivity.start(this@BookInfoActivity, book.author)
                 }
             }
+            true
+        }
+        tvName.setOnClickListener {
+            viewModel.getBook(false)?.let { book ->
+                SourceCallBack.callBackBtn(
+                    this@BookInfoActivity, SourceCallBack.CLICK_BOOK_NAME,
+                    viewModel.bookSource, book, null, 0, book.name
+                ) {
+                    startActivity<SearchActivity> {
+                        putExtra("key", book.name)
+                    }
+                }
+            }
+        }
+        tvName.setOnLongClickListener {
+            viewModel.getBook(false)?.let { book ->
+                SourceCallBack.callBackBtn(
+                    this@BookInfoActivity,
+                    SourceCallBack.LONG_CLICK_BOOK_NAME,
+                    viewModel.bookSource, book, null, result = book.name
+                ) {
+                    SearchActivity.start(this@BookInfoActivity, book.name)
+                }
+            }
+            true
         }
         refreshLayout?.setOnRefreshListener {
             refreshLayout.isRefreshing = false
@@ -663,10 +758,9 @@ class BookInfoActivity :
                 val script = buildBookUpdateScript(
                     bookUrl = book.bookUrl,
                     notifyEnabled = notifyEnabled,
-                    cacheEnabled = cacheEnabled,
-                    minCount = 1
+                    cacheEnabled = cacheEnabled
                 )
-                val displayName = if (book.name.isNotBlank()) book.name else book.bookUrl
+                val displayName = book.name.ifBlank { book.bookUrl }
                 val updated = (existing ?: AutoTaskRule(id = taskId)).copy(
                     id = taskId,
                     name = getString(R.string.auto_task_book_update_name, displayName),
@@ -707,8 +801,8 @@ class BookInfoActivity :
             val action = findRefreshAction(root, bookUrl)
             val notify = toStringKeyMap(action?.get("notify"))
             val cache = toStringKeyMap(action?.get("cache"))
-            notifyEnabled = readBoolean(notify, "enable", notifyEnabled)
-            cacheEnabled = readBoolean(cache, "enable", cacheEnabled)
+            notifyEnabled = readBoolean(notify, "enable", true)
+            cacheEnabled = readBoolean(cache, "enable", false)
         }
         return BookAutoTaskConfig(
             enabled = task.enable,
@@ -721,12 +815,11 @@ class BookInfoActivity :
     private fun buildBookUpdateScript(
         bookUrl: String,
         notifyEnabled: Boolean,
-        cacheEnabled: Boolean,
-        minCount: Int
+        cacheEnabled: Boolean
     ): String {
         val notify = linkedMapOf<String, Any?>(
             "enable" to notifyEnabled,
-            "minCount" to minCount
+            "minCount" to 1
         )
         val cache = linkedMapOf<String, Any?>(
             "enable" to cacheEnabled
@@ -794,8 +887,7 @@ class BookInfoActivity :
         bookUrl: String
     ): Map<String, Any?>? {
         if (root == null) return null
-        val actionsValue = root["actions"]
-        val actions = when (actionsValue) {
+        val actions = when (val actionsValue = root["actions"]) {
             is List<*> -> actionsValue
             else -> if (root.containsKey("type")) listOf(root) else emptyList()
         }
@@ -826,8 +918,7 @@ class BookInfoActivity :
         defaultValue: Boolean
     ): Boolean {
         if (map == null) return defaultValue
-        val value = getValueIgnoreCase(map, key)
-        return when (value) {
+        return when (val value = getValueIgnoreCase(map, key)) {
             is Boolean -> value
             is Number -> value.toInt() != 0
             is String -> value.equals("true", true) || value == "1"

@@ -919,6 +919,9 @@ object ReadBook : CoroutineScope by MainScope() {
                     }
                 }
                 appDb.bookDao.update(book)
+                SourceCallBack.callBackBook(
+                    SourceCallBack.SAVE_READ, bookSource, book
+                )
             }.onFailure {
                 AppLog.put("保存书籍阅读进度信息出错\n$it", it)
             }

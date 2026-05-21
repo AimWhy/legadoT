@@ -553,6 +553,9 @@ Placeholders:
     <string name="rule_replace_regex">Replace regex(replaceRegex)</string>
     <string name="rule_image_style">Image style(imageStyle)</string>
     <string name="rule_pay_action">Pay action(payAction)</string>
+    <string name="rule_call_back">Callback JS(callBackJs)</string>
+    <string name="is_event_listener">Event Listener</string>
+    <string name="custom_button">Custom Button</string>
 
     <string name="source_icon">Source icon(sourceIcon)</string>
     <string name="r_articles">Rule articles(ruleArticles)</string>

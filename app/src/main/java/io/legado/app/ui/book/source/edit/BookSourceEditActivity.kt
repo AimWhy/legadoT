@@ -361,6 +361,8 @@ class BookSourceEditActivity :
             binding.cbIsEnableExplore.isChecked = it.enabledExplore
             binding.cbIsEnableCookie.isChecked = it.enabledCookieJar ?: false
             binding.cbIsEnableReview.isChecked = it.ruleReview?.enabled ?: false
+            binding.cbIsEventListener.isChecked = it.eventListener
+            binding.cbIsCustomButton.isChecked = it.customButton
             binding.spType.setSelection(
                 when (it.bookSourceType) {
                     BookSourceType.file -> 3
@@ -462,6 +464,7 @@ class BookSourceEditActivity :
             add(EditEntity("imageStyle", cr.imageStyle, R.string.rule_image_style))
             add(EditEntity("imageDecode", cr.imageDecode, R.string.rule_image_decode))
             add(EditEntity("payAction", cr.payAction, R.string.rule_pay_action))
+            add(EditEntity("callBackJs", cr.callBackJs, R.string.rule_call_back))
         }
         // 段评
         val rr = bs.ruleReview ?: ReviewRule()
@@ -498,6 +501,8 @@ class BookSourceEditActivity :
         source.enabled = binding.cbIsEnable.isChecked
         source.enabledExplore = binding.cbIsEnableExplore.isChecked
         source.enabledCookieJar = binding.cbIsEnableCookie.isChecked
+        source.eventListener = binding.cbIsEventListener.isChecked
+        source.customButton = binding.cbIsCustomButton.isChecked
         source.bookSourceType = when (binding.spType.selectedItemPosition) {
             3 -> BookSourceType.file
             2 -> BookSourceType.image
@@ -664,6 +669,7 @@ class BookSourceEditActivity :
                 "imageStyle" -> contentRule.imageStyle = it.value
                 "imageDecode" -> contentRule.imageDecode = it.value
                 "payAction" -> contentRule.payAction = it.value
+                "callBackJs" -> contentRule.callBackJs = it.value
             }
         }
         reviewEntities.forEach {

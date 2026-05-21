@@ -43,6 +43,7 @@ import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.isMainThread
 import io.legado.app.utils.longToastOnUi
 import io.legado.app.utils.mapAsync
+import io.legado.app.utils.sendToClip
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toStringArray
@@ -1080,6 +1081,21 @@ interface JsExtensions : JsEncodeUtils {
             putExtra("sourceName", source.getTag())
             putExtra("sourceType", source.getSourceType())
         }
+    }
+
+    /**
+     * 显示底部浏览器弹窗
+     * 需要 Activity 上下文，SourceCallbackJsExtensions 等子类可覆盖提供完整实现
+     */
+    fun showBrowser(url: String, html: String? = null, preloadJs: String? = null, config: String? = null) {
+        // 默认空实现，需要 Activity 上下文的子类可覆盖
+    }
+
+    /**
+     * 复制文本到剪贴板
+     */
+    fun copyText(text: String) {
+        appCtx.sendToClip(text)
     }
 
 }

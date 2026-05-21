@@ -30,6 +30,7 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.model.AudioCache
 import io.legado.app.model.AudioPlay
 import io.legado.app.model.BookCover
+import io.legado.app.model.SourceCallBack
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.AudioPlayService
@@ -77,6 +78,7 @@ class AudioPlayActivity :
     private var adjustProgress = false
     private var playMode = AudioPlay.PlayMode.LIST_END_STOP
     private var pendingCacheAction: (() -> Unit)? = null
+    private var menuCustomBtn: MenuItem? = null
 
     private val tocActivityResult = registerForActivityResult(TocActivityResult()) {
         it?.let {
@@ -112,12 +114,16 @@ class AudioPlayActivity :
         viewModel.coverData.observe(this) {
             upCover(it)
         }
+        viewModel.customBtnData.observe(this) { menuCustomBtn?.isVisible = it }
         viewModel.initData(intent)
         initView()
     }
 
     override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.audio_play, menu)
+        menuCustomBtn = menu.findItem(R.id.menu_custom_btn)?.also {
+            it.isVisible = viewModel.customBtnData.value == true
+        }
         return super.onCompatCreateOptionsMenu(menu)
     }
 
@@ -133,6 +139,14 @@ class AudioPlayActivity :
                 showDialogFragment(ChangeBookSourceDialog(it.name, it.author))
             }
 
+            R.id.menu_custom_btn -> AudioPlay.book?.let { book ->
+                SourceCallBack.callBackBtn(
+                    this, SourceCallBack.CLICK_CUSTOM_BUTTON,
+                    AudioPlay.bookSource, book, AudioPlay.durChapter,
+                    BookType.audio
+                )
+            }
+
             R.id.menu_login -> AudioPlay.bookSource?.let {
                 startActivity<SourceLoginActivity> {
                     putExtra("type", "bookSource")
@@ -141,7 +155,17 @@ class AudioPlayActivity :
             }
 
             R.id.menu_wake_lock -> AppConfig.audioPlayUseWakeLock = !AppConfig.audioPlayUseWakeLock
-            R.id.menu_copy_audio_url -> sendToClip(AudioPlayService.url)
+            R.id.menu_copy_audio_url -> AudioPlay.book?.let { book ->
+                val url = AudioPlayService.url
+                // 如果书源注册了事件回调则先触发回调，noCall 作为兜底执行复制
+                SourceCallBack.callBackBtn(
+                    this, SourceCallBack.CLICK_COPY_PLAY_URL,
+                    AudioPlay.bookSource, book, AudioPlay.durChapter,
+                    BookType.audio, url
+                ) {
+                    sendToClip(url)
+                }
+            } ?: sendToClip(AudioPlayService.url) // book 为空时直接复制
             R.id.menu_clear_current_audio_cache -> clearCurrentChapterCache()
             R.id.menu_edit_source -> AudioPlay.bookSource?.let {
                 sourceEditResult.launch {
@@ -262,10 +286,18 @@ class AudioPlayActivity :
         val book = AudioPlay.book ?: return super.finish()
 
         if (AudioPlay.inBookshelf) {
+            SourceCallBack.callBackBook(
+                SourceCallBack.END_READ, AudioPlay.bookSource,
+                book, AudioPlay.durChapter
+            )
             return super.finish()
         }
 
         if (!AppConfig.showAddToShelfAlert) {
+            SourceCallBack.callBackBook(
+                SourceCallBack.END_READ, AudioPlay.bookSource,
+                book, AudioPlay.durChapter
+            )
             viewModel.removeFromBookshelf { super.finish() }
         } else {
             alert(title = getString(R.string.add_to_bookshelf)) {
@@ -274,9 +306,22 @@ class AudioPlayActivity :
                     AudioPlay.book?.removeType(BookType.notShelf)
                     AudioPlay.book?.save()
                     AudioPlay.inBookshelf = true
+                    SourceCallBack.callBackBook(
+                        SourceCallBack.ADD_BOOK_SHELF, AudioPlay.bookSource, book
+                    )
+                    SourceCallBack.callBackBook(
+                        SourceCallBack.END_READ, AudioPlay.bookSource,
+                        book, AudioPlay.durChapter
+                    )
                     setResult(RESULT_OK)
                 }
-                noButton { viewModel.removeFromBookshelf { super.finish() } }
+                noButton {
+                    SourceCallBack.callBackBook(
+                        SourceCallBack.END_READ, AudioPlay.bookSource,
+                        book, AudioPlay.durChapter
+                    )
+                    viewModel.removeFromBookshelf { super.finish() }
+                }
             }
         }
     }

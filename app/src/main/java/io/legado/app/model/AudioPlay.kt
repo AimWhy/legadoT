@@ -371,6 +371,9 @@ object AudioPlay : CoroutineScope by MainScope() {
         postEvent(EventBus.AUDIO_SUB_TITLE, title)
         postEvent(EventBus.AUDIO_SIZE, durAudioSize)
         postEvent(EventBus.AUDIO_PROGRESS, durChapterPos)
+        SourceCallBack.callBackBook(
+            SourceCallBack.START_READ, bookSource, book, durChapter
+        )
     }
 
     fun pause(context: Context) {
@@ -524,6 +527,9 @@ object AudioPlay : CoroutineScope by MainScope() {
                 }
             }
             book.update()
+            SourceCallBack.callBackBook(
+                SourceCallBack.SAVE_READ, bookSource, book
+            )
         }
     }
 

@@ -20,14 +20,21 @@ class LabelsBar @JvmOverloads constructor(
     fun setLabels(labels: Array<String>) {
         clear()
         labels.forEach {
-            addLabel(it)
+            addLabel(it, null, null)
         }
     }
 
     fun setLabels(labels: List<String>) {
         clear()
         labels.forEach {
-            addLabel(it)
+            addLabel(it, null, null)
+        }
+    }
+
+    fun setLabels(labels: List<String>, onClick: ((String) -> Unit)?, onLongClick: ((String) -> Boolean)?) {
+        clear()
+        labels.forEach {
+            addLabel(it, onClick, onLongClick)
         }
     }
 
@@ -37,7 +44,7 @@ class LabelsBar @JvmOverloads constructor(
         removeAllViews()
     }
 
-    fun addLabel(label: String) {
+    fun addLabel(label: String, onClick: ((String) -> Unit)?, onLongClick: ((String) -> Boolean)?) {
         val tv = if (unUsedViews.isEmpty()) {
             AccentBgTextView(context, null).apply {
                 setPadding(3.dpToPx(), 0, 3.dpToPx(), 0)
@@ -57,6 +64,12 @@ class LabelsBar @JvmOverloads constructor(
         }
         tv.textSize = textSize
         tv.text = label
+        if (onClick != null) {
+            tv.setOnClickListener { onClick.invoke(label) }
+        }
+        if (onLongClick != null) {
+            tv.setOnLongClickListener { onLongClick.invoke(label) }
+        }
         addView(tv)
     }
 }
