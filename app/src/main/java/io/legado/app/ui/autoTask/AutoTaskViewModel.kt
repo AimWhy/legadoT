@@ -103,6 +103,12 @@ class AutoTaskViewModel(application: Application) : BaseViewModel(application) {
         }
     }
 
+    fun saveOrder(items: List<AutoTaskRule>) {
+        execute {
+            AutoTask.saveRules(items, refresh = false)
+        }
+    }
+
     fun updateEnabled(ids: List<String>, enabled: Boolean) {
         if (ids.isEmpty()) return
         execute {

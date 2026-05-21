@@ -184,6 +184,48 @@
     .cm-editor {
       height: 100%;
     }
+    .cm-scroller::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scrollbar {
+      position: absolute;
+      right: 2px;
+      top: 0;
+      bottom: 0;
+      width: 28px;
+      z-index: 40;
+      pointer-events: none;
+    }
+    .custom-scrollbar-track {
+      position: absolute;
+      right: 2px;
+      top: 4px;
+      bottom: 4px;
+      width: 14px;
+      border-radius: 7px;
+      background: transparent;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    .custom-scrollbar-thumb {
+      position: absolute;
+      right: 0;
+      width: 14px;
+      height: 50px;
+      border-radius: 5px;
+      background: var(--border);
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: auto;
+      touch-action: none;
+    }
+    .custom-scrollbar-thumb.visible {
+      opacity: 1;
+    }
+    .custom-scrollbar-thumb.dragging {
+      opacity: 1;
+      background: var(--accent);
+    }
 
     .cm-panels { display: none !important; }
 
@@ -739,6 +781,11 @@
       </div>
     </div>
     <div id="editor"></div>
+    <div class="custom-scrollbar">
+      <div class="custom-scrollbar-track">
+        <div class="custom-scrollbar-thumb"></div>
+      </div>
+    </div>
   </div>
 
   <div id="syntax-status"></div>
@@ -1730,10 +1777,14 @@
             );
           }
           exts.push(...buildAutocompleteExtensions());
+          let _wrapCheckTimer = 0;
           exts.push(
             EditorView.updateListener.of((update) => {
               if (!update.docChanged) return;
-              updateWrappedScriptMode(update.state.doc.toString());
+              clearTimeout(_wrapCheckTimer);
+              _wrapCheckTimer = setTimeout(() => {
+                updateWrappedScriptMode(update.state.doc.toString());
+              }, 300);
               scheduleSyntaxCheck();
             }),
           );
@@ -2244,7 +2295,11 @@
         bindClick(dom.replaceBtn, replaceCurrent);
         bindClick(dom.replaceAllBtn, replaceAllMatches);
 
-        dom.searchInput.addEventListener("input", () => performSearch(true));
+        let _searchDebounce = 0;
+        dom.searchInput.addEventListener("input", () => {
+          clearTimeout(_searchDebounce);
+          _searchDebounce = setTimeout(() => performSearch(true), 150);
+        });
         dom.searchInput.addEventListener("keydown", (e) => {
           if (e.key === "Enter") { e.preventDefault(); e.shiftKey ? searchPrev() : searchNext(); }
           if (e.key === "Escape") { e.preventDefault(); closeCustomSearch(); }
@@ -2638,6 +2693,123 @@
         window.__getCode = function () {
           return getCode();
         };
+
+        // 自定义滚动条
+        (function initCustomScrollbar() {
+          const thumb = document.querySelector(".custom-scrollbar-thumb");
+          const track = document.querySelector(".custom-scrollbar-track");
+          if (!thumb || !track) return;
+          let scroller = null;
+          let hideTimer = null;
+          let dragging = false;
+          let startY = 0;
+          let startScrollTop = 0;
+
+          function getScroller() {
+            if (!scroller) scroller = document.querySelector(".cm-scroller");
+            return scroller;
+          }
+
+          function updateThumb() {
+            const s = getScroller();
+            if (!s) return;
+            const scrollH = s.scrollHeight;
+            const clientH = s.clientHeight;
+            if (scrollH <= clientH) {
+              thumb.style.display = "none";
+              return;
+            }
+            thumb.style.display = "block";
+            const trackH = track.clientHeight;
+            const thumbH = 50;
+            const scrollRange = scrollH - clientH;
+            const thumbRange = trackH - thumbH;
+            const top = (s.scrollTop / scrollRange) * thumbRange;
+            thumb.style.top = top + "px";
+          }
+
+          function showThumb() {
+            clearTimeout(hideTimer);
+            thumb.classList.add("visible");
+          }
+
+          function scheduleHide() {
+            clearTimeout(hideTimer);
+            hideTimer = setTimeout(() => {
+              if (!dragging) thumb.classList.remove("visible");
+            }, 1500);
+          }
+
+          // 监听编辑器滚动 - 找到 scroller 后立即断开观察
+          const observer = new MutationObserver(() => {
+            const s = document.querySelector(".cm-scroller");
+            if (s) {
+              observer.disconnect();
+              scroller = s;
+              s.addEventListener("scroll", () => {
+                updateThumb();
+                if (!dragging) { showThumb(); scheduleHide(); }
+              }, { passive: true });
+              updateThumb();
+            }
+          });
+          observer.observe(document.getElementById("editor"), { childList: true, subtree: true });
+
+          // 触摸拖拽 - touchmove/touchend 仅在拖拽期间注册
+          function onTouchMove(e) {
+            e.preventDefault();
+            const s = getScroller();
+            if (!s) return;
+            const touch = e.touches[0];
+            const deltaY = touch.clientY - startY;
+            const trackH = track.clientHeight;
+            const scrollRange = s.scrollHeight - s.clientHeight;
+            const thumbH = 50;
+            const thumbRange = trackH - thumbH;
+            const scrollDelta = (deltaY / thumbRange) * scrollRange;
+            s.scrollTop = startScrollTop + scrollDelta;
+            updateThumb();
+          }
+
+          function onTouchEnd() {
+            dragging = false;
+            thumb.classList.remove("dragging");
+            document.removeEventListener("touchmove", onTouchMove);
+            document.removeEventListener("touchend", onTouchEnd);
+            scheduleHide();
+          }
+
+          track.addEventListener("touchstart", (e) => {
+            const s = getScroller();
+            if (!s) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const touch = e.touches[0];
+            const trackRect = track.getBoundingClientRect();
+            const thumbRect = thumb.getBoundingClientRect();
+            // 判断是否点在 thumb 上
+            if (touch.clientY >= thumbRect.top && touch.clientY <= thumbRect.bottom) {
+              dragging = true;
+              startY = touch.clientY;
+              startScrollTop = s.scrollTop;
+            } else {
+              // 点击轨道空白：跳到对应位置
+              dragging = true;
+              const clickRatio = (touch.clientY - trackRect.top) / trackRect.height;
+              s.scrollTop = clickRatio * (s.scrollHeight - s.clientHeight);
+              startY = touch.clientY;
+              startScrollTop = s.scrollTop;
+            }
+            thumb.classList.add("dragging");
+            showThumb();
+            updateThumb();
+            document.addEventListener("touchmove", onTouchMove, { passive: false });
+            document.addEventListener("touchend", onTouchEnd);
+          }, { passive: false });
+
+          // 窗口/内容变化时更新
+          window.addEventListener("resize", updateThumb);
+        })();
 
         if (window.Android && typeof window.Android.onEditorReady === "function") {
           window.Android.onEditorReady();

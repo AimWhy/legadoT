@@ -7,19 +7,22 @@ import android.view.ViewGroup
 import android.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.databinding.ItemAutoTaskBinding
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.ui.login.SourceLoginActivity
+import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.startActivity
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
-    RecyclerAdapter<AutoTaskRule, ItemAutoTaskBinding>(context) {
+    RecyclerAdapter<AutoTaskRule, ItemAutoTaskBinding>(context),
+    ItemTouchCallback.Callback {
 
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     private val selectedIds = linkedSetOf<String>()
@@ -145,6 +148,16 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
         callBack.upCountView()
     }
 
+    // ItemTouchCallback.Callback
+    override fun swap(srcPosition: Int, targetPosition: Int): Boolean {
+        swapItem(srcPosition, targetPosition)
+        return true
+    }
+
+    override fun onClearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+        callBack.upOrder(getItems())
+    }
+
     private fun buildSummary(task: AutoTaskRule): String {
         val cron = task.cron?.trim().orEmpty().ifBlank { "-" }
         val status = when {
@@ -184,5 +197,6 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
         fun toggle(task: AutoTaskRule, enabled: Boolean)
         fun upCountView()
         fun showLog(task: AutoTaskRule)
+        fun upOrder(items: List<AutoTaskRule>)
     }
 }

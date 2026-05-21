@@ -6,8 +6,12 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.databinding.ActivityAutoTaskEditBinding
@@ -16,13 +20,16 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
+import io.legado.app.ui.book.source.edit.BookSourceEditAdapter
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.keyboard.KeyboardToolPop
 import io.legado.app.ui.widget.recycler.NoChildScrollLinearLayoutManager
 import io.legado.app.ui.widget.text.EditEntity
 import io.legado.app.ui.widget.dialog.WebCodeDialog
 import io.legado.app.utils.CronSchedule
+import io.legado.app.utils.GSON
 import io.legado.app.utils.imeHeight
+import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showHelp
@@ -49,7 +56,7 @@ class AutoTaskEditActivity :
     override val viewModel by viewModels<AutoTaskEditViewModel>()
 
     private val webEditRequests = linkedMapOf<String, EditEntity>()
-    private val adapter = AutoTaskEditAdapter { entity ->
+    private val adapter = BookSourceEditAdapter { entity ->
         val requestId = java.util.UUID.randomUUID().toString()
         if (
             WebCodeDialog.show(
@@ -63,8 +70,11 @@ class AutoTaskEditActivity :
         }
     }
     private val fieldMap = linkedMapOf<String, EditEntity>()
+    private val entities: ArrayList<EditEntity> = ArrayList()
     private var task: AutoTaskRule? = null
     private var originTask: AutoTaskRule? = null
+    private var selectedNavIndex = 0
+    private var navClickScrolling = false
     private val softKeyboardTool by lazy {
         KeyboardToolPop(this, lifecycleScope, binding.root, this)
     }
@@ -110,6 +120,8 @@ class AutoTaskEditActivity :
                 }
             }
             R.id.menu_login -> openLogin()
+            R.id.menu_copy_source -> sendToClip(GSON.toJson(buildTaskDraft()))
+            R.id.menu_paste_source -> viewModel.pasteSource { upView(it) }
             R.id.menu_help -> showHelpDialog()
         }
         return super.onCompatOptionsItemSelected(item)
@@ -123,6 +135,22 @@ class AutoTaskEditActivity :
             softKeyboardTool.initialPadding = windowInsets.imeHeight
             windowInsets
         }
+        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    navClickScrolling = false
+                }
+            }
+
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                if (navClickScrolling) return
+                val lm = rv.layoutManager as? LinearLayoutManager ?: return
+                val firstVisible = lm.findFirstVisibleItemPosition()
+                if (firstVisible >= 0 && firstVisible != selectedNavIndex) {
+                    highlightNavItem(firstVisible)
+                }
+            }
+        })
     }
 
     private fun upView(rule: AutoTaskRule) {
@@ -130,6 +158,7 @@ class AutoTaskEditActivity :
         binding.cbEnable.isChecked = rule.enable
         binding.cbCookie.isChecked = rule.enabledCookieJar
         fieldMap.clear()
+        entities.clear()
         addField("name", rule.name, R.string.name)
         addField("cron", rule.cron?.ifBlank { AutoTask.DEFAULT_CRON }, R.string.auto_task_cron)
         addField("comment", rule.comment, R.string.auto_task_comment)
@@ -140,56 +169,82 @@ class AutoTaskEditActivity :
         addField("loginUrl", rule.loginUrl, R.string.login_url)
         addField("loginUi", rule.loginUi, R.string.login_ui)
         addField("loginCheckJs", rule.loginCheckJs, R.string.login_check_js)
-        adapter.setSections(
-            listOf(
-                AutoTaskEditAdapter.Section(
-                    "basic",
-                    getString(R.string.auto_task_group_basic),
-                    true,
-                    listOf(fieldMap.getValue("name"), fieldMap.getValue("cron"))
-                ),
-                AutoTaskEditAdapter.Section(
-                    "comment",
-                    getString(R.string.auto_task_group_comment),
-                    true,
-                    listOf(fieldMap.getValue("comment"))
-                ),
-                AutoTaskEditAdapter.Section(
-                    "script",
-                    getString(R.string.auto_task_group_script),
-                    true,
-                    listOf(fieldMap.getValue("script"))
-                ),
-                AutoTaskEditAdapter.Section(
-                    "request",
-                    getString(R.string.auto_task_group_request),
-                    true,
-                    listOf(
-                        fieldMap.getValue("header"),
-                        fieldMap.getValue("jsLib"),
-                        fieldMap.getValue("concurrentRate")
-                    )
-                ),
-                AutoTaskEditAdapter.Section(
-                    "login",
-                    getString(R.string.auto_task_group_login),
-                    true,
-                    listOf(
-                        fieldMap.getValue("loginUrl"),
-                        fieldMap.getValue("loginUi"),
-                        fieldMap.getValue("loginCheckJs")
-                    )
-                )
-            )
-        )
+        adapter.editEntities = entities
+        updateFieldNav(entities)
     }
 
     private fun addField(key: String, value: String?, hintRes: Int) {
-        fieldMap[key] = EditEntity(key, value, hintRes)
+        val entity = EditEntity(key, value, hintRes)
+        fieldMap[key] = entity
+        entities.add(entity)
     }
 
     private fun getFieldValue(key: String): String {
         return fieldMap[key]?.value?.trim().orEmpty()
+    }
+
+    private fun updateFieldNav(entities: List<EditEntity>) {
+        val container = binding.fieldNavGroup
+        container.removeAllViews()
+        entities.forEachIndexed { index, entity ->
+            val label = entity.hint.replace(Regex("[（(].+?[）)]"), "").trim()
+            val tv = TextView(this).apply {
+                text = label
+                textSize = 12f
+                setPadding(24, 8, 24, 8)
+                setBackgroundResource(R.drawable.bg_field_nav_item)
+                setTextColor(context.getColor(R.color.primaryText))
+                gravity = android.view.Gravity.CENTER
+                val lp = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                lp.marginEnd = 6
+                layoutParams = lp
+                setOnClickListener {
+                    navClickScrolling = true
+                    val lm = binding.recyclerView.layoutManager as? LinearLayoutManager
+                    if (lm != null) {
+                        val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(context) {
+                            override fun getVerticalSnapPreference() = SNAP_TO_START
+                            override fun calculateDtToFit(
+                                viewStart: Int, viewEnd: Int,
+                                boxStart: Int, boxEnd: Int,
+                                snapPreference: Int
+                            ): Int {
+                                val offset = (resources.displayMetrics.density * 4).toInt()
+                                return boxStart - viewStart + offset
+                            }
+                        }
+                        scroller.targetPosition = index
+                        lm.startSmoothScroll(scroller)
+                    }
+                    highlightNavItem(index)
+                }
+            }
+            container.addView(tv)
+        }
+        highlightNavItem(0)
+    }
+
+    private fun highlightNavItem(index: Int) {
+        val container = binding.fieldNavGroup
+        if (selectedNavIndex in 0 until container.childCount) {
+            val prev = container.getChildAt(selectedNavIndex) as? TextView
+            prev?.isSelected = false
+            prev?.setTextColor(getColor(R.color.primaryText))
+        }
+        if (index in 0 until container.childCount) {
+            val curr = container.getChildAt(index) as? TextView
+            curr?.isSelected = true
+            curr?.setTextColor(android.graphics.Color.WHITE)
+            curr?.let {
+                binding.fieldNavScroll.smoothScrollTo(
+                    (it.left - 16).coerceAtLeast(0), 0
+                )
+            }
+        }
+        selectedNavIndex = index
     }
 
     private fun buildTask(): AutoTaskRule? {
@@ -310,6 +365,9 @@ class AutoTaskEditActivity :
     override fun onCodeSave(code: String, requestId: String?) {
         val entity = requestId?.let { webEditRequests.remove(it) } ?: return
         entity.value = code
-        adapter.notifyEntityUpdated(entity)
+        val index = entities.indexOf(entity)
+        if (index >= 0) {
+            adapter.notifyItemChanged(index)
+        }
     }
 }

@@ -7,6 +7,7 @@ import okhttp3.ResponseBody.Companion.asResponseBody
 import okhttp3.internal.http.promisesBody
 import okio.buffer
 import okio.source
+import org.brotli.dec.BrotliInputStream
 import java.util.zip.GZIPInputStream
 import java.util.zip.Inflater
 import java.util.zip.InflaterInputStream
@@ -19,7 +20,7 @@ object DecompressInterceptor : Interceptor {
         var transparentDecompress = false
         if (request.header("Accept-Encoding") == null && request.header("Range") == null) {
             transparentDecompress = true
-            requestBuilder.header("Accept-Encoding", "gzip, deflate")
+            requestBuilder.header("Accept-Encoding", "gzip, deflate, br")
         }
 
         val response = chain.proceed(requestBuilder.build())
@@ -33,6 +34,7 @@ object DecompressInterceptor : Interceptor {
         val source = when (encoding) {
             "gzip" -> GZIPInputStream(body.byteStream()).source().buffer()
             "deflate" -> InflaterInputStream(body.byteStream(), Inflater(true)).source().buffer()
+            "br" -> BrotliInputStream(body.byteStream()).source().buffer()
             else -> return response
         }
 

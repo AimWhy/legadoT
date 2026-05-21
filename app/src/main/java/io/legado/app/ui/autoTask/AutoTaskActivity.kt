@@ -4,24 +4,29 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.appcompat.widget.PopupMenu
-import io.legado.app.ui.autoTask.AutoTaskEditActivity
+import androidx.appcompat.widget.SearchView
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.ItemTouchHelper
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.databinding.ActivityAutoTaskBinding
 import io.legado.app.databinding.DialogEditTextBinding
-import io.legado.app.lib.theme.primaryColor
-import io.legado.app.model.AutoTaskRule
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.theme.primaryColor
+import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.model.AutoTask
+import io.legado.app.model.AutoTaskRule
 import io.legado.app.help.DirectLinkUpload
+import io.legado.app.utils.applyTint
+import io.legado.app.utils.isAbsUrl
+import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.ACache
-import io.legado.app.utils.isAbsUrl
-import io.legado.app.utils.sendToClip
 import io.legado.app.utils.splitNotBlank
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.ui.widget.recycler.VerticalDivider
 import io.legado.app.ui.widget.SelectActionBar
 import io.legado.app.ui.about.AppLogDialog
@@ -32,12 +37,18 @@ import kotlinx.coroutines.launch
 class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewModel>(),
     AutoTaskAdapter.CallBack,
     PopupMenu.OnMenuItemClickListener,
-    SelectActionBar.CallBack {
+    SelectActionBar.CallBack,
+    SearchView.OnQueryTextListener {
 
     override val viewModel: AutoTaskViewModel by viewModels()
     override val binding: ActivityAutoTaskBinding by viewBinding(ActivityAutoTaskBinding::inflate)
     private val adapter: AutoTaskAdapter by lazy { AutoTaskAdapter(this, this) }
+    private val searchView: SearchView by lazy {
+        binding.titleBar.findViewById(R.id.search_view)
+    }
+    private val itemTouchCallback by lazy { ItemTouchCallback(adapter) }
     private val importRecordKey = "autoTaskRecordKey"
+    private var allRules: List<AutoTaskRule> = emptyList()
     private val importDoc = registerForActivityResult(HandleFileContract()) {
         it.uri?.let { uri ->
             showDialogFragment(ImportAutoTaskDialog(uri.toString()))
@@ -63,6 +74,7 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         initView()
+        initSearchView()
         initSelectActionBar()
         observeData()
         bindImportResult()
@@ -96,6 +108,14 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
         recyclerView.setEdgeEffectColor(primaryColor)
         recyclerView.adapter = adapter
         recyclerView.addItemDecoration(VerticalDivider(this@AutoTaskActivity))
+        itemTouchCallback.isCanDrag = true
+        ItemTouchHelper(itemTouchCallback).attachToRecyclerView(recyclerView)
+    }
+
+    private fun initSearchView() {
+        searchView.applyTint(primaryTextColor)
+        searchView.queryHint = getString(R.string.search)
+        searchView.setOnQueryTextListener(this)
     }
 
     private fun initSelectActionBar() {
@@ -109,11 +129,22 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
     private fun observeData() {
         lifecycleScope.launch {
             viewModel.rulesFlow.collectLatest {
-                adapter.setItems(it, adapter.diffItemCallBack)
-                invalidateOptionsMenu()
-                upCountView()
+                allRules = it
+                applyFilter()
             }
         }
+    }
+
+    private fun applyFilter() {
+        val query = searchView.query?.toString()?.trim().orEmpty()
+        val filtered = if (query.isEmpty()) {
+            allRules
+        } else {
+            allRules.filter { it.name.contains(query, ignoreCase = true) }
+        }
+        adapter.setItems(filtered, adapter.diffItemCallBack)
+        invalidateOptionsMenu()
+        upCountView()
     }
 
     private fun bindImportResult() {
@@ -155,6 +186,17 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
         }
     }
 
+    // SearchView.OnQueryTextListener
+    override fun onQueryTextSubmit(query: String?): Boolean {
+        return false
+    }
+
+    override fun onQueryTextChange(newText: String?): Boolean {
+        applyFilter()
+        return false
+    }
+
+    // AutoTaskAdapter.CallBack
     override fun edit(task: AutoTaskRule) {
         startActivity(AutoTaskEditActivity.startIntent(this, task.id))
     }
@@ -175,10 +217,15 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
         showDialogFragment(AutoTaskLogDialog(task.id, task.name))
     }
 
+    override fun upOrder(items: List<AutoTaskRule>) {
+        viewModel.saveOrder(items)
+    }
+
     override fun upCountView() {
         binding.selectActionBar.upCountView(adapter.selection.size, adapter.itemCount)
     }
 
+    // SelectActionBar.CallBack
     override fun selectAll(selectAll: Boolean) {
         if (selectAll) {
             adapter.selectAll()

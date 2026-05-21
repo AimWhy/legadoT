@@ -25,6 +25,7 @@ mlkitTextRecognitionChinese = "16.0.0"
 media = "1.7.1"
 nanoHttpd = "2.3.1"
 okhttp = "5.3.2"
+brotli = "0.1.2"
 preference = "1.2.1"
 quickChineseTransfer = "0.2.16"
 
@@ -129,6 +130,7 @@ preference-preference = { module = "androidx.preference:preference", version.ref
 preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
 
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+brotli-dec = { module = "org.brotli:dec", version.ref = "brotli" }
 protobuf-javalite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "protobufJavalite" }
 
 quick-chinese-transfer-core = { module = "com.github.liuyueyi.quick-chinese-transfer:quick-transfer-core", version.ref = "quickChineseTransfer" }

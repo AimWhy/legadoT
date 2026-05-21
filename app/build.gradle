@@ -229,6 +229,7 @@ dependencies {
 
     //网络
     implementation(libs.okhttp)
+    implementation(libs.brotli.dec)
     implementation(fileTree(dir: 'cronetlib', include: ['*.jar', '*.aar']))
     implementation(libs.protobuf.javalite)
 
