@@ -15,6 +15,8 @@ import io.legado.app.constant.AppLog
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemAppLogBinding
 import io.legado.app.lib.theme.primaryColor
+import io.legado.app.model.HttpLogger
+import io.legado.app.model.HttpRecord
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.utils.LogUtils
 import io.legado.app.utils.setLayout
@@ -52,6 +54,7 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
         when (item?.itemId) {
             R.id.menu_clear -> {
                 AppLog.clear()
+                HttpLogger.clear()
                 adapter.clearItems()
             }
         }
@@ -78,8 +81,17 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
         override fun registerListener(holder: ItemViewHolder, binding: ItemAppLogBinding) {
             binding.root.onClick {
                 getItem(holder.layoutPosition)?.let { item ->
-                    item.third?.let {
-                        showDialogFragment(TextDialog("Log", it.stackTraceToString()))
+                    val logId = HttpRecord.parseIdFromLog(item.second)
+                    if (logId != null) {
+                        // HTTP 日志：显示完整请求详情
+                        val detail = HttpLogger.getById(logId)?.fullDetail
+                            ?: item.second
+                        showDialogFragment(TextDialog("HTTP", detail))
+                    } else {
+                        // 普通日志：显示 stacktrace
+                        item.third?.let {
+                            showDialogFragment(TextDialog("Log", it.stackTraceToString()))
+                        }
                     }
                 }
             }

@@ -771,6 +771,8 @@ Placeholders:
     <string name="add_to_text_context_menu_s">Long tap to display Legado·Search in the operation menu</string>
     <string name="add_to_text_context_menu_t">Text operation display Search</string>
     <string name="record_log">Record log</string>
+    <string name="record_http_log">Record HTTP log</string>
+    <string name="record_http_log_s">Record HTTP request/response overview in the app log</string>
     <string name="log">Log</string>
     <string name="chinese_converter">Simplified conversion</string>
     <string name="change_icon_error">The icon is a vector icon, which was not supported before Android 8.0</string>
