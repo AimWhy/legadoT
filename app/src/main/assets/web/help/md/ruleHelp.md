@@ -265,3 +265,60 @@ function decodeImage(data, key) {
 
 decodeImage(result, key)
 ```
+
+* 回调操作 (callBackJs)
+> 在书源编辑页面勾选「事件监听」并填写正文规则中的回调JS后生效。  
+> 当用户在阅读/详情页触发对应操作时，软件会执行此JS代码。  
+> 变量`event`为当前事件名称，`result`为事件关联内容（可能为空）；  
+> 变量`book`为当前书籍对象，`chapter`为当前章节对象（可能为null）。  
+
+**交互事件**（回调返回 `true` 会拦截默认操作）：
+
+```
+event 名称               触发时机                     result 内容
+──────────────────────────────────────────────────────────────
+"clickBookName"          点击详情页书名               book.name
+"longClickBookName"      长按详情页书名               book.name
+"clickAuthor"            点击详情页作者               book.author
+"longClickAuthor"        长按详情页作者               book.author
+"clickCustomButton"      点击自定义按钮               -
+"longClickCustomButton"  长按自定义按钮（正文阅读页）  -
+"clickShareBook"         点击分享按钮                 分享字符串
+"clickClearCache"        点击清理缓存                 -
+"clickCopyBookUrl"       复制书籍URL                  book.bookUrl
+"clickCopyTocUrl"        复制目录URL                  book.tocUrl
+"clickCopyPlayUrl"       复制播放URL（音频页）        播放URL
+"clickBookLabel"         点击书籍标签                 标签文本
+"longClickBookLabel"     长按书籍标签                 标签文本
+```
+
+**通知事件**（仅通知，无法拦截默认行为）：
+
+```
+event 名称               触发时机
+────────────────────────────────────────
+"addBookShelf"           书籍加入书架
+"delBookShelf"           书籍移出书架
+"saveRead"               保存阅读进度
+"startRead"              开始阅读
+"endRead"                结束阅读（退出阅读页时）
+"startShelfRefresh"      书架开始刷新（每个启用事件监听的书源）
+"endShelfRefresh"        书架刷新全部完成
+```
+
+**示例：点击自定义按钮打开浏览器**
+```js
+if (event == "clickCustomButton") {
+    java.startBrowser("https://example.com/chapter?id=" + chapter?.index);
+}
+```
+
+**示例：分享前修改内容**
+```js
+if (event == "clickShareBook") {
+    result = result.replace(/关键词/g, "替换词");
+    return false; // false 表示不拦截，继续执行默认分享
+}
+```
+
+> JS 执行有超时限制（30 秒），请避免耗时操作。
