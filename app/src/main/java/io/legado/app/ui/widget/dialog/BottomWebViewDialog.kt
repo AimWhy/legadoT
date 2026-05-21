@@ -202,6 +202,12 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
                     hasChanged = true
                 }
             }
+            config.heightPercentage?.let { percentage ->
+                if (percentage in 0.0..1.0) {
+                    params.height = (displayMetrics.heightPixels * percentage).toInt()
+                    hasChanged = true
+                }
+            }
             val dialogHeight = config.dialogHeight ?: if (first) ViewGroup.LayoutParams.MATCH_PARENT else null
             dialogHeight?.let { height ->
                 params.height = height
@@ -212,16 +218,45 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
 
         config.expandedCornersRadius?.let { radius ->
             val radiusPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, radius, displayMetrics)
-            val bgColor = with(TypedValue()) {
-                if (requireContext().theme.resolveAttribute(
-                        com.google.android.material.R.attr.colorSurface, this, true
-                    )) data else Color.WHITE
+            bottomSheet?.let { sheet ->
+                if (radiusPx > 0f) {
+                    sheet.backgroundTintList = null
+                    val shapeDrawable = GradientDrawable().apply {
+                        cornerRadii = floatArrayOf(
+                            radiusPx, radiusPx,
+                            radiusPx, radiusPx,
+                            0f, 0f,
+                            0f, 0f
+                        )
+                    }
+                    sheet.background = shapeDrawable
+                    sheet.clipToOutline = true
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                        currentWebView.outlineProvider = object : android.view.ViewOutlineProvider() {
+                            override fun getOutline(view: View, outline: android.graphics.Outline) {
+                                outline.setRoundRect(0, 0, view.width, view.height, radiusPx)
+                            }
+                        }
+                        currentWebView.clipToOutline = true
+                        binding.customWebView.outlineProvider = object : android.view.ViewOutlineProvider() {
+                            override fun getOutline(view: View, outline: android.graphics.Outline) {
+                                outline.setRoundRect(0, 0, view.width, view.height, radiusPx)
+                            }
+                        }
+                        binding.customWebView.clipToOutline = true
+                    }
+                } else {
+                    sheet.backgroundTintList = null
+                    sheet.background = null
+                    sheet.clipToOutline = false
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                        currentWebView.outlineProvider = null
+                        currentWebView.clipToOutline = false
+                        binding.customWebView.outlineProvider = null
+                        binding.customWebView.clipToOutline = false
+                    }
+                }
             }
-            val drawable = GradientDrawable().apply {
-                setColor(bgColor)
-                cornerRadii = floatArrayOf(radiusPx, radiusPx, radiusPx, radiusPx, 0f, 0f, 0f, 0f)
-            }
-            bottomSheet?.background = drawable
         }
 
         val scrollNoDraggable = config.scrollNoDraggable ?: if (first) true else null
@@ -461,9 +496,15 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
         bottomSheet?.let { sheet ->
             currentConfig?.widthPercentage?.let { percentage ->
                 if (percentage in 0.0..1.0) {
-                    val width = (displayMetrics.widthPixels * percentage).toInt()
                     val params = sheet.layoutParams
-                    params.width = width
+                    params.width = (displayMetrics.widthPixels * percentage).toInt()
+                    sheet.layoutParams = params
+                }
+            }
+            currentConfig?.heightPercentage?.let { percentage ->
+                if (percentage in 0.0..1.0) {
+                    val params = sheet.layoutParams
+                    params.height = (displayMetrics.heightPixels * percentage).toInt()
                     sheet.layoutParams = params
                 }
             }
