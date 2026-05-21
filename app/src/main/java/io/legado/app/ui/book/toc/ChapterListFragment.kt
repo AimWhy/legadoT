@@ -96,7 +96,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
             audioCacheStateReady = !book.isAudio
             pendingAudioCacheChanges.clear()
 
-            adapter.setItems(queryChapterList(null))
+            adapter.setAllItems(queryChapterList(null))
 
             val (cacheFileNames, cachedChapterIndexes) = queryCacheState(book)
             adapter.cacheFileNames.addAll(cacheFileNames)
@@ -157,7 +157,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
 
     override fun upChapterList(searchKey: String?) {
         lifecycleScope.launch {
-            adapter.setItems(queryChapterList(searchKey))
+            adapter.setAllItems(queryChapterList(searchKey))
         }
     }
 
@@ -186,7 +186,15 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
         }
     }
 
+    private var pendingScrollAnchor: Int? = null
+    /** 锚定条目的 index（而非列表位置），用于位置变化后查找 */
+    private var pendingScrollItemIndex: Int? = null
+
     override fun onListChanged() {
+        if (pendingScrollAnchor != null) {
+            // 分卷切换中，跳过自动滚动，由 onItemsUpdated 恢复位置
+            return
+        }
         lifecycleScope.launch {
             var scrollPos = 0
             withContext(Default) {
@@ -199,6 +207,26 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
             }
             mLayoutManager.scrollToPositionWithOffset(scrollPos, 0)
             adapter.upDisplayTitles(scrollPos)
+        }
+    }
+
+    override fun onVolumeToggled(volumeIndex: Int) {
+        val pos = mLayoutManager.findFirstVisibleItemPosition()
+        pendingScrollAnchor = pos
+        pendingScrollItemIndex = adapter.getItems().getOrNull(pos)?.index
+    }
+
+    override fun onItemsUpdated() {
+        val anchorItemIdx = pendingScrollItemIndex
+        pendingScrollAnchor = null
+        pendingScrollItemIndex = null
+        if (anchorItemIdx == null) return
+        binding.recyclerView.post {
+            val newPos = adapter.getItems().indexOfFirst { it.index == anchorItemIdx }
+            if (newPos >= 0) {
+                mLayoutManager.scrollToPositionWithOffset(newPos, 0)
+            }
+            adapter.upDisplayTitles(newPos.coerceAtLeast(0))
         }
     }
 

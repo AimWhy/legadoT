@@ -33,6 +33,11 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
     private val displayTitleMap = ConcurrentHashMap<String, String>()
     private val handler = Handler(Looper.getMainLooper())
 
+    /** 完整未过滤的章节目录 */
+    private var allItems: List<BookChapter> = emptyList()
+    /** 已折叠的分卷 index 集合 */
+    val collapsedVolumes = mutableSetOf<Int>()
+
     override val diffItemCallback: DiffUtil.ItemCallback<BookChapter>
         get() = object : DiffUtil.ItemCallback<BookChapter>() {
 
@@ -64,6 +69,8 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
     override fun onCurrentListChanged() {
         super.onCurrentListChanged()
         callback.onListChanged()
+        // 通知 Fragment 恢复滚动位置
+        handler.post { callback.onItemsUpdated() }
     }
 
     fun clearDisplayTitle() {
@@ -113,6 +120,43 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
         return displayTitleMap[chapter.title] ?: chapter.title
     }
 
+    fun setAllItems(items: List<BookChapter>) {
+        allItems = items
+        collapsedVolumes.clear()
+        val durIdx = callback.durChapterIndex()
+        var currentVolumeIndex: Int? = null
+        for (item in allItems) {
+            if (item.isVolume && item.index <= durIdx) {
+                currentVolumeIndex = item.index
+            }
+        }
+        allItems.filter { it.isVolume }.forEach { volume ->
+            if (volume.index != currentVolumeIndex) {
+                collapsedVolumes.add(volume.index)
+            }
+        }
+        refreshVisibleItems()
+    }
+
+    fun refreshVisibleItems() {
+        val visible = computeVisibleItems()
+        super.setItems(visible)
+    }
+
+    private fun computeVisibleItems(): List<BookChapter> {
+        val result = mutableListOf<BookChapter>()
+        var skipping = false
+        for (item in allItems) {
+            if (item.isVolume) {
+                result.add(item)
+                skipping = collapsedVolumes.contains(item.index)
+            } else if (!skipping) {
+                result.add(item)
+            }
+        }
+        return result
+    }
+
     override fun getViewBinding(parent: ViewGroup): ItemChapterListBinding {
         return ItemChapterListBinding.inflate(inflater, parent, false)
     }
@@ -140,24 +184,19 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
                 }
                 tvChapterName.text = getDisplayTitle(item)
                 if (item.isVolume) {
-                    //卷名，如第一卷 突出显示
                     tvChapterItem.setBackgroundColor(context.getCompatColor(R.color.btn_bg_press))
                 } else {
-                    //普通章节 保持不变
                     tvChapterItem.background =
                         ThemeUtils.resolveDrawable(context, android.R.attr.selectableItemBackground)
                 }
 
-                //卷名不显示
                 if (!item.tag.isNullOrEmpty() && !item.isVolume) {
-                    //更新时间规则
                     tvTag.text = item.tag
                     tvTag.visible()
                 } else {
                     tvTag.gone()
                 }
                 if (AppConfig.tocCountWords && !item.wordCount.isNullOrEmpty() && !item.isVolume) {
-                    //章节字数
                     tvWordCount.text = item.wordCount
                     tvWordCount.visible()
                 } else {
@@ -175,13 +214,35 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
                 tvChapterName.text = getDisplayTitle(item)
                 upHasCache(binding, isDur, cached)
             }
+            if (item.isVolume) {
+                ivVolumeArrow.visible()
+                ivVolumeArrow.setImageResource(
+                    if (collapsedVolumes.contains(item.index))
+                        R.drawable.ic_arrow_right
+                    else
+                        R.drawable.ic_expand_more
+                )
+            } else {
+                ivVolumeArrow.gone()
+            }
         }
     }
 
     override fun registerListener(holder: ItemViewHolder, binding: ItemChapterListBinding) {
         holder.itemView.setOnClickListener {
-            getItem(holder.layoutPosition)?.let {
-                callback.openChapter(it)
+            getItem(holder.layoutPosition)?.let { item ->
+                if (item.isVolume) {
+                    if (collapsedVolumes.contains(item.index)) {
+                        collapsedVolumes.remove(item.index)
+                    } else {
+                        collapsedVolumes.add(item.index)
+                    }
+                    notifyItemChanged(holder.layoutPosition)
+                    callback.onVolumeToggled(item.index)
+                    refreshVisibleItems()
+                } else {
+                    callback.openChapter(item)
+                }
             }
         }
         holder.itemView.setOnLongClickListener {
@@ -211,6 +272,8 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
         fun openChapter(bookChapter: BookChapter)
         fun durChapterIndex(): Int
         fun onListChanged()
+        fun onVolumeToggled(volumeIndex: Int)
+        fun onItemsUpdated()
     }
 
 }
