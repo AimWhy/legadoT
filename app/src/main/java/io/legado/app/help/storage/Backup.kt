@@ -148,7 +148,10 @@ object Backup {
         writeListToJson(appDb.httpTTSDao.all, "httpTTS.json", backupPath)
         writeListToJson(appDb.keyboardAssistsDao.all, "keyboardAssists.json", backupPath)
         writeListToJson(appDb.dictRuleDao.all, "dictRule.json", backupPath)
-        writeListToJson(appDb.autoTaskRuleDao.all, "autoTask.json", backupPath)
+        GSON.toJson(appDb.autoTaskRuleDao.all()).let { json ->
+            FileUtils.createFileIfNotExist(backupPath + File.separator + "autoTask.json")
+                .writeText(json)
+        }
         GSON.toJson(appDb.serverDao.all).let { json ->
             aes.runCatching {
                 encryptBase64(json)

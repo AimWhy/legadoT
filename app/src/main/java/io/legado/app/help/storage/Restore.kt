@@ -3,6 +3,7 @@ package io.legado.app.help.storage
 import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
 import android.net.Uri
+import androidx.core.content.edit
 import androidx.documentfile.provider.DocumentFile
 import io.legado.app.BuildConfig
 import io.legado.app.R
@@ -40,6 +41,8 @@ import io.legado.app.utils.ACache
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.LogUtils
+import io.legado.app.utils.externalFiles
+import io.legado.app.utils.getFile
 import io.legado.app.utils.compress.ZipUtils
 import io.legado.app.utils.defaultSharedPreferences
 import io.legado.app.utils.fromJsonArray
@@ -127,16 +130,16 @@ object Restore {
             }
             appDb.bookDao.insert(*newBooks.toTypedArray())
         }
-        fileToListT<Bookmark>(path, "bookmark.json")?.let {
+        fileToListT<Bookmark>(path, "bookmark.json")?.let { bookmarks ->
             kotlin.runCatching {
-                appDb.bookmarkDao.insert(*it.toTypedArray())
+                appDb.bookmarkDao.insert(*bookmarks.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复书签出错\n${it.localizedMessage}", it)
             }
         }
-        fileToListT<BookGroup>(path, "bookGroup.json")?.let {
+        fileToListT<BookGroup>(path, "bookGroup.json")?.let { groups ->
             kotlin.runCatching {
-                appDb.bookGroupDao.insert(*it.toTypedArray())
+                appDb.bookGroupDao.insert(*groups.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复分组出错\n${it.localizedMessage}", it)
             }
@@ -173,8 +176,8 @@ object Restore {
                 }
             }
         }
-        fileToListT<RssStar>(path, "rssStar.json")?.let {
-            it.forEach { star ->
+        fileToListT<RssStar>(path, "rssStar.json")?.let { stars ->
+            stars.forEach { star ->
                 kotlin.runCatching {
                     if (appDb.rssStarDao.get(star.origin, star.link) == null) {
                         appDb.rssStarDao.insert(star)
@@ -184,44 +187,44 @@ object Restore {
                 }
             }
         }
-        fileToListT<ReplaceRule>(path, "replaceRule.json")?.let {
+        fileToListT<ReplaceRule>(path, "replaceRule.json")?.let { replaceRules ->
             kotlin.runCatching {
-                appDb.replaceRuleDao.insert(*it.toTypedArray())
+                appDb.replaceRuleDao.insert(*replaceRules.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复替换规则出错\n${it.localizedMessage}", it)
             }
         }
-        fileToListT<SearchKeyword>(path, "searchHistory.json")?.let {
-            it.forEach { keyword ->
+        fileToListT<SearchKeyword>(path, "searchHistory.json")?.let { keywords ->
+            keywords.forEach { keyword ->
                 kotlin.runCatching {
                     appDb.searchKeywordDao.insert(keyword)
                 }.onFailure { /* 忽略重复 */ }
             }
         }
-        fileToListT<RuleSub>(path, "sourceSub.json")?.let {
+        fileToListT<RuleSub>(path, "sourceSub.json")?.let { subs ->
             kotlin.runCatching {
-                appDb.ruleSubDao.insert(*it.toTypedArray())
+                appDb.ruleSubDao.insert(*subs.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复订阅源规则出错\n${it.localizedMessage}", it)
             }
         }
-        fileToListT<TxtTocRule>(path, "txtTocRule.json")?.let {
+        fileToListT<TxtTocRule>(path, "txtTocRule.json")?.let { rules ->
             kotlin.runCatching {
-                appDb.txtTocRuleDao.insert(*it.toTypedArray())
+                appDb.txtTocRuleDao.insert(*rules.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复TXT目录规则出错\n${it.localizedMessage}", it)
             }
         }
-        fileToListT<HttpTTS>(path, "httpTTS.json")?.let {
+        fileToListT<HttpTTS>(path, "httpTTS.json")?.let { ttsList ->
             kotlin.runCatching {
-                appDb.httpTTSDao.insert(*it.toTypedArray())
+                appDb.httpTTSDao.insert(*ttsList.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复TTS配置出错\n${it.localizedMessage}", it)
             }
         }
-        fileToListT<DictRule>(path, "dictRule.json")?.let {
+        fileToListT<DictRule>(path, "dictRule.json")?.let { dicts ->
             kotlin.runCatching {
-                appDb.dictRuleDao.insert(*it.toTypedArray())
+                appDb.dictRuleDao.insert(*dicts.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复字典规则出错\n${it.localizedMessage}", it)
             }
@@ -233,9 +236,9 @@ object Restore {
                 }.onFailure { /* 忽略重复 */ }
             }
         }
-        fileToListT<AutoTaskRule>(path, "autoTask.json")?.let {
+        fileToListT<AutoTaskRule>(path, "autoTask.json")?.let { tasks ->
             kotlin.runCatching {
-                appDb.autoTaskRuleDao.insert(*it.toTypedArray())
+                appDb.autoTaskRuleDao.insert(*tasks.toTypedArray())
                 AutoTask.refreshSchedule()
             }.onFailure {
                 AppLog.put("恢复定时任务出错\n${it.localizedMessage}", it)
@@ -321,36 +324,35 @@ object Restore {
         }
         //AppWebDav.downBgs()
         appCtx.getSharedPreferences(path, "config")?.all?.let { map ->
-            val edit = appCtx.defaultSharedPreferences.edit()
-
-            map.forEach { (key, value) ->
-                if (BackupConfig.keyIsNotIgnore(key)) {
-                    when (key) {
-                        PreferKey.webDavPassword -> {
-                            kotlin.runCatching {
-                                aes.decryptStr(value.toString())
-                            }.getOrNull()?.let {
-                                edit.putString(key, it)
-                            } ?: let {
-                                if (appCtx.getPrefString(PreferKey.webDavPassword)
-                                        .isNullOrBlank()
-                                ) {
-                                    edit.putString(key, value.toString())
+            appCtx.defaultSharedPreferences.edit {
+                map.forEach { (key, value) ->
+                    if (BackupConfig.keyIsNotIgnore(key)) {
+                        when (key) {
+                            PreferKey.webDavPassword -> {
+                                kotlin.runCatching {
+                                    aes.decryptStr(value.toString())
+                                }.getOrNull()?.let {
+                                    putString(key, it)
+                                } ?: let {
+                                    if (appCtx.getPrefString(PreferKey.webDavPassword)
+                                            .isNullOrBlank()
+                                    ) {
+                                        putString(key, value.toString())
+                                    }
                                 }
                             }
-                        }
 
-                        else -> when (value) {
-                            is Int -> edit.putInt(key, value)
-                            is Boolean -> edit.putBoolean(key, value)
-                            is Long -> edit.putLong(key, value)
-                            is Float -> edit.putFloat(key, value)
-                            is String -> edit.putString(key, value)
+                            else -> when (value) {
+                                is Int -> putInt(key, value)
+                                is Boolean -> putBoolean(key, value)
+                                is Long -> putLong(key, value)
+                                is Float -> putFloat(key, value)
+                                is String -> putString(key, value)
+                            }
                         }
                     }
                 }
             }
-            edit.apply()
         }
         ReadBookConfig.apply {
             comicStyleSelect = appCtx.getPrefInt(PreferKey.comicStyleSelect)
