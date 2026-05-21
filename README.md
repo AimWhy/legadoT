@@ -38,14 +38,32 @@ Legado is a free and open source novel reader for Android.
 </details>
 
 #### 阅读T增强特性
-* 规则能力增强：URL参数支持 `timeout`、`followRedirects`、`resolveIp`，java.get/post/head新增json字符串请求头的重载方法
-* JS引擎升级：更换Rhino为htmlunit-core-js，修复const作用域问题。
-* 加解密优化：内置 `CryptoJS`，方便使用网页JS加解密函数。
-* 代码编辑体验增强：WebView代码编辑器支持自动补全、语法检查、格式化等。
-* 定时任务支持：新增定时任务编辑与管理，支持 cron 表达式驱动脚本执行。
-* 听书体验增强：新增片头/片尾自动跳过，支持本书与全局配置。
-* 有声书缓存增强：支持范围缓存、自定义缓存目录、清除本章缓存并触发重新解析。
-* 新增中文 OCR 能力，提升图片文字提取场景可用性。
+
+阅读体验
+* 目录分卷支持展开/折叠，默认只展开当前阅读所在分卷
+* 听书体验增强：新增片头/片尾自动跳过，支持本书与全局配置
+* 有声书缓存增强：支持范围缓存、自定义缓存目录、清除本章缓存并触发重新解析
+
+书源/规则
+* 回调操作(callBackJs)事件系统：支持17种事件监听与拦截，书源可响应阅读行为@Luoyacheng
+* showBrowser 函数：底部WebView弹窗，可自定义圆角、宽高比例等样式@Luoyacheng
+* copyText 函数：JS可直接复制文本到剪贴板@Luoyacheng
+* 内置 `CryptoJS`，方便使用网页JS加解密函数
+* 规则能力增强：URL参数支持 `timeout`、`followRedirects`、`resolveIp`，java.get/post/head 新增json字符串请求头的重载方法
+* JS引擎升级：更换Rhino为htmlunit-core-js，修复const作用域问题
+
+调试/开发
+* HTTP请求日志：设置中开启后可在日志查看请求概况，点击查看完整请求/响应详情
+* 新增中文 OCR 能力，java.ocr() 自动转换图片到文字
+
+编辑器
+* 代码编辑器增加右侧滚动条、快速定位导航栏
+* 搜索替换重构，支持正则表达式测试
+* WebView代码编辑器支持自动补全、语法检查、格式化等
+* HTTP请求支持brotli压缩算法
+
+自动化
+* 定时任务支持：cron 表达式驱动脚本执行，支持 refreshToc / notify 动作
 
 <a href="#readme">
     <img src="https://img.shields.io/badge/-返回顶部-orange.svg" alt="#" align="right">
