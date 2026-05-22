@@ -45,12 +45,10 @@ Legado is a free and open source novel reader for Android.
 * 有声书缓存增强：支持范围缓存、自定义缓存目录、清除本章缓存并触发重新解析
 
 书源/规则
-* 回调操作(callBackJs)事件系统：支持17种事件监听与拦截，书源可响应阅读行为@Luoyacheng
-* showBrowser 函数：底部WebView弹窗，可自定义圆角、宽高比例等样式@Luoyacheng
-* copyText 函数：JS可直接复制文本到剪贴板@Luoyacheng
 * 内置 `CryptoJS`，方便使用网页JS加解密函数
 * 规则能力增强：URL参数支持 `timeout`、`followRedirects`、`resolveIp`，java.get/post/head 新增json字符串请求头的重载方法
 * JS引擎升级：更换Rhino为htmlunit-core-js，修复const作用域问题
+* 新增java.orc/showBrowser/copyText等新方法
 
 调试/开发
 * HTTP请求日志：设置中开启后可在日志查看请求概况，点击查看完整请求/响应详情

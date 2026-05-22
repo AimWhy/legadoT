@@ -3,6 +3,7 @@ package io.legado.app.ui.widget.dialog
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.pm.ActivityInfo
+import androidx.annotation.Keep
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
@@ -83,6 +84,7 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
         }
     }
 
+    @Keep
     data class Config(
         var state: Int? = null,
         var peekHeight: Int? = null,

@@ -61,6 +61,14 @@
 -keep class * extends io.legado.app.help.JsExtensions{*;}
 # 数据类
 -keep class **.data.entities.**{*;}
+# showBrowser WebView JS 接口
+-keepclassmembers class **.ui.widget.dialog.BottomWebViewDialog$JSInterface {
+    public *;
+}
+# 回调系统
+-keepclassmembers class **.ui.login.SourceCallbackJsExtensions {
+    public *;
+}
 # hutool-core hutool-crypto
 -keep class
 !cn.hutool.core.util.RuntimeUtil,

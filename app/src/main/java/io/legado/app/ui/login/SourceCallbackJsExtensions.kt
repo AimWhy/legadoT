@@ -47,7 +47,6 @@ class SourceCallbackJsExtensions(
         activityRef.get()?.showDialogFragment(AddToBookshelfDialog(bookUrl))
     }
 
-    @JvmOverloads
     override fun showBrowser(url: String, html: String?, preloadJs: String?, config: String?) {
         val activity = activityRef.get() ?: return
         val source = getSource() ?: return

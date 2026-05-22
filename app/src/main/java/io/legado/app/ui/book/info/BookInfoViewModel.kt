@@ -100,10 +100,10 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
 
     private fun upBook(book: Book) {
         execute {
-            bookData.postValue(book)
-            upCoverByRule(book)
             bookSource = if (book.isLocal) null else
                 appDb.bookSourceDao.getBookSource(book.origin)
+            bookData.postValue(book)
+            upCoverByRule(book)
             if (book.tocUrl.isEmpty() && !book.isLocal) {
                 loadBookInfo(book, runPreUpdateJs = inBookshelf)
             } else {
