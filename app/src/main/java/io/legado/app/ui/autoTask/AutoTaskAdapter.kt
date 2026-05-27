@@ -14,6 +14,7 @@ import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.databinding.ItemAutoTaskBinding
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.ui.login.SourceLoginActivity
+import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.startActivity
 import java.text.SimpleDateFormat
@@ -157,6 +158,31 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
     override fun onClearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
         callBack.upOrder(getItems())
     }
+
+    val dragSelectCallback: DragSelectTouchHelper.Callback =
+        object : DragSelectTouchHelper.AdvanceCallback<String>(DragSelectTouchHelper.AdvanceCallback.Mode.ToggleAndReverse) {
+            override fun currentSelectedId(): Set<String> {
+                return selectedIds
+            }
+
+            override fun getItemId(position: Int): String {
+                return getItem(position)!!.id
+            }
+
+            override fun updateSelectState(position: Int, isSelected: Boolean): Boolean {
+                getItem(position)?.let { task ->
+                    if (isSelected) {
+                        selectedIds.add(task.id)
+                    } else {
+                        selectedIds.remove(task.id)
+                    }
+                    notifyItemChanged(position, bundleOf(Pair("selected", null)))
+                    callBack.upCountView()
+                    return true
+                }
+                return false
+            }
+        }
 
     private fun buildSummary(task: AutoTaskRule): String {
         val cron = task.cron?.trim().orEmpty().ifBlank { "-" }

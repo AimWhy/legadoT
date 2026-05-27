@@ -17,5 +17,6 @@ package-lock.json
 # Kotlin 2.0
 .kotlin/
 .npm-cache/
+.agents/
 index.html
 legadoT.md

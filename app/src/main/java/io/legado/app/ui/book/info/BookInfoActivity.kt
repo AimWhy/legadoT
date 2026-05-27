@@ -732,7 +732,7 @@ class BookInfoActivity :
         val enabled: Boolean,
         val notifyEnabled: Boolean,
         val cacheEnabled: Boolean,
-        val intervalMinutes: Int
+        val intervalHours: Int
     )
 
     private fun showAutoTaskDialog() {
@@ -744,17 +744,17 @@ class BookInfoActivity :
         dialogBinding.switchEnable.isChecked = config.enabled
         dialogBinding.switchNotify.isChecked = config.notifyEnabled
         dialogBinding.switchCache.isChecked = config.cacheEnabled
-        dialogBinding.editInterval.setText(config.intervalMinutes.toString())
+        dialogBinding.editInterval.setText(config.intervalHours.toString())
         alert(R.string.auto_task_book_update) {
             customView { dialogBinding.root }
             okButton {
                 val enabled = dialogBinding.switchEnable.isChecked
-                val minutes = dialogBinding.editInterval.text?.toString()?.trim()?.toIntOrNull()
+                val hours = dialogBinding.editInterval.text?.toString()?.trim()?.toIntOrNull()
                     ?.coerceAtLeast(1)
-                    ?: (parseCronMinutes(AutoTask.DEFAULT_CRON) ?: 5)
+                    ?: cachedOrDefaultIntervalHours
                 val notifyEnabled = dialogBinding.switchNotify.isChecked
                 val cacheEnabled = dialogBinding.switchCache.isChecked
-                val cron = "*/$minutes * * * *"
+                val cron = "0 */$hours * * *"
                 val script = buildBookUpdateScript(
                     bookUrl = book.bookUrl,
                     notifyEnabled = notifyEnabled,
@@ -769,6 +769,7 @@ class BookInfoActivity :
                     script = script
                 )
                 AutoTask.upsert(updated)
+                LocalConfig.bookAutoTaskIntervalHours = hours
                 if (enabled) {
                     toastOnUi(R.string.auto_task_book_update_saved)
                 } else {
@@ -783,16 +784,16 @@ class BookInfoActivity :
         task: AutoTaskRule?,
         bookUrl: String
     ): BookAutoTaskConfig {
-        val defaultInterval = parseCronMinutes(AutoTask.DEFAULT_CRON) ?: 5
         if (task == null) {
             return BookAutoTaskConfig(
                 enabled = true,
                 notifyEnabled = true,
                 cacheEnabled = false,
-                intervalMinutes = defaultInterval
+                intervalHours = cachedOrDefaultIntervalHours
             )
         }
-        val interval = parseCronMinutes(task.cron) ?: defaultInterval
+        val interval = parseCronHours(task.cron)
+            ?: cachedOrDefaultIntervalHours
         var notifyEnabled = true
         var cacheEnabled = false
         val json = extractTaskJson(task.script)
@@ -808,7 +809,7 @@ class BookInfoActivity :
             enabled = task.enable,
             notifyEnabled = notifyEnabled,
             cacheEnabled = cacheEnabled,
-            intervalMinutes = interval
+            intervalHours = interval
         )
     }
 
@@ -875,12 +876,32 @@ class BookInfoActivity :
         return null
     }
 
-    private fun parseCronMinutes(cron: String?): Int? {
+    // 解析 cron 获取间隔小时数，兼容旧版分钟格式 `*/N * * * *` 和新版 `0 */N * * *`
+    private fun parseCronHours(cron: String?): Int? {
         if (cron.isNullOrBlank()) return null
-        val match = Regex("^\\s*\\*/(\\d+)\\s+\\*\\s+\\*\\s+\\*\\s+\\*\\s*$")
-            .find(cron.trim())
-        return match?.groupValues?.getOrNull(1)?.toIntOrNull()
+        val trimmed = cron.trim()
+        // 新版：每小时执行 `0 */N * * *`
+        Regex("^\\s*0\\s+\\*/(\\d+)\\s+\\*\\s+\\*\\s+\\*\\s*$")
+            .find(trimmed)
+            ?.groupValues?.getOrNull(1)
+            ?.toIntOrNull()
+            ?.let { return it }
+        // 旧版：每N分钟 `*/N * * * *`，转换为小时（向上取整，最小1小时）
+        Regex("^\\s*\\*/(\\d+)\\s+\\*\\s+\\*\\s+\\*\\s+\\*\\s*$")
+            .find(trimmed)
+            ?.groupValues?.getOrNull(1)
+            ?.toIntOrNull()
+            ?.let { minutes ->
+                return Math.ceil(minutes / 60.0).toInt().coerceAtLeast(1)
+            }
+        return null
     }
+
+    private val cachedOrDefaultIntervalHours: Int
+        get() {
+            val cached = LocalConfig.bookAutoTaskIntervalHours
+            return if (cached > 0) cached else 1
+        }
 
     private fun findRefreshAction(
         root: Map<String, Any?>?,

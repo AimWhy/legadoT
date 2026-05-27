@@ -3,6 +3,11 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/menu_batch_cron"
+        android:title="@string/auto_task_batch_cron"
+        app:showAsAction="never" />
+    
+    <item
         android:id="@+id/menu_enable_selection"
         android:title="@string/enable_selection"
         app:showAsAction="never" />

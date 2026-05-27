@@ -20,12 +20,15 @@ import io.legado.app.model.AutoTaskRule
 import io.legado.app.help.DirectLinkUpload
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.isAbsUrl
+import io.legado.app.utils.CronSchedule
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.ACache
 import io.legado.app.utils.splitNotBlank
+import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.ui.widget.recycler.VerticalDivider
 import io.legado.app.ui.widget.SelectActionBar
@@ -108,6 +111,10 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
         recyclerView.setEdgeEffectColor(primaryColor)
         recyclerView.adapter = adapter
         recyclerView.addItemDecoration(VerticalDivider(this@AutoTaskActivity))
+        val dragSelectTouchHelper =
+            DragSelectTouchHelper(adapter.dragSelectCallback).setSlideArea(16, 50)
+        dragSelectTouchHelper.attachToRecyclerView(recyclerView)
+        dragSelectTouchHelper.activeSlideSelect()
         itemTouchCallback.isCanDrag = true
         ItemTouchHelper(itemTouchCallback).attachToRecyclerView(recyclerView)
     }
@@ -196,6 +203,24 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
         return false
     }
 
+    private fun showBatchCronDialog() {
+        val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
+            editView.hint = getString(R.string.auto_task_cron)
+        }
+        alert(titleResource = R.string.auto_task_batch_cron) {
+            customView { alertBinding.root }
+            okButton {
+                val cron = alertBinding.editView.text?.toString()?.trim().orEmpty()
+                if (cron.isNotBlank() && CronSchedule.parse(cron) != null) {
+                    viewModel.updateCron(adapter.selection.map { it.id }, cron)
+                } else {
+                    toastOnUi(R.string.auto_task_cron_invalid)
+                }
+            }
+            cancelButton()
+        }
+    }
+
     // AutoTaskAdapter.CallBack
     override fun edit(task: AutoTaskRule) {
         startActivity(AutoTaskEditActivity.startIntent(this, task.id))
@@ -260,6 +285,7 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
                     )
                 }
             }
+            R.id.menu_batch_cron -> showBatchCronDialog()
         }
         return true
     }

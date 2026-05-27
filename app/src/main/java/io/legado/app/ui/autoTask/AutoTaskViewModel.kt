@@ -123,6 +123,20 @@ class AutoTaskViewModel(application: Application) : BaseViewModel(application) {
         }
     }
 
+    fun updateCron(ids: List<String>, cron: String) {
+        if (ids.isEmpty()) return
+        execute {
+            val idSet = ids.toHashSet()
+            val updated = AutoTask.getRules().map {
+                if (idSet.contains(it.id)) it.copy(cron = cron) else it
+            }
+            AutoTask.saveRules(updated)
+            AutoTask.getRules()
+        }.onSuccess {
+            _rulesFlow.value = it
+        }
+    }
+
     fun exportToFile(success: (File) -> Unit) {
         execute {
             val path = "${context.filesDir}/exportAutoTask.json"

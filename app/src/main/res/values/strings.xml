@@ -104,7 +104,7 @@
     <string name="auto_task_manage">Task manager</string>
     <string name="auto_task_manage_desc">Manage schedule tasks</string>
     <string name="auto_task_service_desc">Run tasks in background</string>
-    <string name="auto_task_interval">Interval (minutes)</string>
+    <string name="auto_task_interval">Interval (hours)</string>
     <string name="auto_task_cron">Cron (min hour day month week)</string>
     <string name="auto_task_comment">Script comment</string>
     <string name="auto_task_cron_invalid">Invalid cron expression</string>
@@ -131,6 +131,7 @@
     <string name="auto_task_cache_switch">Cache new chapters</string>
     <string name="auto_task_book_update_saved">Schedule saved</string>
     <string name="auto_task_book_update_deleted">Schedule disabled</string>
+    <string name="auto_task_batch_cron">Change schedule</string>
     <string name="auto_task_notify_title">Task notification</string>
     <string name="auto_task_notify_content">%1$s</string>
     <string name="auto_task_help_title">Auto task help</string>
