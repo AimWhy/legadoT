@@ -29,6 +29,8 @@ data class HttpTTS(
     override var enabledCookieJar: Boolean? = false,
     var loginCheckJs: String? = null,
     @ColumnInfo(defaultValue = "0")
+    var pauseDuration: Int = 0,
+    @ColumnInfo(defaultValue = "0")
     var lastUpdateTime: Long = System.currentTimeMillis()
 ) : BaseSource {
 
@@ -56,6 +58,7 @@ data class HttpTTS(
                     loginUi = if (loginUi is List<*>) GSON.toJson(loginUi) else loginUi?.toString(),
                     header = doc.readString("$.header"),
                     loginCheckJs = doc.readString("$.loginCheckJs"),
+                    pauseDuration = doc.read<Int>("$.pauseDuration") ?: 0,
                     lastUpdateTime = doc.readLong("$.lastUpdateTime") ?: System.currentTimeMillis()
                 )
             }

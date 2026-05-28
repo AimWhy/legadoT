@@ -170,6 +170,15 @@ class HttpReadAloudService : BaseReadAloudService(),
             val file = getSpeakFileAsMd5(fileName)
             val mediaItem = createQueueMediaItem(Uri.fromFile(file), index, sessionId)
             enqueueMediaItem(sessionId, mediaItem)
+            val pauseMs = httpTts.pauseDuration
+            if (pauseMs > 0 && index < contentList.lastIndex) {
+                val pauseName = "pause_$pauseMs"
+                if (!hasSpeakFile(pauseName)) {
+                    createPauseFile(pauseName, pauseMs)
+                }
+                val pauseFile = getSpeakFileAsMd5(pauseName)
+                enqueueMediaItem(sessionId, createQueueMediaItem(Uri.fromFile(pauseFile), -1, sessionId))
+            }
         }
     }
 
@@ -209,6 +218,23 @@ class HttpReadAloudService : BaseReadAloudService(),
             val dataSourceFactory = createDataSourceFactory(httpTts, speakText)
             val mediaSource = createMediaSource(dataSourceFactory, fileName, index, sessionId)
             enqueueMediaSource(sessionId, mediaSource)
+            val pauseMs = httpTts.pauseDuration
+            if (pauseMs > 0 && index < contentList.lastIndex) {
+                val pauseDataSourceFactory = DataSource.Factory {
+                    InputStreamDataSource {
+                        java.io.ByteArrayInputStream(generateSilentWavBytes(pauseMs))
+                    }
+                }
+                val pauseItem = MediaItem.Builder()
+                    .setUri("pause:$pauseMs".toUri())
+                    .setMediaId("$sessionId:-1")
+                    .build()
+                val pauseMediaSource = DefaultMediaSourceFactory(this)
+                    .setDataSourceFactory(pauseDataSourceFactory)
+                    .setLoadErrorHandlingPolicy(loadErrorHandlingPolicy)
+                    .createMediaSource(pauseItem)
+                enqueueMediaSource(sessionId, pauseMediaSource)
+            }
         }
     }
 
@@ -409,6 +435,36 @@ class HttpReadAloudService : BaseReadAloudService(),
         }
     }
 
+    private fun generateSilentWavBytes(durationMs: Int): ByteArray {
+        val sampleRate = 24000
+        val numChannels = 1
+        val bitsPerSample = 16
+        val bytesPerSample = bitsPerSample / 8
+        val dataSize = (sampleRate.toLong() * bytesPerSample * numChannels * durationMs / 1000).toInt()
+        val alignedDataSize = ((dataSize + 1) / 2) * 2
+        val totalSize = 44 + alignedDataSize
+        val buf = java.nio.ByteBuffer.allocate(totalSize).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        buf.put("RIFF".toByteArray())
+        buf.putInt(36 + alignedDataSize)
+        buf.put("WAVE".toByteArray())
+        buf.put("fmt ".toByteArray())
+        buf.putInt(16)
+        buf.putShort(1) // PCM
+        buf.putShort(numChannels.toShort())
+        buf.putInt(sampleRate)
+        buf.putInt(sampleRate * numChannels * bytesPerSample)
+        buf.putShort((numChannels * bytesPerSample).toShort())
+        buf.putShort(bitsPerSample.toShort())
+        buf.put("data".toByteArray())
+        buf.putInt(alignedDataSize)
+        return buf.array()
+    }
+
+    private fun createPauseFile(name: String, durationMs: Int) {
+        val file = createSpeakFile(name)
+        file.writeBytes(generateSilentWavBytes(durationMs))
+    }
+
     /**
      * 移除缓存文件
      */
@@ -543,6 +599,9 @@ class HttpReadAloudService : BaseReadAloudService(),
             playErrorNo = 0
         }
         trimPlayedMediaItems()
+        if (mediaItem?.mediaId?.endsWith(":-1") == true) {
+            return
+        }
         updateNextPos()
         upPlayPos()
     }

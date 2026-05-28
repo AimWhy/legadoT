@@ -64,7 +64,8 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
         val loginUrl: String,
         val loginUi: String,
         val loginCheckJs: String,
-        val header: String
+        val header: String,
+        val pauseDuration: String
     )
 
     private data class CodeField(
@@ -145,6 +146,7 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
         loginUiField.codeView.setText(httpTTS.loginUi)
         loginCheckJsField.codeView.setText(httpTTS.loginCheckJs)
         headersField.codeView.setText(httpTTS.header)
+        binding.tvPauseDuration.setText(httpTTS.pauseDuration.takeIf { it > 0 }?.toString().orEmpty())
     }
 
     override fun onMenuItemClick(item: MenuItem?): Boolean {
@@ -195,7 +197,8 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
             loginUrl = loginUrlField.codeView.text?.toString(),
             loginUi = loginUiField.codeView.text?.toString(),
             loginCheckJs = loginCheckJsField.codeView.text?.toString(),
-            header = headersField.codeView.text?.toString()
+            header = headersField.codeView.text?.toString(),
+            pauseDuration = binding.tvPauseDuration.text?.toString()?.toIntOrNull() ?: 0
         )
     }
 
@@ -208,7 +211,8 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
             loginUrl = loginUrlField.codeView.text?.toString().orEmpty(),
             loginUi = loginUiField.codeView.text?.toString().orEmpty(),
             loginCheckJs = loginCheckJsField.codeView.text?.toString().orEmpty(),
-            header = headersField.codeView.text?.toString().orEmpty()
+            header = headersField.codeView.text?.toString().orEmpty(),
+            pauseDuration = binding.tvPauseDuration.text?.toString().orEmpty()
         )
     }
 

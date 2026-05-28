@@ -71,6 +71,20 @@
                     android:id="@+id/field_login_check_js"
                     layout="@layout/view_code_edit_field" />
 
+                <io.legado.app.ui.widget.text.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="段落间隔(毫秒)">
+
+                    <io.legado.app.lib.theme.view.ThemeEditText
+                        android:id="@+id/tv_pause_duration"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
+
+                </io.legado.app.ui.widget.text.TextInputLayout>
+
                 <include
                     android:id="@+id/field_headers"
                     layout="@layout/view_code_edit_field" />
