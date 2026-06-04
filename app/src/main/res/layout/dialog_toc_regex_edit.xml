@@ -18,7 +18,7 @@
             android:id="@+id/tool_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@color/background_menu"
+            android:background="@drawable/bg_dialog_toolbar_top_round"
             android:elevation="5dp"
             android:theme="?attr/actionBarStyle"
             app:displayHomeAsUp="false"
@@ -31,6 +31,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingTop="6dp"
+            android:paddingBottom="@dimen/space_m"
+            android:clipToPadding="false"
             android:overScrollMode="ifContentScrolls">
 
             <LinearLayout

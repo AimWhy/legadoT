@@ -83,6 +83,7 @@ import io.legado.app.utils.visible
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.math.ceil
 
 class BookInfoActivity :
     VMBaseActivity<ActivityBookInfoBinding, BookInfoViewModel>(toolBarTheme = Theme.Dark),
@@ -892,7 +893,7 @@ class BookInfoActivity :
             ?.groupValues?.getOrNull(1)
             ?.toIntOrNull()
             ?.let { minutes ->
-                return Math.ceil(minutes / 60.0).toInt().coerceAtLeast(1)
+                return ceil(minutes / 60.0).toInt().coerceAtLeast(1)
             }
         return null
     }

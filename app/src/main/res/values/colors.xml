@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">@color/md_light_blue_600</color>
-    <color name="primaryDark">@color/md_light_blue_700</color>
-    <color name="accent">@color/md_pink_800</color>
+    <color name="primary">#37474F</color>
+    <color name="primaryDark">#2A363C</color>
+    <color name="accent">#3D7EFF</color>
+
+    <!-- 现代极简：主题 fallback 默认色（ThemeConfig 引用，集中可控） -->
+    <color name="md_theme_day_primary">#37474F</color>
+    <color name="md_theme_day_accent">#3D7EFF</color>
+    <color name="md_theme_day_background">#FAFAFA</color>
+    <color name="md_theme_day_bottom_background">#FFFFFF</color>
+    <color name="md_theme_night_primary">#1C1C1E</color>
+    <color name="md_theme_night_accent">#5E9BFF</color>
+    <color name="md_theme_night_background">#121212</color>
+    <color name="md_theme_night_bottom_background">#1C1C1E</color>
 
     <color name="disabled">@color/md_light_disabled</color>
 
-    <color name="divider">#66666666</color>
+    <color name="divider">#33666666</color>
 
     <color name="lightBlue_color">#FF578FCC</color>
 
@@ -15,9 +25,9 @@
 
     <color name="night_mask">#00000000</color>
 
-    <color name="background">@color/md_grey_50</color>
-    <color name="background_card">@color/md_grey_100</color>
-    <color name="background_menu">@color/md_grey_200</color>
+    <color name="background">#FAFAFA</color>
+    <color name="background_card">#FFFFFF</color>
+    <color name="background_menu">#F2F2F2</color>
     <color name="background_prefs">#7fffffff</color>
 
     <color name="transparent">#00000000</color>

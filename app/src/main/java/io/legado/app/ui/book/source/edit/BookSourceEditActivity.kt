@@ -3,6 +3,8 @@ package io.legado.app.ui.book.source.edit
 import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import android.view.MenuItem
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -213,6 +215,28 @@ class BookSourceEditActivity :
         binding.recyclerView.setEdgeEffectColor(primaryColor)
         binding.recyclerView.layoutManager = NoChildScrollLinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
+        binding.llTopHeader.setOnClickListener {
+            toggleTopExpand(binding.llTopExpand.isGone)
+        }
+        val chipSummaryListener = android.widget.CompoundButton.OnCheckedChangeListener { _, _ ->
+            upTopSummary()
+        }
+        binding.cbIsEnable.setOnCheckedChangeListener(chipSummaryListener)
+        binding.cbIsEnableExplore.setOnCheckedChangeListener(chipSummaryListener)
+        binding.cbIsEnableCookie.setOnCheckedChangeListener(chipSummaryListener)
+        binding.cbIsEnableReview.setOnCheckedChangeListener(chipSummaryListener)
+        binding.cbIsEventListener.setOnCheckedChangeListener(chipSummaryListener)
+        binding.cbIsCustomButton.setOnCheckedChangeListener(chipSummaryListener)
+        binding.cgType.setOnCheckedStateChangeListener { _, _ ->
+            upTopSummary()
+        }
+        runCatching {
+            val types = resources.getStringArray(R.array.book_type)
+            binding.chipTypeText.text = types.getOrNull(0) ?: "Text"
+            binding.chipTypeAudio.text = types.getOrNull(1) ?: "Audio"
+            binding.chipTypeImage.text = types.getOrNull(2) ?: "Image"
+            binding.chipTypeFile.text = types.getOrNull(3) ?: "File"
+        }
         binding.tabLayout.setBackgroundColor(backgroundColor)
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -273,8 +297,34 @@ class BookSourceEditActivity :
         softKeyboardTool.dismiss()
     }
 
-    private fun setEditEntities(tabPosition: Int?) {
-        val entities = when (tabPosition) {
+    /** 展开/收起顶部类型+开关面板 */
+    private fun toggleTopExpand(expand: Boolean) {
+        binding.llTopExpand.isVisible = expand
+        binding.ivTopArrow.setImageResource(
+            if (expand) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_down
+        )
+        if (!expand) upTopSummary()
+    }
+
+    /** 更新折叠头的摘要文字：类型 · 各已开启项 */
+    private fun upTopSummary() {
+        val parts = mutableListOf<String>()
+        runCatching {
+            val typeChip = binding.cgType.findViewById<com.google.android.material.chip.Chip>(
+                binding.cgType.checkedChipId
+            )
+            typeChip?.text?.toString()?.let { parts.add(it) }
+        }
+        if (binding.cbIsEnable.isChecked) parts.add(getString(R.string.is_enable))
+        if (binding.cbIsEnableExplore.isChecked) parts.add(getString(R.string.discovery))
+        if (binding.cbIsEnableCookie.isChecked) parts.add(getString(R.string.auto_save_cookie))
+        if (binding.cbIsEnableReview.isChecked) parts.add(getString(R.string.review))
+        if (binding.cbIsEventListener.isChecked) parts.add(getString(R.string.is_event_listener))
+        if (binding.cbIsCustomButton.isChecked) parts.add(getString(R.string.custom_button))
+        binding.tvTopSummary.text = parts.joinToString(" · ")
+    }
+
+    private fun setEditEntities(tabPosition: Int?) {        val entities = when (tabPosition) {
             1 -> searchEntities
             2 -> exploreEntities
             3 -> infoEntities
@@ -365,15 +415,16 @@ class BookSourceEditActivity :
             binding.cbIsEnableReview.isChecked = it.ruleReview?.enabled ?: false
             binding.cbIsEventListener.isChecked = it.eventListener
             binding.cbIsCustomButton.isChecked = it.customButton
-            binding.spType.setSelection(
+            binding.cgType.check(
                 when (it.bookSourceType) {
-                    BookSourceType.file -> 3
-                    BookSourceType.image -> 2
-                    BookSourceType.audio -> 1
-                    else -> 0
+                    BookSourceType.file -> R.id.chip_type_file
+                    BookSourceType.image -> R.id.chip_type_image
+                    BookSourceType.audio -> R.id.chip_type_audio
+                    else -> R.id.chip_type_text
                 }
             )
         }
+        binding.cgType.post { upTopSummary() }
         // 基本信息
         sourceEntities.clear()
         sourceEntities.apply {
@@ -505,10 +556,10 @@ class BookSourceEditActivity :
         source.enabledCookieJar = binding.cbIsEnableCookie.isChecked
         source.eventListener = binding.cbIsEventListener.isChecked
         source.customButton = binding.cbIsCustomButton.isChecked
-        source.bookSourceType = when (binding.spType.selectedItemPosition) {
-            3 -> BookSourceType.file
-            2 -> BookSourceType.image
-            1 -> BookSourceType.audio
+        source.bookSourceType = when (binding.cgType.checkedChipId) {
+            R.id.chip_type_file -> BookSourceType.file
+            R.id.chip_type_image -> BookSourceType.image
+            R.id.chip_type_audio -> BookSourceType.audio
             else -> BookSourceType.default
         }
         val searchRule = SearchRule()

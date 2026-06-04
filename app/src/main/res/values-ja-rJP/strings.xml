@@ -374,6 +374,8 @@
     <string name="finish_book">Finished books</string>
     <string name="local_book">Local books</string>
     <string name="status_bar_immersion">The status bar color becomes transparent</string>
+    <string name="immersion_action_bar">Immersive app bars</string>
+    <string name="action_bar_immersion">Top and bottom app bars become transparent</string>
     <string name="imm_navigation_bar">immersion navigation bar</string>
     <string name="imm_navigation_bar_s">The navigation bar becomes transparent</string>
     <string name="add_to_bookshelf">Add to Bookshelf</string>

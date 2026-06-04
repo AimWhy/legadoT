@@ -18,7 +18,11 @@ import io.legado.app.databinding.ActivityChapterListBinding
 import io.legado.app.help.book.isLocalTxt
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.theme.accentColor
-import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.primaryColor
+import io.legado.app.lib.theme.tabTextColors
+import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.model.ReadBook
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.toc.rule.TxtTocRuleDialog
@@ -56,6 +60,14 @@ class TocActivity : VMBaseActivity<ActivityChapterListBinding, TocViewModel>(),
         tabLayout = binding.titleBar.findViewById(R.id.tab_layout)
         tabLayout.isTabIndicatorFullWidth = false
         tabLayout.setSelectedTabIndicatorColor(accentColor)
+        // 沉浸式时栏透明，可见背景是页面背景而非主色，需用页面背景判断明暗
+        val tabBarIsLight = appBarBackgroundIsLight(
+            transparentActionBar = AppConfig.isTransparentActionBar,
+            barBackgroundColor = primaryColor,
+            contentBackgroundColor = backgroundColor
+        )
+        val tabColors = tabTextColors(tabBarIsLight)
+        tabLayout.setTabTextColors(tabColors.unselected, tabColors.selected)
         binding.viewPager.adapter = TabFragmentPageAdapter()
         tabLayout.setupWithViewPager(binding.viewPager)
         tabLayout.tabGravity = TabLayout.GRAVITY_CENTER
@@ -72,7 +84,7 @@ class TocActivity : VMBaseActivity<ActivityChapterListBinding, TocViewModel>(),
         this.menu = menu
         val search = menu.findItem(R.id.menu_search)
         searchView = (search.actionView as SearchView).apply {
-            applyTint(primaryTextColor)
+            applyTint(toolbarTextColor)
             maxWidth = resources.displayMetrics.widthPixels
             onActionViewCollapsed()
             setOnCloseListener {

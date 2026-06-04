@@ -32,7 +32,7 @@ import io.legado.app.lib.theme.Selector
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
-import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.source.manage.BookSourceActivity
@@ -182,7 +182,7 @@ class SearchActivity : VMBaseActivity<ActivityBookSearchBinding, SearchViewModel
     }
 
     private fun initSearchView() {
-        searchView.applyTint(primaryTextColor)
+        searchView.applyTint(toolbarTextColor)
         searchView.isSubmitButtonEnabled = true
         searchView.queryHint = getString(R.string.search_book_key)
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {

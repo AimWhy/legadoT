@@ -81,11 +81,11 @@
         app:flexWrap="wrap"
         app:justifyContent="space_between">
 
-        <io.legado.app.ui.widget.text.AccentTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/tv_footer_left"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="12dp"
             android:visibility="gone"
             tools:ignore="RtlHardcoded" />
 
@@ -98,21 +98,21 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_cancel"
+                style="@style/Widget.Material3.Button.TextButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="12dp"
                 android:text="@string/cancel"
-                android:textColor="@color/secondaryText"
                 android:visibility="gone"
                 tools:ignore="RtlHardcoded" />
 
-            <io.legado.app.ui.widget.text.AccentTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_ok"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="12dp"
+                android:layout_marginStart="@dimen/space_s"
                 android:text="@string/ok"
                 android:visibility="gone"
                 tools:ignore="RtlHardcoded" />

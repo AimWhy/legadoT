@@ -16,12 +16,15 @@ import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.data.entities.BookSourcePart
 import io.legado.app.databinding.ItemBookSourceBinding
+import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.model.Debug
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.buildMainHandler
 import io.legado.app.utils.gone
 import io.legado.app.utils.invisible
@@ -97,11 +100,13 @@ class BookSourceAdapter(
         payloads: MutableList<Any>
     ) {
         binding.run {
+            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
+            selectionBar.setBackgroundColor(ThemeStore.accentColor(context))
             if (payloads.isEmpty()) {
-                root.setBackgroundColor(ColorUtils.withAlpha(context.backgroundColor, 0.5f))
                 cbBookSource.text = item.getDisPlayNameGroup()
                 swtEnabled.isChecked = item.enabled
                 cbBookSource.isChecked = selected.contains(item)
+                upSelectStroke(binding, item)
                 upCheckSourceMessage(binding, item)
                 upShowExplore(ivExplore, item)
                 upSourceHost(binding, holder.layoutPosition)
@@ -113,7 +118,10 @@ class BookSourceAdapter(
                             "enabled" -> swtEnabled.isChecked = bundle.getBoolean("enabled")
                             "upName" -> cbBookSource.text = item.getDisPlayNameGroup()
                             "upExplore" -> upShowExplore(ivExplore, item)
-                            "selected" -> cbBookSource.isChecked = selected.contains(item)
+                            "selected" -> {
+                                cbBookSource.isChecked = selected.contains(item)
+                                upSelectStroke(binding, item)
+                            }
                             "checkSourceMessage" -> upCheckSourceMessage(binding, item)
                             "upSourceHost" -> upSourceHost(binding, holder.layoutPosition)
                         }
@@ -138,6 +146,7 @@ class BookSourceAdapter(
                     } else {
                         selected.remove(it)
                     }
+                    upSelectStroke(binding, it)
                     callBack.upCountView()
                 }
             }
@@ -148,6 +157,15 @@ class BookSourceAdapter(
             }
             ivMenuMore.setOnClickListener {
                 showMenu(ivMenuMore, holder.layoutPosition)
+            }
+            contentLayout.setOnClickListener {
+                getItem(holder.layoutPosition)?.let {
+                    val nowSelected = !selected.contains(it)
+                    if (nowSelected) selected.add(it) else selected.remove(it)
+                    cbBookSource.isChecked = nowSelected
+                    upSelectStroke(binding, it)
+                    callBack.upCountView()
+                }
             }
         }
     }
@@ -203,6 +221,10 @@ class BookSourceAdapter(
             true
         }
         popupMenu.show()
+    }
+
+    private fun upSelectStroke(binding: ItemBookSourceBinding, source: BookSourcePart) {
+        binding.selectionBar.visibility = if (selected.contains(source)) View.VISIBLE else View.GONE
     }
 
     private fun upShowExplore(iv: ImageView, source: BookSourcePart) {

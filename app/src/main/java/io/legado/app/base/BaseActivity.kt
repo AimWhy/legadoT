@@ -3,6 +3,7 @@ package io.legado.app.base
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
+import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.os.Build
 import android.os.Bundle
@@ -16,9 +17,12 @@ import androidx.activity.addCallback
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewbinding.ViewBinding
+import com.google.android.material.color.DynamicColors
+import com.google.android.material.color.DynamicColorsOptions
 import io.legado.app.R
 import io.legado.app.constant.AppConst
 import io.legado.app.constant.AppLog
+import io.legado.app.constant.PreferKey
 import io.legado.app.constant.Theme
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ThemeConfig
@@ -32,6 +36,7 @@ import io.legado.app.utils.applyOpenTint
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.disableAutoFill
 import io.legado.app.utils.fullScreen
+import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.hideSoftInput
 import io.legado.app.utils.setLightStatusBar
 import io.legado.app.utils.setNavigationBarColorAuto
@@ -157,6 +162,26 @@ abstract class BaseActivity<VB : ViewBinding>(
                 window.decorView.applyBackgroundTint(backgroundColor)
             }
         }
+        applyDynamicColors()
+    }
+
+    /**
+     * 用用户主色作种子，注入 M3 动态 colorScheme，让纯 ?attr 着色的 M3 控件也跟随换肤。
+     * EInk 模式旁路（黑白不经动态取色）。
+     */
+    private fun applyDynamicColors() {
+        if (AppConfig.isEInkMode) return
+        kotlin.runCatching {
+            val seed = if (AppConfig.isNightTheme) {
+                getPrefInt(PreferKey.cNPrimary, primaryColor)
+            } else {
+                getPrefInt(PreferKey.cPrimary, primaryColor)
+            }
+            val options = DynamicColorsOptions.Builder()
+                .setContentBasedSource(seed)
+                .build()
+            DynamicColors.applyToActivityIfAvailable(this, options)
+        }
     }
 
     open fun upBackgroundImage() {
@@ -189,12 +214,15 @@ abstract class BaseActivity<VB : ViewBinding>(
     }
 
     open fun upNavigationBarColor() {
-        if (AppConfig.immNavigationBar) {
-            setNavigationBarColorAuto(ThemeStore.navigationBarColor(this))
+        val nbColor = if (AppConfig.isTransparentStatusBar || AppConfig.isTransparentActionBar) {
+            // 沉浸模式：导航栏透明，手势条直接浮在页面背景上
+            Color.TRANSPARENT
+        } else if (AppConfig.immNavigationBar) {
+            ThemeStore.navigationBarColor(this)
         } else {
-            val nbColor = ColorUtils.darkenColor(ThemeStore.navigationBarColor(this))
-            setNavigationBarColorAuto(nbColor)
+            ColorUtils.darkenColor(ThemeStore.navigationBarColor(this))
         }
+        setNavigationBarColorAuto(nbColor)
     }
 
     open fun observeLiveBus() {

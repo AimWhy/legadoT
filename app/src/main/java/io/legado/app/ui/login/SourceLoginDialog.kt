@@ -122,6 +122,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
                         false
                     ).let {
                         binding.flexbox.addView(it.root)
+                        it.root.spaceBelow()
                         it.root.id = index + 1000
                         it.textInputLayout.hint = rowUi.name
                         it.textInputLayout.isHintAnimationEnabled = false
@@ -135,6 +136,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
                         false
                     ).let {
                         binding.flexbox.addView(it.root)
+                        it.root.spaceBelow()
                         it.root.id = index + 1000
                         it.textInputLayout.hint = rowUi.name
                         it.editText.inputType =
@@ -208,6 +210,14 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     override fun onDismiss(dialog: DialogInterface) {
         super.onDismiss(dialog)
         activity?.finish()
+    }
+
+    /** 给 flexbox 中的整行输入项加底部间距，避免相邻输入框挤在一起 */
+    private fun View.spaceBelow() {
+        (layoutParams as? com.google.android.flexbox.FlexboxLayout.LayoutParams)?.let {
+            it.bottomMargin = 12.dpToPx()
+            layoutParams = it
+        }
     }
 
 }

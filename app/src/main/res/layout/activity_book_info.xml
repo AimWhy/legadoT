@@ -66,13 +66,13 @@
                             app:arcHeight="36dp"
                             app:bgColor="@color/background" />
 
-                        <androidx.cardview.widget.CardView
+                        <com.google.android.material.card.MaterialCardView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_centerHorizontal="true"
                             android:layout_margin="3dp"
-                            app:cardCornerRadius="5dp"
-                            app:cardElevation="8dp">
+                            app:cardCornerRadius="@dimen/radius_m"
+                            app:cardElevation="6dp">
 
                             <io.legado.app.ui.widget.image.CoverImageView
                                 android:id="@+id/iv_cover"
@@ -82,7 +82,7 @@
                                 android:scaleType="centerCrop"
                                 android:src="@drawable/image_cover_default" />
 
-                        </androidx.cardview.widget.CardView>
+                        </com.google.android.material.card.MaterialCardView>
 
                     </RelativeLayout>
 
@@ -388,13 +388,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/background_menu"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/space_m"
+            android:paddingVertical="@dimen/space_s"
             app:layout_constraintBottom_toBottomOf="parent">
 
             <TextView
                 android:id="@+id/tv_shelf"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
                 android:background="?attr/selectableItemBackground"
                 android:clickable="true"
@@ -405,15 +408,15 @@
                 android:textColor="@color/primaryText"
                 android:textSize="15sp" />
 
-            <io.legado.app.ui.widget.text.AccentBgTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_read"
                 android:layout_width="0dp"
-                android:layout_height="50dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:gravity="center"
-                android:includeFontPadding="false"
+                android:layout_marginStart="@dimen/space_m"
                 android:text="@string/reading"
-                android:textSize="15sp" />
+                android:textSize="15sp"
+                app:cornerRadius="@dimen/radius_l" />
 
         </LinearLayout>
 

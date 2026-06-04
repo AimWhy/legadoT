@@ -14,7 +14,7 @@ import io.legado.app.databinding.ActivityAutoTaskBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
-import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.help.DirectLinkUpload
@@ -120,7 +120,7 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
     }
 
     private fun initSearchView() {
-        searchView.applyTint(primaryTextColor)
+        searchView.applyTint(toolbarTextColor)
         searchView.queryHint = getString(R.string.search)
         searchView.setOnQueryTextListener(this)
     }

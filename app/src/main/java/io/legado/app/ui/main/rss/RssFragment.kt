@@ -19,7 +19,7 @@ import io.legado.app.databinding.FragmentRssBinding
 import io.legado.app.databinding.ItemRssBinding
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
-import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.main.MainFragmentInterface
 import io.legado.app.ui.rss.article.RssSortActivity
 import io.legado.app.ui.rss.favorites.RssFavoritesActivity
@@ -108,7 +108,7 @@ class RssFragment() : VMBaseFragment<RssViewModel>(R.layout.fragment_rss),
     }
 
     private fun initSearchView() {
-        searchView.applyTint(primaryTextColor)
+        searchView.applyTint(toolbarTextColor)
         searchView.isSubmitButtonEnabled = true
         searchView.queryHint = getString(R.string.rss)
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {

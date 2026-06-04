@@ -38,19 +38,15 @@
             android:textSize="13sp"
             tools:text="/" />
 
-        <io.legado.app.ui.widget.text.StrokeTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/tv_go_back"
+            style="@style/Widget.Material3.Button.OutlinedButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_margin="4dp"
-            android:gravity="center"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
             android:text="@string/go_back"
-            android:textFontWeight="800"
-            android:textSize="14sp"
-            app:cornerRadius="5dp"
+            app:cornerRadius="@dimen/radius_m"
             tools:ignore="UnusedAttribute" />
     </LinearLayout>
 

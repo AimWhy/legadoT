@@ -28,7 +28,7 @@ import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
-import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.book.group.GroupManageDialog
 import io.legado.app.ui.book.group.GroupSelectDialog
 import io.legado.app.ui.book.info.BookInfoActivity
@@ -160,7 +160,7 @@ class BookshelfManageActivity :
     }
 
     private fun initSearchView() {
-        searchView.applyTint(primaryTextColor)
+        searchView.applyTint(toolbarTextColor)
         searchView.isSubmitButtonEnabled = true
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {

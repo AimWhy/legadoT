@@ -14,6 +14,7 @@ import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.data.entities.ReplaceRule
 import io.legado.app.databinding.ItemReplaceRuleBinding
 import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.ColorUtils
@@ -103,8 +104,8 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
         payloads: MutableList<Any>
     ) {
         binding.run {
+            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
             if (payloads.isEmpty()) {
-                root.setBackgroundColor(ColorUtils.withAlpha(context.backgroundColor, 0.5f))
                 cbName.text = item.getDisplayNameGroup()
                 swtEnabled.isChecked = item.isEnabled
                 cbName.isChecked = selected.contains(item)
@@ -148,6 +149,14 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
             }
             ivMenuMore.setOnClickListener {
                 showMenu(ivMenuMore, holder.layoutPosition)
+            }
+            contentLayout.setOnClickListener {
+                getItem(holder.layoutPosition)?.let {
+                    val nowSelected = !selected.contains(it)
+                    if (nowSelected) selected.add(it) else selected.remove(it)
+                    cbName.isChecked = nowSelected
+                    callBack.upCountView()
+                }
             }
         }
     }

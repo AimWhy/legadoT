@@ -10,6 +10,7 @@ import io.legado.app.databinding.ItemBookshelfGridBinding
 import io.legado.app.databinding.ItemBookshelfGridGroupBinding
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.utils.invisible
 import splitties.views.onLongClick
 
@@ -49,6 +50,7 @@ class BooksAdapterGrid(context: Context, callBack: CallBack) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun onBind(item: Book, position: Int) = binding.run {
+            coverCard.setCardBackgroundColor(context.cardBackgroundColor)
             tvName.text = item.name
             ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.origin)
             upRefresh(this, item)
