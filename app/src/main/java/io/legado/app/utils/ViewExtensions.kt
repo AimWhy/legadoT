@@ -317,3 +317,22 @@ fun View.setOnApplyWindowInsetsListenerCompat(listener: (View, WindowInsetsCompa
     }
 }
 
+/**
+ * 给视图设置“圆角 + 指定颜色”的纯色背景，
+ * 替代直接 setBackgroundColor 造成的方角，使对话框与圆角卡片一致。
+ * @param topOnly 仅圆顶部两角（用于对话框 Toolbar）；false 时四角全圆。
+ */
+fun View.setRoundBackground(color: Int, topOnly: Boolean = false) {
+    val radius = 12f.dpToPx()
+    val drawable = android.graphics.drawable.GradientDrawable().apply {
+        shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+        if (topOnly) {
+            cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+        } else {
+            cornerRadius = radius
+        }
+        setColor(color)
+    }
+    background = drawable
+}
+

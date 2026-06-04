@@ -20,6 +20,7 @@ import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.setBackgroundKeepPadding
+import io.legado.app.utils.setRoundBackground
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.coroutines.CoroutineContext
@@ -84,6 +85,23 @@ abstract class BaseDialogFragment(
         }
         onFragmentCreated(view, savedInstanceState)
         observeLiveBus()
+        // 统一把对话框 Toolbar 的方角背景替换为顶部圆角（在子类 onFragmentCreated 之后执行，覆盖其 setBackgroundColor）
+        if (!AppConfig.isEInkMode) {
+            view.findViewById<View>(R.id.tool_bar)?.let { toolBar ->
+                val bg = toolBar.background
+                if (bg is android.graphics.drawable.ColorDrawable) {
+                    toolBar.setRoundBackground(bg.color, topOnly = true)
+                    toolBar.elevation = 0f
+                    if (!adaptationSoftKeyboard) {
+                        // 根布局四角改为圆角并裁剪子视图、窗口背景设为透明，
+                        // 否则圆角缺口处会露出根布局/窗口的方角背景（白色直角），底部也会是直角
+                        view.setRoundBackground(ThemeStore.backgroundColor())
+                        view.clipToOutline = true
+                        dialog?.window?.setBackgroundDrawableResource(R.color.transparent)
+                    }
+                }
+            }
+        }
     }
 
     abstract fun onFragmentCreated(view: View, savedInstanceState: Bundle?)

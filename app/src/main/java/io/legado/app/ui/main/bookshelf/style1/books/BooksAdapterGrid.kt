@@ -8,6 +8,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.databinding.ItemBookshelfGridBinding
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.utils.invisible
 import splitties.views.onLongClick
 
@@ -24,6 +25,7 @@ class BooksAdapterGrid(context: Context, private val callBack: CallBack) :
         item: Book,
         payloads: MutableList<Any>
     ) = binding.run {
+        coverCard.setCardBackgroundColor(context.cardBackgroundColor)
         if (payloads.isEmpty()) {
             tvName.text = item.name
             ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.origin)

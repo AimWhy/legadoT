@@ -369,6 +369,8 @@
     <string name="finish_book">Sách đã hoàn thành</string>
     <string name="local_book">Sách cục bộ</string>
     <string name="status_bar_immersion">Màu thanh trạng thái trở nên trong suốt</string>
+    <string name="immersion_action_bar">Thanh ứng dụng chìm</string>
+    <string name="action_bar_immersion">Thanh trên và dưới trở nên trong suốt</string>
     <string name="imm_navigation_bar">Thanh điều hướng chìm</string>
     <string name="imm_navigation_bar_s">Thanh điều hướng trở nên trong suốt</string>
     <string name="add_to_bookshelf">Thêm vào tủ sách</string>

@@ -20,7 +20,7 @@ import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.DirectLinkUpload
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.primaryColor
-import io.legado.app.lib.theme.primaryTextColor
+import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.association.ImportRssSourceDialog
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.qrcode.QrCodeResult
@@ -194,7 +194,7 @@ class RssSourceActivity : VMBaseActivity<ActivityRssSourceBinding, RssSourceView
 
     private fun initSearchView() {
         binding.titleBar.findViewById<SearchView>(R.id.search_view).let {
-            it.applyTint(primaryTextColor)
+            it.applyTint(toolbarTextColor)
             it.onActionViewExpanded()
             it.queryHint = getString(R.string.search_rss_source)
             it.clearFocus()

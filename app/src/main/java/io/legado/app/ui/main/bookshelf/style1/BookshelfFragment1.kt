@@ -17,7 +17,10 @@ import io.legado.app.data.entities.BookGroup
 import io.legado.app.databinding.FragmentBookshelf1Binding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
+import io.legado.app.lib.theme.tabTextColors
 import io.legado.app.ui.book.group.GroupEditDialog
 import io.legado.app.ui.book.search.SearchActivity
 import io.legado.app.ui.main.bookshelf.BaseBookshelfFragment
@@ -71,6 +74,14 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
         tabLayout.isTabIndicatorFullWidth = false
         tabLayout.tabMode = TabLayout.MODE_SCROLLABLE
         tabLayout.setSelectedTabIndicatorColor(requireContext().accentColor)
+        // 沉浸式时栏透明，可见背景是页面背景而非主色，需用页面背景判断明暗
+        val tabBarIsLight = appBarBackgroundIsLight(
+            transparentActionBar = AppConfig.isTransparentActionBar,
+            barBackgroundColor = primaryColor,
+            contentBackgroundColor = requireContext().backgroundColor
+        )
+        val tabColors = tabTextColors(tabBarIsLight)
+        tabLayout.setTabTextColors(tabColors.unselected, tabColors.selected)
         tabLayout.setupWithViewPager(binding.viewPagerBookshelf)
         binding.viewPagerBookshelf.offscreenPageLimit = 1
         binding.viewPagerBookshelf.adapter = adapter

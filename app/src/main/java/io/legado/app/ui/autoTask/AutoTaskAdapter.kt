@@ -12,11 +12,14 @@ import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.databinding.ItemAutoTaskBinding
+import io.legado.app.lib.theme.ThemeStore
+import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.startActivity
+import io.legado.app.utils.dpToPx
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -71,10 +74,13 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
         payloads: MutableList<Any>
     ) {
         if (payloads.isEmpty()) {
+            binding.rootCard.setCardBackgroundColor(context.cardBackgroundColor)
+            binding.selectionBar.setBackgroundColor(ThemeStore.accentColor(context))
             binding.cbTask.text = item.name.ifBlank { item.id }
             binding.swtEnabled.isChecked = item.enable
             binding.titleDesc.text = buildSummary(item)
             binding.cbTask.isChecked = selectedIds.contains(item.id)
+            upSelectStroke(binding, item)
         } else {
             for (i in payloads.indices) {
                 val bundle = payloads[i] as? Bundle ?: continue
@@ -87,6 +93,7 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
                 }
             }
             binding.cbTask.isChecked = selectedIds.contains(item.id)
+            upSelectStroke(binding, item)
         }
     }
 
@@ -99,6 +106,7 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
                     } else {
                         selectedIds.remove(task.id)
                     }
+                    upSelectStroke(binding, task)
                     callBack.upCountView()
                 }
             }
@@ -115,8 +123,18 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
         binding.ivMenuMore.setOnClickListener { view ->
             getItem(holder.layoutPosition)?.let { showMenu(view, it) }
         }
-        binding.root.setOnClickListener {
-            getItem(holder.layoutPosition)?.let { callBack.edit(it) }
+        binding.contentLayout.setOnClickListener {
+            getItem(holder.layoutPosition)?.let { task ->
+                val nowSelected = !selectedIds.contains(task.id)
+                if (nowSelected) {
+                    selectedIds.add(task.id)
+                } else {
+                    selectedIds.remove(task.id)
+                }
+                binding.cbTask.isChecked = nowSelected
+                upSelectStroke(binding, task)
+                callBack.upCountView()
+            }
         }
     }
 
@@ -183,6 +201,10 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
                 return false
             }
         }
+
+    private fun upSelectStroke(binding: ItemAutoTaskBinding, task: AutoTaskRule) {
+        binding.selectionBar.visibility = if (selectedIds.contains(task.id)) View.VISIBLE else View.GONE
+    }
 
     private fun buildSummary(task: AutoTaskRule): String {
         val cron = task.cron?.trim().orEmpty().ifBlank { "-" }

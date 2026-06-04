@@ -43,13 +43,12 @@
 
     </FrameLayout>
 
-    <io.legado.app.ui.widget.text.AccentBgTextView
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/tv_ok"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:layout_margin="3dp"
+        android:layout_margin="@dimen/space_s"
         android:text="@string/ok"
-        android:gravity="center" />
+        app:cornerRadius="@dimen/radius_m" />
 
 </LinearLayout>

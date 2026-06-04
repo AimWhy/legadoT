@@ -3,6 +3,7 @@ package io.legado.app.ui.book.toc
 import android.annotation.SuppressLint
 import android.app.Activity.RESULT_OK
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.PorterDuff
 import android.os.Bundle
 import android.view.View
@@ -18,14 +19,17 @@ import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.isAudio
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.simulatedTotalChapterNum
+import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.model.AudioCache
 import io.legado.app.model.AudioCacheStateChanged
 import io.legado.app.ui.widget.recycler.UpLinearLayoutManager
 import io.legado.app.ui.widget.recycler.VerticalDivider
-import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.applyNavigationBarPadding
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.observeEvent
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.CoroutineScope
@@ -49,9 +53,18 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) = binding.run {
         viewModel.chapterListCallBack = this@ChapterListFragment
-        val bbg = bottomBackground
-        val btc = requireContext().getPrimaryTextColor(ColorUtils.isColorLight(bbg))
-        llChapterBaseInfo.setBackgroundColor(bbg)
+        // 沉浸式时底栏透明，露出页面背景，与顶栏/底部导航一致；前景色按可见背景判断明暗
+        val immersive = AppConfig.isTransparentActionBar
+        val btc = requireContext().getPrimaryTextColor(
+            appBarBackgroundIsLight(
+                transparentActionBar = immersive,
+                barBackgroundColor = bottomBackground,
+                contentBackgroundColor = requireContext().backgroundColor
+            )
+        )
+        llChapterBaseInfo.setBackgroundColor(if (immersive) Color.TRANSPARENT else bottomBackground)
+        // 透明时去掉 elevation，避免栏看不见却仍在内容上投出阴影线（与 TitleBar 一致）
+        llChapterBaseInfo.elevation = if (immersive) 0f else 5f.dpToPx()
         tvCurrentChapterInfo.setTextColor(btc)
         ivChapterTop.setColorFilter(btc, PorterDuff.Mode.SRC_IN)
         ivChapterBottom.setColorFilter(btc, PorterDuff.Mode.SRC_IN)

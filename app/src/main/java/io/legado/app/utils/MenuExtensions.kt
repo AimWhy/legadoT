@@ -4,6 +4,9 @@ package io.legado.app.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.text.Spannable
+import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -14,6 +17,11 @@ import androidx.appcompat.view.menu.SubMenuBuilder
 import androidx.core.view.forEach
 import io.legado.app.R
 import io.legado.app.constant.Theme
+import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.getPrimaryTextColor
+import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.primaryTextColor
 import java.lang.reflect.Method
 
@@ -31,6 +39,19 @@ fun Menu.applyTint(context: Context, theme: Theme = Theme.Auto): Menu = this.let
             impl.icon?.setTintMutate(
                 if (impl.requiresOverflow()) defaultTextColor else tintColor
             )
+            // 沉浸式：无图标的文字菜单项（如主题切换按钮）需手动设前景色
+            if (!impl.requiresOverflow() && impl.icon == null) {
+                val title = impl.title
+                if (!title.isNullOrEmpty()) {
+                    val spannable = SpannableString(title)
+                    spannable.setSpan(
+                        ForegroundColorSpan(tintColor),
+                        0, title.length,
+                        Spannable.SPAN_INCLUSIVE_INCLUSIVE
+                    )
+                    impl.title = spannable
+                }
+            }
         }
     }
     return menu
@@ -106,7 +127,18 @@ object MenuExtensions {
         return when (theme) {
             Theme.Dark -> context.getCompatColor(R.color.md_white_1000)
             Theme.Light -> context.getCompatColor(R.color.md_black_1000)
-            else -> primaryTextColor
+            else -> if (AppConfig.isTransparentActionBar) {
+                // 沉浸式：按可见的页面背景取前景色，否则浅背景配白图标会看不清
+                context.getPrimaryTextColor(
+                    appBarBackgroundIsLight(
+                        transparentActionBar = true,
+                        barBackgroundColor = context.primaryColor,
+                        contentBackgroundColor = context.backgroundColor
+                    )
+                )
+            } else {
+                primaryTextColor
+            }
         }
     }
 

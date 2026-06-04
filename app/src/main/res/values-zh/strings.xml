@@ -488,6 +488,8 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="finish_book">完结书籍</string>
     <string name="local_book">本地书籍</string>
     <string name="status_bar_immersion">状态栏颜色透明</string>
+    <string name="immersion_action_bar">沉浸式操作栏</string>
+    <string name="action_bar_immersion">顶栏和底部操作栏背景透明</string>
     <string name="imm_navigation_bar">沉浸式导航栏</string>
     <string name="imm_navigation_bar_s">导航栏颜色透明</string>
     <string name="add_to_bookshelf">放入书架</string>

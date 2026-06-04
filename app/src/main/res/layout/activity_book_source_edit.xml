@@ -12,87 +12,195 @@
         android:layout_height="wrap_content"
         app:title="@string/edit_book_source" />
 
-    <HorizontalScrollView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="none">
+        android:layout_marginHorizontal="@dimen/space_xs"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        app:cardBackgroundColor="@color/background"
+        app:cardCornerRadius="@dimen/radius_m"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
-            tools:ignore="VisualLintBounds">
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/space_m"
+            android:paddingVertical="0dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:text="@string/book_type"
-                tools:ignore="RtlHardcoded" />
-
-            <androidx.appcompat.widget.AppCompatSpinner
-                android:id="@+id/sp_type"
-                android:layout_width="wrap_content"
+            <!--折叠头：始终显示一行摘要 + 箭头-->
+            <LinearLayout
+                android:id="@+id/ll_top_header"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:entries="@array/book_type"
-                android:theme="@style/Spinner"
-                tools:ignore="TouchTargetSizeCheck" />
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:minHeight="40dp"
+                android:orientation="horizontal">
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_enable"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/is_enable" />
+                <TextView
+                    android:id="@+id/tv_top_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:singleLine="true"
+                    android:textColor="@color/primaryText"
+                    tools:text="文本 · 已启用 · 发现" />
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_enable_explore"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/discovery" />
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/iv_top_arrow"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@string/expand_collapse"
+                    android:src="@drawable/ic_arrow_down"
+                    app:tint="@color/secondaryText" />
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_enable_cookie"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/auto_save_cookie" />
+            </LinearLayout>
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_enable_review"
-                android:layout_width="wrap_content"
+            <!--展开内容：类型下拉 + Chip 开关，默认折叠-->
+            <LinearLayout
+                android:id="@+id/ll_top_expand"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="false"
-                android:text="@string/review" />
+                android:orientation="vertical"
+                android:visibility="gone">
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_event_listener"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="false"
-                android:text="@string/is_event_listener" />
+                <!--书源类型-->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_xs"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_custom_button"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="false"
-                android:text="@string/custom_button" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/book_type"
+                        android:textColor="@color/primaryText"
+                        tools:ignore="RtlHardcoded" />
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/cg_type"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_m"
+                        app:singleLine="true"
+                        app:singleSelection="true"
+                        app:selectionRequired="true">
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_type_text"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:text="@string/text" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_type_audio"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/audio" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_type_image"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Image" />
+
+                        <com.google.android.material.chip.Chip
+                            android:id="@+id/chip_type_file"
+                            style="@style/Widget.Material3.Chip.Filter"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="File" />
+
+                    </com.google.android.material.chip.ChipGroup>
+
+                </LinearLayout>
+
+                <!--功能开关（自动换行的 Chip）-->
+                <com.google.android.flexbox.FlexboxLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    app:flexWrap="wrap">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/cb_is_enable"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_s"
+                        android:checked="true"
+                        android:text="@string/is_enable" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/cb_is_enable_explore"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_s"
+                        android:checked="true"
+                        android:text="@string/discovery" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/cb_is_enable_cookie"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_s"
+                        android:checked="true"
+                        android:text="@string/auto_save_cookie" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/cb_is_enable_review"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_s"
+                        android:checked="false"
+                        android:text="@string/review" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/cb_is_event_listener"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_s"
+                        android:checked="false"
+                        android:text="@string/is_event_listener" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/cb_is_custom_button"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_s"
+                        android:checked="false"
+                        android:text="@string/custom_button" />
+
+                </com.google.android.flexbox.FlexboxLayout>
+
+            </LinearLayout>
 
         </LinearLayout>
 
-    </HorizontalScrollView>
+    </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_layout"
         android:layout_width="match_parent"
-        android:layout_height="36dp"
+        android:layout_height="40dp"
         android:background="@color/background"
-        android:elevation="3dp"
+        android:elevation="2dp"
         tools:ignore="SpeakableTextPresentCheck" />
 
     <HorizontalScrollView
@@ -106,8 +214,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
-            android:paddingVertical="4dp" />
+            android:paddingHorizontal="@dimen/space_xs"
+            android:paddingVertical="@dimen/space_xs" />
 
     </HorizontalScrollView>
 

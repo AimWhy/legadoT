@@ -19,7 +19,10 @@ import androidx.core.view.children
 import com.google.android.material.appbar.AppBarLayout
 import io.legado.app.R
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.elevation
+import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.activity
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
@@ -58,6 +61,10 @@ class TitleBar @JvmOverloads constructor(
     private val fitStatusBar: Boolean
     private val fitNavigationBar: Boolean
     private val attachToActivity: Boolean
+    private val foregroundColor: Int?
+    private val titleTextColorFromAttrs: Boolean
+    private val subtitleTextColorFromAttrs: Boolean
+    private var autoForegroundColorEnabled = true
 
     init {
         val a = context.obtainStyledAttributes(
@@ -70,14 +77,31 @@ class TitleBar @JvmOverloads constructor(
         displayHomeAsUp = a.getBoolean(R.styleable.TitleBar_displayHomeAsUp, true)
         fitStatusBar = a.getBoolean(R.styleable.TitleBar_fitStatusBar, true)
         fitNavigationBar = a.getBoolean(R.styleable.TitleBar_fitNavigationBar, false)
+        val themeMode = a.getInt(R.styleable.TitleBar_themeMode, 0)
+        // 仅在“自动主题 + 沉浸式操作栏”时接管前景色。
+        // 不透明时栏背景=主色，系统 actionBarStyle 叠加层已正确处理，无需干预；
+        // themeMode 被强制为 dark/light（如详情页、播放页）时同样交给叠加层。
+        foregroundColor = if (themeMode == 0 && AppConfig.isTransparentActionBar && !AppConfig.isEInkMode) {
+            context.getPrimaryTextColor(
+                appBarBackgroundIsLight(
+                    transparentActionBar = true,
+                    barBackgroundColor = context.primaryColor,
+                    contentBackgroundColor = context.backgroundColor
+                )
+            )
+        } else {
+            null
+        }
 
         val navigationIcon = a.getDrawable(R.styleable.TitleBar_navigationIcon)
         val navigationContentDescription =
             a.getText(R.styleable.TitleBar_navigationContentDescription)
         val titleText = a.getString(R.styleable.TitleBar_title)
         val subtitleText = a.getString(R.styleable.TitleBar_subtitle)
+        titleTextColorFromAttrs = a.hasValue(R.styleable.TitleBar_titleTextColor)
+        subtitleTextColorFromAttrs = a.hasValue(R.styleable.TitleBar_subtitleTextColor)
 
-        when (a.getInt(R.styleable.TitleBar_themeMode, 0)) {
+        when (themeMode) {
             1 -> inflate(context, R.layout.view_title_bar_dark, this)
             else -> inflate(context, R.layout.view_title_bar, this)
         }
@@ -96,8 +120,10 @@ class TitleBar @JvmOverloads constructor(
                 )
             }
 
-            if (a.hasValue(R.styleable.TitleBar_titleTextColor)) {
+            if (titleTextColorFromAttrs) {
                 this.setTitleTextColor(a.getColor(R.styleable.TitleBar_titleTextColor, -0x1))
+            } else {
+                foregroundColor?.let(this::setTitleTextColor)
             }
 
             if (a.hasValue(R.styleable.TitleBar_subtitleTextAppearance)) {
@@ -107,8 +133,10 @@ class TitleBar @JvmOverloads constructor(
                 )
             }
 
-            if (a.hasValue(R.styleable.TitleBar_subtitleTextColor)) {
+            if (subtitleTextColorFromAttrs) {
                 this.setSubtitleTextColor(a.getColor(R.styleable.TitleBar_subtitleTextColor, -0x1))
+            } else {
+                foregroundColor?.let(this::setSubtitleTextColor)
             }
 
 
@@ -179,6 +207,8 @@ class TitleBar @JvmOverloads constructor(
 
             if (AppConfig.isEInkMode) {
                 setBackgroundResource(R.drawable.bg_eink_border_bottom)
+            } else if (AppConfig.isTransparentActionBar) {
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
             } else {
                 setBackgroundColor(context.primaryColor)
             }
@@ -192,6 +222,10 @@ class TitleBar @JvmOverloads constructor(
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         attachToActivity()
+        if (foregroundColor != null && autoForegroundColorEnabled) {
+            // post 到下一帧：等返回箭头(setDisplayHomeAsUpEnabled)与溢出菜单图标创建完成后再着色
+            post { applyForegroundColor() }
+        }
     }
 
     fun setNavigationOnClickListener(clickListener: ((View) -> Unit)) {
@@ -235,6 +269,33 @@ class TitleBar @JvmOverloads constructor(
         toolbar.menu.children.forEach {
             it.icon?.colorFilter = colorFilter
         }
+    }
+
+    /**
+     * 沉浸式操作栏接管前景色：标题/副标题文字 + 返回箭头 + 溢出(三点)图标。
+     * 菜单项图标由 [io.legado.app.utils.applyTint]/getMenuColor 单独着色（会区分溢出弹窗项），此处不碰，避免把弹窗里的项也染成栏前景色。
+     */
+    private fun applyForegroundColor() {
+        if (!autoForegroundColorEnabled) return
+        val color = foregroundColor ?: return
+        if (!titleTextColorFromAttrs) {
+            setTitleTextColor(color)
+        }
+        if (!subtitleTextColorFromAttrs) {
+            setSubTitleTextColor(color)
+        }
+        val colorFilter = PorterDuffColorFilter(color, PorterDuff.Mode.SRC_ATOP)
+        toolbar.navigationIcon?.colorFilter = colorFilter
+        toolbar.overflowIcon?.colorFilter = colorFilter
+    }
+
+    /**
+     * 关闭沉浸式前景色自动接管。
+     * 供复用本控件却自行刷不透明背景、自管前景色的宿主（如阅读菜单）调用：
+     * 否则本控件会因全局沉浸式设置误判自己透明，按页面背景给标题着色，覆盖宿主设定。
+     */
+    fun disableAutoForegroundColor() {
+        autoForegroundColorEnabled = false
     }
 
     override fun setBackgroundColor(color: Int) {

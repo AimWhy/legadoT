@@ -19,6 +19,7 @@ import io.legado.app.utils.BitmapUtils
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
+import io.legado.app.utils.defaultSharedPreferences
 import io.legado.app.utils.externalFiles
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.fromJsonObject
@@ -190,15 +191,94 @@ object ThemeConfig {
         }
     }
 
+    /**
+     * 现代极简配色焕新：仅把“还停留在旧默认色”的 day/night pref 迁移到新调色板。
+     * 已自定义过颜色的用户保持原值，不覆盖个性化主题。
+     */
+    fun upThemeV2(context: Context) {
+        kotlin.runCatching {
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cPrimary,
+                R.color.md_brown_500,
+                R.color.md_theme_day_primary
+            )
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cAccent,
+                R.color.md_red_600,
+                R.color.md_theme_day_accent
+            )
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cBackground,
+                R.color.md_grey_100,
+                R.color.md_theme_day_background
+            )
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cBBackground,
+                R.color.md_grey_200,
+                R.color.md_theme_day_bottom_background
+            )
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cNPrimary,
+                R.color.md_blue_grey_600,
+                R.color.md_theme_night_primary
+            )
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cNAccent,
+                R.color.md_deep_orange_800,
+                R.color.md_theme_night_accent
+            )
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cNBackground,
+                R.color.md_grey_900,
+                R.color.md_theme_night_background
+            )
+            migrateThemePrefIfLegacy(
+                context,
+                PreferKey.cNBBackground,
+                R.color.md_grey_850,
+                R.color.md_theme_night_bottom_background
+            )
+            applyTheme(context)
+        }.onFailure {
+            it.printOnDebug()
+        }
+    }
+
+    private fun migrateThemePrefIfLegacy(
+        context: Context,
+        key: String,
+        legacyColorRes: Int,
+        newColorRes: Int,
+    ) {
+        val prefs = context.defaultSharedPreferences
+        val newColor = context.getCompatColor(newColorRes)
+        if (!prefs.contains(key)) {
+            context.putPrefInt(key, newColor)
+            return
+        }
+        val legacyColor = context.getCompatColor(legacyColorRes)
+        val currentColor = prefs.getInt(key, legacyColor)
+        if (currentColor == legacyColor) {
+            context.putPrefInt(key, newColor)
+        }
+    }
+
     fun saveDayTheme(context: Context, name: String) {
         val primary =
-            context.getPrefInt(PreferKey.cPrimary, context.getCompatColor(R.color.md_brown_500))
+            context.getPrefInt(PreferKey.cPrimary, context.getCompatColor(R.color.md_theme_day_primary))
         val accent =
-            context.getPrefInt(PreferKey.cAccent, context.getCompatColor(R.color.md_red_600))
+            context.getPrefInt(PreferKey.cAccent, context.getCompatColor(R.color.md_theme_day_accent))
         val background =
-            context.getPrefInt(PreferKey.cBackground, context.getCompatColor(R.color.md_grey_100))
+            context.getPrefInt(PreferKey.cBackground, context.getCompatColor(R.color.md_theme_day_background))
         val bBackground =
-            context.getPrefInt(PreferKey.cBBackground, context.getCompatColor(R.color.md_grey_200))
+            context.getPrefInt(PreferKey.cBBackground, context.getCompatColor(R.color.md_theme_day_bottom_background))
         val config = Config(
             themeName = name,
             isNightTheme = false,
@@ -214,17 +294,17 @@ object ThemeConfig {
         val primary =
             context.getPrefInt(
                 PreferKey.cNPrimary,
-                context.getCompatColor(R.color.md_blue_grey_600)
+                context.getCompatColor(R.color.md_theme_night_primary)
             )
         val accent =
             context.getPrefInt(
                 PreferKey.cNAccent,
-                context.getCompatColor(R.color.md_deep_orange_800)
+                context.getCompatColor(R.color.md_theme_night_accent)
             )
         val background =
-            context.getPrefInt(PreferKey.cNBackground, context.getCompatColor(R.color.md_grey_900))
+            context.getPrefInt(PreferKey.cNBackground, context.getCompatColor(R.color.md_theme_night_background))
         val bBackground =
-            context.getPrefInt(PreferKey.cNBBackground, context.getCompatColor(R.color.md_grey_850))
+            context.getPrefInt(PreferKey.cNBBackground, context.getCompatColor(R.color.md_theme_night_bottom_background))
         val config = Config(
             themeName = name,
             isNightTheme = true,
@@ -252,17 +332,17 @@ object ThemeConfig {
 
             AppConfig.isNightTheme -> {
                 val primary =
-                    getPrefInt(PreferKey.cNPrimary, getCompatColor(R.color.md_blue_grey_600))
+                    getPrefInt(PreferKey.cNPrimary, getCompatColor(R.color.md_theme_night_primary))
                 val accent =
-                    getPrefInt(PreferKey.cNAccent, getCompatColor(R.color.md_deep_orange_800))
+                    getPrefInt(PreferKey.cNAccent, getCompatColor(R.color.md_theme_night_accent))
                 var background =
-                    getPrefInt(PreferKey.cNBackground, getCompatColor(R.color.md_grey_900))
+                    getPrefInt(PreferKey.cNBackground, getCompatColor(R.color.md_theme_night_background))
                 if (ColorUtils.isColorLight(background)) {
-                    background = getCompatColor(R.color.md_grey_900)
+                    background = getCompatColor(R.color.md_theme_night_background)
                     putPrefInt(PreferKey.cNBackground, background)
                 }
                 val bBackground =
-                    getPrefInt(PreferKey.cNBBackground, getCompatColor(R.color.md_grey_850))
+                    getPrefInt(PreferKey.cNBBackground, getCompatColor(R.color.md_theme_night_bottom_background))
                 ThemeStore.editTheme(this)
                     .primaryColor(ColorUtils.withAlpha(primary, 1f))
                     .accentColor(ColorUtils.withAlpha(accent, 1f))
@@ -273,17 +353,17 @@ object ThemeConfig {
 
             else -> {
                 val primary =
-                    getPrefInt(PreferKey.cPrimary, getCompatColor(R.color.md_brown_500))
+                    getPrefInt(PreferKey.cPrimary, getCompatColor(R.color.md_theme_day_primary))
                 val accent =
-                    getPrefInt(PreferKey.cAccent, getCompatColor(R.color.md_red_600))
+                    getPrefInt(PreferKey.cAccent, getCompatColor(R.color.md_theme_day_accent))
                 var background =
-                    getPrefInt(PreferKey.cBackground, getCompatColor(R.color.md_grey_100))
+                    getPrefInt(PreferKey.cBackground, getCompatColor(R.color.md_theme_day_background))
                 if (!ColorUtils.isColorLight(background)) {
-                    background = getCompatColor(R.color.md_grey_100)
+                    background = getCompatColor(R.color.md_theme_day_background)
                     putPrefInt(PreferKey.cBackground, background)
                 }
                 val bBackground =
-                    getPrefInt(PreferKey.cBBackground, getCompatColor(R.color.md_grey_200))
+                    getPrefInt(PreferKey.cBBackground, getCompatColor(R.color.md_theme_day_bottom_background))
                 ThemeStore.editTheme(this)
                     .primaryColor(ColorUtils.withAlpha(primary, 1f))
                     .accentColor(ColorUtils.withAlpha(accent, 1f))

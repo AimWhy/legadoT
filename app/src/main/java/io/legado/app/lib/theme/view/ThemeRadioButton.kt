@@ -1,19 +1,24 @@
 package io.legado.app.lib.theme.view
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.util.AttributeSet
-import androidx.appcompat.widget.AppCompatRadioButton
+import com.google.android.material.radiobutton.MaterialRadioButton
 import io.legado.app.lib.theme.accentColor
-import io.legado.app.utils.applyTint
+import io.legado.app.utils.ColorUtils
 
 class ThemeRadioButton(context: Context, attrs: AttributeSet) :
-    AppCompatRadioButton(context, attrs) {
+    MaterialRadioButton(context, attrs) {
 
     private var isUserAction = false
 
     init {
         if (!isInEditMode) {
-            applyTint(context.accentColor)
+            val accent = context.accentColor
+            buttonTintList = ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+                intArrayOf(accent, ColorUtils.withAlpha(0x888888, 0.6f))
+            )
         }
     }
 

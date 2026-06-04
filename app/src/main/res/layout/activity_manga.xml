@@ -83,13 +83,13 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/primaryText" />
 
-            <io.legado.app.ui.widget.text.AccentTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_retry"
+                style="@style/Widget.Material3.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="16dp"
                 android:text="重新加载"
-                android:textSize="18sp"
                 tools:visibility="visible" />
         </LinearLayout>
 

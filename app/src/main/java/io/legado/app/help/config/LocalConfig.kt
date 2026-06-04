@@ -73,6 +73,12 @@ by appCtx.getSharedPreferences("local", Context.MODE_PRIVATE) {
     val needUpDictRule: Boolean
         get() = !isLastVersion(2, "needUpDictRule")
 
+    /**
+     * 现代极简配色焕新：一次性把内置默认色迁移为新调色板（仅触发一次）
+     */
+    val needUpThemeV2: Boolean
+        get() = !isLastVersion(1, "themeV2Version")
+
     var versionCode
         get() = getLong(versionCodeKey, 0)
         set(value) {

@@ -175,6 +175,9 @@ class ReadMenu @JvmOverloads constructor(
         }
         initAnimation()
         tvCustomBtn.setColorFilter(context.accentColor)
+        // 本菜单完全自管 titleBar 前景色，禁止其因全局沉浸式设置自动按页面背景着色
+        // （否则非沉浸菜单的书名会被染成与章节名相反的颜色）
+        titleBar.disableAutoForegroundColor()
         if (immersiveMenu) {
             val lightTextColor = ColorUtils.withAlpha(ColorUtils.lightenColor(textColor), 0.75f)
             titleBar.setTextColor(textColor)
@@ -182,7 +185,7 @@ class ReadMenu @JvmOverloads constructor(
             titleBar.setColorFilter(textColor)
             tvChapterName.setTextColor(lightTextColor)
             tvChapterUrl.setTextColor(lightTextColor)
-        } else if (reset) {
+        } else {
             val bgColor = context.primaryColor
             val textColor = context.primaryTextColor
             titleBar.setTextColor(textColor)
@@ -201,13 +204,9 @@ class ReadMenu @JvmOverloads constructor(
         } else {
             llBottomBg.setBackgroundColor(bgColor)
         }
-        fabSearch.backgroundTintList = bottomBackgroundList
         fabSearch.setColorFilter(textColor)
-        fabAutoPage.backgroundTintList = bottomBackgroundList
         fabAutoPage.setColorFilter(textColor)
-        fabReplaceRule.backgroundTintList = bottomBackgroundList
         fabReplaceRule.setColorFilter(textColor)
-        fabNightTheme.backgroundTintList = bottomBackgroundList
         fabNightTheme.setColorFilter(textColor)
         tvPre.setTextColor(textColor)
         tvNext.setTextColor(textColor)
@@ -242,8 +241,14 @@ class ReadMenu @JvmOverloads constructor(
     }
 
     fun refreshMenuColorFilter() {
-        if (immersiveMenu) {
-            binding.titleBar.setColorFilter(textColor)
+        // 用顶部 toolbar 实际背景对应的前景色给返回箭头和菜单图标（换源/刷新/下载等）着色，
+        // 覆盖 getMenuColor 的结果（沉浸操作栏开启时它会误判栏透明、按页面背景着色，深色主色调下得到黑图标）。
+        // 注意：成员 textColor 基准是 bottomBackground（底栏），与顶部 toolbar 背景不同，
+        // 非沉浸时须用 primaryTextColor（基准 = primaryColor，即顶部 toolbar 的实际背景）。
+        // post 到下一帧：本方法在 onCompatCreateOptionsMenu 里调用，需晚于其后 BaseActivity 的 applyTint 才不被覆盖。
+        val toolbarTextColor = if (immersiveMenu) textColor else context.primaryTextColor
+        binding.titleBar.post {
+            binding.titleBar.setColorFilter(toolbarTextColor)
         }
     }
 

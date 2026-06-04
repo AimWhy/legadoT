@@ -24,6 +24,7 @@ import io.legado.app.help.glide.ImageLoader
 import io.legado.app.help.glide.OkHttpModelLoader
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.model.BookCover
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.textHeight
 import io.legado.app.utils.toStringArray
 
@@ -38,6 +39,8 @@ class CoverImageView @JvmOverloads constructor(
     private var filletPath = Path()
     private var viewWidth: Float = 0f
     private var viewHeight: Float = 0f
+    /** 封面圆角（现代极简：12dp，全局统一） */
+    private val cornerRadius: Float = 12f.dpToPx()
     private var defaultCover = true
     var bitmapPath: String? = null
         private set
@@ -87,16 +90,17 @@ class CoverImageView @JvmOverloads constructor(
         viewHeight = height.toFloat()
         filletPath.reset()
         if (width > 10 && viewHeight > 10) {
+            val r = cornerRadius.coerceAtMost(viewWidth / 2).coerceAtMost(viewHeight / 2)
             filletPath.apply {
-                moveTo(10f, 0f)
-                lineTo(viewWidth - 10, 0f)
-                quadTo(viewWidth, 0f, viewWidth, 10f)
-                lineTo(viewWidth, viewHeight - 10)
-                quadTo(viewWidth, viewHeight, viewWidth - 10, viewHeight)
-                lineTo(10f, viewHeight)
-                quadTo(0f, viewHeight, 0f, viewHeight - 10)
-                lineTo(0f, 10f)
-                quadTo(0f, 0f, 10f, 0f)
+                moveTo(r, 0f)
+                lineTo(viewWidth - r, 0f)
+                quadTo(viewWidth, 0f, viewWidth, r)
+                lineTo(viewWidth, viewHeight - r)
+                quadTo(viewWidth, viewHeight, viewWidth - r, viewHeight)
+                lineTo(r, viewHeight)
+                quadTo(0f, viewHeight, 0f, viewHeight - r)
+                lineTo(0f, r)
+                quadTo(0f, 0f, r, 0f)
                 close()
             }
         }

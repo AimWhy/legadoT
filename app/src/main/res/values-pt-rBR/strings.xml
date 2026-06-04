@@ -372,6 +372,8 @@
     <string name="finish_book">Livros concluídos</string>
     <string name="local_book">Livros locais</string>
     <string name="status_bar_immersion">A cor da barra de status fica transparente</string>
+    <string name="immersion_action_bar">Barras de aplicativo imersivas</string>
+    <string name="action_bar_immersion">As barras superior e inferior ficam transparentes</string>
     <string name="imm_navigation_bar">barra de navegação de imersão</string>
     <string name="imm_navigation_bar_s">A barra de navegação fica transparente</string>
     <string name="add_to_bookshelf">Adicionar à Estante</string>

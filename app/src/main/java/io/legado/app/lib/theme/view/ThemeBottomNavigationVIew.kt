@@ -11,23 +11,33 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.legado.app.databinding.ViewNavigationBadgeBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.theme.Selector
-import io.legado.app.lib.theme.ThemeStore
+import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.getSecondaryTextColor
 import io.legado.app.ui.widget.text.BadgeView
-import io.legado.app.utils.ColorUtils
 
 class ThemeBottomNavigationVIew(context: Context, attrs: AttributeSet) :
     BottomNavigationView(context, attrs) {
 
     init {
-        val bgColor = context.bottomBackground
+        val bgColor = if (AppConfig.isTransparentActionBar) {
+            android.graphics.Color.TRANSPARENT
+        } else {
+            context.bottomBackground
+        }
         setBackgroundColor(bgColor)
-        val textIsDark = ColorUtils.isColorLight(bgColor)
-        val textColor = context.getSecondaryTextColor(textIsDark)
+        val textColor = context.getSecondaryTextColor(
+            appBarBackgroundIsLight(
+                transparentActionBar = AppConfig.isTransparentActionBar,
+                barBackgroundColor = context.bottomBackground,
+                contentBackgroundColor = context.backgroundColor
+            )
+        )
         val colorStateList = Selector.colorBuild()
             .setDefaultColor(textColor)
-            .setSelectedColor(ThemeStore.accentColor(context)).create()
+            .setSelectedColor(context.accentColor).create()
         itemIconTintList = colorStateList
         itemTextColor = colorStateList
 

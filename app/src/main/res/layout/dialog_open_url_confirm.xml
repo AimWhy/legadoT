@@ -30,18 +30,20 @@
         app:flexDirection="row"
         app:justifyContent="flex_end">
 
-        <io.legado.app.ui.widget.text.AccentTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_negative"
+            style="@style/Widget.Material3.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="16dp"
             android:text="@string/cancel" />
 
-        <io.legado.app.ui.widget.text.AccentTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_positive"
+            style="@style/Widget.Material3.Button.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="16dp"
+            android:layout_marginStart="@dimen/space_s"
+            android:layout_marginEnd="@dimen/space_m"
             android:text="@string/ok" />
 
     </com.google.android.flexbox.FlexboxLayout>
