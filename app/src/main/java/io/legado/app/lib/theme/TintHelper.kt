@@ -6,6 +6,7 @@ import android.content.res.ColorStateList
 import android.graphics.PorterDuff
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.RippleDrawable
+import android.os.Build
 import android.view.View
 import android.widget.Button
 import android.widget.CheckBox
@@ -172,6 +173,14 @@ object TintHelper {
                         if (icon != null) {
                             setTint(icon, color)
                         }
+                    }
+                    // 输入文字、提示文字与光标也按前景色着色：沉浸式透明栏下可见背景是页面背景，
+                    // 仅靠 actionBarStyle 叠加层（按主色明暗定文字色）会浅底配浅字/浅光标看不清。
+                    // color 即调用方传入、已按可见背景算好的前景色。
+                    view.findViewById<EditText>(androidx.appcompat.R.id.search_src_text)?.apply {
+                        setTextColor(color)
+                        setHintTextColor(ColorUtils.adjustAlpha(color, 0.5f))
+                        setCursorTint(this, color)
                     }
                 }
                 else -> isBg = true
@@ -464,6 +473,13 @@ object TintHelper {
 
     @SuppressLint("DiscouragedPrivateApi", "SoonBlockedPrivateApi")
     fun setCursorTint(editText: EditText, @ColorInt color: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            editText.textCursorDrawable = createTintedDrawable(
+                ContextCompat.getDrawable(editText.context, R.drawable.shape_text_cursor),
+                color
+            )
+            return
+        }
         try {
             val fCursorDrawableRes = TextView::class.java.getDeclaredField("mCursorDrawableRes")
             fCursorDrawableRes.isAccessible = true
