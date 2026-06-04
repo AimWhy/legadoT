@@ -3,6 +3,7 @@ package io.legado.app.ui.book.audio
 import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
+import android.text.InputType
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
@@ -389,9 +390,11 @@ class AudioPlayActivity :
         alert(titleResource = R.string.audio_skip_config) {
             val alertBinding = DialogMultipleEditTextBinding.inflate(layoutInflater).apply {
                 layout1.hint = getString(R.string.audio_skip_intro_seconds)
+                edit1.inputType = InputType.TYPE_CLASS_NUMBER
                 edit1.setText((book.getAudioIntroMs() / 1000).toString())
                 layout2.hint = getString(R.string.audio_skip_outro_seconds)
                 layout2.visible()
+                edit2.inputType = InputType.TYPE_CLASS_NUMBER
                 edit2.setText((book.getAudioOutroMs() / 1000).toString())
             }
             customView { alertBinding.root }

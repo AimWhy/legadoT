@@ -84,6 +84,11 @@
         <item name="android:color">@color/transparent</item>
     </style>
 
+    <style name="ShapeAppearanceLegadoAudioPlayFab">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
     //**********System Style******************//
 
     <style name="Style.NavigationView" parent="android:Widget">
