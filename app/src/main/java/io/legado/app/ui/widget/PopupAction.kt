@@ -1,6 +1,7 @@
 package io.legado.app.ui.widget
 
 import android.content.Context
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.TypedValue
 import android.view.Gravity
@@ -23,6 +24,7 @@ import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.utils.applyMd3PopupStyle
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getCompatColor
+import io.legado.app.utils.resolveDropDownYOffset
 import io.legado.app.utils.setTintMutate
 import splitties.systemservices.layoutInflater
 
@@ -63,6 +65,36 @@ class PopupAction(private val context: Context) :
         isFocusable = true
 
         binding.recyclerView.adapter = adapter
+    }
+
+    /**
+     * 重写下拉显示:先测量菜单真实高度,再决定显示在锚点下方还是上方。
+     *
+     * 系统的 [showAsDropDown] 在 PopupWindow 高度为 WRAP_CONTENT 时不会自动翻转到锚点上方,
+     * 导致贴近屏幕底部的锚点(如底部操作栏的"更多"按钮、列表底部卡片的菜单按钮)弹出的菜单
+     * 落到屏幕外不可见。这里用测量高度配合可视区域计算偏移,空间不足时翻转到上方。
+     */
+    override fun showAsDropDown(anchor: View?, xoff: Int, yoff: Int, gravity: Int) {
+        if (anchor == null) {
+            super.showAsDropDown(anchor, xoff, yoff, gravity)
+            return
+        }
+        val frame = Rect()
+        anchor.getWindowVisibleDisplayFrame(frame)
+        val widthSpec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        val heightSpec = View.MeasureSpec.makeMeasureSpec(frame.height(), View.MeasureSpec.AT_MOST)
+        contentView.measure(widthSpec, heightSpec)
+        val location = IntArray(2)
+        anchor.getLocationOnScreen(location)
+        val resolvedYOff = resolveDropDownYOffset(
+            anchorTop = location[1],
+            anchorHeight = anchor.height,
+            popupHeight = contentView.measuredHeight,
+            frameTop = frame.top,
+            frameBottom = frame.bottom,
+            gap = yoff
+        )
+        super.showAsDropDown(anchor, xoff, resolvedYOff, gravity)
     }
 
     fun setVertical(vertical: Boolean) {
