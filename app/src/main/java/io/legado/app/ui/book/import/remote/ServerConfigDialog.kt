@@ -66,7 +66,8 @@ class ServerConfigDialog() : BaseDialogFragment(R.layout.dialog_webdav_server, t
 
     private fun upConfigView(server: Server?) {
         binding.etName.setText(server?.name)
-        binding.spType.setSelection(
+        binding.spType.setFilterValues(*resources.getStringArray(R.array.server_type))
+        binding.spType.setSelectionByIndex(
             when (server?.type) {
                 else -> 0
             }

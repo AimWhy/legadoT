@@ -60,13 +60,16 @@
                 android:layout_margin="1dp"
                 android:gravity="center"
                 android:maxWidth="120dp"
-                android:paddingLeft="6dp"
-                android:paddingRight="6dp"
+                android:minHeight="32dp"
+                android:paddingStart="@dimen/space_m"
+                android:paddingEnd="@dimen/space_s"
                 android:text="@string/book_source"
+                app:drawableEndCompat="@drawable/ic_arrow_drop_down"
+                app:drawableTint="@color/primaryText"
                 app:layout_constraintBottom_toBottomOf="@+id/tv_chapter_url"
                 app:layout_constraintRight_toRightOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                app:radius="2dp"
+                app:radius="16dp"
                 tools:visibility="visible" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>

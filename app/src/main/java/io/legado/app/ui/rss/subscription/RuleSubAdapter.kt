@@ -3,7 +3,7 @@ package io.legado.app.ui.rss.subscription
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupMenu
+import io.legado.app.ui.widget.popupActionMenu
 import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
@@ -44,15 +44,14 @@ class RuleSubAdapter(context: Context, val callBack: Callback) :
 
     private fun showMenu(view: View, position: Int) {
         val source = getItem(position) ?: return
-        val popupMenu = PopupMenu(context, view)
-        popupMenu.inflate(R.menu.source_sub_item)
-        popupMenu.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.menu_del -> callBack.delSubscription(source)
+        popupActionMenu(context) {
+            item(context.getString(R.string.delete), "del")
+            danger("del")
+        }.show(view) { action ->
+            when (action) {
+                "del" -> callBack.delSubscription(source)
             }
-            true
         }
-        popupMenu.show()
     }
 
     override fun getViewBinding(parent: ViewGroup): ItemRuleSubBinding {

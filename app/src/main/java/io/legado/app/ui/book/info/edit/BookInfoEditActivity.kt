@@ -69,6 +69,7 @@ class BookInfoEditActivity :
     }
 
     private fun initView() {
+        binding.spType.setFilterValues(*resources.getStringArray(R.array.book_type))
         binding.root.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
             val typeMask = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()
             val insets = windowInsets.getInsets(typeMask)
@@ -99,7 +100,7 @@ class BookInfoEditActivity :
     private fun upView(book: Book) = binding.run {
         tieBookName.setText(book.name)
         tieBookAuthor.setText(book.author)
-        spType.setSelection(
+        spType.setSelectionByIndex(
             when {
                 book.isImage -> 2
                 book.isAudio -> 1

@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.core.view.doOnLayout
 import androidx.recyclerview.widget.DiffUtil
@@ -19,8 +18,10 @@ import io.legado.app.databinding.ItemBookSourceBinding
 import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.cardBackgroundColor
+import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.model.Debug
 import io.legado.app.ui.login.SourceLoginActivity
+import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.ColorUtils
@@ -181,46 +182,54 @@ class BookSourceAdapter(
 
     private fun showMenu(view: View, position: Int) {
         val source = getItem(position) ?: return
-        val popupMenu = PopupMenu(context, view)
-        popupMenu.inflate(R.menu.book_source_item)
-        popupMenu.menu.findItem(R.id.menu_top).isVisible = callBack.sort == BookSourceSort.Default
-        popupMenu.menu.findItem(R.id.menu_bottom).isVisible =
-            callBack.sort == BookSourceSort.Default
-        val qyMenu = popupMenu.menu.findItem(R.id.menu_enable_explore)
-        if (!source.hasExploreUrl) {
-            qyMenu.isVisible = false
-        } else {
-            if (source.enabledExplore) {
-                qyMenu.setTitle(R.string.disable_explore)
-            } else {
-                qyMenu.setTitle(R.string.enable_explore)
+        val items = buildList {
+            if (callBack.sort == BookSourceSort.Default) {
+                add(SelectItem(context.getString(R.string.to_top), "top"))
+                add(SelectItem(context.getString(R.string.to_bottom), "bottom"))
             }
-        }
-        val loginMenu = popupMenu.menu.findItem(R.id.menu_login)
-        loginMenu.isVisible = source.hasLoginUrl
-        popupMenu.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.menu_top -> callBack.toTop(source)
-                R.id.menu_bottom -> callBack.toBottom(source)
-                R.id.menu_login -> context.startActivity<SourceLoginActivity> {
-                    putExtra("type", "bookSource")
-                    putExtra("key", source.bookSourceUrl)
-                }
-
-                R.id.menu_search -> callBack.searchBook(source)
-                R.id.menu_debug_source -> callBack.debug(source)
-                R.id.menu_del -> {
-                    callBack.del(source)
-                    selected.remove(source)
-                }
-
-                R.id.menu_enable_explore -> {
-                    callBack.enableExplore(!source.enabledExplore, source)
-                }
+            if (source.hasLoginUrl) {
+                add(SelectItem(context.getString(R.string.login), "login"))
             }
-            true
+            add(SelectItem(context.getString(R.string.search), "search"))
+            add(SelectItem(context.getString(R.string.debug), "debug"))
+            if (source.hasExploreUrl) {
+                add(
+                    SelectItem(
+                        context.getString(
+                            if (source.enabledExplore) R.string.disable_explore else R.string.enable_explore
+                        ),
+                        "toggleExplore"
+                    )
+                )
+            }
+            add(SelectItem(context.getString(R.string.delete), "delete"))
         }
-        popupMenu.show()
+        PopupAction(context).apply {
+            setVertical(true)
+            setDangerValues(setOf("delete"))
+            setItems(items)
+            onActionClick = { action ->
+                when (action) {
+                    "top" -> callBack.toTop(source)
+                    "bottom" -> callBack.toBottom(source)
+                    "login" -> context.startActivity<SourceLoginActivity> {
+                        putExtra("type", "bookSource")
+                        putExtra("key", source.bookSourceUrl)
+                    }
+
+                    "search" -> callBack.searchBook(source)
+                    "debug" -> callBack.debug(source)
+                    "delete" -> {
+                        callBack.del(source)
+                        selected.remove(source)
+                    }
+
+                    "toggleExplore" -> callBack.enableExplore(!source.enabledExplore, source)
+                }
+                dismiss()
+            }
+            showAsDropDown(view, 0, 4.dpToPx())
+        }
     }
 
     private fun upSelectStroke(binding: ItemBookSourceBinding, source: BookSourcePart) {

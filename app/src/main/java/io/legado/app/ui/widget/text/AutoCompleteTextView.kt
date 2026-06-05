@@ -15,6 +15,7 @@ import androidx.appcompat.widget.AppCompatAutoCompleteTextView
 import io.legado.app.R
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.utils.applyTint
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.gone
 import io.legado.app.utils.visible
 
@@ -26,9 +27,19 @@ class AutoCompleteTextView @JvmOverloads constructor(
 ) : AppCompatAutoCompleteTextView(context, attrs) {
 
     var delCallBack: ((value: String) -> Unit)? = null
+    private var filterValues: List<String> = emptyList()
+
+    val itemCount: Int
+        get() = filterValues.size
+
+    val selectedItemPosition: Int
+        get() = filterValues.indexOf(text?.toString().orEmpty()).takeIf { it >= 0 } ?: 0
 
     init {
         applyTint(context.accentColor)
+        setDropDownBackgroundResource(R.drawable.bg_popup_menu)
+        dropDownVerticalOffset = 4.dpToPx()
+        dropDownHorizontalOffset = 0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             isLocalePreferredLineHeightForMinimumUsed = false
         }
@@ -47,13 +58,25 @@ class AutoCompleteTextView @JvmOverloads constructor(
     }
 
     fun setFilterValues(values: List<String>?) {
+        filterValues = values.orEmpty()
         values?.let {
             setAdapter(MyAdapter(context, values))
         }
     }
 
     fun setFilterValues(vararg value: String) {
+        filterValues = value.toList()
         setAdapter(MyAdapter(context, value.toMutableList()))
+    }
+
+    fun setSelectionByIndex(index: Int) {
+        if (filterValues.isEmpty()) {
+            setText("", false)
+            return
+        }
+        val safeIndex = index.coerceIn(0, filterValues.lastIndex)
+        setText(filterValues[safeIndex], false)
+        setSelection(text?.length ?: 0)
     }
 
     inner class MyAdapter(context: Context, values: List<String>) :

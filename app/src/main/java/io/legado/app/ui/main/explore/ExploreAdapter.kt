@@ -3,7 +3,6 @@ package io.legado.app.ui.main.explore
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupMenu
 import android.widget.TextView
 import androidx.core.view.children
 import com.google.android.flexbox.FlexboxLayout
@@ -17,8 +16,10 @@ import io.legado.app.databinding.ItemFindBookBinding
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.source.clearExploreKindsCache
 import io.legado.app.help.source.exploreKinds
+import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.login.SourceLoginActivity
+import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.utils.activity
 import io.legado.app.utils.dpToPx
@@ -154,30 +155,42 @@ class ExploreAdapter(context: Context, val callBack: CallBack) :
 
     private fun showMenu(view: View, position: Int): Boolean {
         val source = getItem(position) ?: return true
-        val popupMenu = PopupMenu(context, view)
-        popupMenu.inflate(R.menu.explore_item)
-        popupMenu.menu.findItem(R.id.menu_login).isVisible = source.hasLoginUrl
-        popupMenu.setOnMenuItemClickListener {
-            when (it.itemId) {
-                R.id.menu_edit -> callBack.editSource(source.bookSourceUrl)
-                R.id.menu_top -> callBack.toTop(source)
-                R.id.menu_search -> callBack.searchBook(source)
-                R.id.menu_login -> context.startActivity<SourceLoginActivity> {
-                    putExtra("type", "bookSource")
-                    putExtra("key", source.bookSourceUrl)
-                }
-
-                R.id.menu_refresh -> Coroutine.async(callBack.scope) {
-                    source.clearExploreKindsCache()
-                }.onSuccess {
-                    notifyItemChanged(position)
-                }
-
-                R.id.menu_del -> callBack.deleteSource(source)
+        val items = buildList {
+            add(SelectItem(context.getString(R.string.edit), "edit"))
+            add(SelectItem(context.getString(R.string.to_top), "top"))
+            if (source.hasLoginUrl) {
+                add(SelectItem(context.getString(R.string.login), "login"))
             }
-            true
+            add(SelectItem(context.getString(R.string.search), "search"))
+            add(SelectItem(context.getString(R.string.refresh), "refresh"))
+            add(SelectItem(context.getString(R.string.delete), "delete"))
         }
-        popupMenu.show()
+        PopupAction(context).apply {
+            setVertical(true)
+            setDangerValues(setOf("delete"))
+            setItems(items)
+            onActionClick = { action ->
+                when (action) {
+                    "edit" -> callBack.editSource(source.bookSourceUrl)
+                    "top" -> callBack.toTop(source)
+                    "search" -> callBack.searchBook(source)
+                    "login" -> context.startActivity<SourceLoginActivity> {
+                        putExtra("type", "bookSource")
+                        putExtra("key", source.bookSourceUrl)
+                    }
+
+                    "refresh" -> Coroutine.async(callBack.scope) {
+                        source.clearExploreKindsCache()
+                    }.onSuccess {
+                        notifyItemChanged(position)
+                    }
+
+                    "delete" -> callBack.deleteSource(source)
+                }
+                dismiss()
+            }
+            showAsDropDown(view, 0, 4.dpToPx())
+        }
         return true
     }
 

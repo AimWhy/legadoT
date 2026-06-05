@@ -100,6 +100,7 @@
             android:id="@+id/ly_et_input_scope"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
             android:hint="@string/export_chapter_index">
 
             <io.legado.app.lib.theme.view.ThemeEditText

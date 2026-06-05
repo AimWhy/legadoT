@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_gravity="center"
-    android:background="@color/background_card"
+    android:background="@drawable/bg_popup_menu"
     android:orientation="horizontal"
-    android:padding="5dp"
+    android:padding="@dimen/space_s"
     app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
