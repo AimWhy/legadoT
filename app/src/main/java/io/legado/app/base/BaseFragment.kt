@@ -14,6 +14,7 @@ import androidx.fragment.app.Fragment
 import io.legado.app.R
 import io.legado.app.ui.widget.TitleBar
 import io.legado.app.utils.applyTint
+import io.legado.app.utils.installMd3OverflowMenu
 
 @Suppress("MemberVisibilityCanBePrivate")
 abstract class BaseFragment(@LayoutRes layoutID: Int) : Fragment(layoutID) {
@@ -57,6 +58,10 @@ abstract class BaseFragment(@LayoutRes layoutID: Int) : Fragment(layoutID) {
             it.menu.apply {
                 onCompatCreateOptionsMenu(this)
                 applyTint(requireContext())
+            }
+
+            it.installMd3OverflowMenu { menuItem ->
+                onCompatOptionsItemSelected(menuItem)
             }
 
             it.setOnMenuItemClickListener { item ->

@@ -12,10 +12,12 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.view.Window
 import android.widget.FrameLayout
 import androidx.activity.addCallback
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.viewbinding.ViewBinding
 import com.google.android.material.color.DynamicColors
 import com.google.android.material.color.DynamicColorsOptions
@@ -38,6 +40,7 @@ import io.legado.app.utils.disableAutoFill
 import io.legado.app.utils.fullScreen
 import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.hideSoftInput
+import io.legado.app.utils.installMd3OverflowMenu
 import io.legado.app.utils.setLightStatusBar
 import io.legado.app.utils.setNavigationBarColorAuto
 import io.legado.app.utils.setStatusBarColorAuto
@@ -78,7 +81,13 @@ abstract class BaseActivity<VB : ViewBinding>(
         if (AppConst.menuViewNames.contains(name) && parent?.parent is FrameLayout) {
             (parent.parent as View).setBackgroundColor(backgroundColor)
         }
-        return super.onCreateView(parent, name, context, attrs)
+        val view = super.onCreateView(parent, name, context, attrs)
+        if (view is Toolbar) {
+            view.installMd3OverflowMenu { menuItem ->
+                view.menu.performIdentifierAction(menuItem.itemId, 0)
+            }
+        }
+        return view
     }
 
     @SuppressLint("ObsoleteSdkInt")
@@ -120,6 +129,14 @@ abstract class BaseActivity<VB : ViewBinding>(
     final override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val bool = onCompatCreateOptionsMenu(menu)
         menu.applyTint(this, toolBarTheme)
+        findViewById<TitleBar>(R.id.title_bar)?.toolbar?.installMd3OverflowMenu(
+            onPrepareMenu = { menu ->
+                onPrepareOptionsMenu(menu)
+                onMenuOpened(Window.FEATURE_OPTIONS_PANEL, menu)
+            }
+        ) { menuItem ->
+            onCompatOptionsItemSelected(menuItem)
+        }
         return bool
     }
 
