@@ -12,7 +12,6 @@ import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 import android.view.animation.Animation
 import android.widget.FrameLayout
 import android.widget.SeekBar
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import io.legado.app.R
@@ -25,6 +24,7 @@ import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.config.ThemeConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.source.getSourceType
+import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.Selector
 import io.legado.app.lib.theme.accentColor
@@ -36,6 +36,7 @@ import io.legado.app.lib.theme.primaryTextColor
 import io.legado.app.model.ReadBook
 import io.legado.app.model.SourceCallBack
 import io.legado.app.ui.browser.WebViewActivity
+import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.ConstraintModify
@@ -103,17 +104,18 @@ class ReadMenu @JvmOverloads constructor(
             PreferKey.showBrightnessView,
             true
         )
-    private val sourceMenu by lazy {
-        PopupMenu(context, binding.tvSourceAction).apply {
-            inflate(R.menu.book_read_source)
-            setOnMenuItemClickListener {
-                when (it.itemId) {
-                    R.id.menu_login -> callBack.showLogin()
-                    R.id.menu_chapter_pay -> callBack.payAction()
-                    R.id.menu_edit_source -> callBack.openSourceEditActivity()
-                    R.id.menu_disable_source -> callBack.disableSource()
+    private val sourceActionMenu by lazy {
+        PopupAction(context).apply {
+            setVertical(true)
+            setDangerValues(setOf("disableSource"))
+            onActionClick = { action ->
+                when (action) {
+                    "login" -> callBack.showLogin()
+                    "chapterPay" -> callBack.payAction()
+                    "editSource" -> callBack.openSourceEditActivity()
+                    "disableSource" -> callBack.disableSource()
                 }
-                true
+                dismiss()
             }
         }
     }
@@ -410,13 +412,18 @@ class ReadMenu @JvmOverloads constructor(
         }
         //书源操作
         tvSourceAction.onClick {
-            sourceMenu.menu.findItem(R.id.menu_login).isVisible =
-                !ReadBook.bookSource?.loginUrl.isNullOrEmpty()
-            sourceMenu.menu.findItem(R.id.menu_chapter_pay).isVisible =
-                !ReadBook.bookSource?.loginUrl.isNullOrEmpty()
-                        && ReadBook.curTextChapter?.isVip == true
-                        && ReadBook.curTextChapter?.isPay != true
-            sourceMenu.show()
+            val items = buildList {
+                if (!ReadBook.bookSource?.loginUrl.isNullOrEmpty()) {
+                    add(SelectItem(context.getString(R.string.login), "login"))
+                    if (ReadBook.curTextChapter?.isVip == true && ReadBook.curTextChapter?.isPay != true) {
+                        add(SelectItem(context.getString(R.string.chapter_pay), "chapterPay"))
+                    }
+                }
+                add(SelectItem(context.getString(R.string.edit_book_source), "editSource"))
+                add(SelectItem(context.getString(R.string.disable_book_source), "disableSource"))
+            }
+            sourceActionMenu.setItems(items)
+            sourceActionMenu.showAsDropDown(binding.tvSourceAction, 0, 4.dpToPx())
         }
         //亮度跟随
         ivBrightnessAuto.setOnClickListener {

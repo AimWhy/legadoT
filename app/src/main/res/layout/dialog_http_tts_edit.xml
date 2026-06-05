@@ -27,12 +27,16 @@
         <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:paddingTop="@dimen/space_s"
+            android:paddingBottom="@dimen/space_m"
+            android:clipToPadding="false"
             android:overScrollMode="ifContentScrolls">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/space_l">
 
                 <io.legado.app.ui.widget.text.TextInputLayout
                     android:layout_width="match_parent"
@@ -49,31 +53,50 @@
 
                 <include
                     android:id="@+id/field_url"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
                 <include
                     android:id="@+id/field_content_type"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
                 <include
                     android:id="@+id/field_concurrent_rate"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
                 <include
                     android:id="@+id/field_login_url"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
                 <include
                     android:id="@+id/field_login_ui"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
                 <include
                     android:id="@+id/field_login_check_js"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
                 <io.legado.app.ui.widget.text.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     android:hint="段落间隔(毫秒)">
 
                     <io.legado.app.lib.theme.view.ThemeEditText
@@ -87,6 +110,9 @@
 
                 <include
                     android:id="@+id/field_headers"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
             </LinearLayout>

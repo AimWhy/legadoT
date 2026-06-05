@@ -106,6 +106,9 @@
 
     <style name="Style.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:listPreferredItemHeightSmall">48dp</item>
+        <item name="android:listPreferredItemPaddingStart">16dp</item>
+        <item name="android:listPreferredItemPaddingEnd">16dp</item>
     </style>
 
     <style name="Activity.Permission" parent="Theme.Material3.DayNight.NoActionBar">

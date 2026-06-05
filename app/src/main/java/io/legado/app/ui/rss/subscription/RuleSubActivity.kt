@@ -94,10 +94,11 @@ class RuleSubActivity : BaseActivity<ActivityRuleSubBinding>(),
     override fun editSubscription(ruleSub: RuleSub) {
         alert(R.string.rule_subscription) {
             val alertBinding = DialogRuleSubEditBinding.inflate(layoutInflater).apply {
-                if (ruleSub.type !in 0..<spType.count) {
+                spType.setFilterValues(*resources.getStringArray(R.array.rule_type))
+                if (ruleSub.type !in 0..<spType.itemCount) {
                     ruleSub.type = 0
                 }
-                spType.setSelection(ruleSub.type)
+                spType.setSelectionByIndex(ruleSub.type)
                 etName.setText(ruleSub.name)
                 etUrl.setText(ruleSub.url)
             }

@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.PopupMenu
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
@@ -14,6 +13,9 @@ import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.databinding.ItemChangeSourceBinding
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.dialogs.SelectItem
+import io.legado.app.ui.widget.PopupAction
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getCompatColor
 import io.legado.app.utils.gone
 import io.legado.app.utils.invisible
@@ -165,30 +167,33 @@ class ChangeChapterSourceAdapter(
 
     private fun showMenu(view: View, searchBook: SearchBook?) {
         searchBook ?: return
-        val popupMenu = PopupMenu(context, view)
-        popupMenu.inflate(R.menu.change_source_item)
-        popupMenu.setOnMenuItemClickListener {
-            when (it.itemId) {
-                R.id.menu_top_source -> {
-                    callBack.topSource(searchBook)
+        PopupAction(context).apply {
+            setVertical(true)
+            setDangerValues(setOf("disableSource", "deleteSource"))
+            setItems(
+                listOf(
+                    SelectItem(context.getString(R.string.to_top), "topSource"),
+                    SelectItem(context.getString(R.string.to_bottom), "bottomSource"),
+                    SelectItem(context.getString(R.string.edit_source), "editSource"),
+                    SelectItem(context.getString(R.string.disable_source), "disableSource"),
+                    SelectItem(context.getString(R.string.delete_source), "deleteSource")
+                )
+            )
+            onActionClick = { action ->
+                when (action) {
+                    "topSource" -> callBack.topSource(searchBook)
+                    "bottomSource" -> callBack.bottomSource(searchBook)
+                    "editSource" -> callBack.editSource(searchBook)
+                    "disableSource" -> callBack.disableSource(searchBook)
+                    "deleteSource" -> {
+                        callBack.deleteSource(searchBook)
+                        updateItems(0, itemCount, listOf<Int>())
+                    }
                 }
-                R.id.menu_bottom_source -> {
-                    callBack.bottomSource(searchBook)
-                }
-                R.id.menu_edit_source -> {
-                    callBack.editSource(searchBook)
-                }
-                R.id.menu_disable_source -> {
-                    callBack.disableSource(searchBook)
-                }
-                R.id.menu_delete_source -> {
-                    callBack.deleteSource(searchBook)
-                    updateItems(0, itemCount, listOf<Int>())
-                }
+                dismiss()
             }
-            true
+            showAsDropDown(view, 0, 4.dpToPx())
         }
-        popupMenu.show()
     }
 
     interface CallBack {

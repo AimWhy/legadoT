@@ -65,16 +65,18 @@ class GroupEditDialog() : BaseDialogFragment(R.layout.dialog_book_group_edit) {
         binding.toolBar.setBackgroundColor(primaryColor)
         @Suppress("DEPRECATION")
         bookGroup = arguments?.getParcelable("group")
+        binding.spSort.setFilterValues(*resources.getStringArray(R.array.book_sort))
         bookGroup?.let {
             binding.btnDelete.visible(it.groupId > 0 || it.groupId == Long.MIN_VALUE)
             binding.tieGroupName.setText(it.groupName)
             binding.ivCover.load(it.cover)
-            if (it.bookSort + 1 !in 0..<binding.spSort.count) {
+            if (it.bookSort + 1 !in 0..<binding.spSort.itemCount) {
                 it.bookSort = -1
             }
-            binding.spSort.setSelection(it.bookSort + 1)
+            binding.spSort.setSelectionByIndex(it.bookSort + 1)
             binding.cbEnableRefresh.isChecked = it.enableRefresh
         } ?: let {
+            binding.spSort.setSelectionByIndex(0)
             binding.toolBar.title = getString(R.string.add_group)
             binding.btnDelete.gone()
             binding.ivCover.load()

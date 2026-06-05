@@ -38,7 +38,8 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/space_l">
 
                 <io.legado.app.ui.widget.text.TextInputLayout
                     android:layout_width="match_parent"
@@ -56,6 +57,7 @@
                 <io.legado.app.ui.widget.text.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     android:hint="@string/url_rule">
 
                     <io.legado.app.lib.theme.view.ThemeEditText
@@ -69,6 +71,7 @@
                 <io.legado.app.ui.widget.text.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
                     android:hint="@string/show_rule">
 
                     <io.legado.app.lib.theme.view.ThemeEditText

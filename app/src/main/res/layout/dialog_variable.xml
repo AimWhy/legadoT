@@ -38,6 +38,7 @@
             android:id="@+id/tv_variable"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/space_l"
             tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
 
         <androidx.core.widget.NestedScrollView

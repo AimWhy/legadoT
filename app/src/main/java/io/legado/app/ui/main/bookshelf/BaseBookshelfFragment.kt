@@ -170,7 +170,8 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
             val alertBinding =
                 DialogBookshelfConfigBinding.inflate(layoutInflater)
                     .apply {
-                        if (AppConfig.bookGroupStyle !in 0..<spGroupStyle.count) {
+                        spGroupStyle.setFilterValues(*resources.getStringArray(R.array.group_style))
+                        if (AppConfig.bookGroupStyle !in 0..<spGroupStyle.itemCount) {
                             AppConfig.bookGroupStyle = 0
                         }
                         if (bookshelfLayout !in rgLayout.indices) {
@@ -181,7 +182,7 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
                             bookshelfSort = 0
                             AppConfig.bookshelfSort = 0
                         }
-                        spGroupStyle.setSelection(AppConfig.bookGroupStyle)
+                        spGroupStyle.setSelectionByIndex(AppConfig.bookGroupStyle)
                         swShowUnread.isChecked = AppConfig.showUnread
                         swShowLastUpdateTime.isChecked = AppConfig.showLastUpdateTime
                         swShowWaitUpBooks.isChecked = AppConfig.showWaitUpCount

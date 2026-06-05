@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupMenu
 import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
@@ -16,6 +15,7 @@ import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.ui.login.SourceLoginActivity
+import io.legado.app.ui.widget.popupActionMenu
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.startActivity
@@ -222,21 +222,21 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
     }
 
     private fun showMenu(view: View, task: AutoTaskRule) {
-        val popupMenu = PopupMenu(context, view)
-        popupMenu.inflate(R.menu.auto_task_item)
-        popupMenu.menu.findItem(R.id.menu_login)?.isVisible = !task.loginUrl.isNullOrBlank()
-        popupMenu.setOnMenuItemClickListener { menuItem ->
-            when (menuItem.itemId) {
-                R.id.menu_login -> context.startActivity<SourceLoginActivity> {
+        popupActionMenu(context) {
+            item(context.getString(R.string.login), "login", visible = !task.loginUrl.isNullOrBlank())
+            item(context.getString(R.string.log), "log")
+            item(context.getString(R.string.auto_task_delete), "delete")
+            danger("delete")
+        }.show(view) { action ->
+            when (action) {
+                "login" -> context.startActivity<SourceLoginActivity> {
                     putExtra("type", "autoTask")
                     putExtra("key", task.id)
                 }
-                R.id.menu_log -> callBack.showLog(task)
-                R.id.menu_delete -> callBack.delete(task)
+                "log" -> callBack.showLog(task)
+                "delete" -> callBack.delete(task)
             }
-            true
         }
-        popupMenu.show()
     }
 
     interface CallBack {

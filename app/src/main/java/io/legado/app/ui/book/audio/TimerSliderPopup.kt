@@ -11,6 +11,7 @@ import io.legado.app.databinding.PopupSeekBarBinding
 import io.legado.app.model.AudioPlay
 import io.legado.app.service.AudioPlayService
 import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
+import io.legado.app.utils.applyMd3PopupStyle
 
 class TimerSliderPopup(private val context: Context) :
     PopupWindow(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT) {
@@ -19,6 +20,7 @@ class TimerSliderPopup(private val context: Context) :
 
     init {
         contentView = binding.root
+        applyMd3PopupStyle()
 
         isTouchable = true
         isOutsideTouchable = false
