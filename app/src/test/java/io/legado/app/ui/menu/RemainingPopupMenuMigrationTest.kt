@@ -93,6 +93,85 @@ class RemainingPopupMenuMigrationTest {
         }
     }
 
+    @Test
+    fun `toolbar overflow menus are routed through md3 popup action bridge`() {
+        val bridge = readProjectFile("src/main/java/io/legado/app/utils/ToolbarOverflowMenuExtensions.kt")
+        val baseActivity = readProjectFile("src/main/java/io/legado/app/base/BaseActivity.kt")
+        val baseFragment = readProjectFile("src/main/java/io/legado/app/base/BaseFragment.kt")
+
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "fun Toolbar.installMd3OverflowMenu")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "onPrepareMenu: (Menu) -> Unit = {}")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "onPrepareMenu(menu)")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "PopupAction(context).apply")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "setActionItems(")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "showAsDropDown(anchor, 0, 4.dpToPx())")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "item.subMenu == null")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "item.actionView == null")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "requestsActionButton()")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "!item.isActionButton")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "showOverflowMenu()")
+        assertContains("BaseActivity.kt", baseActivity, "installMd3OverflowMenu")
+        assertContains("BaseActivity.kt", baseActivity, "onPrepareOptionsMenu(menu)")
+        assertContains("BaseActivity.kt", baseActivity, "onMenuOpened(Window.FEATURE_OPTIONS_PANEL, menu)")
+        assertContains("BaseActivity.kt", baseActivity, "onCompatOptionsItemSelected(menuItem)")
+        assertContains("BaseFragment.kt", baseFragment, "installMd3OverflowMenu")
+        assertContains("BaseFragment.kt", baseFragment, "onCompatOptionsItemSelected(menuItem)")
+    }
+
+    @Test
+    fun `popup action rows support optional leading icons for menu item migration`() {
+        val popupAction = readProjectFile("src/main/java/io/legado/app/ui/widget/PopupAction.kt")
+        val rowXml = readProjectFile("src/main/res/layout/item_popup_action.xml")
+
+        assertContains("PopupAction.kt", popupAction, "data class PopupActionItem")
+        assertContains("PopupAction.kt", popupAction, "val icon: Drawable? = null")
+        assertContains("PopupAction.kt", popupAction, "fun setActionItems(items: List<PopupActionItem>)")
+        assertContains("PopupAction.kt", popupAction, "ivIcon")
+        assertContains("PopupAction.kt", popupAction, "root.minimumHeight = 45.dpToPx()")
+        assertContains("PopupAction.kt", popupAction, "textView.minHeight = 45.dpToPx()")
+        assertFalse("PopupAction vertical rows should not keep 40dp row height", popupAction.contains("minimumHeight = 40.dpToPx()"))
+        assertFalse("PopupAction vertical text should not keep 40dp minHeight", popupAction.contains("textView.minHeight = 40.dpToPx()"))
+        // Equal-width vertical menu measured from the widest item via a real TextView (so the
+        // measurement honours the app's actual typeface and avoids CJK truncation), clamped to a
+        // sensible min/max.
+        assertContains("PopupAction.kt", popupAction, "measuredWidth")
+        assertFalse("PopupAction width must not be measured from a raw Paint (typeface drift)", popupAction.contains("Paint()"))
+        assertContains("PopupAction.kt", popupAction, "coerceIn(112.dpToPx(), 280.dpToPx())")
+        // Reserve the leading-icon column only when items actually carry icons; checkable rows
+        // render their check mark in a trailing column so unchecked rows don't get a leading gap.
+        assertContains("PopupAction.kt", popupAction, "reserveIconColumn")
+        assertContains("PopupAction.kt", popupAction, "reserveCheckColumn")
+        assertContains("PopupAction.kt", popupAction, "items.any { it.icon != null }")
+        assertContains("PopupAction.kt", popupAction, "items.any { it.checked }")
+        assertFalse("Checkable items must not promote the leading icon column",
+            popupAction.contains("items.any { it.icon != null || it.checked }"))
+        assertContains("PopupAction.kt", popupAction, "ivCheckEnd")
+        assertContains("PopupAction.kt", popupAction, "View.INVISIBLE")
+        assertContains("item_popup_action.xml", rowXml, "@+id/iv_check_end")
+        // Vertical rows are left-aligned, not centered, and no longer pin a fixed text min width
+        assertContains("PopupAction.kt", popupAction, "textView.gravity = Gravity.CENTER_VERTICAL")
+        assertFalse("PopupAction vertical rows should not center text", popupAction.contains("if (item.icon == null && !item.checked)"))
+        assertFalse("PopupAction should not keep fixed 96dp min width", popupAction.contains("textView.minWidth = 96.dpToPx()"))
+        assertFalse("PopupAction should not keep fixed 120dp min width", popupAction.contains("textView.minWidth = 120.dpToPx()"))
+        assertContains("PopupAction.kt", popupAction, "selectableItemBackgroundResId")
+        assertContains("item_popup_action.xml", rowXml, "@+id/iv_icon")
+        assertContains("item_popup_action.xml", rowXml, "?attr/selectableItemBackground")
+        assertFalse("item_popup_action.xml should not force vertical row height on horizontal popups", rowXml.contains("android:minHeight=\"48dp\""))
+        assertFalse("item_popup_action.xml should not force menu row background on horizontal popups", rowXml.contains("android:background=\"@drawable/selector_menu_item_bg\""))
+    }
+
+    @Test
+    fun `locally inflated appcompat toolbars get automatic md3 overflow bridge`() {
+        val baseActivity = readProjectFile("src/main/java/io/legado/app/base/BaseActivity.kt")
+        val bridge = readProjectFile("src/main/java/io/legado/app/utils/ToolbarOverflowMenuExtensions.kt")
+
+        assertContains("BaseActivity.kt", baseActivity, "if (view is Toolbar)")
+        assertContains("BaseActivity.kt", baseActivity, "view.installMd3OverflowMenu")
+        assertContains("BaseActivity.kt", baseActivity, "view.menu.performIdentifierAction(menuItem.itemId, 0)")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "updateMd3OverflowMenu")
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "setOnHierarchyChangeListener")
+    }
+
     private fun assertContains(name: String, text: String, expected: String) {
         assertTrue("$name should contain $expected", text.contains(expected))
     }
