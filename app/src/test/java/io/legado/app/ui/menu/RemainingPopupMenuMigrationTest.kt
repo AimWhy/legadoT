@@ -110,6 +110,10 @@ class RemainingPopupMenuMigrationTest {
         assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "requestsActionButton()")
         assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "!item.isActionButton")
         assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "showOverflowMenu()")
+        // The overflow anchor must be located in an R8-safe way: class names are obfuscated in
+        // release builds, so matching by simpleName silently disables the bridge after minify.
+        assertFalse("Overflow button must not be matched by obfuscatable class name", bridge.contains("simpleName"))
+        assertContains("ToolbarOverflowMenuExtensions.kt", bridge, "isOverflowButton")
         assertContains("BaseActivity.kt", baseActivity, "installMd3OverflowMenu")
         assertContains("BaseActivity.kt", baseActivity, "onPrepareOptionsMenu(menu)")
         assertContains("BaseActivity.kt", baseActivity, "onMenuOpened(Window.FEATURE_OPTIONS_PANEL, menu)")

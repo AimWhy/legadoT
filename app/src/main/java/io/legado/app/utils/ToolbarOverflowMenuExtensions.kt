@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.appcompat.view.menu.MenuItemImpl
+import androidx.appcompat.widget.ActionMenuView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.children
 import io.legado.app.ui.widget.PopupAction
@@ -32,7 +33,10 @@ private fun Toolbar.updateMd3OverflowMenu(
     onMenuItemClick: (MenuItem) -> Unit
 ) {
     post {
-        findOverflowAnchor()?.setOnClickListener { anchor ->
+        val overflowDesc = runCatching {
+            context.getString(androidx.appcompat.R.string.abc_action_menu_overflow_description)
+        }.getOrNull()
+        findOverflowAnchor(overflowDesc)?.setOnClickListener { anchor ->
             showMd3OverflowMenu(anchor, onPrepareMenu, onMenuItemClick)
         }
     }
@@ -98,13 +102,26 @@ private fun Menu.visibleOverflowItems(): List<MenuItem> {
     return result
 }
 
-private fun View.findOverflowAnchor(): View? {
-    if (this is ImageView && javaClass.simpleName.contains("Overflow", ignoreCase = true)) {
-        return this
+/**
+ * 在 Toolbar 视图树里找系统溢出按钮。
+ * R8 会混淆类名,所以不能按 class 名匹配,而是用框架自带的、混淆安全的标记:
+ * ActionMenuView 给溢出按钮打的 [ActionMenuView.LayoutParams.isOverflowButton],
+ * 再用溢出按钮的 contentDescription 兜底。
+ */
+@SuppressLint("RestrictedApi")
+private fun View.findOverflowAnchor(overflowDesc: String?): View? {
+    if (this is ImageView) {
+        val lp = layoutParams
+        if (lp is ActionMenuView.LayoutParams && lp.isOverflowButton) {
+            return this
+        }
+        if (overflowDesc != null && contentDescription == overflowDesc) {
+            return this
+        }
     }
     if (this is ViewGroup) {
         children.forEach { child ->
-            child.findOverflowAnchor()?.let { return it }
+            child.findOverflowAnchor(overflowDesc)?.let { return it }
         }
     }
     return null
