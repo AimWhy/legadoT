@@ -12,6 +12,8 @@ import android.view.animation.Interpolator
 import android.widget.OverScroller
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.view.ViewCompat
+import io.legado.app.lib.theme.accentColor
+import io.legado.app.utils.ColorUtils
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -80,6 +82,7 @@ class ScrollTextView(context: Context, attrs: AttributeSet?) :
         mTouchSlop = vc.scaledTouchSlop
         mMinFlingVelocity = vc.scaledMinimumFlingVelocity
         mMaxFlingVelocity = vc.scaledMaximumFlingVelocity
+        highlightColor = ColorUtils.adjustAlpha(context.accentColor, 0.35f)
         movementMethod = LinkMovementMethod.getInstance()
     }
 

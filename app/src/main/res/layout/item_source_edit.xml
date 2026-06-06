@@ -3,13 +3,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/textInputLayout"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:paddingTop="3dp">
+    android:layout_height="wrap_content">
 
     <io.legado.app.ui.widget.code.CodeView
         android:id="@+id/editText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:paddingHorizontal="@dimen/space_m"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:inputType="textMultiLine"
         tools:ignore="SpeakableTextPresentCheck,TouchTargetSizeCheck" />
 
