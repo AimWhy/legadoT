@@ -22,6 +22,11 @@ import kotlin.coroutines.CoroutineContext
 
 abstract class BaseService : LifecycleService() {
 
+    companion object {
+        /** 当前进程生命周期内是否已展示过权限理由弹窗 */
+        private var permissionRationaleShown = false
+    }
+
     private val simpleName = this::class.simpleName.toString()
     private var isForeground = false
 
@@ -89,12 +94,19 @@ abstract class BaseService : LifecycleService() {
     }
 
     /**
-     * 检测通知权限和后台权限
+     * 检测通知权限和后台权限。
+     * 理由弹窗仅展示一次，避免每次服务重启都打扰用户。
      */
     private fun checkPermission() {
+        val showRationale = !permissionRationaleShown
+        permissionRationaleShown = true
         PermissionsCompat.Builder()
             .addPermissions(Permissions.POST_NOTIFICATIONS)
-            .rationale(R.string.notification_permission_rationale)
+            .apply {
+                if (showRationale) {
+                    rationale(R.string.notification_permission_rationale)
+                }
+            }
             .onGranted {
                 if (lifecycleScope.isActive && !isForeground) {
                     if (tryStartForegroundNotification()) {
@@ -106,7 +118,11 @@ abstract class BaseService : LifecycleService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             PermissionsCompat.Builder()
                 .addPermissions(Permissions.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
-                .rationale(R.string.ignore_battery_permission_rationale)
+                .apply {
+                    if (showRationale) {
+                        rationale(R.string.ignore_battery_permission_rationale)
+                    }
+                }
                 .request()
         }
     }
