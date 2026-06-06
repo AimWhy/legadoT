@@ -195,4 +195,5 @@ object PreferKey {
     const val contentSelectSpeakMod = "contentReadAloudMod"
 
     const val highlightLastStyle = "highlightLastStyle"
+    const val highlightRulesInited = "highlightRulesInited"
 }

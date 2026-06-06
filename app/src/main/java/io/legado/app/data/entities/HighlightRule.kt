@@ -80,4 +80,32 @@ data class HighlightRule(
             throw io.legado.app.exception.NoStackTraceException("规则无效: $pattern")
         }
     }
+
+    companion object {
+        /** 内置常用规则(首次启动种入, 默认关闭, 用户可在规则管理页启用) */
+        const val GROUP_BUILT_IN = "内置"
+
+        fun builtIns(): List<HighlightRule> = listOf(
+            HighlightRule(
+                name = "引号对话",
+                pattern = "[「『“].+?[」』”]",
+                isRegex = true,
+                isEnabled = false,
+                group = GROUP_BUILT_IN
+            ).apply { applyStyle(HighlightStyle(fill = 0x804FC3F7.toInt())) },     // 蓝底
+            HighlightRule(
+                name = "书名号",
+                pattern = "《[^》]+?》",
+                isRegex = true,
+                isEnabled = false,
+                group = GROUP_BUILT_IN
+            ).apply {
+                applyStyle(
+                    HighlightStyle(
+                        underline = HighlightStyle.Underline(HighlightStyle.Kind.WAVY, 0xFFE53935.toInt())
+                    )
+                )                                                                  // 红波浪
+            }
+        )
+    }
 }

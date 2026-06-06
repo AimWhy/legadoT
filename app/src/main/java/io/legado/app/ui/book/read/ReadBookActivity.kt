@@ -951,7 +951,8 @@ class ReadBookActivity : BaseReadBookActivity(),
         showDialogFragment(HighlightRuleEditDialog.create(
             pattern = h.bookText,
             scope = ReadBook.book?.name,
-            style = h.style
+            style = h.style,
+            sourceHighlightTime = h.time
         ))
     }
 

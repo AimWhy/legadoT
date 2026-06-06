@@ -40,7 +40,7 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
     private var _binding: DialogHighlightStyleBinding? = null
     private val binding get() = _binding!!
 
-    private val styleHost get() = activity as? StyleHost
+    private val styleHost get() = resolveStyleHost(parentFragment, activity)
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -189,6 +189,10 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
     }
 
     companion object {
+        fun resolveStyleHost(parent: Any?, activity: Any?): StyleHost? {
+            return (parent as? StyleHost) ?: (activity as? StyleHost)
+        }
+
         /** 把某通道(HL_*)取到的颜色写进样式; 手动/规则两处宿主共用, 避免重复 */
         fun applyChannelColor(s: HighlightStyle, dialogId: Int, color: Int): HighlightStyle = when (dialogId) {
             HL_FILL -> s.copy(fill = color)
