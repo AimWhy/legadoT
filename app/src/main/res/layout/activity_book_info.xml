@@ -408,15 +408,17 @@
                 android:textColor="@color/primaryText"
                 android:textSize="15sp" />
 
-            <com.google.android.material.button.MaterialButton
+            <io.legado.app.ui.widget.text.AccentBgTextView
                 android:id="@+id/tv_read"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:layout_marginStart="@dimen/space_m"
+                android:gravity="center"
+                android:includeFontPadding="false"
                 android:text="@string/reading"
                 android:textSize="15sp"
-                app:cornerRadius="@dimen/radius_l" />
+                app:radius="@dimen/radius_l" />
 
         </LinearLayout>
 
