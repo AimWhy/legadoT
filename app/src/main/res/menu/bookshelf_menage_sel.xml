@@ -29,4 +29,8 @@
         android:id="@+id/menu_check_selected_interval"
         android:title="@string/check_selected_interval" />
 
+    <item
+        android:id="@+id/menu_batch_auto_task_update"
+        android:title="@string/batch_auto_task_update" />
+
 </menu>
