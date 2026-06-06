@@ -19,6 +19,7 @@ import androidx.core.net.toUri
 import androidx.core.view.get
 import androidx.core.view.size
 import androidx.lifecycle.lifecycleScope
+import com.jaredrummler.android.colorpicker.ColorPickerDialog
 import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
 import io.legado.app.BuildConfig
 import io.legado.app.R
@@ -29,13 +30,18 @@ import io.legado.app.constant.EventBus
 import io.legado.app.constant.PreferKey
 import io.legado.app.constant.Status
 import io.legado.app.data.appDb
+import io.legado.app.data.entities.HighlightRule
 import io.legado.app.data.entities.BaseSource
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
+import io.legado.app.data.entities.BookHighlight
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.data.entities.BookSource
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.AppWebDav
+import io.legado.app.help.HighlightColors
+import io.legado.app.help.HighlightStyle
+import io.legado.app.help.HighlightStyles
 import io.legado.app.help.IntentData
 import io.legado.app.help.TTS
 import io.legado.app.help.book.BookHelp
@@ -84,6 +90,12 @@ import io.legado.app.ui.book.read.config.ReadAloudDialog
 import io.legado.app.ui.book.read.config.ReadStyleDialog
 import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_COLOR
 import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_DIVIDER_COLOR
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_BOX
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_EMPHASIS
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_FILL
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_STRIKE
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_TEXT
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_UNDERLINE
 import io.legado.app.ui.book.read.page.ContentTextView
 import io.legado.app.ui.book.read.page.ReadView
 import io.legado.app.ui.book.read.page.entities.PageDirection
@@ -98,6 +110,8 @@ import io.legado.app.ui.book.toc.rule.TxtTocRuleDialog
 import io.legado.app.ui.browser.WebViewActivity
 import io.legado.app.ui.dict.DictDialog
 import io.legado.app.ui.file.HandleFileContract
+import io.legado.app.ui.highlight.HighlightRuleActivity
+import io.legado.app.ui.highlight.edit.HighlightRuleEditDialog
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.replace.ReplaceRuleActivity
 import io.legado.app.ui.replace.edit.ReplaceEditActivity
@@ -125,6 +139,7 @@ import kotlin.coroutines.CoroutineContext
 import io.legado.app.utils.observeEvent
 import io.legado.app.utils.observeEventSticky
 import io.legado.app.utils.postEvent
+import io.legado.app.utils.sendToClip
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.showHelp
 import io.legado.app.utils.startActivity
@@ -163,6 +178,9 @@ class ReadBookActivity : BaseReadBookActivity(),
     AutoReadDialog.CallBack,
     TxtTocRuleDialog.CallBack,
     ColorPickerDialogListener,
+    HighlightActionMenu.CallBack,
+    HighlightRulePopup.CallBack,
+    HighlightStyleDialog.StyleHost,
     LayoutProgressListener {
 
     private val tocActivity =
@@ -555,6 +573,7 @@ class ReadBookActivity : BaseReadBookActivity(),
 
             R.id.menu_download -> showDownloadDialog()
             R.id.menu_add_bookmark -> addBookmark()
+            R.id.menu_highlight_rule -> startActivity<HighlightRuleActivity>()
             R.id.menu_simulated_reading -> showSimulatedReading()
             R.id.menu_edit_content -> showDialogFragment(ContentEditDialog())
             R.id.menu_update_toc -> ReadBook.book?.let {
@@ -883,6 +902,94 @@ class ReadBookActivity : BaseReadBookActivity(),
         )
     }
 
+    var editingHighlight: BookHighlight? = null
+        private set
+    private var highlightActionMenu: HighlightActionMenu? = null
+    private var highlightStyleDialog: HighlightStyleDialog? = null
+    var editingHighlightRule: HighlightRule? = null
+        private set
+    private var highlightRulePopup: HighlightRulePopup? = null
+
+    private fun showHighlightActionMenu(highlight: BookHighlight, x: Float, y: Float) {
+        editingHighlight = highlight
+        val menu = highlightActionMenu ?: HighlightActionMenu(this, this).also { highlightActionMenu = it }
+        menu.show(binding.root, x.toInt(), y.toInt())
+    }
+
+    override fun onHighlightClick(highlight: BookHighlight, x: Float, y: Float) {
+        showHighlightActionMenu(highlight, x, y)
+    }
+
+    override fun onHighlightRuleClick(rule: HighlightRule, x: Float, y: Float) {
+        editingHighlightRule = rule
+        val popup = highlightRulePopup ?: HighlightRulePopup(this, this).also { highlightRulePopup = it }
+        popup.show(binding.root, x.toInt(), y.toInt())
+    }
+
+    override fun onRuleEdit() {
+        editingHighlightRule?.let { showDialogFragment(HighlightRuleEditDialog.edit(it.id)) }
+    }
+
+    override fun onRuleDisable() {
+        val rule = editingHighlightRule ?: return
+        rule.isEnabled = false
+        Coroutine.async { appDb.highlightRuleDao.update(rule) }
+            .onFinally { ReadBook.upHighlightRules() }
+    }
+
+    override fun onHighlightStyle() {
+        highlightActionMenu?.dismiss()
+        if (editingHighlight == null) return
+        val dialog = HighlightStyleDialog()
+        highlightStyleDialog = dialog
+        showDialogFragment(dialog)
+    }
+
+    override fun onHighlightBatch() {
+        val h = editingHighlight ?: return
+        highlightActionMenu?.dismiss()
+        showDialogFragment(HighlightRuleEditDialog.create(
+            pattern = h.bookText,
+            scope = ReadBook.book?.name,
+            style = h.style
+        ))
+    }
+
+    override fun currentHighlightStyle(): HighlightStyle =
+        editingHighlight?.styleObj() ?: HighlightStyle()
+
+    override fun onHighlightStyleChanged(style: HighlightStyle) {
+        editingHighlight?.let { h ->
+            h.applyStyle(style)
+            ReadBook.updateHighlight(h)
+            ReadBook.saveLastHighlightStyle(style)
+        }
+    }
+
+    /** HighlightStyleDialog.StyleHost: 打开某通道取色器 */
+    override fun pickHighlightColor(dialogId: Int, initial: Int, withAlpha: Boolean) {
+        val seed = if (initial != 0) initial else HighlightColors.bg.first()
+        ColorPickerDialog.newBuilder()
+            .setColor(seed)
+            .setShowAlphaSlider(withAlpha)
+            .setDialogType(ColorPickerDialog.TYPE_PRESETS)
+            .setPresets(if (withAlpha) HighlightColors.bg else HighlightColors.text)
+            .setDialogId(dialogId)
+            .show(this)
+    }
+
+    override fun onHighlightNote() {
+        editingHighlight?.let { showDialogFragment(HighlightNoteDialog(it)) }
+    }
+
+    override fun onHighlightCopy() {
+        editingHighlight?.let { sendToClip(it.bookText) }
+    }
+
+    override fun onHighlightDelete() {
+        editingHighlight?.let { ReadBook.removeHighlight(it) }
+    }
+
     /**
      * 当前选择的文本
      */
@@ -907,6 +1014,22 @@ class ReadBookActivity : BaseReadBookActivity(),
                     toastOnUi(R.string.create_bookmark_error)
                 } else {
                     showDialogFragment(BookmarkDialog(bookmark))
+                }
+                return true
+            }
+
+            R.id.menu_highlight -> binding.readView.curPage.let {
+                val style = GSON.fromJsonObject<HighlightStyle>(
+                    getPrefString(PreferKey.highlightLastStyle)
+                ).getOrNull() ?: HighlightStyles.presets.first()
+                val anchorX = binding.textMenuPosition.x
+                val anchorY = binding.textMenuPosition.y
+                val highlight = it.createHighlight(style)
+                if (highlight == null) {
+                    toastOnUi(R.string.create_bookmark_error)
+                } else {
+                    ReadBook.addHighlight(highlight)
+                    binding.root.post { showHighlightActionMenu(highlight, anchorX, anchorY) }
                 }
                 return true
             }
@@ -1868,6 +1991,12 @@ class ReadBookActivity : BaseReadBookActivity(),
                 }
             }
 
+            HL_FILL, HL_TEXT, HL_UNDERLINE, HL_STRIKE, HL_BOX, HL_EMPHASIS -> {
+                val ns = HighlightStyleDialog.applyChannelColor(currentHighlightStyle(), dialogId, color)
+                onHighlightStyleChanged(ns)
+                highlightStyleDialog?.refresh()
+            }
+
             TIP_COLOR -> {
                 ReadTipConfig.tipColor = color
                 postEvent(EventBus.TIP_COLOR, "")
@@ -2041,6 +2170,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         tts?.clearTts()
         textActionMenu.dismiss()
         popupAction.dismiss()
+        highlightActionMenu?.dismiss()
         binding.readView.onDestroy()
         ReadBook.unregister(this)
         if (!ReadBook.inBookshelf && !isChangingConfigurations) {

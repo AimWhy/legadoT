@@ -13,9 +13,11 @@ import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
+import io.legado.app.data.entities.BookHighlight
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.Bookmark
 import io.legado.app.data.entities.DictRule
+import io.legado.app.data.entities.HighlightRule
 import io.legado.app.data.entities.HttpTTS
 import io.legado.app.data.entities.KeyboardAssist
 import io.legado.app.data.entities.ReadRecord
@@ -27,6 +29,7 @@ import io.legado.app.data.entities.SearchKeyword
 import io.legado.app.data.entities.Server
 import io.legado.app.data.entities.TxtTocRule
 import io.legado.app.help.DirectLinkUpload
+import io.legado.app.help.HighlightStyle
 import io.legado.app.help.LauncherIconHelp
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.upType
@@ -46,6 +49,7 @@ import io.legado.app.utils.getFile
 import io.legado.app.utils.compress.ZipUtils
 import io.legado.app.utils.defaultSharedPreferences
 import io.legado.app.utils.fromJsonArray
+import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.getPrefString
@@ -137,6 +141,25 @@ object Restore {
                 AppLog.put("恢复书签出错\n${it.localizedMessage}", it)
             }
         }
+        fileToListT<BookHighlight>(path, "highlight.json")?.let { highlights ->
+            kotlin.runCatching {
+                // 兼容旧备份(只有 bgColor/textColor, 无 style): 从原始 JSON 补回颜色
+                val legacy = GSON.fromJsonObject<List<Map<String, Any?>>>(
+                    String(File(path, "highlight.json").readBytes())
+                ).getOrNull()
+                highlights.forEachIndexed { i, h ->
+                    if (h.style.isEmpty()) {
+                        val raw = legacy?.getOrNull(i)
+                        val bg = (raw?.get("bgColor") as? Number)?.toInt() ?: 0
+                        val tc = (raw?.get("textColor") as? Number)?.toInt() ?: 0
+                        if (bg != 0 || tc != 0) h.applyStyle(HighlightStyle(fill = bg, textColor = tc))
+                    }
+                }
+                appDb.bookHighlightDao.insert(*highlights.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复高亮出错\n${it.localizedMessage}", it)
+            }
+        }
         fileToListT<BookGroup>(path, "bookGroup.json")?.let { groups ->
             kotlin.runCatching {
                 appDb.bookGroupDao.insert(*groups.toTypedArray())
@@ -192,6 +215,13 @@ object Restore {
                 appDb.replaceRuleDao.insert(*replaceRules.toTypedArray())
             }.onFailure {
                 AppLog.put("恢复替换规则出错\n${it.localizedMessage}", it)
+            }
+        }
+        fileToListT<HighlightRule>(path, "highlightRule.json")?.let { rules ->
+            kotlin.runCatching {
+                appDb.highlightRuleDao.insert(*rules.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复高亮规则出错\n${it.localizedMessage}", it)
             }
         }
         fileToListT<SearchKeyword>(path, "searchHistory.json")?.let { keywords ->

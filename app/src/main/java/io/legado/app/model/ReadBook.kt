@@ -3,13 +3,19 @@ package io.legado.app.model
 import io.legado.app.constant.AppLog
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.PageAnim.scrollPageAnim
+import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
+import io.legado.app.data.entities.BookHighlight
 import io.legado.app.data.entities.BookProgress
 import io.legado.app.data.entities.BookSource
+import io.legado.app.data.entities.HighlightRule
 import io.legado.app.data.entities.ReadRecord
 import io.legado.app.help.AppWebDav
+import io.legado.app.help.HighlightRuleMatcher
+import io.legado.app.help.HighlightStyle
+import io.legado.app.help.HighlightTextBuilder
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.ContentProcessor
 import io.legado.app.help.book.isImage
@@ -28,9 +34,12 @@ import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.service.CacheBookService
 import io.legado.app.ui.book.read.page.entities.TextChapter
+import io.legado.app.ui.book.read.page.entities.column.TextColumn
 import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.ui.book.read.page.provider.LayoutProgressListener
+import io.legado.app.utils.GSON
 import io.legado.app.utils.postEvent
+import io.legado.app.utils.putPrefString
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.CancellationException
@@ -61,6 +70,8 @@ import kotlin.math.min
 object ReadBook : CoroutineScope by MainScope() {
     var book: Book? = null
     var callBack: CallBack? = null
+    var highlights: List<BookHighlight> = emptyList()
+        private set
     var inBookshelf = false
     var chapterSize = 0
     var simulatedChapterSize = 0
@@ -98,6 +109,8 @@ object ReadBook : CoroutineScope by MainScope() {
     fun resetData(book: Book) {
         releaseAndCancel()
         ReadBook.book = book
+        loadHighlights(book)
+        loadHighlightRules(book)
         readRecord.bookName = book.name
         readRecord.readTime = appDb.readRecordDao.getReadTime(book.name) ?: 0
         chapterSize = appDb.bookChapterDao.getChapterCount(book.bookUrl)
@@ -126,9 +139,89 @@ object ReadBook : CoroutineScope by MainScope() {
         }
     }
 
+    fun loadHighlights(book: Book) {
+        highlights = appDb.bookHighlightDao.getByBook(book.name, book.author)
+    }
+
+    fun highlightsOfChapter(chapterIndex: Int): List<BookHighlight> {
+        return highlights.filter { it.chapterIndex == chapterIndex }
+    }
+
+    var highlightRules: List<HighlightRule> = emptyList()
+        private set
+
+    @Volatile
+    var highlightRulesVersion = 0
+        private set
+
+    fun loadHighlightRules(book: Book) {
+        highlightRules = appDb.highlightRuleDao.findEnabledByBook(book.name, book.origin)
+        highlightRulesVersion++
+    }
+
+    /** 规则集变化后: 重载本书规则 + 升版本(令各 TextChapter 缓存失效) + 重绘当前页 */
+    fun upHighlightRules() {
+        book?.let { loadHighlightRules(it) }
+        callBack?.upContent(resetPageOffset = false)
+    }
+
+    /** 本章规则命中(整章匹配, 缓存在 TextChapter 上, 随重排/规则版本失效) */
+    fun ruleMatchesOfChapter(
+        textChapter: io.legado.app.ui.book.read.page.entities.TextChapter
+    ): List<HighlightRuleMatcher.RuleMatch> {
+        if (highlightRules.isEmpty()) return emptyList()
+        if (textChapter.highlightRuleMatchesVersion == highlightRulesVersion) {
+            return textChapter.highlightRuleMatches ?: emptyList()
+        }
+        val lines = textChapter.pages.flatMap { it.lines }.map { line ->
+            HighlightTextBuilder.LineInput(
+                line.columns.map { col -> (col as? TextColumn)?.charData ?: "" },
+                line.charSize,
+                line.isParagraphEnd
+            )
+        }
+        val text = HighlightTextBuilder.build(lines)
+        val rules = highlightRules.map {
+            HighlightRuleMatcher.Rule(it.id, it.pattern, it.isRegex, it.styleObj(), it.timeoutMillisecond)
+        }
+        val matches = HighlightRuleMatcher.match(text, rules)
+        // 仅在排版完成后缓存; 未完成时每次重算, 避免把半章命中缓存住(长章节翻页后才补齐的页会漏高亮)
+        if (textChapter.isCompleted) {
+            textChapter.highlightRuleMatches = matches
+            textChapter.highlightRuleMatchesVersion = highlightRulesVersion
+        }
+        return matches
+    }
+
+    fun highlightRuleById(id: Long): HighlightRule? = highlightRules.firstOrNull { it.id == id }
+
+    fun addHighlight(highlight: BookHighlight) {
+        appDb.bookHighlightDao.insert(highlight)
+        highlights = highlights + highlight
+        callBack?.upContent(resetPageOffset = false)
+    }
+
+    fun updateHighlight(highlight: BookHighlight) {
+        appDb.bookHighlightDao.update(highlight)
+        highlights = highlights.map { if (it.time == highlight.time) highlight else it }
+        callBack?.upContent(resetPageOffset = false)
+    }
+
+    fun removeHighlight(highlight: BookHighlight) {
+        appDb.bookHighlightDao.delete(highlight)
+        highlights = highlights.filter { it.time != highlight.time }
+        callBack?.upContent(resetPageOffset = false)
+    }
+
+    fun saveLastHighlightStyle(style: HighlightStyle) {
+        appCtx.putPrefString(PreferKey.highlightLastStyle, GSON.toJson(style))
+    }
+
     fun upData(book: Book) {
         releaseAndCancel()
         ReadBook.book = book
+        loadHighlights(book)
+        loadHighlightRules(book)
         chapterSize = appDb.bookChapterDao.getChapterCount(book.bookUrl)
         simulatedChapterSize = if (book.readSimulating()) {
             book.simulatedTotalChapterNum()

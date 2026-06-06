@@ -7,7 +7,11 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
 import io.legado.app.R
+import io.legado.app.data.entities.BookHighlight
 import io.legado.app.data.entities.Bookmark
+import io.legado.app.data.entities.HighlightRule
+import io.legado.app.help.HighlightMatcher
+import io.legado.app.help.HighlightStyle
 import io.legado.app.help.config.AppConfig
 import io.legado.app.model.ReadBook
 import io.legado.app.ui.book.read.page.delegate.PageDelegate
@@ -41,6 +45,14 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
             color = context.getCompatColor(R.color.btn_bg_press_2)
             style = Paint.Style.FILL
         }
+    }
+    private val highlightFillPaint by lazy {
+        Paint().apply { style = Paint.Style.FILL }
+    }
+
+    fun highlightPaint(bgColor: Int): Paint {
+        highlightFillPaint.color = bgColor
+        return highlightFillPaint
     }
     private var callBack: CallBack
     private val visibleRect = ChapterProvider.visibleRect
@@ -77,6 +89,7 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
      */
     fun setContent(textPage: TextPage) {
         this.textPage = textPage
+        upHighlight()
         // 非滑动翻页动画需要同步重绘，不然翻页可能会出现闪烁
         if (isScroll) {
             postInvalidate()
@@ -232,7 +245,7 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
     @Suppress("UNUSED_ANONYMOUS_PARAMETER")
     fun click(x: Float, y: Float): Boolean {
         var handled = false
-        touch(x, y) { _, textPos, textPage, textLine, column ->
+        touch(x, y) { relativeOffset, textPos, textPage, textLine, column ->
             when (column) {
                 is ButtonColumn -> {
                     context.toastOnUi("Button Pressed!")
@@ -251,6 +264,23 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
                     } else if (AppConfig.previewImageByClick) {
                         activity?.showDialogFragment(PhotoDialog(column.src))
                         handled = true
+                    }
+                }
+
+                is TextColumn -> {
+                    if (column.highlightStyle != null) {
+                        val top = textLine.lineTop + relativeOffset + callBack.headerHeight
+                        val highlight = highlightAt(textPos, textPage)
+                        if (highlight != null) {
+                            callBack.onHighlightClick(highlight, column.start, top)
+                            handled = true
+                        } else {
+                            val rule = ruleMatchAt(textPos, textPage)
+                            if (rule != null) {
+                                callBack.onHighlightRuleClick(rule, column.start, top)
+                                handled = true
+                            }
+                        }
                     }
                 }
             }
@@ -608,6 +638,57 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
         callBack.onCancelSelect()
     }
 
+    /** 仅当当前 view 内已绘制过高亮时才需要在无高亮时再跑一次清除 */
+    private var hasHighlightDrawn = false
+
+    /**
+     * 应用高亮: 仿 upSelectChars, 用 HighlightMatcher 按章节位置给可见页的列设色
+     */
+    fun upHighlight() {
+        val hasRules = ReadBook.highlightRules.isNotEmpty()
+        if (ReadBook.highlights.isEmpty() && !hasRules && !hasHighlightDrawn) return
+        hasHighlightDrawn = ReadBook.highlights.isNotEmpty() || hasRules
+        // 用本视图自身的 isScroll, 不可用 callBack.isScroll:
+        // setContent 会在 ReadView.<init> 期间被调到这里, 此刻 Activity 的 binding 仍在惰性初始化,
+        // 访问 callBack.isScroll(读 binding)会重入 binding 触发无限递归(崩溃: 二次打开有高亮的书)。
+        val last = if (isScroll) 2 else 0
+        for (relativePos in 0..last) {
+            val page = relativePage(relativePos)
+            if (page.lines.isEmpty() || page.isMsgPage) continue
+            val textChapter = page.getTextChapter()
+            val pageBase = textChapter.getReadLength(page.index)
+            val pageLen = page.lines.sumOf { it.charSize + if (it.isParagraphEnd) 1 else 0 }
+            val pageEnd = pageBase + pageLen
+            // 规则命中: 整章匹配(按 textChapter 缓存) → 只取落在本页坐标窗口者(高频词也不拖慢)
+            val ruleRanges = ReadBook.ruleMatchesOfChapter(textChapter)
+                .asSequence()
+                .filter { it.start < pageEnd && it.end > pageBase }
+                .map { HighlightMatcher.Range(it.start, it.end, it.style) }
+                .toList()
+            // 手动高亮排在规则之后 → resolve 按列表序逐通道 merge, 手动压过规则
+            val manualRanges = ReadBook.highlightsOfChapter(page.chapterIndex).map {
+                HighlightMatcher.Range(it.chapterPos, it.chapterPosEnd, it.styleObj())
+            }
+            val ranges = ruleRanges + manualRanges
+            val lineSpecs = page.lines.map { line ->
+                HighlightMatcher.LineSpec(
+                    line.charSize,
+                    line.columns.map { if (it is TextColumn) it.charData.length else 0 },
+                    line.isParagraphEnd
+                )
+            }
+            val colors = HighlightMatcher.resolve(pageBase, lineSpecs, ranges)
+            page.lines.forEachIndexed { li, line ->
+                line.columns.forEachIndexed { ci, col ->
+                    if (col is TextColumn) {
+                        col.highlightStyle = colors[li][ci]
+                    }
+                }
+            }
+        }
+        postInvalidate()
+    }
+
     fun getSelectedText(): String {
         val textPos = TextPos(0, 0, 0)
         val builder = StringBuilder()
@@ -665,6 +746,45 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
             }
         }
         return null
+    }
+
+    fun createHighlight(style: HighlightStyle): BookHighlight? {
+        val book = ReadBook.book ?: return null
+        val startPage = relativePage(selectStart.relativePagePos)
+        val chapter = startPage.getTextChapter()
+        val endPage = relativePage(selectEnd.relativePagePos)
+        val endColumn = endPage.getLine(selectEnd.lineIndex).getColumn(selectEnd.columnIndex)
+        val endLen = (endColumn as? TextColumn)?.charData?.length ?: 0
+        val startPos = chapter.getReadLength(startPage.index) +
+                startPage.getPosByLineColumn(selectStart.lineIndex, selectStart.columnIndex)
+        val endPos = chapter.getReadLength(endPage.index) +
+                endPage.getPosByLineColumn(selectEnd.lineIndex, selectEnd.columnIndex) + endLen
+        return BookHighlight(
+            bookName = book.name,
+            bookAuthor = book.author,
+            chapterIndex = startPage.chapterIndex,
+            chapterPos = startPos,
+            chapterPosEnd = endPos,
+            chapterName = chapter.title,
+            bookText = getSelectedText()
+        ).apply { applyStyle(style) }
+    }
+
+    private fun highlightAt(textPos: TextPos, page: TextPage): BookHighlight? {
+        val chapter = page.getTextChapter()
+        val pos = chapter.getReadLength(page.index) +
+                page.getPosByLineColumn(textPos.lineIndex, textPos.columnIndex)
+        return ReadBook.highlightsOfChapter(page.chapterIndex)
+            .firstOrNull { pos >= it.chapterPos && pos < it.chapterPosEnd }
+    }
+
+    private fun ruleMatchAt(textPos: TextPos, page: TextPage): HighlightRule? {
+        val chapter = page.getTextChapter()
+        val pos = chapter.getReadLength(page.index) +
+                page.getPosByLineColumn(textPos.lineIndex, textPos.columnIndex)
+        val match = ReadBook.ruleMatchesOfChapter(chapter)
+            .lastOrNull { pos >= it.start && pos < it.end } ?: return null // 重叠取最后命中
+        return ReadBook.highlightRuleById(match.ruleId)
     }
 
     private fun relativeOffset(relativePos: Int): Float {
@@ -731,6 +851,8 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
         fun onImageClick(src: String): Boolean
         fun onReviewClick(paragraphNum: Int, count: Int)
         fun onCancelSelect()
+        fun onHighlightClick(highlight: BookHighlight, x: Float, y: Float)
+        fun onHighlightRuleClick(rule: HighlightRule, x: Float, y: Float)
         fun onLongScreenshotTouchEvent(event: MotionEvent): Boolean
     }
 
