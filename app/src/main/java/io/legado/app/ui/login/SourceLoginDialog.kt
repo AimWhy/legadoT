@@ -215,7 +215,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     /** 给 flexbox 中的整行输入项加底部间距，避免相邻输入框挤在一起 */
     private fun View.spaceBelow() {
         (layoutParams as? com.google.android.flexbox.FlexboxLayout.LayoutParams)?.let {
-            it.bottomMargin = 12.dpToPx()
+            it.bottomMargin = 4.dpToPx()
             layoutParams = it
         }
     }
