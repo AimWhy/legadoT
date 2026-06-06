@@ -20,6 +20,7 @@ object DatabaseMigrations {
             migration_31_32, migration_32_33, migration_33_34, migration_34_35,
             migration_35_36, migration_36_37, migration_37_38, migration_38_39,
             migration_39_40, migration_40_41, migration_41_42, migration_42_43,
+            migration_79_80, migration_80_81,
         )
     }
 
@@ -321,6 +322,32 @@ object DatabaseMigrations {
     private val migration_42_43 = object : Migration(42, 43) {
         override fun migrate(db: SupportSQLiteDatabase) {
             db.execSQL("ALTER TABLE `chapters` ADD `isVolume` INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
+    private val migration_79_80 = object : Migration(79, 80) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """CREATE TABLE IF NOT EXISTS `highlights_new` (`time` INTEGER NOT NULL,
+                    `bookName` TEXT NOT NULL, `bookAuthor` TEXT NOT NULL, `chapterIndex` INTEGER NOT NULL,
+                    `chapterPos` INTEGER NOT NULL, `chapterPosEnd` INTEGER NOT NULL, `chapterName` TEXT NOT NULL,
+                    `bookText` TEXT NOT NULL, `style` TEXT NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`time`))"""
+            )
+            db.execSQL(
+                """INSERT INTO `highlights_new`
+                    SELECT `time`, `bookName`, `bookAuthor`, `chapterIndex`, `chapterPos`, `chapterPosEnd`,
+                    `chapterName`, `bookText`, '{"fill":' || `bgColor` || ',"textColor":' || `textColor` || '}', `note`
+                    FROM `highlights`"""
+            )
+            db.execSQL("DROP TABLE `highlights`")
+            db.execSQL("ALTER TABLE `highlights_new` RENAME TO `highlights`")
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_highlights_bookName_bookAuthor` ON `highlights` (`bookName`, `bookAuthor`)")
+        }
+    }
+
+    private val migration_80_81 = object : Migration(80, 81) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS `highlightRules` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `pattern` TEXT NOT NULL, `isRegex` INTEGER NOT NULL, `scope` TEXT, `isEnabled` INTEGER NOT NULL, `style` TEXT NOT NULL, `sortOrder` INTEGER NOT NULL, `timeoutMillisecond` INTEGER NOT NULL, `group` TEXT)")
         }
     }
 

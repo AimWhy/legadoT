@@ -10,10 +10,10 @@ import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
 import io.legado.app.constant.AppLog
 import io.legado.app.data.appDb
-import io.legado.app.data.entities.Bookmark
+import io.legado.app.data.entities.BookHighlight
 import io.legado.app.databinding.FragmentBookmarkBinding
 import io.legado.app.lib.theme.primaryColor
-import io.legado.app.ui.book.bookmark.BookmarkDialog
+import io.legado.app.ui.book.read.HighlightNoteDialog
 import io.legado.app.ui.widget.recycler.UpLinearLayoutManager
 import io.legado.app.ui.widget.recycler.VerticalDivider
 import io.legado.app.utils.applyNavigationBarPadding
@@ -27,22 +27,21 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-
-class BookmarkFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_bookmark),
-    BookmarkAdapter.Callback,
-    TocViewModel.BookmarkCallBack {
+class HighlightFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_bookmark),
+    HighlightAdapter.Callback,
+    TocViewModel.HighlightCallBack {
     override val viewModel by activityViewModels<TocViewModel>()
     private val binding by viewBinding(FragmentBookmarkBinding::bind)
     private var mLayoutManager: UpLinearLayoutManager? = null
-    private val adapter by lazy { BookmarkAdapter(requireContext(), this) }
+    private val adapter by lazy { HighlightAdapter(requireContext(), this) }
     private var durChapterIndex = 0
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        viewModel.bookMarkCallBack = this
+        viewModel.highlightCallBack = this
         initRecyclerView()
         viewModel.bookData.observe(this) {
             durChapterIndex = it.durChapterIndex
-            upBookmark(null)
+            upHighlight(null)
         }
     }
 
@@ -55,20 +54,20 @@ class BookmarkFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_bookmark
         binding.recyclerView.applyNavigationBarPadding()
     }
 
-    override fun upBookmark(searchKey: String?) {
+    override fun upHighlight(searchKey: String?) {
         val book = viewModel.bookData.value ?: return
         lifecycleScope.launch {
             when {
-                searchKey.isNullOrBlank() -> appDb.bookmarkDao.flowByBook(book.name, book.author)
-                else -> appDb.bookmarkDao.flowSearch(book.name, book.author, searchKey)
+                searchKey.isNullOrBlank() -> appDb.bookHighlightDao.flowByBook(book.name, book.author)
+                else -> appDb.bookHighlightDao.flowSearch(book.name, book.author, searchKey)
             }.catch {
-                AppLog.put("目录界面获取书签数据失败\n${it.localizedMessage}", it)
+                AppLog.put("目录界面获取高亮数据失败\n${it.localizedMessage}", it)
             }.flowOn(IO).collect {
                 adapter.setItems(it)
                 var scrollPos = 0
                 withContext(Dispatchers.Default) {
-                    adapter.getItems().forEachIndexed { index, bookmark ->
-                        if (bookmark.chapterIndex >= durChapterIndex) {
+                    adapter.getItems().forEachIndexed { index, highlight ->
+                        if (highlight.chapterIndex >= durChapterIndex) {
                             return@withContext
                         }
                         scrollPos = index
@@ -79,19 +78,18 @@ class BookmarkFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_bookmark
         }
     }
 
-
-    override fun onClick(bookmark: Bookmark) {
+    override fun onClick(highlight: BookHighlight) {
         activity?.run {
             setResult(Activity.RESULT_OK, Intent().apply {
-                putExtra("index", bookmark.chapterIndex)
-                putExtra("chapterPos", bookmark.chapterPos)
+                putExtra("index", highlight.chapterIndex)
+                putExtra("chapterPos", highlight.chapterPos)
             })
             finish()
         }
     }
 
-    override fun onLongClick(bookmark: Bookmark, pos: Int) {
-        showDialogFragment(BookmarkDialog(bookmark, pos))
+    override fun onLongClick(highlight: BookHighlight, pos: Int) {
+        showDialogFragment(HighlightNoteDialog(highlight))
     }
 
 }

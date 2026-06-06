@@ -27,6 +27,7 @@ class TocViewModel(application: Application) : BaseViewModel(application) {
     var bookData = MutableLiveData<Book>()
     var chapterListCallBack: ChapterListCallBack? = null
     var bookMarkCallBack: BookmarkCallBack? = null
+    var highlightCallBack: HighlightCallBack? = null
     var searchKey: String? = null
 
     fun initBook(bookUrl: String) {
@@ -90,6 +91,10 @@ class TocViewModel(application: Application) : BaseViewModel(application) {
         bookMarkCallBack?.upBookmark(newText)
     }
 
+    fun startHighlightSearch(newText: String?) {
+        highlightCallBack?.upHighlight(newText)
+    }
+
     fun upChapterListAdapter() {
         chapterListCallBack?.upAdapter()
     }
@@ -146,5 +151,9 @@ class TocViewModel(application: Application) : BaseViewModel(application) {
 
     interface BookmarkCallBack {
         fun upBookmark(searchKey: String?)
+    }
+
+    interface HighlightCallBack {
+        fun upHighlight(searchKey: String?)
     }
 }

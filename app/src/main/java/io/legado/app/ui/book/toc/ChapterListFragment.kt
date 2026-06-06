@@ -44,7 +44,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
     TocViewModel.ChapterListCallBack {
     override val viewModel by activityViewModels<TocViewModel>()
     private val binding by viewBinding(FragmentChapterListBinding::bind)
-    private val mLayoutManager by lazy { UpLinearLayoutManager(requireContext()) }
+    private var mLayoutManager: UpLinearLayoutManager? = null
     private val adapter by lazy { ChapterListAdapter(requireContext(), this) }
     private var durChapterIndex = 0
     private var audioCacheStateReady = false
@@ -76,6 +76,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
     }
 
     private fun initRecyclerView() {
+        mLayoutManager = UpLinearLayoutManager(requireContext())
         binding.recyclerView.layoutManager = mLayoutManager
         binding.recyclerView.addItemDecoration(VerticalDivider(requireContext()))
         binding.recyclerView.adapter = adapter
@@ -83,15 +84,15 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
 
     private fun initView() = binding.run {
         ivChapterTop.setOnClickListener {
-            mLayoutManager.scrollToPositionWithOffset(0, 0)
+            mLayoutManager?.scrollToPositionWithOffset(0, 0)
         }
         ivChapterBottom.setOnClickListener {
             if (adapter.itemCount > 0) {
-                mLayoutManager.scrollToPositionWithOffset(adapter.itemCount - 1, 0)
+                mLayoutManager?.scrollToPositionWithOffset(adapter.itemCount - 1, 0)
             }
         }
         tvCurrentChapterInfo.setOnClickListener {
-            mLayoutManager.scrollToPositionWithOffset(durChapterIndex, 0)
+            mLayoutManager?.scrollToPositionWithOffset(durChapterIndex, 0)
         }
         binding.llChapterBaseInfo.applyNavigationBarPadding()
     }
@@ -218,15 +219,15 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
                     scrollPos = index
                 }
             }
-            mLayoutManager.scrollToPositionWithOffset(scrollPos, 0)
+            mLayoutManager?.scrollToPositionWithOffset(scrollPos, 0)
             adapter.upDisplayTitles(scrollPos)
         }
     }
 
     override fun onVolumeToggled(volumeIndex: Int) {
-        val pos = mLayoutManager.findFirstVisibleItemPosition()
+        val pos = mLayoutManager?.findFirstVisibleItemPosition()
         pendingScrollAnchor = pos
-        pendingScrollItemIndex = adapter.getItems().getOrNull(pos)?.index
+        pendingScrollItemIndex = pos?.let { adapter.getItems().getOrNull(it)?.index }
     }
 
     override fun onItemsUpdated() {
@@ -237,7 +238,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
         binding.recyclerView.post {
             val newPos = adapter.getItems().indexOfFirst { it.index == anchorItemIdx }
             if (newPos >= 0) {
-                mLayoutManager.scrollToPositionWithOffset(newPos, 0)
+                mLayoutManager?.scrollToPositionWithOffset(newPos, 0)
             }
             adapter.upDisplayTitles(newPos.coerceAtLeast(0))
         }
@@ -245,7 +246,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
 
     override fun clearDisplayTitle() {
         adapter.clearDisplayTitle()
-        adapter.upDisplayTitles(mLayoutManager.findFirstVisibleItemPosition())
+        adapter.upDisplayTitles(mLayoutManager?.findFirstVisibleItemPosition() ?: 0)
     }
 
     override fun upAdapter() {

@@ -34,6 +34,10 @@ data class TextChapter(
     private val textPages = arrayListOf<TextPage>()
     val pages: List<TextPage> get() = textPages
 
+    /** 关键词/正则高亮命中缓存; 随重排(新实例)与规则版本(ReadBook.highlightRulesVersion)失效 */
+    var highlightRuleMatches: List<io.legado.app.help.HighlightRuleMatcher.RuleMatch>? = null
+    var highlightRuleMatchesVersion: Int = -1
+
     private var layout: TextChapterLayout? = null
 
     val layoutChannel get() = layout!!.channel
