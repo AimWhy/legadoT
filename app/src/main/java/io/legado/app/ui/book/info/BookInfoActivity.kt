@@ -756,7 +756,7 @@ class BookInfoActivity :
                 val notifyEnabled = dialogBinding.switchNotify.isChecked
                 val cacheEnabled = dialogBinding.switchCache.isChecked
                 val cron = "0 */$hours * * *"
-                val script = buildBookUpdateScript(
+                val script = AutoTask.buildBookUpdateScript(
                     bookUrl = book.bookUrl,
                     notifyEnabled = notifyEnabled,
                     cacheEnabled = cacheEnabled
@@ -812,31 +812,6 @@ class BookInfoActivity :
             cacheEnabled = cacheEnabled,
             intervalHours = interval
         )
-    }
-
-    private fun buildBookUpdateScript(
-        bookUrl: String,
-        notifyEnabled: Boolean,
-        cacheEnabled: Boolean
-    ): String {
-        val notify = linkedMapOf<String, Any?>(
-            "enable" to notifyEnabled,
-            "minCount" to 1
-        )
-        val cache = linkedMapOf<String, Any?>(
-            "enable" to cacheEnabled
-        )
-        val action = linkedMapOf<String, Any?>(
-            "type" to "refreshToc",
-            "bookUrl" to bookUrl,
-            "notify" to notify,
-            "cache" to cache
-        )
-        val root = linkedMapOf<String, Any?>(
-            "actions" to listOf(action)
-        )
-        val json = GSON.toJson(root)
-        return "var __autoTask = $json;\n__autoTask"
     }
 
     private fun extractTaskJson(script: String?): String? {

@@ -23,6 +23,31 @@ object AutoTask {
         return BOOK_TASK_PREFIX + io.legado.app.utils.MD5Utils.md5Encode16(bookUrl)
     }
 
+    fun buildBookUpdateScript(
+        bookUrl: String,
+        notifyEnabled: Boolean = true,
+        cacheEnabled: Boolean = false
+    ): String {
+        val notify = linkedMapOf<String, Any?>(
+            "enable" to notifyEnabled,
+            "minCount" to 1
+        )
+        val cache = linkedMapOf<String, Any?>(
+            "enable" to cacheEnabled
+        )
+        val action = linkedMapOf<String, Any?>(
+            "type" to "refreshToc",
+            "bookUrl" to bookUrl,
+            "notify" to notify,
+            "cache" to cache
+        )
+        val root = linkedMapOf<String, Any?>(
+            "actions" to listOf(action)
+        )
+        val json = io.legado.app.utils.GSON.toJson(root)
+        return "var __autoTask = $json;\n__autoTask"
+    }
+
     fun normalizeScript(script: String): String {
         val trimmed = script.trim()
         return when {

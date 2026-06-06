@@ -20,6 +20,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
 import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityArrangeBookBinding
+import io.legado.app.databinding.DialogBookAutoTaskBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.DirectLinkUpload
 import io.legado.app.help.book.contains
@@ -27,6 +28,8 @@ import io.legado.app.help.book.isLocal
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.model.AutoTask
+import io.legado.app.model.AutoTaskRule
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.book.group.GroupManageDialog
@@ -45,6 +48,7 @@ import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
+import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
@@ -309,8 +313,62 @@ class BookshelfManageActivity :
             R.id.menu_change_source -> showDialogFragment<SourcePickerDialog>()
             R.id.menu_clear_cache -> viewModel.clearCache(adapter.selection)
             R.id.menu_check_selected_interval -> adapter.checkSelectedInterval()
+            R.id.menu_batch_auto_task_update -> showBatchAutoTaskDialog()
         }
         return false
+    }
+
+    private fun showBatchAutoTaskDialog() {
+        val selectedBooks = adapter.selection.filter { !it.isLocal }
+        if (selectedBooks.isEmpty()) {
+            toastOnUi(R.string.no_book_can_auto_update)
+            return
+        }
+        val dialogBinding = DialogBookAutoTaskBinding.inflate(layoutInflater)
+        val defaultHours = LocalConfig.bookAutoTaskIntervalHours.let {
+            if (it > 0) it else 1
+        }
+        dialogBinding.switchEnable.isChecked = true
+        dialogBinding.switchNotify.isChecked = true
+        dialogBinding.switchCache.isChecked = false
+        dialogBinding.editInterval.setText(defaultHours.toString())
+        alert(getString(R.string.batch_auto_task_update_dialog_title, selectedBooks.size)) {
+            customView { dialogBinding.root }
+            okButton {
+                val enabled = dialogBinding.switchEnable.isChecked
+                val hours = dialogBinding.editInterval.text?.toString()?.trim()?.toIntOrNull()
+                    ?.coerceAtLeast(1) ?: defaultHours
+                val notifyEnabled = dialogBinding.switchNotify.isChecked
+                val cacheEnabled = dialogBinding.switchCache.isChecked
+                val cron = "0 */$hours * * *"
+                lifecycleScope.launch {
+                    selectedBooks.forEach { book ->
+                        val taskId = AutoTask.bookTaskId(book.bookUrl)
+                        val displayName = book.name.ifBlank { book.bookUrl }
+                        val script = AutoTask.buildBookUpdateScript(
+                            bookUrl = book.bookUrl,
+                            notifyEnabled = notifyEnabled,
+                            cacheEnabled = cacheEnabled
+                        )
+                        val updated = AutoTaskRule(id = taskId).copy(
+                            id = taskId,
+                            name = getString(R.string.auto_task_book_update_name, displayName),
+                            enable = enabled,
+                            cron = cron,
+                            script = script
+                        )
+                        AutoTask.upsert(updated)
+                    }
+                    LocalConfig.bookAutoTaskIntervalHours = hours
+                    if (enabled) {
+                        toastOnUi(R.string.auto_task_book_update_saved)
+                    } else {
+                        toastOnUi(R.string.auto_task_book_update_deleted)
+                    }
+                }
+            }
+            cancelButton()
+        }
     }
 
     private fun upMenu() {
