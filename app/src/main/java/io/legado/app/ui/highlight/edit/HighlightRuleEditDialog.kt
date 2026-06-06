@@ -9,6 +9,7 @@ import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.data.appDb
+import io.legado.app.data.entities.BookHighlight
 import io.legado.app.data.entities.HighlightRule
 import io.legado.app.databinding.DialogHighlightRuleEditBinding
 import io.legado.app.help.HighlightColors
@@ -33,24 +34,77 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
     ColorPickerDialogListener {
 
     companion object {
-        /** 新建规则(预填 pattern/isRegex/scope/style) */
+        private const val COLOR_PICKER_TAG = "highlight-rule-color-picker"
+
+        /**
+         * 新建规则(预填 pattern/isRegex/scope/style)。
+         * [sourceHighlightTime] > 0 表示由「批量」从某手动划线发起,保存成功后删除该划线(转化为规则);
+         * 0 表示规则管理页直接新增,不影响任何划线。
+         */
         fun create(
             pattern: String,
             isRegex: Boolean = false,
             scope: String? = null,
-            style: String? = null
+            style: String? = null,
+            sourceHighlightTime: Long = 0L
         ): HighlightRuleEditDialog = HighlightRuleEditDialog().apply {
             arguments = Bundle().apply {
                 putString("pattern", pattern)
                 putBoolean("isRegex", isRegex)
                 putString("scope", scope)
                 putString("style", style)
+                putLong("sourceHighlightTime", sourceHighlightTime)
             }
         }
 
         /** 编辑已有规则 */
         fun edit(id: Long): HighlightRuleEditDialog = HighlightRuleEditDialog().apply {
             arguments = Bundle().apply { putLong("id", id) }
+        }
+
+        /** 「批量」保存成功后应删除的来源划线; sourceTime<=0(规则管理页新增)时返回 null */
+        fun highlightToRemove(highlights: List<BookHighlight>, sourceTime: Long): BookHighlight? =
+            if (sourceTime > 0) highlights.firstOrNull { it.time == sourceTime } else null
+
+        data class ColorPickerConfig(
+            val dialogId: Int,
+            val color: Int,
+            val withAlpha: Boolean,
+            val presets: IntArray
+        )
+
+        fun colorPickerConfig(dialogId: Int, initial: Int, withAlpha: Boolean): ColorPickerConfig {
+            val seed = if (initial != 0) initial else HighlightColors.bg.first()
+            return ColorPickerConfig(
+                dialogId = dialogId,
+                color = seed,
+                withAlpha = withAlpha,
+                presets = if (withAlpha) HighlightColors.bg else HighlightColors.text
+            )
+        }
+
+        fun bindColorPickerListener(
+            dialog: ColorPickerDialog,
+            listener: ColorPickerDialogListener
+        ): ColorPickerDialog = dialog.also { it.setColorPickerDialogListener(listener) }
+
+        fun createColorPickerDialog(
+            dialogId: Int,
+            initial: Int,
+            withAlpha: Boolean,
+            listener: ColorPickerDialogListener
+        ): ColorPickerDialog {
+            val config = colorPickerConfig(dialogId, initial, withAlpha)
+            return bindColorPickerListener(
+                ColorPickerDialog.newBuilder()
+                    .setColor(config.color)
+                    .setShowAlphaSlider(config.withAlpha)
+                    .setDialogType(ColorPickerDialog.TYPE_PRESETS)
+                    .setPresets(config.presets)
+                    .setDialogId(config.dialogId)
+                    .create(),
+                listener
+            )
         }
     }
 
@@ -73,6 +127,9 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
         }
         binding.tvCancel.setOnClickListener { dismiss() }
         binding.tvOk.setOnClickListener { save() }
+        childFragmentManager.findFragmentByTag(COLOR_PICKER_TAG)
+            ?.let { it as? ColorPickerDialog }
+            ?.setColorPickerDialogListener(this)
 
         val id = arguments?.getLong("id", -1) ?: -1
         if (id > 0) {
@@ -141,6 +198,9 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
                 appDb.highlightRuleDao.insert(r)
             }
             ReadBook.upHighlightRules()
+            // 「批量」转化: 规则已接管该处文字, 删除发起的那条手动划线, 避免同段文字双份高亮
+            val srcTime = arguments?.getLong("sourceHighlightTime", 0L) ?: 0L
+            highlightToRemove(ReadBook.highlights, srcTime)?.let { ReadBook.removeHighlight(it) }
             dismiss()
         }
     }
@@ -159,14 +219,12 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
     }
 
     override fun pickHighlightColor(dialogId: Int, initial: Int, withAlpha: Boolean) {
-        val seed = if (initial != 0) initial else HighlightColors.bg.first()
-        ColorPickerDialog.newBuilder()
-            .setColor(seed)
-            .setShowAlphaSlider(withAlpha)
-            .setDialogType(ColorPickerDialog.TYPE_PRESETS)
-            .setPresets(if (withAlpha) HighlightColors.bg else HighlightColors.text)
-            .setDialogId(dialogId)
-            .show(requireActivity())
+        createColorPickerDialog(
+            dialogId = dialogId,
+            initial = initial,
+            withAlpha = withAlpha,
+            listener = this@HighlightRuleEditDialog
+        ).show(childFragmentManager, COLOR_PICKER_TAG)
     }
 
     // --- ColorPickerDialogListener ---

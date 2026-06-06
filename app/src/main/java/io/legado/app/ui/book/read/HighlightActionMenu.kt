@@ -9,7 +9,7 @@ import android.widget.PopupWindow
 import io.legado.app.databinding.PopupHighlightActionBinding
 
 /**
- * 点击已有高亮时弹出的操作菜单: 样式 / 笔记 / 批量 / 复制 / 删除
+ * 点击已有高亮时弹出的操作菜单: 样式 / 笔记 / 规则 / 复制 / 删除
  */
 class HighlightActionMenu(context: Context, private val callBack: CallBack) :
     PopupWindow(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT) {

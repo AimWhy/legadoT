@@ -59,6 +59,9 @@ import io.legado.app.data.entities.SearchKeyword
 import io.legado.app.data.entities.Server
 import io.legado.app.data.entities.TxtTocRule
 import io.legado.app.help.DefaultData
+import io.legado.app.constant.PreferKey
+import io.legado.app.utils.getPrefBoolean
+import io.legado.app.utils.putPrefBoolean
 import org.intellij.lang.annotations.Language
 import splitties.init.appCtx
 import java.util.Locale
@@ -249,6 +252,32 @@ abstract class AppDatabase : RoomDatabase() {
                             )
                         }
                     }
+                }
+                // 内置高亮规则: 仅首次种入(pref 标记), 用户删除后不复活; 默认关闭
+                if (!appCtx.getPrefBoolean(PreferKey.highlightRulesInited)) {
+                    // 列名 group 是 SQLite 保留字, 须反引号转义; 故手写 SQL 而非 db.insert(ContentValues)
+                    @Language("sql")
+                    val insertHighlightRuleSql =
+                        "INSERT INTO `highlightRules` " +
+                            "(`name`,`pattern`,`isRegex`,`scope`,`isEnabled`,`style`,`sortOrder`,`timeoutMillisecond`,`group`) " +
+                            "VALUES (?,?,?,?,?,?,?,?,?)"
+                    HighlightRule.builtIns().forEachIndexed { i, rule ->
+                        db.execSQL(
+                            insertHighlightRuleSql,
+                            arrayOf<Any?>(
+                                rule.name,
+                                rule.pattern,
+                                if (rule.isRegex) 1 else 0,
+                                rule.scope,
+                                if (rule.isEnabled) 1 else 0,
+                                rule.style,
+                                -(i + 1),                 // 负数: 内置排在用户规则之前
+                                rule.timeoutMillisecond,
+                                rule.group
+                            )
+                        )
+                    }
+                    appCtx.putPrefBoolean(PreferKey.highlightRulesInited, true)
                 }
             }
         }

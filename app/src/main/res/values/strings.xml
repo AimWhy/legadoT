@@ -417,7 +417,7 @@ Placeholders:
     <string name="highlight_rule_edit_title">编辑高亮规则</string>
     <string name="highlight_rule_pattern">关键词 / 正则</string>
     <string name="highlight_rule_scope_hint">作用范围(书名/书源,留空=全部)</string>
-    <string name="highlight_batch">批量</string>
+    <string name="highlight_batch">规则</string>
     <string name="highlight_rule_disable">停用规则</string>
     <string name="action_del">Delete</string>
     <string name="load_over_time">Loading timeout</string>
