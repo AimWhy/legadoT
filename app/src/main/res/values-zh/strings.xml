@@ -214,7 +214,7 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="cache_book_complete_content">成功 %1$d 章，失败 %2$d 章</string>
     <string name="change_origin">换源</string>
     <string name="about_description">
-        \u3000\u3000这是一款使用 Kotlin 全新开发的开源的阅读软件，欢迎您的加入。
+        \u3000\u3000这是一款使用 Kotlin 全新开发的开源的阅读软件。
     </string>
     <string name="app_share_description">
         阅读 3.0 下载地址：\nhttps://github.com/skybbk1001/legado/releases
