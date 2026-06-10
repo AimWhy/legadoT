@@ -124,6 +124,28 @@ class UpdateManifestTest {
     }
 
     @Test
+    fun toUpdateResult_returnsNoUpdateWhenManifestIsReachableButNotNewer() {
+        val manifest = UpdateManifest(
+            versionName = "3.26.061010",
+            artifacts = listOf(
+                UpdateManifest.Artifact(
+                    abi = "arm64-v8a",
+                    fileName = "legado_app_3.26.061010_arm64-v8a.apk",
+                    url = "https://example.com/v8.apk"
+                )
+            )
+        )
+
+        val result = UpdateManifestSelector.toUpdateResult(
+            manifest,
+            currentVersionName = "3.26.061010debug",
+            supportedAbis = listOf("arm64-v8a")
+        )
+
+        assertTrue(result is UpdateManifestResult.NoUpdate)
+    }
+
+    @Test
     fun githubAsset_acceptsUploadedApkEvenWhenContentTypeIsOctetStream() {
         val asset = Asset(
             apkUrl = "https://github.com/example/release.apk",

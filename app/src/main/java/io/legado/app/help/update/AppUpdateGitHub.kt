@@ -33,31 +33,7 @@ object AppUpdateGitHub : AppUpdate.AppUpdateInterface {
     private val checkChannel: String
         get() = if (checkVariant.isBeta()) "beta" else "release"
 
-    private suspend fun getLatestRelease(): List<AppReleaseInfo> {
-        val lastReleaseUrl = if (checkVariant.isBeta()) {
-            "https://api.github.com/repos/skybbk1001/legadoT/releases/tags/beta"
-        } else {
-            "https://api.github.com/repos/skybbk1001/legadoT/releases/tags/release"
-        }
-        val res = okHttpClient.newCallResponse {
-            url(lastReleaseUrl)
-        }
-        if (!res.isSuccessful) {
-            throw NoStackTraceException("获取新版本出错(${res.code})")
-        }
-        val body = res.body.text()
-        if (body.isBlank()) {
-            throw NoStackTraceException("获取新版本出错")
-        }
-        return GSON.fromJsonObject<GithubRelease>(body)
-            .getOrElse {
-                throw NoStackTraceException("获取新版本出错 " + it.localizedMessage)
-            }
-            .gitReleaseToAppReleaseInfo()
-            .sortedByDescending { it.createdAt }
-    }
-
-    private suspend fun getManifestUpdate(): AppUpdate.UpdateInfo? {
+    private suspend fun getManifestUpdate(): UpdateManifestResult {
         var lastError: Throwable? = null
         manifestUrls.forEach { manifestUrl ->
             try {
@@ -81,48 +57,30 @@ object AppUpdateGitHub : AppUpdate.AppUpdateInterface {
                         lastError = it
                         return@forEach
                     }
-                UpdateManifestSelector.toUpdateInfo(
+                return UpdateManifestSelector.toUpdateResult(
                     manifest = manifest,
                     currentVersionName = AppConst.appInfo.versionName,
                     currentVersionCode = AppConst.appInfo.versionCode,
                     supportedAbis = Build.SUPPORTED_ABIS.toList()
-                )?.let {
-                    return it
-                }
+                )
             } catch (e: Throwable) {
                 lastError = e
             }
         }
-        lastError?.let {
-            return null
-        }
-        return null
+        return UpdateManifestResult.Unavailable(
+            lastError?.localizedMessage ?: "获取更新清单出错"
+        )
     }
 
     override fun check(
         scope: CoroutineScope,
     ): Coroutine<AppUpdate.UpdateInfo> {
         return Coroutine.async(scope) {
-            getManifestUpdate()?.let {
-                return@async it
+            when (val result = getManifestUpdate()) {
+                is UpdateManifestResult.HasUpdate -> result.updateInfo
+                UpdateManifestResult.NoUpdate -> throw NoStackTraceException("已是最新版本")
+                is UpdateManifestResult.Unavailable -> throw NoStackTraceException(result.message)
             }
-            getLatestRelease()
-                .filter { it.appVariant == checkVariant || checkVariant == AppVariant.OFFICIAL }
-                .firstOrNull {
-                    UpdateManifestSelector.compareVersionName(
-                        it.versionName,
-                        AppConst.appInfo.versionName
-                    ) > 0
-                }
-                ?.let {
-                    return@async AppUpdate.UpdateInfo(
-                        it.versionName,
-                        it.note,
-                        it.downloadUrl,
-                        it.name
-                    )
-                }
-                ?: throw NoStackTraceException("已是最新版本")
         }.timeout(10000)
     }
 }
