@@ -125,6 +125,15 @@ android {
         resources.excludes.add('META-INF/*')
     }
 
+    splits {
+        abi {
+            enable true
+            reset()
+            include 'arm64-v8a', 'armeabi-v7a'
+            universalApk false
+        }
+    }
+
     sourceSets {
         // Adds exported schema location as test app assets.
         androidTest.assets.srcDirs += files("$projectDir/schemas".toString())
@@ -186,7 +195,6 @@ dependencies {
 
     //google
     implementation(libs.material)
-    implementation(libs.mlkit.text.recognition.chinese)
     implementation(libs.flexbox)
     implementation(libs.gson)
 

@@ -99,7 +99,12 @@ jobs:
         run: |
           mkdir -p ${{ github.workspace }}/apk/
           for file in `ls ${{ github.workspace }}/app/build/outputs/apk/*/*/*.apk`; do
-            cp "$file" ${{ github.workspace }}/apk/legado_${{ env.product }}_${{ env.VERSION }}.apk
+            base=$(basename "$file" .apk)
+            abi=$(echo "$base" | grep -oE 'arm64-v8a|armeabi-v7a' || true)
+            if [ -z "$abi" ]; then
+              abi="universal"
+            fi
+            cp "$file" ${{ github.workspace }}/apk/legado_${{ env.product }}_${{ env.VERSION }}_${abi}.apk
           done
           
       - name: Upload App To Artifact
