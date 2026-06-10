@@ -27,6 +27,12 @@ data class UpdateManifest(
     )
 }
 
+sealed class UpdateManifestResult {
+    data class HasUpdate(val updateInfo: AppUpdate.UpdateInfo) : UpdateManifestResult()
+    data object NoUpdate : UpdateManifestResult()
+    data class Unavailable(val message: String) : UpdateManifestResult()
+}
+
 object UpdateManifestSelector {
 
     private val versionRegex = Regex("""\d+(?:\.\d+)+""")
@@ -68,32 +74,55 @@ object UpdateManifestSelector {
         return candidates.firstOrNull { it.resolvedAbi() == "universal" }
     }
 
+    fun toUpdateResult(
+        manifest: UpdateManifest,
+        currentVersionName: String,
+        supportedAbis: List<String>,
+        currentVersionCode: Long = 0L
+    ): UpdateManifestResult {
+        if (!manifest.error.isNullOrBlank()) {
+            return UpdateManifestResult.Unavailable(manifest.error)
+        }
+        val versionName = manifest.versionName.ifBlank {
+            parseVersionName(manifest.tag).ifBlank {
+                manifest.artifacts.firstNotNullOfOrNull { parseVersionName(it.fileName).takeIf(String::isNotBlank) }.orEmpty()
+            }
+        }
+        if (versionName.isBlank()) {
+            return UpdateManifestResult.Unavailable("更新清单缺少版本号")
+        }
+        val isNewer = if (manifest.versionCode != null && currentVersionCode > 0) {
+            manifest.versionCode > currentVersionCode
+        } else {
+            compareVersionName(versionName, currentVersionName) > 0
+        }
+        if (!isNewer) {
+            return UpdateManifestResult.NoUpdate
+        }
+        val artifact = selectArtifact(manifest.artifacts, supportedAbis)
+            ?: return UpdateManifestResult.Unavailable("更新清单没有适合当前设备的安装包")
+        return UpdateManifestResult.HasUpdate(
+            AppUpdate.UpdateInfo(
+                tagName = versionName,
+                updateLog = manifest.updateLog,
+                downloadUrl = artifact.url,
+                fileName = artifact.fileName.ifBlank { "legado_$versionName.apk" }
+            )
+        )
+    }
+
     fun toUpdateInfo(
         manifest: UpdateManifest,
         currentVersionName: String,
         supportedAbis: List<String>,
         currentVersionCode: Long = 0L
     ): AppUpdate.UpdateInfo? {
-        if (!manifest.error.isNullOrBlank()) return null
-        val versionName = manifest.versionName.ifBlank {
-            parseVersionName(manifest.tag).ifBlank {
-                manifest.artifacts.firstNotNullOfOrNull { parseVersionName(it.fileName).takeIf(String::isNotBlank) }.orEmpty()
-            }
-        }
-        if (versionName.isBlank()) return null
-        val isNewer = if (manifest.versionCode != null && currentVersionCode > 0) {
-            manifest.versionCode > currentVersionCode
-        } else {
-            compareVersionName(versionName, currentVersionName) > 0
-        }
-        if (!isNewer) return null
-        val artifact = selectArtifact(manifest.artifacts, supportedAbis) ?: return null
-        return AppUpdate.UpdateInfo(
-            tagName = versionName,
-            updateLog = manifest.updateLog,
-            downloadUrl = artifact.url,
-            fileName = artifact.fileName.ifBlank { "legado_$versionName.apk" }
-        )
+        return (toUpdateResult(
+            manifest = manifest,
+            currentVersionName = currentVersionName,
+            currentVersionCode = currentVersionCode,
+            supportedAbis = supportedAbis
+        ) as? UpdateManifestResult.HasUpdate)?.updateInfo
     }
 
     fun inferAbi(fileName: String?): String {
