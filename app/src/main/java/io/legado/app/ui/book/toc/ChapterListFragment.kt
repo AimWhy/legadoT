@@ -33,7 +33,6 @@ import io.legado.app.utils.dpToPx
 import io.legado.app.utils.observeEvent
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers.Default
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -46,10 +45,13 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
     private val binding by viewBinding(FragmentChapterListBinding::bind)
     private var mLayoutManager: UpLinearLayoutManager? = null
     private val adapter by lazy { ChapterListAdapter(requireContext(), this) }
+    private val tocListState = TocListState()
     private var durChapterIndex = 0
     private var audioCacheStateReady = false
     private val pendingAudioCacheChanges = linkedMapOf<Int, Boolean>()
     private var initBookJob: Job? = null
+    private var currentSearchKey: String? = null
+    private var pendingScrollItemKey: String? = null
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) = binding.run {
         viewModel.chapterListCallBack = this@ChapterListFragment
@@ -92,7 +94,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
             }
         }
         tvCurrentChapterInfo.setOnClickListener {
-            mLayoutManager?.scrollToPositionWithOffset(durChapterIndex, 0)
+            scrollToChapterIndex(durChapterIndex, expandVolume = true)
         }
         binding.llChapterBaseInfo.applyNavigationBarPadding()
     }
@@ -110,7 +112,14 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
             audioCacheStateReady = !book.isAudio
             pendingAudioCacheChanges.clear()
 
-            adapter.setAllItems(queryChapterList(null))
+            val chapters = queryChapterList(null)
+            tocListState.setFullChapters(
+                chapters = chapters,
+                durChapterIndex = durChapterIndex,
+                resetCollapse = true
+            )
+            currentSearchKey = null
+            adapter.setItems(tocListState.showNormal(durChapterIndex))
 
             val (cacheFileNames, cachedChapterIndexes) = queryCacheState(book)
             adapter.cacheFileNames.addAll(cacheFileNames)
@@ -146,15 +155,7 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
                 }
                 if (book.bookUrl == bookUrl) {
                     adapter.cacheFileNames.add(chapter.getFileName())
-                    if (viewModel.searchKey.isNullOrEmpty()) {
-                        adapter.notifyItemChanged(chapter.index, true)
-                    } else {
-                        adapter.getItems().forEachIndexed { index, bookChapter ->
-                            if (bookChapter.index == chapter.index) {
-                                adapter.notifyItemChanged(index, true)
-                            }
-                        }
-                    }
+                    notifyVisibleChapterChanged(chapter.index)
                 }
             }
         }
@@ -169,9 +170,27 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
         }
     }
 
-    override fun upChapterList(searchKey: String?) {
+    override fun upChapterList(searchKey: String?, resetCollapse: Boolean) {
         lifecycleScope.launch {
-            adapter.setAllItems(queryChapterList(searchKey))
+            currentSearchKey = searchKey
+            if (searchKey.isNullOrBlank()) {
+                val chapters = queryChapterList(null)
+                tocListState.setFullChapters(
+                    chapters = chapters,
+                    durChapterIndex = durChapterIndex,
+                    resetCollapse = resetCollapse
+                )
+                adapter.setItems(tocListState.showNormal(durChapterIndex))
+            } else {
+                if (resetCollapse || !tocListState.hasFullChapters()) {
+                    tocListState.setFullChapters(
+                        chapters = queryChapterList(null),
+                        durChapterIndex = durChapterIndex,
+                        resetCollapse = resetCollapse
+                    )
+                }
+                adapter.setItems(tocListState.showSearch(queryChapterList(searchKey), durChapterIndex))
+            }
         }
     }
 
@@ -186,38 +205,42 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
         } else {
             adapter.cachedChapterIndexes.remove(chapterIndex)
         }
-        if (viewModel.searchKey.isNullOrEmpty()) {
-            if (chapterIndex in 0 until adapter.itemCount) {
-                adapter.notifyItemChanged(chapterIndex, true)
-            }
-            return
+        notifyVisibleChapterChanged(chapterIndex)
+    }
+
+    private fun notifyVisibleChapterChanged(chapterIndex: Int) {
+        val position = adapter.findVisiblePositionByChapterIndex(chapterIndex)
+        if (position >= 0) {
+            adapter.notifyItemChanged(position, true)
         }
-        adapter.getItems().forEachIndexed { index, bookChapter ->
-            if (bookChapter.index == chapterIndex) {
-                adapter.notifyItemChanged(index, true)
-                return
+    }
+
+    private fun scrollToChapterIndex(chapterIndex: Int, expandVolume: Boolean) {
+        if (expandVolume && currentSearchKey.isNullOrBlank()) {
+            val changed = tocListState.expandVolumeContainingChapter(chapterIndex)
+            if (changed) {
+                adapter.setItems(tocListState.showNormal(durChapterIndex))
+            }
+        }
+        binding.recyclerView.post {
+            val position = tocListState.findFallbackVisiblePositionForChapterIndex(chapterIndex)
+            if (position >= 0) {
+                mLayoutManager?.scrollToPositionWithOffset(position, 0)
+                adapter.upDisplayTitles(position)
             }
         }
     }
 
-    private var pendingScrollAnchor: Int? = null
-    /** 锚定条目的 index（而非列表位置），用于位置变化后查找 */
-    private var pendingScrollItemIndex: Int? = null
-
     override fun onListChanged() {
-        if (pendingScrollAnchor != null) {
+        if (pendingScrollItemKey != null) {
             // 分卷切换中，跳过自动滚动，由 onItemsUpdated 恢复位置
             return
         }
         lifecycleScope.launch {
-            var scrollPos = 0
-            withContext(Default) {
-                adapter.getItems().forEachIndexed { index, bookChapter ->
-                    if (bookChapter.index >= durChapterIndex) {
-                        return@withContext
-                    }
-                    scrollPos = index
-                }
+            val scrollPos = if (currentSearchKey.isNullOrBlank()) {
+                tocListState.findFallbackVisiblePositionForChapterIndex(durChapterIndex).coerceAtLeast(0)
+            } else {
+                0
             }
             mLayoutManager?.scrollToPositionWithOffset(scrollPos, 0)
             adapter.upDisplayTitles(scrollPos)
@@ -225,22 +248,27 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
     }
 
     override fun onVolumeToggled(volumeIndex: Int) {
-        val pos = mLayoutManager?.findFirstVisibleItemPosition()
-        pendingScrollAnchor = pos
-        pendingScrollItemIndex = pos?.let { adapter.getItems().getOrNull(it)?.index }
+        if (!currentSearchKey.isNullOrBlank()) return
+        pendingScrollItemKey = mLayoutManager
+            ?.findFirstVisibleItemPosition()
+            ?.let { adapter.getItem(it)?.key }
+        if (tocListState.toggleVolume(volumeIndex)) {
+            adapter.setItems(tocListState.showNormal(durChapterIndex))
+        }
     }
 
     override fun onItemsUpdated() {
-        val anchorItemIdx = pendingScrollItemIndex
-        pendingScrollAnchor = null
-        pendingScrollItemIndex = null
-        if (anchorItemIdx == null) return
+        val anchorKey = pendingScrollItemKey
+        pendingScrollItemKey = null
+        if (anchorKey == null) return
         binding.recyclerView.post {
-            val newPos = adapter.getItems().indexOfFirst { it.index == anchorItemIdx }
+            val newPos = adapter.findVisiblePositionByItemKey(anchorKey)
             if (newPos >= 0) {
                 mLayoutManager?.scrollToPositionWithOffset(newPos, 0)
+                adapter.upDisplayTitles(newPos)
+            } else {
+                adapter.upDisplayTitles(mLayoutManager?.findFirstVisibleItemPosition() ?: 0)
             }
-            adapter.upDisplayTitles(newPos.coerceAtLeast(0))
         }
     }
 
