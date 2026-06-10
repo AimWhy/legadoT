@@ -1105,12 +1105,15 @@ object ChapterProvider {
 
     private fun getReviewColumnRange(textLine: TextLine): Pair<Float, Float> {
         val width = getReviewWidth(textLine.isTitle)
-        val maxEnd = if (doublePage && textLine.isLeftLine) {
-            (viewWidth / 2 - paddingRight).toFloat()
+        // 图标可延伸进右侧页边距，最多到屏幕物理边缘（双页时为本页中线），留 1dp 不贴边
+        val screenRight = if (doublePage && textLine.isLeftLine) {
+            (viewWidth / 2).toFloat()
         } else {
-            visibleRight.toFloat()
+            viewWidth.toFloat()
         }
+        val maxEnd = screenRight - 1.dpToPx()
         val textEnd = textLine.columns.lastOrNull { it !is ReviewColumn }?.end ?: textLine.lineEnd
+        // 紧跟文字末尾；排满整行时溢出到页边距，而不是被往左拽压在文字上
         val start = kotlin.math.min(textEnd, maxEnd - width)
         return start to start + width
     }
@@ -1350,7 +1353,7 @@ object ChapterProvider {
         visibleRect.set( //留余，让溢出时也显示
             paddingLeft.toFloat() - 10,
             paddingTop.toFloat() - 10,
-            visibleRight.toFloat() + 10,
+            viewWidth.toFloat(), //放宽到屏幕右缘，供段评图标溢出到右页边距时显示与点击
             visibleBottom.toFloat() + 10f.dpToPx() //下划线最远10dp
         )
 
