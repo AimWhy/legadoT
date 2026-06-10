@@ -25,7 +25,7 @@ data class ReviewColumn(
 
     override fun isTouch(x: Float): Boolean {
         if (count == 0) return false
-        // Expand the hit area slightly so the review icon stays tappable when it overlaps text.
+        // 图标较小，适当放大点击热区，便于点中
         val extraTouchWidth = ((end - start) * 0.35f).coerceAtLeast(textLine.height * 0.15f)
         return x > start - extraTouchWidth && x < end + extraTouchWidth
     }
