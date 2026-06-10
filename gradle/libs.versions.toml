@@ -21,7 +21,6 @@ coroutines = "1.10.2"
 liveeventbus = "1.8.14"
 markwon = "4.6.2"
 material = "1.13.0"
-mlkitTextRecognitionChinese = "16.0.0"
 media = "1.7.1"
 nanoHttpd = "2.3.1"
 okhttp = "5.3.2"
@@ -184,7 +183,6 @@ kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref =
 #kotlinx-serialization-protobuf = { module = "org.jetbrains.kotlinx:kotlinx-serialization-protobuf", version.ref = "kotlinxSerialization" }
 liveeventbus = { module = "com.github.michaellee123:LiveEventBus", version.ref = "liveeventbus" }
 material = { module = "com.google.android.material:material", version.ref = "material" }
-mlkit-text-recognition-chinese = { module = "com.google.mlkit:text-recognition-chinese", version.ref = "mlkitTextRecognitionChinese" }
 
 mozilla-rhino = { module = "org.htmlunit:htmlunit-core-js", version.ref = "rhino" }
 

@@ -120,7 +120,12 @@ jobs:
           echo "修改APK文件名"
           mkdir -p ${{ github.workspace }}/apk/
           for file in `ls ${{ github.workspace }}/app/build/outputs/apk/*/*/*.apk`; do
-            mv "$file" ${{ github.workspace }}/apk/legado_${{ env.product }}_${{ env.VERSIONL }}_$typeName.apk
+            base=$(basename "$file" .apk)
+            abi=$(echo "$base" | grep -oE 'arm64-v8a|armeabi-v7a' || true)
+            if [ -z "$abi" ]; then
+              abi="universal"
+            fi
+            mv "$file" ${{ github.workspace }}/apk/legado_${{ env.product }}_${{ env.VERSIONL }}_${abi}_$typeName.apk
           done
           echo "移动mapping文件"
           mkdir -p ${{ github.workspace }}/mapping/
