@@ -184,7 +184,7 @@
         android:singleLine="true"
         android:text="@string/lasted_show"
         android:textColor="@color/tv_text_summary"
-        android:textSize="@dimen/text_body"
+        android:textSize="13sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toRightOf="@+id/iv_last"
         app:layout_constraintRight_toRightOf="@id/fl_has_new"

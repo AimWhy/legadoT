@@ -64,10 +64,10 @@ private fun Toolbar.showMd3OverflowMenu(
     PopupAction(context).apply {
         setVertical(true)
         setActionItems(
-            actionItems.map { item ->
+            actionItems.mapIndexed { index, item ->
                 PopupAction.PopupActionItem(
                     title = item.title?.toString().orEmpty(),
-                    value = item.itemId.toString(),
+                    value = index.toString(),
                     icon = item.icon?.constantState?.newDrawable()?.mutate() ?: item.icon,
                     enabled = item.isEnabled,
                     checked = item.isChecked
@@ -76,9 +76,9 @@ private fun Toolbar.showMd3OverflowMenu(
         )
         onActionClick = { action ->
             dismiss()
-            actionItems.firstOrNull { item ->
-                item.itemId.toString() == action
-            }?.let(onMenuItemClick)
+            action.toIntOrNull()
+                ?.let { actionItems.getOrNull(it) }
+                ?.let(onMenuItemClick)
         }
         showAsDropDown(anchor, 0, 4.dpToPx())
     }
