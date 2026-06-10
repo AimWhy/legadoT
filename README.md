@@ -39,30 +39,37 @@ Legado is a free and open source novel reader for Android.
 
 #### 阅读T增强特性
 
+脚本自动化
+* 定时任务支持：cron 表达式驱动js脚本执行，支持 refreshToc / notify 动作。
+* 书籍详情/书架管理支持书籍的自动检测更新并缓存（自动创建定时任务）
+
+视觉重构
+* Material Design 3 视觉改版，大量组件使用md3风格，更多圆角，更多色彩风格
+* 主题设置新增沉浸式操作栏开关，开启后顶栏和底栏透明并沉浸
+
 阅读体验
-* 目录分卷支持展开/折叠，默认只展开当前阅读所在分卷
+* 支持选中文字高亮、设置高亮规则（正则/关键词）
+* 目录分卷支持展开/折叠，更好的层级展示
+* 原生的段评支持，支持自定义段评图标
+
+听书增强
 * 听书体验增强：新增片头/片尾自动跳过，支持本书与全局配置
-* 有声书缓存增强：支持范围缓存、自定义缓存目录、清除本章缓存并触发重新解析
+* 有声书缓存增强：支持缓存音频到本地、自定义缓存目录、清除缓存并触发重新解析
 
 书源/规则
 * 内置 `CryptoJS`，方便使用网页JS加解密函数
-* 规则能力增强：URL参数支持 `timeout`、`followRedirects`、`resolveIp`，java.get/post/head 新增json字符串请求头的重载方法
+* 规则能力增强：URL参数支持 `timeout`（超时）、`followRedirects`（跟随重定向）、`resolveIp`（指定解析ip），java.get/post/head 新增json字符串请求头的重载方法
 * JS引擎升级：更换Rhino为htmlunit-core-js，修复const作用域问题
-* 新增java.orc/showBrowser/copyText等新方法
+* 新增java.showBrowser/copyText等新方法
 
 调试/开发
 * HTTP请求日志：设置中开启后可在日志查看请求概况，点击查看完整请求/响应详情
-* 新增中文 OCR 能力，java.ocr() 自动转换图片到文字
 
 编辑器
 * 代码编辑器增加右侧滚动条、快速定位导航栏
 * 搜索替换重构，支持正则表达式测试
 * WebView代码编辑器支持自动补全、语法检查、格式化等
 * HTTP请求支持brotli压缩算法
-
-自动化
-* 定时任务支持：cron 表达式驱动脚本执行，支持 refreshToc / notify 动作
-* 定时任务数据采用 Room 存储，与书源同级管理
 
 备份/恢复
 * 定时任务纳入备份范围，支持完整备份与恢复
