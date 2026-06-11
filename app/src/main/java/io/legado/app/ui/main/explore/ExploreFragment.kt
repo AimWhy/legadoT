@@ -22,9 +22,12 @@ import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.book.explore.ExploreShowActivity
 import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.search.SearchActivity
+import io.legado.app.ui.book.search.SearchScope
+import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.main.MainFragmentInterface
 import io.legado.app.ui.main.explore.manage.ExploreContainerEditDialog
 import io.legado.app.ui.main.explore.manage.ExploreManageActivity
+import io.legado.app.ui.widget.popupActionMenu
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
@@ -153,11 +156,48 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
         viewModel.refreshContainer(state.container.id)
     }
 
-    override fun editContainer(state: ExploreContainerState) {
+    /** 长按菜单:登录仅在书源配置了登录地址时显示,搜索/登录直接作用于容器所属书源 */
+    override fun showContainerMenu(anchor: View, state: ExploreContainerState) {
+        val container = state.container
+        viewLifecycleOwner.lifecycleScope.launch {
+            val source = withContext(IO) {
+                appDb.bookSourceDao.getBookSource(container.sourceUrl)
+            }
+            popupActionMenu(requireContext()) {
+                item(getString(R.string.refresh), "refresh")
+                item(getString(R.string.search), "search", source != null)
+                item(getString(R.string.login), "login", !source?.loginUrl.isNullOrBlank())
+                item(getString(R.string.edit), "edit")
+                item(getString(R.string.delete), "delete")
+                danger("delete")
+            }.show(anchor) { action ->
+                when (action) {
+                    "refresh" -> refreshContainer(state)
+                    "search" -> source?.let {
+                        startActivity<SearchActivity> {
+                            putExtra("searchScope", SearchScope(it).toString())
+                        }
+                    }
+
+                    "login" -> source?.let {
+                        startActivity<SourceLoginActivity> {
+                            putExtra("type", "bookSource")
+                            putExtra("key", it.bookSourceUrl)
+                        }
+                    }
+
+                    "edit" -> editContainer(state)
+                    "delete" -> deleteContainer(state)
+                }
+            }
+        }
+    }
+
+    private fun editContainer(state: ExploreContainerState) {
         showDialogFragment(ExploreContainerEditDialog.edit(state.container.id))
     }
 
-    override fun deleteContainer(state: ExploreContainerState) {
+    private fun deleteContainer(state: ExploreContainerState) {
         alert(R.string.draw) {
             setMessage(getString(R.string.sure_del) + "\n" + state.container.getDisplayTitle())
             noButton()

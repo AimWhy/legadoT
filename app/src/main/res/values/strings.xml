@@ -1452,4 +1452,7 @@ Placeholders:
     <string name="explore_select_kinds_least">请至少选择一个分类</string>
     <string name="explore_kinds_added">已添加 %1$d 个容器</string>
     <string name="explore_refresh_error">刷新失败,点击重试</string>
+    <string name="explore_change_source">换书源</string>
+    <string name="explore_change_kind">换分类</string>
+    <string name="explore_select_kind">选择分类</string>
 </resources>
