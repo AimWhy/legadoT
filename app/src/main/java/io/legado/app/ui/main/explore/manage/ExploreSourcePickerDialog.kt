@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -28,9 +29,16 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 
 /**
- * 添加容器流程①:选择书源
+ * 添加容器流程①:选择书源。
+ * 带 resultKey 参数时为编辑流程的单选模式,选中后经 Fragment Result API 回传 sourceUrl
  */
 class ExploreSourcePickerDialog : BaseDialogFragment(R.layout.dialog_explore_source_picker, true) {
+
+    companion object {
+        fun pick(resultKey: String) = ExploreSourcePickerDialog().apply {
+            arguments = Bundle().apply { putString("resultKey", resultKey) }
+        }
+    }
 
     private val binding by viewBinding(DialogExploreSourcePickerBinding::bind)
     private val adapter by lazy { SourceAdapter(requireContext()) }
@@ -67,8 +75,15 @@ class ExploreSourcePickerDialog : BaseDialogFragment(R.layout.dialog_explore_sou
     }
 
     private fun onSourceClick(source: BookSourcePart) {
-        (requireActivity() as AppCompatActivity)
-            .showDialogFragment(KindPickerDialog.create(source.bookSourceUrl))
+        val resultKey = arguments?.getString("resultKey")
+        if (resultKey == null) {
+            (requireActivity() as AppCompatActivity)
+                .showDialogFragment(KindPickerDialog.create(source.bookSourceUrl))
+        } else {
+            parentFragmentManager.setFragmentResult(
+                resultKey, bundleOf("sourceUrl" to source.bookSourceUrl)
+            )
+        }
         dismiss()
     }
 

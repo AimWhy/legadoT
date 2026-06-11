@@ -15,7 +15,6 @@ import io.legado.app.databinding.ItemExploreContainerBinding
 import io.legado.app.databinding.ItemSearchBinding
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.book.explore.bindSearchBook
-import io.legado.app.ui.widget.popupActionMenu
 import io.legado.app.utils.gone
 import io.legado.app.utils.visible
 import splitties.views.onLongClick
@@ -183,24 +182,12 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
 
     private fun showMenu(view: View, position: Int) {
         val item = getItem(position) ?: return
-        popupActionMenu(context) {
-            item(context.getString(R.string.refresh), "refresh")
-            item(context.getString(R.string.edit), "edit")
-            item(context.getString(R.string.delete), "delete")
-            danger("delete")
-        }.show(view) { action ->
-            when (action) {
-                "refresh" -> callBack.refreshContainer(item)
-                "edit" -> callBack.editContainer(item)
-                "delete" -> callBack.deleteContainer(item)
-            }
-        }
+        callBack.showContainerMenu(view, item)
     }
 
     interface CallBack : ExploreCoverAdapter.CallBack {
         fun openExplore(state: ExploreContainerState)
         fun refreshContainer(state: ExploreContainerState)
-        fun editContainer(state: ExploreContainerState)
-        fun deleteContainer(state: ExploreContainerState)
+        fun showContainerMenu(anchor: View, state: ExploreContainerState)
     }
 }

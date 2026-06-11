@@ -79,17 +79,25 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
             states.clear()
             containers.forEach { c ->
                 val oldState = old[c.id]
-                if (oldState == null) {
-                    // 新出现的容器:缓存优先,无缓存才走网络
-                    val cached = ExploreContainerHelp.getCachedBooks(c.id)
-                    if (cached == null) toLoad.add(c)
-                    states[c.id] = ExploreContainerState(
-                        container = c,
-                        books = cached ?: emptyList(),
-                        loading = cached == null
-                    )
-                } else {
-                    states[c.id] = oldState.copy(container = c)
+                when {
+                    oldState == null -> {
+                        // 新出现的容器:缓存优先,无缓存才走网络
+                        val cached = ExploreContainerHelp.getCachedBooks(c.id)
+                        if (cached == null) toLoad.add(c)
+                        states[c.id] = ExploreContainerState(
+                            container = c,
+                            books = cached ?: emptyList(),
+                            loading = cached == null
+                        )
+                    }
+
+                    !sameTarget(oldState.container, c) -> {
+                        // 编辑改了书源/分类:旧书作废,重新加载
+                        toLoad.add(c)
+                        states[c.id] = ExploreContainerState(container = c, loading = true)
+                    }
+
+                    else -> states[c.id] = oldState.copy(container = c)
                 }
             }
             statesData.postValue(states.values.toList())
@@ -111,10 +119,15 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
         }
     }
 
+    /** 书源/分类指向是否一致(样式等展示属性变化不影响已加载书籍) */
+    private fun sameTarget(a: ExploreContainer, b: ExploreContainer): Boolean {
+        return a.sourceUrl == b.sourceUrl && a.kindUrl == b.kindUrl && a.kindTitle == b.kindTitle
+    }
+
     private fun loadContainer(container: ExploreContainer) {
         if (!loadingIds.add(container.id)) return
         viewModelScope.launch(IO) {
-            upState(container.id) { it.copy(loading = true, error = null) }
+            upStateIfSameTarget(container) { it.copy(loading = true, error = null) }
             kotlin.runCatching {
                 val source = appDb.bookSourceDao.getBookSource(container.sourceUrl)
                     ?: throw NoStackTraceException(
@@ -128,26 +141,42 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
                     WebBook.exploreBookAwait(source, url, 1)
                 }
             }.onSuccess { books ->
-                ExploreContainerHelp.putCachedBooks(container.id, books)
-                upState(container.id) { it.copy(books = books, loading = false, error = null) }
+                val accepted = upStateIfSameTarget(container) {
+                    it.copy(books = books, loading = false, error = null)
+                }
+                if (accepted) {
+                    ExploreContainerHelp.putCachedBooks(container.id, books)
+                }
             }.onFailure { e ->
                 AppLog.put("发现容器[${container.getDisplayTitle()}]加载失败", e)
-                upState(container.id) {
+                upStateIfSameTarget(container) {
                     it.copy(loading = false, error = e.localizedMessage ?: "加载失败")
                 }
             }
             loadingIds.remove(container.id)
+            // 加载期间容器被编辑改了指向:本次结果已丢弃,换当前指向重新加载
+            val current = stateMutex.withLock { states[container.id]?.container }
+            if (current != null && !sameTarget(current, container)) {
+                loadContainer(current)
+            }
         }
     }
 
-    private suspend fun upState(
-        id: Long,
+    /**
+     * 仅当容器当前指向与发起加载时一致才更新状态(也排除已删除的容器),
+     * 避免编辑竞态下旧指向的加载结果覆盖新指向
+     */
+    private suspend fun upStateIfSameTarget(
+        loaded: ExploreContainer,
         transform: (ExploreContainerState) -> ExploreContainerState
-    ) {
+    ): Boolean {
         stateMutex.withLock {
-            states[id]?.let { states[id] = transform(it) }
+            val state = states[loaded.id] ?: return false
+            if (!sameTarget(state.container, loaded)) return false
+            states[loaded.id] = transform(state)
             statesData.postValue(states.values.toList())
         }
+        return true
     }
 
     fun isInBookShelf(book: SearchBook): Boolean {
