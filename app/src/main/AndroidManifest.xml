@@ -246,6 +246,11 @@
             android:name=".ui.highlight.HighlightRuleActivity"
             android:launchMode="singleTop"
             android:screenOrientation="behind" />
+        <!-- 发现容器管理 -->
+        <activity
+            android:name=".ui.main.explore.manage.ExploreManageActivity"
+            android:launchMode="singleTop"
+            android:screenOrientation="behind" />
         <!-- 书籍管理 -->
         <activity
             android:name=".ui.book.manage.BookshelfManageActivity"

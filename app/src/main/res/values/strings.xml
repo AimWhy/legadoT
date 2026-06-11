@@ -1431,4 +1431,25 @@ Placeholders:
     <string name="review_icon_size_title">Icon size</string>
     <string name="review_icon_size_hint">Enter 50-200, where 100 is default</string>
     <string name="review_icon_size_invalid">Please enter an integer between 50 and 200</string>
+    <!-- 发现容器 -->
+    <string name="explore_container_manage">发现容器管理</string>
+    <string name="explore_container_add">添加容器</string>
+    <string name="explore_container_edit">编辑容器</string>
+    <string name="explore_container_empty">还没有发现容器\n点击下方按钮,选择书源分类添加到发现页</string>
+    <string name="explore_style">展示样式</string>
+    <string name="explore_style_flow">横滑封面</string>
+    <string name="explore_style_list">列表简介</string>
+    <string name="explore_list_count">列表展示数量</string>
+    <string name="explore_custom_title">自定义标题(留空使用分类名)</string>
+    <string name="explore_select_source">选择书源</string>
+    <string name="explore_select_kinds">选择分类(可多选)</string>
+    <string name="explore_default_style">默认样式</string>
+    <string name="explore_source_not_found">书源不存在</string>
+    <string name="explore_more">更多 ›</string>
+    <string name="explore_enable_all">全部启用</string>
+    <string name="explore_disable_all">全部禁用</string>
+    <string name="explore_no_kinds">该书源没有可用分类</string>
+    <string name="explore_select_kinds_least">请至少选择一个分类</string>
+    <string name="explore_kinds_added">已添加 %1$d 个容器</string>
+    <string name="explore_refresh_error">刷新失败,点击重试</string>
 </resources>

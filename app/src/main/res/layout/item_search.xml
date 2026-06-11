@@ -68,6 +68,7 @@
         android:id="@+id/tv_author"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
         android:layout_marginTop="6dp"
         android:layout_marginEnd="12dp"
         android:ellipsize="end"
@@ -77,25 +78,27 @@
         android:textColor="@color/primaryText"
         android:textSize="13sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/tv_name"
+        app:layout_constraintStart_toEndOf="@id/iv_cover"
         app:layout_constraintTop_toBottomOf="@id/tv_name" />
 
     <io.legado.app.ui.widget.LabelsBar
         android:id="@+id/ll_kind"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="12dp"
         android:orientation="horizontal"
         android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/tv_name"
+        app:layout_constraintStart_toEndOf="@id/iv_cover"
         app:layout_constraintTop_toBottomOf="@id/tv_author" />
 
     <TextView
         android:id="@+id/tv_lasted"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
         android:layout_marginTop="6dp"
         android:layout_marginEnd="12dp"
         android:ellipsize="end"
@@ -105,13 +108,14 @@
         android:textColor="@color/tv_text_summary"
         android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/tv_name"
+        app:layout_constraintStart_toEndOf="@id/iv_cover"
         app:layout_constraintTop_toBottomOf="@id/ll_kind" />
 
     <TextView
         android:id="@+id/tv_introduce"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="6dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="8dp"
@@ -123,7 +127,7 @@
         android:textSize="13sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@id/tv_name"
+        app:layout_constraintStart_toEndOf="@id/iv_cover"
         app:layout_constraintTop_toBottomOf="@id/tv_lasted"
         app:layout_constraintVertical_bias="0" />
 
