@@ -12,8 +12,7 @@ class SourcePopupActionMigrationTest {
         listOf(
             "src/main/java/io/legado/app/ui/book/changesource/ChangeBookSourceAdapter.kt",
             "src/main/java/io/legado/app/ui/book/changesource/ChangeChapterSourceAdapter.kt",
-            "src/main/java/io/legado/app/ui/book/source/manage/BookSourceAdapter.kt",
-            "src/main/java/io/legado/app/ui/main/explore/ExploreAdapter.kt"
+            "src/main/java/io/legado/app/ui/book/source/manage/BookSourceAdapter.kt"
         ).forEach { path ->
             val kt = readProjectFile(path)
             assertFalse("$path should not instantiate AppCompat PopupMenu", kt.contains("PopupMenu(context, view)"))
@@ -29,14 +28,10 @@ class SourcePopupActionMigrationTest {
         val bookSourceAdapter = readProjectFile(
             "src/main/java/io/legado/app/ui/book/source/manage/BookSourceAdapter.kt"
         )
-        val exploreAdapter = readProjectFile(
-            "src/main/java/io/legado/app/ui/main/explore/ExploreAdapter.kt"
-        )
 
         assertContains("BookSourceAdapter.kt", bookSourceAdapter, "if (callBack.sort == BookSourceSort.Default)")
         assertContains("BookSourceAdapter.kt", bookSourceAdapter, "if (source.hasLoginUrl)")
         assertContains("BookSourceAdapter.kt", bookSourceAdapter, "if (source.hasExploreUrl)")
-        assertContains("ExploreAdapter.kt", exploreAdapter, "if (source.hasLoginUrl)")
     }
 
     private fun assertContains(name: String, text: String, expected: String) {

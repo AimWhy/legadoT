@@ -3,53 +3,43 @@ package io.legado.app.ui.main.explore
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.SubMenu
 import android.view.View
-import androidx.appcompat.widget.SearchView
 import androidx.core.view.isGone
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
-import io.legado.app.constant.AppLog
-import io.legado.app.data.AppDatabase
 import io.legado.app.data.appDb
-import io.legado.app.data.entities.BookSourcePart
+import io.legado.app.data.entities.SearchBook
 import io.legado.app.databinding.FragmentExploreBinding
 import io.legado.app.help.config.AppConfig
+import io.legado.app.help.source.ExploreContainerHelp
+import io.legado.app.help.source.exploreKinds
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.primaryColor
-import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.book.explore.ExploreShowActivity
+import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.search.SearchActivity
-import io.legado.app.ui.book.search.SearchScope
-import io.legado.app.ui.book.source.edit.BookSourceEditActivity
 import io.legado.app.ui.main.MainFragmentInterface
-import io.legado.app.utils.applyTint
-import io.legado.app.utils.flowWithLifecycleAndDatabaseChange
+import io.legado.app.ui.main.explore.manage.ExploreContainerEditDialog
+import io.legado.app.ui.main.explore.manage.ExploreManageActivity
 import io.legado.app.utils.setEdgeEffectColor
+import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
-import io.legado.app.utils.transaction
+import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers.IO
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.conflate
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
- * 发现界面
+ * 发现界面(容器卡片流)
  */
 class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_explore),
     MainFragmentInterface,
-    ExploreAdapter.CallBack {
+    ExploreContainerAdapter.CallBack {
 
     constructor(position: Int) : this() {
         val bundle = Bundle()
@@ -61,180 +51,117 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
 
     override val viewModel by viewModels<ExploreViewModel>()
     private val binding by viewBinding(FragmentExploreBinding::bind)
-    private val adapter by lazy { ExploreAdapter(requireContext(), this) }
-    private val linearLayoutManager by lazy { LinearLayoutManager(context) }
-    private val searchView: SearchView by lazy {
-        binding.titleBar.findViewById(R.id.search_view)
-    }
-    private val diffItemCallBack = ExploreDiffItemCallBack()
-    private val groups = linkedSetOf<String>()
-    private var exploreFlowJob: Job? = null
-    private var groupsMenu: SubMenu? = null
+    private val adapter by lazy { ExploreContainerAdapter(requireContext(), this) }
+    private var openingExplore = false
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         setSupportToolbar(binding.titleBar.toolbar)
-        initSearchView()
         initRecyclerView()
-        initGroupData()
-        upExploreData()
+        observeData()
     }
 
     override fun onCompatCreateOptionsMenu(menu: Menu) {
         super.onCompatCreateOptionsMenu(menu)
         menuInflater.inflate(R.menu.main_explore, menu)
-        groupsMenu = menu.findItem(R.id.menu_group)?.subMenu
-        upGroupsMenu()
     }
-
-    override fun onPause() {
-        super.onPause()
-        searchView.clearFocus()
-    }
-
-    private fun initSearchView() {
-        searchView.applyTint(toolbarTextColor)
-        searchView.isSubmitButtonEnabled = true
-        searchView.queryHint = getString(R.string.screen_find)
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                return false
-            }
-
-            override fun onQueryTextChange(newText: String?): Boolean {
-                upExploreData(newText)
-                return false
-            }
-        })
-    }
-
-    private fun initRecyclerView() {
-        binding.rvFind.setEdgeEffectColor(primaryColor)
-        binding.rvFind.layoutManager = linearLayoutManager
-        binding.rvFind.adapter = adapter
-        adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
-
-            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
-                super.onItemRangeInserted(positionStart, itemCount)
-                if (positionStart == 0) {
-                    binding.rvFind.scrollToPosition(0)
-                }
-            }
-        })
-    }
-
-    private fun initGroupData() {
-        viewLifecycleOwner.lifecycleScope.launch {
-            appDb.bookSourceDao.flowExploreGroups()
-                .flowWithLifecycleAndDatabaseChange(
-                    viewLifecycleOwner.lifecycle,
-                    Lifecycle.State.RESUMED,
-                    AppDatabase.BOOK_SOURCE_TABLE_NAME
-                )
-                .conflate()
-                .distinctUntilChanged()
-                .collect {
-                    groups.clear()
-                    groups.addAll(it)
-                    upGroupsMenu()
-                    delay(500)
-                }
-        }
-    }
-
-    private fun upExploreData(searchKey: String? = null) {
-        exploreFlowJob?.cancel()
-        exploreFlowJob = viewLifecycleOwner.lifecycleScope.launch {
-            when {
-                searchKey.isNullOrBlank() -> {
-                    appDb.bookSourceDao.flowExplore()
-                }
-
-                searchKey.startsWith("group:") -> {
-                    val key = searchKey.substringAfter("group:")
-                    appDb.bookSourceDao.flowGroupExplore(key)
-                }
-
-                else -> {
-                    appDb.bookSourceDao.flowExplore(searchKey)
-                }
-            }.flowWithLifecycleAndDatabaseChange(
-                viewLifecycleOwner.lifecycle,
-                Lifecycle.State.RESUMED,
-                AppDatabase.BOOK_SOURCE_TABLE_NAME
-            ).catch {
-                AppLog.put("发现界面更新数据出错", it)
-            }.conflate().flowOn(IO).collect {
-                binding.tvEmptyMsg.isGone = it.isNotEmpty() || searchView.query.isNotEmpty()
-                adapter.setItems(it, diffItemCallBack)
-                delay(500)
-            }
-        }
-    }
-
-    private fun upGroupsMenu() = groupsMenu?.transaction { subMenu ->
-        subMenu.removeGroup(R.id.menu_group_text)
-        groups.forEach {
-            subMenu.add(R.id.menu_group_text, Menu.NONE, Menu.NONE, it)
-        }
-    }
-
-    override val scope: CoroutineScope
-        get() = viewLifecycleOwner.lifecycleScope
 
     override fun onCompatOptionsItemSelected(item: MenuItem) {
         super.onCompatOptionsItemSelected(item)
-        if (item.groupId == R.id.menu_group_text) {
-            searchView.setQuery("group:${item.title}", true)
+        when (item.itemId) {
+            R.id.menu_search -> startActivity<SearchActivity>()
+            R.id.menu_manage -> startActivity<ExploreManageActivity>()
         }
     }
 
-    override fun scrollTo(pos: Int) {
-        (binding.rvFind.layoutManager as LinearLayoutManager).scrollToPositionWithOffset(pos, 0)
-    }
-
-    override fun openExplore(sourceUrl: String, title: String, exploreUrl: String?) {
-        if (exploreUrl.isNullOrBlank()) return
-        startActivity<ExploreShowActivity> {
-            putExtra("exploreName", title)
-            putExtra("sourceUrl", sourceUrl)
-            putExtra("exploreUrl", exploreUrl)
+    private fun initRecyclerView() {
+        binding.rvContainers.setEdgeEffectColor(primaryColor)
+        binding.rvContainers.layoutManager = LinearLayoutManager(context)
+        binding.rvContainers.adapter = adapter
+        binding.refreshLayout.setColorSchemeColors(accentColor)
+        binding.refreshLayout.setOnRefreshListener {
+            binding.refreshLayout.isRefreshing = false
+            viewModel.refreshAll()
+        }
+        binding.btnAddContainer.setOnClickListener {
+            startActivity<ExploreManageActivity>()
         }
     }
 
-    override fun editSource(sourceUrl: String) {
-        startActivity<BookSourceEditActivity> {
-            putExtra("sourceUrl", sourceUrl)
+    private fun observeData() {
+        viewModel.statesData.observe(viewLifecycleOwner) { states ->
+            binding.llEmpty.isGone = states.isNotEmpty()
+            adapter.setItems(states, adapter.diffItemCallBack)
+        }
+        viewModel.upBookshelfLiveData.observe(viewLifecycleOwner) {
+            adapter.notifyItemRangeChanged(0, adapter.itemCount, "isInBookshelf")
         }
     }
 
-    override fun toTop(source: BookSourcePart) {
-        viewModel.topSource(source)
+    fun gotoTop() {
+        if (AppConfig.isEInkMode) {
+            binding.rvContainers.scrollToPosition(0)
+        } else {
+            binding.rvContainers.smoothScrollToPosition(0)
+        }
     }
 
-    override fun deleteSource(source: BookSourcePart) {
+    override fun isInBookshelf(book: SearchBook): Boolean {
+        return viewModel.isInBookShelf(book)
+    }
+
+    override fun showBookInfo(book: SearchBook) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            withContext(IO) {
+                runCatching { appDb.searchBookDao.insert(book) }
+            }
+            startActivity<BookInfoActivity> {
+                putExtra("name", book.name)
+                putExtra("author", book.author)
+                putExtra("bookUrl", book.bookUrl)
+            }
+        }
+    }
+
+    override fun openExplore(state: ExploreContainerState) {
+        if (openingExplore) return
+        openingExplore = true
+        val container = state.container
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val source = withContext(IO) {
+                    appDb.bookSourceDao.getBookSource(container.sourceUrl)
+                }
+                if (source == null) {
+                    toastOnUi(R.string.explore_source_not_found)
+                    return@launch
+                }
+                val url = ExploreContainerHelp.resolveKindUrl(
+                    source.exploreKinds(), container.kindTitle, container.kindUrl
+                )
+                startActivity<ExploreShowActivity> {
+                    putExtra("exploreName", container.getDisplayTitle())
+                    putExtra("sourceUrl", container.sourceUrl)
+                    putExtra("exploreUrl", url)
+                }
+            } finally {
+                openingExplore = false
+            }
+        }
+    }
+
+    override fun refreshContainer(state: ExploreContainerState) {
+        viewModel.refreshContainer(state.container.id)
+    }
+
+    override fun editContainer(state: ExploreContainerState) {
+        showDialogFragment(ExploreContainerEditDialog.edit(state.container.id))
+    }
+
+    override fun deleteContainer(state: ExploreContainerState) {
         alert(R.string.draw) {
-            setMessage(getString(R.string.sure_del) + "\n" + source.bookSourceName)
+            setMessage(getString(R.string.sure_del) + "\n" + state.container.getDisplayTitle())
             noButton()
-            yesButton {
-                viewModel.deleteSource(source)
-            }
+            yesButton { viewModel.deleteContainer(state.container) }
         }
     }
-
-    override fun searchBook(bookSource: BookSourcePart) {
-        startActivity<SearchActivity> {
-            putExtra("searchScope", SearchScope(bookSource).toString())
-        }
-    }
-
-    fun compressExplore() {
-        if (!adapter.compressExplore()) {
-            if (AppConfig.isEInkMode) {
-                binding.rvFind.scrollToPosition(0)
-            } else {
-                binding.rvFind.smoothScrollToPosition(0)
-            }
-        }
-    }
-
 }

@@ -17,6 +17,7 @@ import io.legado.app.data.entities.BookHighlight
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.Bookmark
 import io.legado.app.data.entities.DictRule
+import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.data.entities.HighlightRule
 import io.legado.app.data.entities.HttpTTS
 import io.legado.app.data.entities.KeyboardAssist
@@ -272,6 +273,13 @@ object Restore {
                 AutoTask.refreshSchedule()
             }.onFailure {
                 AppLog.put("恢复定时任务出错\n${it.localizedMessage}", it)
+            }
+        }
+        fileToListT<ExploreContainer>(path, "exploreContainer.json")?.let { containers ->
+            kotlin.runCatching {
+                appDb.exploreContainerDao.insert(*containers.toTypedArray())
+            }.onFailure {
+                AppLog.put("恢复发现容器出错\n${it.localizedMessage}", it)
             }
         }
         fileToListT<ReadRecord>(path, "readRecord.json")?.let {

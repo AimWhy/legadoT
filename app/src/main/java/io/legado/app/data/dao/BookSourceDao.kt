@@ -114,18 +114,6 @@ interface BookSourceDao {
     )
     fun flowExplore(key: String): Flow<List<BookSourcePart>>
 
-    @Query(
-        """select * from book_sources_part 
-        where enabledExplore = 1 
-        and hasExploreUrl = 1 
-        and (bookSourceGroup = :key
-            or bookSourceGroup like :key || ',%' 
-            or bookSourceGroup like  '%,' || :key
-            or bookSourceGroup like  '%,' || :key || ',%') 
-        order by customOrder asc"""
-    )
-    fun flowGroupExplore(key: String): Flow<List<BookSourcePart>>
-
     @Query("select distinct bookSourceGroup from book_sources where trim(bookSourceGroup) <> ''")
     fun flowGroupsUnProcessed(): Flow<List<String>>
 
@@ -136,16 +124,7 @@ interface BookSourceDao {
     fun flowEnabledGroupsUnProcessed(): Flow<List<String>>
 
     @Query(
-        """select distinct bookSourceGroup from book_sources 
-        where enabledExplore = 1 
-        and trim(exploreUrl) <> '' 
-        and trim(bookSourceGroup) <> ''
-        order by customOrder"""
-    )
-    fun flowExploreGroupsUnProcessed(): Flow<List<String>>
-
-    @Query(
-        """select * from book_sources 
+        """select * from book_sources
         where bookSourceGroup like '%' || :group || '%' order by customOrder asc"""
     )
     fun getByGroup(group: String): List<BookSource>
@@ -354,12 +333,6 @@ interface BookSourceDao {
 
     fun flowGroups(): Flow<List<String>> {
         return flowGroupsUnProcessed().map { list ->
-            dealGroups(list)
-        }.flowOn(IO)
-    }
-
-    fun flowExploreGroups(): Flow<List<String>> {
-        return flowExploreGroupsUnProcessed().map { list ->
             dealGroups(list)
         }.flowOn(IO)
     }
