@@ -86,6 +86,15 @@
     <string name="book_name">书名</string>
     <string name="lasted_show">最新：%s</string>
     <string name="check_add_bookshelf">是否将《%s》放入书架？</string>
+    <string name="jump">跳转</string>
+    <string name="page_number_format">第%1$d页</string>
+    <string name="add_all_to_bookshelf">全部加入书架</string>
+    <string name="input_page_number">页码</string>
+    <string name="invalid_page_number">请输入大于等于 1 的整数</string>
+    <string name="no_loaded_books_to_add">没有已加载的书籍可加入</string>
+    <string name="loaded_books_all_in_bookshelf">已加载的书籍都在书架中</string>
+    <string name="add_loaded_books_to_shelf_message">已加载：%1$d 本\n将加入：%2$d 本\n跳过已在书架：%3$d 本</string>
+    <string name="add_loaded_books_to_shelf_result">已加入 %1$d 本，跳过 %2$d 本</string>
     <string name="import_books_count">共 %s 个文本文件</string>
     <string name="is_loading">加载中…</string>
     <string name="retry">重试</string>

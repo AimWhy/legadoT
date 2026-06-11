@@ -10,10 +10,12 @@ import io.legado.app.constant.AppLog
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.SearchBook
+import io.legado.app.help.book.SearchBookShelfHelp
 import io.legado.app.help.book.isNotShelf
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.utils.printOnDebug
 import io.legado.app.utils.stackTraceStr
+import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
@@ -26,6 +28,8 @@ class ExploreShowViewModel(application: Application) : BaseViewModel(application
     val bookshelf: MutableSet<String> = ConcurrentHashMap.newKeySet()
     val upAdapterLiveData = MutableLiveData<String>()
     val booksData = MutableLiveData<List<SearchBook>>()
+    val clearBooksLiveData = MutableLiveData<Boolean>()
+    val currentPageLiveData = MutableLiveData(1)
     val errorLiveData = MutableLiveData<String>()
     private var bookSource: BookSource? = null
     private var exploreUrl: String? = null
@@ -81,6 +85,31 @@ class ExploreShowViewModel(application: Application) : BaseViewModel(application
                 it.printOnDebug()
                 errorLiveData.postValue(it.stackTraceStr)
             }
+    }
+
+    fun getLoadedBooks(): List<SearchBook> {
+        return books.toList()
+    }
+
+    fun jumpToPage(page: Int) {
+        if (page < 1) return
+        books.clear()
+        this.page = page
+        currentPageLiveData.postValue(page)
+        clearBooksLiveData.postValue(true)
+        explore()
+    }
+
+    fun addLoadedBooksToShelf(success: (SearchBookShelfHelp.AddResult) -> Unit) {
+        val loadedBooks = books.toList()
+        execute {
+            SearchBookShelfHelp.addLoadedBooksToShelf(loadedBooks, ::isInBookShelf)
+        }.onSuccess {
+            success.invoke(it)
+        }.onError {
+            AppLog.put("发现列表批量加入书架失败\n${it.localizedMessage}", it)
+            context.toastOnUi(it.localizedMessage ?: "批量加入书架失败")
+        }
     }
 
     fun isInBookShelf(book: SearchBook): Boolean {

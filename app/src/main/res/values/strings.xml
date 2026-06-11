@@ -87,6 +87,15 @@
     <string name="book_name">Title</string>
     <string name="lasted_show">Latest: %s</string>
     <string name="check_add_bookshelf">Would you like to add %s to your Bookshelf?</string>
+    <string name="jump">Jump</string>
+    <string name="page_number_format">Page %1$d</string>
+    <string name="add_all_to_bookshelf">Add all to bookshelf</string>
+    <string name="input_page_number">Page number</string>
+    <string name="invalid_page_number">Please enter an integer greater than or equal to 1.</string>
+    <string name="no_loaded_books_to_add">No loaded books to add.</string>
+    <string name="loaded_books_all_in_bookshelf">All loaded books are already in the bookshelf.</string>
+    <string name="add_loaded_books_to_shelf_message">Loaded: %1$d\nAdd: %2$d\nSkip existing: %3$d</string>
+    <string name="add_loaded_books_to_shelf_result">Added %1$d book(s), skipped %2$d existing book(s).</string>
     <string name="import_books_count">%s text file(s) in total</string>
     <string name="is_loading">Loading…</string>
     <string name="retry">Retry</string>
