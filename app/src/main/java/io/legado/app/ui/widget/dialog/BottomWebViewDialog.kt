@@ -68,7 +68,6 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
 
     constructor(
         sourceKey: String,
-        bookType: Int,
         url: String,
         html: String? = null,
         preloadJs: String? = null,
@@ -76,7 +75,6 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
     ) : this() {
         arguments = Bundle().apply {
             putString("sourceKey", sourceKey)
-            putInt("bookType", bookType)
             putString("url", url)
             putString("html", html)
             putString("preloadJs", preloadJs)

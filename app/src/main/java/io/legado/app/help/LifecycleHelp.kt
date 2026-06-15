@@ -17,10 +17,20 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
 
     private val activities: MutableList<WeakReference<Activity>> = arrayListOf()
     private val services: MutableList<WeakReference<BaseService>> = arrayListOf()
+
+    @Volatile
+    private var topActivityRef: WeakReference<Activity>? = null
     private var appFinishedListener: (() -> Unit)? = null
 
     fun activitySize(): Int {
         return activities.size
+    }
+
+    /**
+     * 当前前台 Activity（已 resume 且未 finishing/destroyed），无则返回 null
+     */
+    fun getTopActivity(): Activity? {
+        return topActivityRef?.get()?.takeUnless { it.isFinishing || it.isDestroyed }
     }
 
     /**
@@ -63,6 +73,7 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
 
     override fun onActivityResumed(activity: Activity) {
         LogUtils.d(TAG, "${activity::class.simpleName} onResume")
+        topActivityRef = WeakReference(activity)
     }
 
     override fun onActivityStarted(activity: Activity) {
@@ -71,6 +82,9 @@ object LifecycleHelp : Application.ActivityLifecycleCallbacks {
 
     override fun onActivityDestroyed(activity: Activity) {
         LogUtils.d(TAG, "${activity::class.simpleName} onDestroy")
+        if (topActivityRef?.get() === activity) {
+            topActivityRef = null
+        }
         for (temp in activities) {
             if (temp.get() != null && temp.get() === activity) {
                 activities.remove(temp)

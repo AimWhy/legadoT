@@ -143,8 +143,7 @@ class AudioPlayActivity :
             R.id.menu_custom_btn -> AudioPlay.book?.let { book ->
                 SourceCallBack.callBackBtn(
                     this, SourceCallBack.CLICK_CUSTOM_BUTTON,
-                    AudioPlay.bookSource, book, AudioPlay.durChapter,
-                    BookType.audio
+                    AudioPlay.bookSource, book, AudioPlay.durChapter
                 )
             }
 
@@ -162,7 +161,7 @@ class AudioPlayActivity :
                 SourceCallBack.callBackBtn(
                     this, SourceCallBack.CLICK_COPY_PLAY_URL,
                     AudioPlay.bookSource, book, AudioPlay.durChapter,
-                    BookType.audio, url
+                    url
                 ) {
                     sendToClip(url)
                 }

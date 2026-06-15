@@ -15,7 +15,6 @@ import android.widget.SeekBar
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import io.legado.app.R
-import io.legado.app.constant.BookType
 import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.ViewReadMenuBinding
 import io.legado.app.help.config.AppConfig
@@ -390,8 +389,7 @@ class ReadMenu @JvmOverloads constructor(
                     SourceCallBack.CLICK_CUSTOM_BUTTON,
                     ReadBook.bookSource,
                     book,
-                    chapter,
-                    BookType.text
+                    chapter
                 )
             }
         }
@@ -404,8 +402,7 @@ class ReadMenu @JvmOverloads constructor(
                     SourceCallBack.LONG_CLICK_CUSTOM_BUTTON,
                     ReadBook.bookSource,
                     book,
-                    chapter,
-                    BookType.text
+                    chapter
                 )
             }
             true

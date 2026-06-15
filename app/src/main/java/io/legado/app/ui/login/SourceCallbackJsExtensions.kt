@@ -6,7 +6,6 @@ import io.legado.app.data.entities.BaseSource
 import io.legado.app.help.JsExtensions
 import io.legado.app.ui.association.AddToBookshelfDialog
 import io.legado.app.ui.book.search.SearchActivity
-import io.legado.app.ui.widget.dialog.BottomWebViewDialog
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.showDialogFragment
 import java.lang.ref.WeakReference
@@ -14,8 +13,7 @@ import java.lang.ref.WeakReference
 @Suppress("unused")
 class SourceCallbackJsExtensions(
     activity: AppCompatActivity?,
-    source: BaseSource?,
-    val bookType: Int = 0
+    source: BaseSource?
 ) : JsExtensions {
 
     val activityRef: WeakReference<AppCompatActivity> = WeakReference(activity)
@@ -45,21 +43,6 @@ class SourceCallbackJsExtensions(
 
     fun addBook(bookUrl: String) {
         activityRef.get()?.showDialogFragment(AddToBookshelfDialog(bookUrl))
-    }
-
-    override fun showBrowser(url: String, html: String?, preloadJs: String?, config: String?) {
-        val activity = activityRef.get() ?: return
-        val source = getSource() ?: return
-        activity.showDialogFragment(
-            BottomWebViewDialog(
-                source.getKey(),
-                bookType,
-                url,
-                html,
-                preloadJs,
-                config
-            )
-        )
     }
 
 }

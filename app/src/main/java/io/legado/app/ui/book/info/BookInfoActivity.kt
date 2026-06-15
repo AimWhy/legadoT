@@ -235,7 +235,7 @@ class BookInfoActivity :
                     val shareStr = "${book.bookUrl}#$bookJson"
                     SourceCallBack.callBackBtn(
                         this, SourceCallBack.CLICK_SHARE_BOOK,
-                        viewModel.bookSource, book, null, 0, shareStr
+                        viewModel.bookSource, book, null, shareStr
                     ) {
                         shareWithQr(shareStr, book.name)
                     }
@@ -263,7 +263,7 @@ class BookInfoActivity :
             R.id.menu_copy_book_url -> viewModel.getBook()?.let { book ->
                 SourceCallBack.callBackBtn(
                     this, SourceCallBack.CLICK_COPY_BOOK_URL,
-                    viewModel.bookSource, book, null, 0, book.bookUrl
+                    viewModel.bookSource, book, null, book.bookUrl
                 ) {
                     sendToClip(book.bookUrl)
                 }
@@ -273,7 +273,7 @@ class BookInfoActivity :
                 val tocUrl = book.tocUrl
                 SourceCallBack.callBackBtn(
                     this, SourceCallBack.CLICK_COPY_TOC_URL,
-                    viewModel.bookSource, book, null, 0, tocUrl
+                    viewModel.bookSource, book, null, tocUrl
                 ) {
                     sendToClip(tocUrl)
                 }
@@ -577,7 +577,7 @@ class BookInfoActivity :
             viewModel.getBook(false)?.let { book ->
                 SourceCallBack.callBackBtn(
                     this@BookInfoActivity, SourceCallBack.CLICK_AUTHOR,
-                    viewModel.bookSource, book, null, 0, book.getRealAuthor()
+                    viewModel.bookSource, book, null, book.getRealAuthor()
                 ) {
                     startActivity<SearchActivity> {
                         putExtra("key", book.author)
@@ -601,7 +601,7 @@ class BookInfoActivity :
             viewModel.getBook(false)?.let { book ->
                 SourceCallBack.callBackBtn(
                     this@BookInfoActivity, SourceCallBack.CLICK_BOOK_NAME,
-                    viewModel.bookSource, book, null, 0, book.name
+                    viewModel.bookSource, book, null, book.name
                 ) {
                     startActivity<SearchActivity> {
                         putExtra("key", book.name)
