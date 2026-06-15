@@ -142,8 +142,11 @@ class AutoTaskService : BaseService() {
             taskLock.withLock {
                 isRun = true
                 try {
-                    processDueTasks()
+                    // 先排好下一次闹钟再执行任务。shortService 单次约 3 分钟会触发
+                    // onTimeout -> stopSelf，取消 lifecycleScope；若把排程放在任务之后，
+                    // 长任务超时就漏排下一次，导致整条定时链中断。提前排程保证链路不断。
                     scheduleNextRunFromRules()
+                    processDueTasks()
                 } finally {
                     isRun = false
                 }
@@ -266,12 +269,35 @@ class AutoTaskService : BaseService() {
 
     private fun scheduleNextRunFromRules() {
         if (!useAlarmFgsMode()) return
-        val nextRunAt = computeNextRunAt(AutoTask.getRules())
+        val nextRunAt = computeNextAlarmAt(AutoTask.getRules(), System.currentTimeMillis())
         if (nextRunAt == null) {
             cancelNextAlarm()
             return
         }
         scheduleNextAlarm(nextRunAt)
+    }
+
+    /**
+     * 计算下一次闹钟触发时间：取所有启用任务在 [fromTime] 之后最近的一次 cron 触发点。
+     *
+     * 与 [computeNextRunAt] 的区别：这里固定以 [fromTime]（当前时刻）为基准，而非各任务的
+     * lastRunAt。对“此刻已到期”的任务，以 lastRunAt 为基准会算出一个过去时间，被
+     * [scheduleNextAlarm] coerce 成 now+1s 而立即重触发；以当前时刻为基准则排到它的下一个
+     * 未来触发点，正好契合“本批已处理完到期任务，下次再唤醒”的语义。
+     */
+    private fun computeNextAlarmAt(rules: List<AutoTaskRule>, fromTime: Long): Long? {
+        val enabled = rules.filter { it.enable }
+        if (enabled.isEmpty()) return null
+        var nextRunAt: Long? = null
+        enabled.forEach { task ->
+            val cron = task.cron?.trim().orEmpty()
+            if (cron.isBlank()) return@forEach
+            val schedule = CronSchedule.parse(cron) ?: return@forEach
+            val next = schedule.nextTimeAfter(fromTime) ?: return@forEach
+            val current = nextRunAt
+            nextRunAt = if (current == null) next else minOf(current, next)
+        }
+        return nextRunAt
     }
 
     private fun computeNextRunAt(rules: List<AutoTaskRule>): Long? {
