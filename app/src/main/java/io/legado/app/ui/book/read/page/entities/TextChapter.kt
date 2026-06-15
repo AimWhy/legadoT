@@ -10,6 +10,7 @@ import io.legado.app.ui.book.read.page.provider.LayoutProgressListener
 import io.legado.app.ui.book.read.page.provider.TextChapterLayout
 import io.legado.app.utils.fastBinarySearchBy
 import kotlinx.coroutines.CoroutineScope
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -31,7 +32,12 @@ data class TextChapter(
     val effectiveReplaceRules: List<ReplaceRule>?
 ) : LayoutProgressListener {
 
-    private val textPages = arrayListOf<TextPage>()
+    /**
+     * 排版协程在 IO 线程 add, 主线程读取(进度/翻页/二分查找页码),
+     * 必须线程安全, 否则 add 时 size 先于元素写入可见, 索引读取会取到 null 元素导致 NPE.
+     * 仅追加+索引读, 无 remove, CopyOnWriteArrayList 最合适.
+     */
+    private val textPages = CopyOnWriteArrayList<TextPage>()
     val pages: List<TextPage> get() = textPages
 
     /** 关键词/正则高亮命中缓存; 随重排(新实例)与规则版本(ReadBook.highlightRulesVersion)失效 */
