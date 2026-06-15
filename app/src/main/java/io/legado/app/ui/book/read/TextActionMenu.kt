@@ -22,11 +22,9 @@ import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.constant.AppLog
-import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.ItemTextBinding
 import io.legado.app.databinding.PopupActionMenuBinding
 import io.legado.app.help.config.AppConfig
-import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.gone
 import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.printOnDebug
@@ -46,7 +44,6 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
     private val menuItems: List<MenuItemImpl>
     private val visibleMenuItems = arrayListOf<MenuItemImpl>()
     private val moreMenuItems = arrayListOf<MenuItemImpl>()
-    private val expandTextMenu get() = context.getPrefBoolean(PreferKey.expandTextMenu)
 
     init {
         @SuppressLint("InflateParams")
@@ -63,17 +60,10 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
             onInitializeMenu(otherMenu)
         }
         menuItems = myMenu.visibleItems + otherMenu.visibleItems
-        visibleMenuItems.addAll(menuItems.subList(0, 5))
-        moreMenuItems.addAll(menuItems.subList(5, menuItems.size))
         binding.recyclerView.adapter = adapter
         binding.recyclerViewMore.adapter = adapter
         setOnDismissListener {
-            if (!context.getPrefBoolean(PreferKey.expandTextMenu)) {
-                binding.ivMenuMore.setImageResource(R.drawable.ic_more_vert)
-                binding.recyclerViewMore.gone()
-                adapter.setItems(visibleMenuItems)
-                binding.recyclerView.visible()
-            }
+            resetToPrimaryView()
         }
         binding.ivMenuMore.setOnClickListener {
             if (binding.recyclerView.isVisible) {
@@ -82,22 +72,58 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
                 binding.recyclerView.gone()
                 binding.recyclerViewMore.visible()
             } else {
-                binding.ivMenuMore.setImageResource(R.drawable.ic_more_vert)
-                binding.recyclerViewMore.gone()
-                adapter.setItems(visibleMenuItems)
-                binding.recyclerView.visible()
+                resetToPrimaryView()
             }
+        }
+        binding.ivMenuMore.setOnLongClickListener {
+            dismiss()
+            callBack.onEditTextActionMenu()
+            true
         }
         upMenu()
     }
 
+    private fun resetToPrimaryView() {
+        binding.ivMenuMore.setImageResource(R.drawable.ic_more_vert)
+        binding.recyclerViewMore.gone()
+        adapter.setItems(visibleMenuItems)
+        binding.recyclerView.visible()
+    }
+
+    /** 按保存的配置重建"浮动条/更多"划分,并刷新初始视图 */
     fun upMenu() {
-        if (expandTextMenu) {
-            adapter.setItems(menuItems)
+        buildPartition()
+        adapter.setItems(visibleMenuItems)
+        if (moreMenuItems.isEmpty()) {
             binding.ivMenuMore.gone()
         } else {
-            adapter.setItems(visibleMenuItems)
             binding.ivMenuMore.visible()
+        }
+    }
+
+    private fun buildPartition() {
+        val config = loadTextSelectMenuConfig(context).normalized()
+        // 内置项有唯一 id;动态 PROCESS_TEXT 项 id 为 0,在此跳过(后面统一补到"更多")
+        val byId = HashMap<Int, MenuItemImpl>()
+        for (item in menuItems) {
+            if (item.itemId != 0 && !byId.containsKey(item.itemId)) {
+                byId[item.itemId] = item
+            }
+        }
+        val placed = HashSet<MenuItemImpl>()
+        visibleMenuItems.clear()
+        moreMenuItems.clear()
+        for (key in config.bar) {
+            val item = TextSelectMenuItem.menuIdOf(key)?.let { byId[it] } ?: continue
+            if (placed.add(item)) visibleMenuItems.add(item)
+        }
+        for (key in config.more) {
+            val item = TextSelectMenuItem.menuIdOf(key)?.let { byId[it] } ?: continue
+            if (placed.add(item)) moreMenuItems.add(item)
+        }
+        // 剩余项(动态 PROCESS_TEXT 项 + 配置未覆盖的内置项)统一补到"更多"末尾
+        for (item in menuItems) {
+            if (placed.add(item)) moreMenuItems.add(item)
         }
     }
 
@@ -110,58 +136,23 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
         endX: Int,
         endBottomY: Int
     ) {
-        if (expandTextMenu) {
-            when {
-                startTopY > 500 -> {
-                    showAtLocation(
-                        view,
-                        Gravity.BOTTOM or Gravity.START,
-                        startX,
-                        windowHeight - startTopY
-                    )
-                }
-
-                endBottomY - startBottomY > 500 -> {
-                    showAtLocation(view, Gravity.TOP or Gravity.START, startX, startBottomY)
-                }
-
-                else -> {
-                    showAtLocation(view, Gravity.TOP or Gravity.START, endX, endBottomY)
-                }
+        upMenu()
+        contentView.measure(
+            View.MeasureSpec.UNSPECIFIED,
+            View.MeasureSpec.UNSPECIFIED,
+        )
+        val popupHeight = contentView.measuredHeight
+        when {
+            startBottomY > 500 -> {
+                showAtLocation(view, Gravity.TOP or Gravity.START, startX, startTopY - popupHeight)
             }
-        } else {
-            contentView.measure(
-                View.MeasureSpec.UNSPECIFIED,
-                View.MeasureSpec.UNSPECIFIED,
-            )
-            val popupHeight = contentView.measuredHeight
-            when {
-                startBottomY > 500 -> {
-                    showAtLocation(
-                        view,
-                        Gravity.TOP or Gravity.START,
-                        startX,
-                        startTopY - popupHeight
-                    )
-                }
 
-                endBottomY - startBottomY > 500 -> {
-                    showAtLocation(
-                        view,
-                        Gravity.TOP or Gravity.START,
-                        startX,
-                        startBottomY
-                    )
-                }
+            endBottomY - startBottomY > 500 -> {
+                showAtLocation(view, Gravity.TOP or Gravity.START, startX, startBottomY)
+            }
 
-                else -> {
-                    showAtLocation(
-                        view,
-                        Gravity.TOP or Gravity.START,
-                        endX,
-                        endBottomY
-                    )
-                }
+            else -> {
+                showAtLocation(view, Gravity.TOP or Gravity.START, endX, endBottomY)
             }
         }
     }
@@ -291,5 +282,7 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
         fun onMenuItemSelected(itemId: Int): Boolean
 
         fun onMenuActionFinally()
+
+        fun onEditTextActionMenu()
     }
 }

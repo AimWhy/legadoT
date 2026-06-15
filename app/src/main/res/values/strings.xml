@@ -1464,4 +1464,8 @@ Placeholders:
     <string name="explore_change_source">换书源</string>
     <string name="explore_change_kind">换分类</string>
     <string name="explore_select_kind">选择分类</string>
+    <string name="text_select_menu_config">Customize selection menu</string>
+    <string name="text_menu_zone_bar">Floating bar</string>
+    <string name="text_menu_zone_more">More</string>
+    <string name="text_select_menu_config_summary">Drag to reorder; tap the arrow to move a button between the floating bar and More</string>
 </resources>

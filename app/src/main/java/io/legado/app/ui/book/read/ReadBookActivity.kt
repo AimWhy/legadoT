@@ -88,6 +88,7 @@ import io.legado.app.ui.book.read.config.BgTextConfigDialog.Companion.TEXT_COLOR
 import io.legado.app.ui.book.read.config.MoreConfigDialog
 import io.legado.app.ui.book.read.config.ReadAloudDialog
 import io.legado.app.ui.book.read.config.ReadStyleDialog
+import io.legado.app.ui.book.read.config.TextSelectMenuConfigDialog
 import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_COLOR
 import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_DIVIDER_COLOR
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_BOX
@@ -1074,6 +1075,20 @@ class ReadBookActivity : BaseReadBookActivity(),
     override fun onMenuActionFinally() = binding.run {
         textActionMenu.dismiss()
         readView.cancelSelect()
+    }
+
+    /**
+     * 打开自定义文字选择菜单编辑器(长按"更多"触发)
+     */
+    override fun onEditTextActionMenu() {
+        showTextSelectMenuConfig()
+    }
+
+    /**
+     * 打开自定义文字选择菜单编辑器(设置入口也用它)
+     */
+    fun showTextSelectMenuConfig() {
+        showDialogFragment(TextSelectMenuConfigDialog())
     }
 
     private fun speak(text: String) {
