@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.widget.SearchView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.os.bundleOf
 import androidx.fragment.app.viewModels
@@ -26,6 +27,7 @@ import io.legado.app.databinding.ItemTocRegexBinding
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
+import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.association.ImportTxtTocRuleDialog
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.qrcode.QrCodeResult
@@ -65,6 +67,10 @@ class TxtTocRuleDialog() : BaseDialogFragment(R.layout.dialog_toc_regex),
     private val adapter by lazy { TocRegexAdapter(requireContext()) }
     var selectedName: String? = null
     private var durRegex: String? = null
+    private val searchView: SearchView by lazy { binding.root.findViewById(R.id.search_view) }
+    private lateinit var itemTouchCallback: ItemTouchCallback
+    private var allRules: List<TxtTocRule> = emptyList()
+    private var searchKey: String = ""
     private val qrCodeResult = registerForActivityResult(QrCodeResult()) {
         it ?: return@registerForActivityResult
         showDialogFragment(ImportTxtTocRuleDialog(it))
@@ -88,20 +94,21 @@ class TxtTocRuleDialog() : BaseDialogFragment(R.layout.dialog_toc_regex),
         binding.toolBar.menu.applyTint(requireContext())
         binding.toolBar.setOnMenuItemClickListener(this)
         initView()
+        initSearchView()
         initData()
     }
 
     private fun initView() = binding.run {
         recyclerView.addItemDecoration(VerticalDivider(requireContext()))
         recyclerView.adapter = adapter
-        val itemTouchCallback = ItemTouchCallback(adapter)
+        itemTouchCallback = ItemTouchCallback(adapter)
         itemTouchCallback.isCanDrag = true
         ItemTouchHelper(itemTouchCallback).attachToRecyclerView(recyclerView)
         tvCancel.setOnClickListener {
             dismissAllowingStateLoss()
         }
         tvOk.setOnClickListener {
-            adapter.getItems().forEach { tocRule ->
+            allRules.forEach { tocRule ->
                 if (selectedName == tocRule.name) {
                     val callBack = activity as? CallBack
                     callBack?.onTocRegexDialogResult(tocRule.rule)
@@ -112,15 +119,34 @@ class TxtTocRuleDialog() : BaseDialogFragment(R.layout.dialog_toc_regex),
         }
     }
 
+    private fun initSearchView() {
+        binding.searchBar.setBackgroundColor(primaryColor)
+        searchView.applyTint(toolbarTextColor)
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean = false
+            override fun onQueryTextChange(newText: String?): Boolean {
+                searchKey = newText?.trim() ?: ""
+                upAdapter()
+                return false
+            }
+        })
+    }
+
     private fun initData() {
         lifecycleScope.launch {
             appDb.txtTocRuleDao.observeAll().catch {
                 AppLog.put("TXT目录规则对话框获取数据失败\n${it.localizedMessage}", it)
             }.flowOn(IO).conflate().collect { tocRules ->
+                allRules = tocRules
                 initSelectedName(tocRules)
-                adapter.setItems(tocRules, adapter.diffItemCallBack)
+                upAdapter()
             }
         }
+    }
+
+    private fun upAdapter() {
+        itemTouchCallback.isCanDrag = searchKey.isEmpty()
+        adapter.setItems(allRules.filterByKeyword(searchKey), adapter.diffItemCallBack)
     }
 
     private fun initSelectedName(tocRules: List<TxtTocRule>) {
