@@ -142,10 +142,6 @@ class MoreConfigDialog : BasePrefDialogFragment() {
                     postEvent(PreferKey.showBrightnessView, "")
                 }
 
-                PreferKey.expandTextMenu -> {
-                    (activity as? ReadBookActivity)?.textActionMenu?.upMenu()
-                }
-
                 PreferKey.doublePageHorizontal -> {
                     ChapterProvider.upLayout()
                     ReadBook.loadContent(false)
@@ -181,6 +177,10 @@ class MoreConfigDialog : BasePrefDialogFragment() {
                 "customPageKey" -> PageKeyDialog(requireContext()).show()
                 "clickRegionalConfig" -> {
                     (activity as? ReadBookActivity)?.showClickRegionalConfig()
+                }
+
+                "customTextMenu" -> {
+                    (activity as? ReadBookActivity)?.showTextSelectMenuConfig()
                 }
 
                 PreferKey.pageTouchSlop -> {
