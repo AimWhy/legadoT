@@ -29,6 +29,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import splitties.init.appCtx
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.coroutineContext
 import kotlin.math.min
 
@@ -77,6 +78,9 @@ class SearchModel(private val scope: CoroutineScope, private val callBack: CallB
     private fun startSearch() {
         val precision = appCtx.getPrefBoolean(PreferKey.precisionSearch)
         var hasMore = false
+        val total = bookSourceParts.size
+        val searchedCount = AtomicInteger(0)
+        callBack.onSearchProgress(0, total)
         searchJob = scope.launch(searchPool!!) {
             flow {
                 for (bs in bookSourceParts) {
@@ -88,13 +92,17 @@ class SearchModel(private val scope: CoroutineScope, private val callBack: CallB
             }.onStart {
                 callBack.onSearchStart()
             }.mapParallelSafe(threadCount) {
-                withTimeout(30000L) {
-                    WebBook.searchBookAwait(
-                        it, searchKey, searchPage,
-                        filter = { name, author ->
-                            !precision || name.contains(searchKey) ||
-                                    author.contains(searchKey)
-                        })
+                try {
+                    withTimeout(30000L) {
+                        WebBook.searchBookAwait(
+                            it, searchKey, searchPage,
+                            filter = { name, author ->
+                                !precision || name.contains(searchKey) ||
+                                        author.contains(searchKey)
+                            })
+                    }
+                } finally {
+                    callBack.onSearchProgress(searchedCount.incrementAndGet(), total)
                 }
             }.onEach { items ->
                 for (book in items) {
@@ -203,6 +211,7 @@ class SearchModel(private val scope: CoroutineScope, private val callBack: CallB
     interface CallBack {
         fun getSearchScope(): SearchScope
         fun onSearchStart()
+        fun onSearchProgress(searched: Int, total: Int)
         fun onSearchSuccess(searchBooks: List<SearchBook>)
         fun onSearchFinish(isEmpty: Boolean, hasMore: Boolean)
         fun onSearchCancel(exception: Throwable? = null)
