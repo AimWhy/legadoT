@@ -284,7 +284,6 @@ class SearchActivity : VMBaseActivity<ActivityBookSearchBinding, SearchViewModel
         }
         binding.fbStartStop.applyNavigationBarMargin(true)
         binding.tvClearHistory.setOnClickListener { alertClearHistory() }
-        binding.tvSearchProgress.setTextColor(accentColor)
     }
 
     private fun initData() {
