@@ -2,6 +2,7 @@ package io.legado.app.help
 
 import android.webkit.WebSettings
 import androidx.annotation.Keep
+import androidx.appcompat.app.AppCompatActivity
 import cn.hutool.core.codec.Base64
 import cn.hutool.core.util.HexUtil
 import com.script.rhino.rhinoContext
@@ -24,6 +25,7 @@ import io.legado.app.model.Debug
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.analyzeRule.QueryTTF
 import io.legado.app.ui.association.OpenUrlConfirmActivity
+import io.legado.app.ui.widget.dialog.BottomWebViewDialog
 import io.legado.app.utils.ArchiveUtils
 import io.legado.app.utils.ChineseUtils
 import io.legado.app.utils.EncoderUtils
@@ -44,6 +46,7 @@ import io.legado.app.utils.isMainThread
 import io.legado.app.utils.longToastOnUi
 import io.legado.app.utils.mapAsync
 import io.legado.app.utils.sendToClip
+import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toStringArray
@@ -1025,12 +1028,28 @@ interface JsExtensions : JsEncodeUtils {
         }
     }
 
+    fun showBrowser(url: String) = showBrowser(url, null, null, null)
+
+    fun showBrowser(url: String, html: String?) = showBrowser(url, html, null, null)
+
+    fun showBrowser(url: String, html: String?, preloadJs: String?) =
+        showBrowser(url, html, preloadJs, null)
+
     /**
      * 显示底部浏览器弹窗
-     * 需要 Activity 上下文，SourceCallbackJsExtensions 等子类可覆盖提供完整实现
+     * 需要前台 Activity；后台(如书架刷新)或无界面时仅记录日志、不显示。
      */
-    fun showBrowser(url: String, html: String? = null, preloadJs: String? = null, config: String? = null) {
-        // 默认空实现，需要 Activity 上下文的子类可覆盖
+    fun showBrowser(url: String, html: String?, preloadJs: String?, config: String?) {
+        val activity = LifecycleHelp.getTopActivity() as? AppCompatActivity ?: run {
+            log("showBrowser 调用无效：当前没有前台界面")
+            return
+        }
+        val source = getSource() ?: return
+        activity.runOnUiThread {
+            activity.showDialogFragment(
+                BottomWebViewDialog(source.getKey(), url, html, preloadJs, config)
+            )
+        }
     }
 
     /**
