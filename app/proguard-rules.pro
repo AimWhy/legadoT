@@ -61,6 +61,10 @@
 -keep class * extends io.legado.app.help.JsExtensions{*;}
 # 数据类
 -keep class **.data.entities.**{*;}
+# 高亮样式 Gson 模型在 help 包(不在 data.entities),release 下 R8 会破坏下划线线型枚举
+# (虚线/点线/双线 变实线、规则存了读回也变实线),必须单独保留类名/字段/枚举常量名
+-keep class io.legado.app.help.HighlightStyle { *; }
+-keep class io.legado.app.help.HighlightStyle$** { *; }
 # showBrowser WebView JS 接口
 -keepclassmembers class **.ui.widget.dialog.BottomWebViewDialog$JSInterface {
     public *;
