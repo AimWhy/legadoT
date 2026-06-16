@@ -53,24 +53,24 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
         binding.dsbTitleTop.progress = ReadBookConfig.titleTopSpacing
         binding.dsbTitleBottom.progress = ReadBookConfig.titleBottomSpacing
 
-        binding.tvHeaderShow.text =
+        binding.llHeaderShow.value =
             ReadTipConfig.getHeaderModes(requireContext())[ReadTipConfig.headerMode]
-        binding.tvFooterShow.text =
+        binding.llFooterShow.value =
             ReadTipConfig.getFooterModes(requireContext())[ReadTipConfig.footerMode]
 
         ReadTipConfig.run {
             tipNames.let { tipNames ->
-                binding.tvHeaderLeft.text =
+                binding.llHeaderLeft.value =
                     tipNames.getOrElse(tipValues.indexOf(tipHeaderLeft)) { tipNames[none] }
-                binding.tvHeaderMiddle.text =
+                binding.llHeaderMiddle.value =
                     tipNames.getOrElse(tipValues.indexOf(tipHeaderMiddle)) { tipNames[none] }
-                binding.tvHeaderRight.text =
+                binding.llHeaderRight.value =
                     tipNames.getOrElse(tipValues.indexOf(tipHeaderRight)) { tipNames[none] }
-                binding.tvFooterLeft.text =
+                binding.llFooterLeft.value =
                     tipNames.getOrElse(tipValues.indexOf(tipFooterLeft)) { tipNames[none] }
-                binding.tvFooterMiddle.text =
+                binding.llFooterMiddle.value =
                     tipNames.getOrElse(tipValues.indexOf(tipFooterMiddle)) { tipNames[none] }
-                binding.tvFooterRight.text =
+                binding.llFooterRight.value =
                     tipNames.getOrElse(tipValues.indexOf(tipFooterRight)) { tipNames[none] }
             }
         }
@@ -81,7 +81,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
     private fun upTvTipColor() {
         val tipColorNames = ReadTipConfig.tipColorNames
         val tipColor = ReadTipConfig.tipColor
-        binding.tvTipColor.text = if (tipColor == 0) {
+        binding.llTipColor.value = if (tipColor == 0) {
             tipColorNames.first()
         } else {
             "#${tipColor.hexString}"
@@ -91,7 +91,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
     private fun upTvTipDividerColor() {
         val tipDividerColorNames = ReadTipConfig.tipDividerColorNames
         val tipDividerColor = ReadTipConfig.tipDividerColor
-        binding.tvTipDividerColor.text = when (tipDividerColor) {
+        binding.llTipDividerColor.value = when (tipDividerColor) {
             -1, 0 -> tipDividerColorNames[tipDividerColor + 1]
             else -> "#${tipDividerColor.hexString}"
         }
@@ -118,7 +118,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
             val headerModes = ReadTipConfig.getHeaderModes(requireContext())
             context?.selector(items = headerModes.values.toList()) { _, i ->
                 ReadTipConfig.headerMode = headerModes.keys.toList()[i]
-                tvHeaderShow.text = headerModes[ReadTipConfig.headerMode]
+                llHeaderShow.value = headerModes[ReadTipConfig.headerMode]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2))
             }
         }
@@ -126,7 +126,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
             val footerModes = ReadTipConfig.getFooterModes(requireContext())
             context?.selector(items = footerModes.values.toList()) { _, i ->
                 ReadTipConfig.footerMode = footerModes.keys.toList()[i]
-                tvFooterShow.text = footerModes[ReadTipConfig.footerMode]
+                llFooterShow.value = footerModes[ReadTipConfig.footerMode]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2))
             }
         }
@@ -135,7 +135,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                 val tipValue = ReadTipConfig.tipValues[i]
                 clearRepeat(tipValue)
                 ReadTipConfig.tipHeaderLeft = tipValue
-                tvHeaderLeft.text = ReadTipConfig.tipNames[i]
+                llHeaderLeft.value = ReadTipConfig.tipNames[i]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6))
             }
         }
@@ -144,7 +144,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                 val tipValue = ReadTipConfig.tipValues[i]
                 clearRepeat(tipValue)
                 ReadTipConfig.tipHeaderMiddle = tipValue
-                tvHeaderMiddle.text = ReadTipConfig.tipNames[i]
+                llHeaderMiddle.value = ReadTipConfig.tipNames[i]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6))
             }
         }
@@ -153,7 +153,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                 val tipValue = ReadTipConfig.tipValues[i]
                 clearRepeat(tipValue)
                 ReadTipConfig.tipHeaderRight = tipValue
-                tvHeaderRight.text = ReadTipConfig.tipNames[i]
+                llHeaderRight.value = ReadTipConfig.tipNames[i]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6))
             }
         }
@@ -162,7 +162,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                 val tipValue = ReadTipConfig.tipValues[i]
                 clearRepeat(tipValue)
                 ReadTipConfig.tipFooterLeft = tipValue
-                tvFooterLeft.text = ReadTipConfig.tipNames[i]
+                llFooterLeft.value = ReadTipConfig.tipNames[i]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6))
             }
         }
@@ -171,7 +171,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                 val tipValue = ReadTipConfig.tipValues[i]
                 clearRepeat(tipValue)
                 ReadTipConfig.tipFooterMiddle = tipValue
-                tvFooterMiddle.text = ReadTipConfig.tipNames[i]
+                llFooterMiddle.value = ReadTipConfig.tipNames[i]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6))
             }
         }
@@ -180,7 +180,7 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                 val tipValue = ReadTipConfig.tipValues[i]
                 clearRepeat(tipValue)
                 ReadTipConfig.tipFooterRight = tipValue
-                tvFooterRight.text = ReadTipConfig.tipNames[i]
+                llFooterRight.value = ReadTipConfig.tipNames[i]
                 postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6))
             }
         }
@@ -224,27 +224,27 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
         if (repeat != none) {
             if (tipHeaderLeft == repeat) {
                 tipHeaderLeft = none
-                binding.tvHeaderLeft.text = tipNames[none]
+                binding.llHeaderLeft.value = tipNames[none]
             }
             if (tipHeaderMiddle == repeat) {
                 tipHeaderMiddle = none
-                binding.tvHeaderMiddle.text = tipNames[none]
+                binding.llHeaderMiddle.value = tipNames[none]
             }
             if (tipHeaderRight == repeat) {
                 tipHeaderRight = none
-                binding.tvHeaderRight.text = tipNames[none]
+                binding.llHeaderRight.value = tipNames[none]
             }
             if (tipFooterLeft == repeat) {
                 tipFooterLeft = none
-                binding.tvFooterLeft.text = tipNames[none]
+                binding.llFooterLeft.value = tipNames[none]
             }
             if (tipFooterMiddle == repeat) {
                 tipFooterMiddle = none
-                binding.tvFooterMiddle.text = tipNames[none]
+                binding.llFooterMiddle.value = tipNames[none]
             }
             if (tipFooterRight == repeat) {
                 tipFooterRight = none
-                binding.tvFooterRight.text = tipNames[none]
+                binding.llFooterRight.value = tipNames[none]
             }
         }
     }

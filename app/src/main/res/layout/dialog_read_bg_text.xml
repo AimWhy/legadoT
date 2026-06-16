@@ -85,7 +85,6 @@
             android:layout_weight="1"
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
-            android:background="?attr/selectableItemBackground"
             android:ellipsize="end"
             android:gravity="center"
             android:padding="6dp"
@@ -93,7 +92,8 @@
             android:text="@string/review_icon_svg_title"
             android:textAlignment="center"
             android:textSize="14sp"
-            app:isBottomBackground="true" />
+            app:isBottomBackground="true"
+            app:radius="@dimen/radius_m" />
 
         <io.legado.app.ui.widget.text.StrokeTextView
             android:id="@+id/tv_review_icon_size"
@@ -102,7 +102,6 @@
             android:layout_weight="1"
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
-            android:background="?attr/selectableItemBackground"
             android:ellipsize="end"
             android:gravity="center"
             android:padding="6dp"
@@ -110,7 +109,8 @@
             android:text="@string/review_icon_size_title"
             android:textAlignment="center"
             android:textSize="14sp"
-            app:isBottomBackground="true" />
+            app:isBottomBackground="true"
+            app:radius="@dimen/radius_m" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
@@ -127,13 +127,13 @@
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
             android:layout_weight="5"
-            android:background="?attr/selectableItemBackground"
             android:gravity="center"
             android:padding="6dp"
             android:singleLine="true"
             android:text="@string/text_color"
             android:textSize="14sp"
             app:isBottomBackground="true"
+            app:radius="@dimen/radius_m"
             tools:ignore="HardcodedText" />
 
         <io.legado.app.ui.widget.text.StrokeTextView
@@ -144,13 +144,13 @@
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
             android:layout_weight="5"
-            android:background="?attr/selectableItemBackground"
             android:gravity="center"
             android:padding="6dp"
             android:singleLine="true"
             android:text="@string/bg_color"
             android:textSize="14sp"
             app:isBottomBackground="true"
+            app:radius="@dimen/radius_m"
             tools:ignore="HardcodedText" />
 
         <ImageView

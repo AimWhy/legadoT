@@ -1,13 +1,12 @@
 package io.legado.app.ui.book.read.config
 
 import android.content.DialogInterface
-import android.graphics.PorterDuff
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.SeekBar
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogAutoReadBinding
@@ -19,7 +18,6 @@ import io.legado.app.model.ReadBook
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.book.read.BaseReadBookActivity
 import io.legado.app.ui.book.read.ReadBookActivity
-import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import java.util.Locale
@@ -58,17 +56,16 @@ class AutoReadDialog : BaseDialogFragment(R.layout.dialog_auto_read) {
         val bg = requireContext().bottomBackground
         val isLight = ColorUtils.isColorLight(bg)
         val textColor = requireContext().getPrimaryTextColor(isLight)
-        root.setBackgroundColor(bg)
-        tvReadSpeedTitle.setTextColor(textColor)
-        tvReadSpeed.setTextColor(textColor)
-        ivCatalog.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvCatalog.setTextColor(textColor)
-        ivMainMenu.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvMainMenu.setTextColor(textColor)
-        ivAutoPageStop.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvAutoPageStop.setTextColor(textColor)
-        ivSetting.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvSetting.setTextColor(textColor)
+        val radius = requireContext().resources.getDimension(R.dimen.radius_l)
+        root.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+            setColor(bg)
+        }
+        llCatalog.setTint(textColor)
+        llMainMenu.setTint(textColor)
+        llAutoPageStop.setTint(textColor)
+        llSetting.setTint(textColor)
         initOnChange()
         initData()
         initEvent()
@@ -76,23 +73,17 @@ class AutoReadDialog : BaseDialogFragment(R.layout.dialog_auto_read) {
 
     private fun initData() {
         val speed = if (ReadBookConfig.autoReadSpeed < 1) 1 else ReadBookConfig.autoReadSpeed
-        binding.tvReadSpeed.text = String.format(Locale.ROOT, "%ds", speed)
         binding.seekAutoRead.progress = speed
     }
 
     private fun initOnChange() {
-        binding.seekAutoRead.setOnSeekBarChangeListener(object : SeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                val speed = if (progress < 1) 1 else progress
-                binding.tvReadSpeed.text = String.format(Locale.ROOT, "%ds", speed)
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                ReadBookConfig.autoReadSpeed =
-                    if (binding.seekAutoRead.progress < 1) 1 else binding.seekAutoRead.progress
-                upTtsSpeechRate()
-            }
-        })
+        binding.seekAutoRead.valueFormat = { progress ->
+            String.format(Locale.ROOT, "%ds", if (progress < 1) 1 else progress)
+        }
+        binding.seekAutoRead.onChanged = { progress ->
+            ReadBookConfig.autoReadSpeed = if (progress < 1) 1 else progress
+            upTtsSpeechRate()
+        }
     }
 
     private fun initEvent() {

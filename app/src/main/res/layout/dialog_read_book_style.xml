@@ -27,7 +27,7 @@
             android:paddingBottom="4dp"
             android:textSize="14sp"
             app:isBottomBackground="true"
-            app:radius="3dp" />
+            app:radius="@dimen/radius_m" />
 
         <Space
             android:layout_width="0dp"
@@ -46,7 +46,7 @@
             android:text="@string/text_font"
             android:textSize="14sp"
             app:isBottomBackground="true"
-            app:radius="3dp" />
+            app:radius="@dimen/radius_m" />
 
         <Space
             android:layout_width="0dp"
@@ -65,7 +65,7 @@
             android:text="@string/text_indent"
             android:textSize="14sp"
             app:isBottomBackground="true"
-            app:radius="3dp" />
+            app:radius="@dimen/radius_m" />
 
         <Space
             android:layout_width="0dp"
@@ -83,7 +83,7 @@
             android:paddingBottom="4dp"
             android:textSize="14sp"
             app:isBottomBackground="true"
-            app:radius="3dp" />
+            app:radius="@dimen/radius_m" />
 
         <Space
             android:layout_width="0dp"
@@ -102,7 +102,7 @@
             android:text="@string/padding"
             android:textSize="14sp"
             app:isBottomBackground="true"
-            app:radius="3dp" />
+            app:radius="@dimen/radius_m" />
 
         <Space
             android:layout_width="0dp"
@@ -121,7 +121,7 @@
             android:text="@string/information"
             android:textSize="14sp"
             app:isBottomBackground="true"
-            app:radius="3dp" />
+            app:radius="@dimen/radius_m" />
 
     </LinearLayout>
 
@@ -279,18 +279,12 @@
             android:text="@string/text_bg_style"
             android:textSize="12sp" />
 
-        <TextView
-            android:id="@+id/tv_share_layout"
+        <io.legado.app.lib.theme.view.ThemeSwitch
+            android:id="@+id/sw_share_layout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_l"
             android:text="@string/share_layout" />
-
-        <io.legado.app.ui.widget.checkbox.SmoothCheckBox
-            android:id="@+id/cb_share_layout"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_marginStart="6dp"
-            android:layout_marginEnd="16dp" />
 
     </LinearLayout>
 

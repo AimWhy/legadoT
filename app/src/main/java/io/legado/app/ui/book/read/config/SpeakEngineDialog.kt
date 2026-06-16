@@ -276,7 +276,13 @@ class SpeakEngineDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
                 }
                 ivMenuDelete.setOnClickListener {
                     getItemByLayoutPosition(holder.layoutPosition)?.let { httpTTS ->
-                        appDb.httpTTSDao.delete(httpTTS)
+                        alert(R.string.delete) {
+                            setMessage(getString(R.string.sure_del_any, httpTTS.name))
+                            yesButton {
+                                appDb.httpTTSDao.delete(httpTTS)
+                            }
+                            noButton()
+                        }
                     }
                 }
             }

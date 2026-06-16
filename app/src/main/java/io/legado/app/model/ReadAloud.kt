@@ -3,17 +3,21 @@ package io.legado.app.model
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import io.legado.app.R
 import io.legado.app.constant.AppLog
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.IntentAction
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.HttpTTS
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.service.HttpReadAloudService
 import io.legado.app.service.TTSReadAloudService
+import io.legado.app.utils.GSON
 import io.legado.app.utils.LogUtils
 import io.legado.app.utils.StringUtils
+import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.startForegroundServiceCompat
 import io.legado.app.utils.toastOnUi
@@ -132,6 +136,19 @@ object ReadAloud {
             intent.putExtra("minute", minute)
             context.startForegroundServiceCompat(intent)
         }
+    }
+
+    /**
+     * 当前朗读引擎的显示名(系统默认 / 在线引擎名 / 系统引擎标题)
+     */
+    fun getEngineName(context: Context): String {
+        val ttsEngine = ttsEngine ?: return context.getString(R.string.system_tts)
+        if (StringUtils.isNumeric(ttsEngine)) {
+            return appDb.httpTTSDao.getName(ttsEngine.toLong())
+                ?: context.getString(R.string.system_tts)
+        }
+        return GSON.fromJsonObject<SelectItem<String>>(ttsEngine).getOrNull()?.title
+            ?: context.getString(R.string.system_tts)
     }
 
 }

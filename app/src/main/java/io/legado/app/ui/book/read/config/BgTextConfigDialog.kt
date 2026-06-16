@@ -3,6 +3,7 @@ package io.legado.app.ui.book.read.config
 import android.annotation.SuppressLint
 import android.content.DialogInterface
 import android.graphics.PorterDuff
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
@@ -107,7 +108,7 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
         super.onStart()
         dialog?.window?.run {
             clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setBackgroundDrawableResource(R.color.background)
+            setBackgroundDrawableResource(android.R.color.transparent)
             decorView.setPadding(0, 0, 0, 0)
             val attr = attributes
             attr.dimAmount = 0.0f
@@ -135,7 +136,12 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
         val isLight = ColorUtils.isColorLight(bg)
         primaryTextColor = requireContext().getPrimaryTextColor(isLight)
         secondaryTextColor = requireContext().getSecondaryTextColor(isLight)
-        rootView.setBackgroundColor(bg)
+        val radius = requireContext().resources.getDimension(R.dimen.radius_l)
+        rootView.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+            setColor(bg)
+        }
         tvNameTitle.setTextColor(primaryTextColor)
         tvName.setTextColor(secondaryTextColor)
         ivEdit.setColorFilter(secondaryTextColor, PorterDuff.Mode.SRC_IN)

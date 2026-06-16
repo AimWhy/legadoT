@@ -239,4 +239,14 @@
             <enum name="right_bottom_fill" value="7" />
         </attr>
     </declare-styleable>
+
+    <declare-styleable name="ReadMenuActionButton">
+        <attr name="menuIcon" format="reference" />
+        <attr name="menuLabel" format="string" />
+        <attr name="menuShowLabel" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="LabeledValueRow">
+        <attr name="title" />
+    </declare-styleable>
 </resources>
