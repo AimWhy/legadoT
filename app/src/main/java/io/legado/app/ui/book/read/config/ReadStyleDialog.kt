@@ -74,7 +74,7 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
         rootView.setBackgroundColor(bg)
         tvPageAnim.setTextColor(textColor)
         tvBgTs.setTextColor(textColor)
-        tvShareLayout.setTextColor(textColor)
+        swShareLayout.setTextColor(textColor)
         dsbTextSize.valueFormat = {
             (it + 5).toString()
         }
@@ -101,7 +101,7 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
     }
 
     private fun initData() {
-        binding.cbShareLayout.isChecked = ReadBookConfig.shareLayout
+        binding.swShareLayout.isChecked = ReadBookConfig.shareLayout
         upView()
         styleAdapter.setItems(ReadBookConfig.configList)
     }
@@ -139,7 +139,7 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
             callBack?.upPageAnim()
             ReadBook.loadContent(false)
         }
-        cbShareLayout.onCheckedChangeListener = { _, isChecked ->
+        swShareLayout.setOnCheckedChangeListener { _, isChecked ->
             ReadBookConfig.shareLayout = isChecked
             upView()
             postEvent(EventBus.UP_CONFIG, arrayListOf(1, 2, 5))

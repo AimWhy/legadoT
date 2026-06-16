@@ -164,60 +164,48 @@
                 android:paddingTop="@dimen/space_m"
                 android:paddingBottom="@dimen/space_xs">
 
-                <androidx.appcompat.widget.AppCompatImageView
+                <io.legado.app.ui.widget.ReadMenuActionButton
                     android:id="@+id/fab_search"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="@dimen/space_xs"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/search_content"
-                    android:padding="10dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_search"
                     android:tooltipText="@string/search_content"
+                    app:menuIcon="@drawable/ic_search"
                     tools:ignore="UnusedAttribute" />
 
-                <androidx.appcompat.widget.AppCompatImageView
+                <io.legado.app.ui.widget.ReadMenuActionButton
                     android:id="@+id/fab_auto_page"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="@dimen/space_xs"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/auto_next_page"
-                    android:padding="10dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_auto_page"
                     android:tooltipText="@string/auto_next_page"
+                    app:menuIcon="@drawable/ic_auto_page"
                     tools:ignore="UnusedAttribute" />
 
-                <androidx.appcompat.widget.AppCompatImageView
+                <io.legado.app.ui.widget.ReadMenuActionButton
                     android:id="@+id/fab_replace_rule"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="@dimen/space_xs"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/replace_rule_title"
-                    android:padding="10dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_find_replace"
                     android:tooltipText="@string/replace_rule_title"
+                    app:menuIcon="@drawable/ic_find_replace"
                     tools:ignore="UnusedAttribute" />
 
-                <androidx.appcompat.widget.AppCompatImageView
+                <io.legado.app.ui.widget.ReadMenuActionButton
                     android:id="@+id/fab_night_theme"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:layout_marginHorizontal="@dimen/space_xs"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
                     android:contentDescription="@string/dark_theme"
-                    android:padding="10dp"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/ic_brightness"
                     android:tooltipText="@string/dark_theme"
+                    app:menuIcon="@drawable/ic_brightness"
                     tools:ignore="UnusedAttribute" />
 
             </LinearLayout>
@@ -233,10 +221,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="20dp"
-                android:layout_marginTop="5dp"
-                android:layout_marginRight="20dp"
-                android:layout_marginBottom="5dp"
+                android:layout_marginLeft="@dimen/space_l"
+                android:layout_marginTop="@dimen/space_xs"
+                android:layout_marginRight="@dimen/space_l"
+                android:layout_marginBottom="@dimen/space_xs"
                 android:importantForAccessibility="no"
                 android:orientation="horizontal">
 
@@ -244,14 +232,15 @@
                     android:id="@+id/tv_pre"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="10dp"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:layout_marginStart="@dimen/space_s"
+                    android:layout_marginEnd="@dimen/space_s"
+                    android:background="@drawable/bg_read_menu_action"
                     android:clickable="true"
                     android:enabled="false"
                     android:focusable="true"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
+                    android:paddingHorizontal="@dimen/space_s"
+                    android:paddingTop="@dimen/space_s"
+                    android:paddingBottom="@dimen/space_s"
                     android:text="@string/previous_chapter"
                     android:textColor="@color/primaryText"
                     android:textSize="14sp"
@@ -268,14 +257,15 @@
                     android:id="@+id/tv_next"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
-                    android:layout_marginEnd="10dp"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
+                    android:layout_marginStart="@dimen/space_s"
+                    android:layout_marginEnd="@dimen/space_s"
+                    android:background="@drawable/bg_read_menu_action"
                     android:clickable="true"
                     android:enabled="false"
                     android:focusable="true"
-                    android:paddingTop="10dp"
-                    android:paddingBottom="10dp"
+                    android:paddingHorizontal="@dimen/space_s"
+                    android:paddingTop="@dimen/space_s"
+                    android:paddingBottom="@dimen/space_s"
                     android:text="@string/next_chapter"
                     android:textColor="@color/primaryText"
                     android:textSize="14sp"
@@ -287,189 +277,49 @@
                 android:layout_height="wrap_content"
                 android:baselineAligned="false"
                 android:importantForAccessibility="no"
-                android:orientation="horizontal">
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/space_s"
+                android:paddingBottom="@dimen/space_s">
 
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:importantForAccessibility="no" />
-
-                <!--目录按钮-->
-                <LinearLayout
+                <io.legado.app.ui.widget.ReadMenuActionButton
                     android:id="@+id/ll_catalog"
-                    android:layout_width="60dp"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:contentDescription="@string/chapter_list"
-                    android:focusable="true"
-                    android:orientation="vertical"
-                    android:paddingBottom="7dp"
-                    tools:ignore="VisualLintBounds">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/iv_catalog"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:adjustViewBounds="true"
-                        android:contentDescription="@string/chapter_list"
-                        android:maxHeight="20dp"
-                        android:src="@drawable/ic_toc"
-                        app:tint="@color/primaryText"
-                        tools:ignore="NestedWeights" />
-
-                    <TextView
-                        android:id="@+id/tv_catalog"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="3dp"
-                        android:ellipsize="middle"
-                        android:singleLine="true"
-                        android:text="@string/chapter_list"
-                        android:textColor="@color/primaryText"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <View
                     android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="2"
-                    android:importantForAccessibility="no" />
-
-                <!--调节按钮-->
-                <LinearLayout
-                    android:id="@+id/ll_read_aloud"
-                    android:layout_width="60dp"
                     android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:contentDescription="@string/read_aloud"
-                    android:focusable="true"
-                    android:orientation="vertical"
-                    android:paddingBottom="7dp"
-                    tools:ignore="VisualLintBounds">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/iv_read_aloud"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:adjustViewBounds="true"
-                        android:contentDescription="@string/read_aloud"
-                        android:maxHeight="20dp"
-                        android:src="@drawable/ic_read_aloud"
-                        app:tint="@color/primaryText"
-                        tools:ignore="NestedWeights" />
-
-                    <TextView
-                        android:id="@+id/tv_read_aloud"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="3dp"
-                        android:ellipsize="middle"
-                        android:singleLine="true"
-                        android:text="@string/read_aloud"
-                        android:textColor="@color/primaryText"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="2"
-                    android:importantForAccessibility="no" />
-
-                <!--界面按钮-->
-                <LinearLayout
-                    android:id="@+id/ll_font"
-                    android:layout_width="60dp"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:contentDescription="@string/interface_setting"
-                    android:focusable="true"
-                    android:orientation="vertical"
-                    android:paddingBottom="7dp"
-                    tools:ignore="VisualLintBounds">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/iv_font"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:adjustViewBounds="true"
-                        android:contentDescription="@string/interface_setting"
-                        android:maxHeight="20dp"
-                        android:src="@drawable/ic_interface_setting"
-                        app:tint="@color/primaryText"
-                        tools:ignore="NestedWeights" />
-
-                    <TextView
-                        android:id="@+id/tv_font"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="3dp"
-                        android:ellipsize="middle"
-                        android:singleLine="true"
-                        android:text="@string/interface_setting"
-                        android:textColor="@color/primaryText"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="2"
-                    android:importantForAccessibility="no" />
-
-                <!--设置按钮-->
-                <LinearLayout
-                    android:id="@+id/ll_setting"
-                    android:layout_width="60dp"
-                    android:layout_height="wrap_content"
-                    android:background="?android:attr/selectableItemBackgroundBorderless"
-                    android:clickable="true"
-                    android:contentDescription="@string/setting"
-                    android:focusable="true"
-                    android:orientation="vertical"
-                    android:paddingBottom="7dp"
-                    tools:ignore="VisualLintBounds">
-
-                    <androidx.appcompat.widget.AppCompatImageView
-                        android:id="@+id/iv_setting"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1"
-                        android:adjustViewBounds="true"
-                        android:contentDescription="@string/setting"
-                        android:maxHeight="20dp"
-                        android:src="@drawable/ic_settings"
-                        app:tint="@color/primaryText"
-                        tools:ignore="NestedWeights" />
-
-                    <TextView
-                        android:id="@+id/tv_setting"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="center_horizontal"
-                        android:layout_marginTop="3dp"
-                        android:ellipsize="middle"
-                        android:singleLine="true"
-                        android:text="@string/setting"
-                        android:textColor="@color/primaryText"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    android:importantForAccessibility="no" />
+                    android:contentDescription="@string/chapter_list"
+                    android:tooltipText="@string/chapter_list"
+                    app:menuIcon="@drawable/ic_toc"
+                    tools:ignore="UnusedAttribute" />
+
+                <io.legado.app.ui.widget.ReadMenuActionButton
+                    android:id="@+id/ll_read_aloud"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/read_aloud"
+                    android:tooltipText="@string/read_aloud"
+                    app:menuIcon="@drawable/ic_read_aloud"
+                    tools:ignore="UnusedAttribute" />
+
+                <io.legado.app.ui.widget.ReadMenuActionButton
+                    android:id="@+id/ll_font"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/interface_setting"
+                    android:tooltipText="@string/interface_setting"
+                    app:menuIcon="@drawable/ic_interface_setting"
+                    tools:ignore="UnusedAttribute" />
+
+                <io.legado.app.ui.widget.ReadMenuActionButton
+                    android:id="@+id/ll_setting"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/setting"
+                    android:tooltipText="@string/setting"
+                    app:menuIcon="@drawable/ic_settings"
+                    tools:ignore="UnusedAttribute" />
 
             </LinearLayout>
         </LinearLayout>

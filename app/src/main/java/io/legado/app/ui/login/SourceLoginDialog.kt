@@ -36,6 +36,7 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.EmptyCoroutineContext
 import splitties.init.appCtx
 import splitties.views.onClick
 
@@ -110,7 +111,10 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     }
 
     private fun renderLoginUi(source: BaseSource, prefills: Map<String, String>?) {
-        val loginUi = source.loginUi()
+        // loginUi 规则可能是 <js>…</js>(动态生成表单),求值时线程必须已进入 RhinoContext,
+        // 否则脚本被安全策略拦下(allowScriptRun/ensureActive),loginUi() 吞异常返回 null → 弹窗空白。
+        // 与本文件 handleButtonClick/login 同款包裹。
+        val loginUi = runScriptWithContext(EmptyCoroutineContext) { source.loginUi() }
         currentLoginUi = loginUi
         binding.flexbox.removeAllViews()
         try {

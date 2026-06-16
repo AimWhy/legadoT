@@ -7,7 +7,7 @@ import android.view.View
 import androidx.annotation.StringRes
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.Preference
-import androidx.preference.PreferenceFragmentCompat
+import io.legado.app.lib.prefs.fragment.PreferenceFragment
 import io.legado.app.R
 import io.legado.app.constant.AppConst.appInfo
 import io.legado.app.constant.AppLog
@@ -36,7 +36,7 @@ import kotlinx.coroutines.delay
 import splitties.init.appCtx
 import java.io.File
 
-class AboutFragment : PreferenceFragmentCompat() {
+class AboutFragment : PreferenceFragment() {
 
     private val waitDialog by lazy {
         WaitDialog(requireContext())

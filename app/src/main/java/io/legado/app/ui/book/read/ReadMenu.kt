@@ -170,9 +170,9 @@ class ReadMenu @JvmOverloads constructor(
 
     private fun initView(reset: Boolean = false) = binding.run {
         if (AppConfig.isNightTheme) {
-            fabNightTheme.setImageResource(R.drawable.ic_daytime)
+            fabNightTheme.setIconResource(R.drawable.ic_daytime)
         } else {
-            fabNightTheme.setImageResource(R.drawable.ic_brightness)
+            fabNightTheme.setIconResource(R.drawable.ic_brightness)
         }
         initAnimation()
         tvCustomBtn.setColorFilter(context.accentColor)
@@ -196,31 +196,41 @@ class ReadMenu @JvmOverloads constructor(
             tvChapterUrl.setTextColor(textColor)
         }
         val brightnessBackground = GradientDrawable()
-        brightnessBackground.cornerRadius = 5F.dpToPx()
+        brightnessBackground.cornerRadius = resources.getDimension(R.dimen.radius_l)
         brightnessBackground.setColor(ColorUtils.adjustAlpha(bgColor, 0.5f))
         llBrightness.background = brightnessBackground
         if (AppConfig.isEInkMode) {
             titleBar.setBackgroundResource(R.drawable.bg_eink_border_bottom)
             llBottomBg.setBackgroundResource(R.drawable.bg_eink_border_top)
         } else {
-            llBottomBg.setBackgroundColor(bgColor)
+            val radius = resources.getDimension(R.dimen.radius_l)
+            llBottomBg.background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+                setColor(bgColor)
+            }
         }
-        fabSearch.setColorFilter(textColor)
-        fabAutoPage.setColorFilter(textColor)
-        fabReplaceRule.setColorFilter(textColor)
-        fabNightTheme.setColorFilter(textColor)
-        tvPre.setTextColor(textColor)
-        tvNext.setTextColor(textColor)
-        ivCatalog.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvCatalog.setTextColor(textColor)
-        ivReadAloud.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvReadAloud.setTextColor(textColor)
-        ivFont.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvFont.setTextColor(textColor)
-        ivSetting.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
-        tvSetting.setTextColor(textColor)
+        fabSearch.setTint(textColor)
+        fabAutoPage.setTint(textColor)
+        fabReplaceRule.setTint(textColor)
+        fabNightTheme.setTint(textColor)
+        // 禁用态颜色从随底栏自适应的 textColor 派生(降透明度),而非全局主题的固定灰
+        // (buttonDisabledColor 跟随 primaryColor 判明暗,与阅读底色不一致时会在深色背景下近乎不可见)
+        val chapterTextColor = ColorStateList(
+            arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()),
+            intArrayOf(ColorUtils.withAlpha(textColor, 0.4f), textColor)
+        )
+        tvPre.setTextColor(chapterTextColor)
+        tvNext.setTextColor(chapterTextColor)
+        llCatalog.setTint(textColor)
+        llReadAloud.setTint(textColor)
+        llFont.setTint(textColor)
+        llSetting.setTint(textColor)
         vwBrightnessPosAdjust.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
         llBrightness.setOnClickListener(null)
+        val accent = context.accentColor
+        seekBrightness.progressTintList = ColorStateList.valueOf(accent)
+        seekBrightness.thumbTintList = ColorStateList.valueOf(accent)
         seekBrightness.post {
             seekBrightness.progress = AppConfig.readBrightness
         }
@@ -590,13 +600,13 @@ class ReadMenu @JvmOverloads constructor(
 
     fun setAutoPage(autoPage: Boolean) = binding.run {
         if (autoPage) {
-            fabAutoPage.setImageResource(R.drawable.ic_auto_page_stop)
+            fabAutoPage.setIconResource(R.drawable.ic_auto_page_stop)
             fabAutoPage.contentDescription = context.getString(R.string.auto_next_page_stop)
         } else {
-            fabAutoPage.setImageResource(R.drawable.ic_auto_page)
+            fabAutoPage.setIconResource(R.drawable.ic_auto_page)
             fabAutoPage.contentDescription = context.getString(R.string.auto_next_page)
         }
-        fabAutoPage.setColorFilter(textColor)
+        fabAutoPage.setTint(textColor)
     }
 
     private fun upBrightnessVwPos() {
