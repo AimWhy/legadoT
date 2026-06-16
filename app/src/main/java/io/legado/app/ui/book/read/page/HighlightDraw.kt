@@ -21,10 +21,19 @@ object HighlightDraw {
         Paint().apply { isAntiAlias = true; style = Paint.Style.FILL }
     }
     private val dash by lazy { DashPathEffect(floatArrayOf(6f.dpToPx(), 4f.dpToPx()), 0f) }
-    private val dot by lazy { DashPathEffect(floatArrayOf(2f.dpToPx(), 3f.dpToPx()), 0f) }
+    private val dot by lazy { DashPathEffect(floatArrayOf(0.5f.dpToPx(), 3.5f.dpToPx()), 0f) }
     private val wavePath = Path()
+    private val linePath = Path()
 
     private fun lineWidth() = 1.5f.dpToPx()
+
+    /** 用 drawPath 画水平线;硬件加速下 PathEffect(虚线/点线)只对 drawPath 生效,对 drawLine 无效(API<28)。 */
+    private fun drawLinePath(canvas: Canvas, x0: Float, x1: Float, y: Float) {
+        linePath.reset()
+        linePath.moveTo(x0, y)
+        linePath.lineTo(x1, y)
+        canvas.drawPath(linePath, strokePaint)
+    }
 
     /** 用样式配置文字 Paint(加粗/斜体)。返回需要还原的原值以便调用方复位。 */
     fun applyTextStyle(paint: Paint, style: HighlightStyle): Pair<Boolean, Float> {
@@ -59,6 +68,7 @@ object HighlightDraw {
     ) {
         strokePaint.strokeWidth = lineWidth()
         strokePaint.pathEffect = null
+        strokePaint.strokeCap = Paint.Cap.BUTT
 
         underline?.let { u ->
             val color = if (u.color != 0) u.color else fallbackColor
@@ -67,18 +77,23 @@ object HighlightDraw {
             when (u.kind) {
                 HighlightStyle.Kind.SOLID -> canvas.drawLine(x0, y, x1, y, strokePaint)
                 HighlightStyle.Kind.DOUBLE -> {
-                    canvas.drawLine(x0, y, x1, y, strokePaint)
-                    canvas.drawLine(x0, y + 2f.dpToPx(), x1, y + 2f.dpToPx(), strokePaint)
+                    // 两条细线都要落在行高内:原先第二条画在 y+2dp≈height 处会被行高裁掉,看起来和单线无异
+                    strokePaint.strokeWidth = 1f.dpToPx()
+                    canvas.drawLine(x0, height - 3.5f.dpToPx(), x1, height - 3.5f.dpToPx(), strokePaint)
+                    canvas.drawLine(x0, height - 1.5f.dpToPx(), x1, height - 1.5f.dpToPx(), strokePaint)
+                    strokePaint.strokeWidth = lineWidth()
                 }
                 HighlightStyle.Kind.DASHED -> {
                     strokePaint.pathEffect = dash
-                    canvas.drawLine(x0, y, x1, y, strokePaint)
+                    drawLinePath(canvas, x0, x1, y)
                     strokePaint.pathEffect = null
                 }
                 HighlightStyle.Kind.DOTTED -> {
                     strokePaint.pathEffect = dot
-                    canvas.drawLine(x0, y, x1, y, strokePaint)
+                    strokePaint.strokeCap = Paint.Cap.ROUND
+                    drawLinePath(canvas, x0, x1, y)
                     strokePaint.pathEffect = null
+                    strokePaint.strokeCap = Paint.Cap.BUTT
                 }
                 HighlightStyle.Kind.WAVY -> {
                     val pts = HighlightGeometry.wavePoints(
