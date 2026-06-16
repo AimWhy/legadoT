@@ -80,6 +80,10 @@ class ExploreShowViewModel(application: Application) : BaseViewModel(application
                 books.addAll(searchBooks)
                 booksData.postValue(books.toList())
                 appDb.searchBookDao.insert(*searchBooks.toTypedArray())
+                if (searchBooks.isNotEmpty()) {
+                    // page 此刻仍是刚加载完成的页码,滚动翻页时同步右上角“第x页”
+                    currentPageLiveData.postValue(page)
+                }
                 page++
             }.onError {
                 it.printOnDebug()
