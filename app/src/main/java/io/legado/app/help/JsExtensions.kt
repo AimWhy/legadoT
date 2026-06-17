@@ -1059,4 +1059,67 @@ interface JsExtensions : JsEncodeUtils {
         appCtx.sendToClip(text)
     }
 
+    /**
+     * single-flight 并发合并:同一 name 并发时只有一个线程执行 action,其余等其完成后跳过,
+     * 自行读取结果。要不要发起执行由调用方外层判断;action 失败不算完成,下个线程会重试;
+     * 等待超过 timeoutMs(默认 15000)抛异常。
+     *
+     * action 以其自身 parentScope 作为 this 与执行作用域运行。定义在 jsLib 里的函数,其
+     * parentScope 是共享 jsLib 作用域,不含每次执行新建的 book/source/java(这些只在执行
+     * 期 bindings 里,是 jsLib 作用域的子节点,原型链取不到);故这类函数需在 JS 侧用
+     * fn.bind(this) / () => fn.call(this) 把 this 绑到书源执行环境,并通过 this 取
+     * book/source/java。内联在书源里的函数 parentScope 即执行环境,无此问题。
+     */
+    fun singleFlight(
+        name: String,
+        action: org.htmlunit.corejs.javascript.Function,
+        timeoutMs: Long
+    ) {
+        val key = "${getSource()?.getKey()}@$name"
+        SourceLock.singleFlight(key, timeoutMs) {
+            val cx = rhinoContext
+            action.call(cx, action.parentScope, action.parentScope, emptyArray<Any?>())
+        }
+    }
+
+    fun singleFlight(
+        name: String,
+        action: org.htmlunit.corejs.javascript.Function
+    ) = singleFlight(name, action, 15000L)
+
+    /**
+     * 互斥锁(串行化):同一 name 并发时逐个排队执行 action,每个调用都会执行——与
+     * [singleFlight] 的"领跑者跑一次、其余跳过"相反。适合 read-modify-write 这类每次都要
+     * 记账、谁都不能被跳过的写操作(如账号额度扣减),把整段读-改-写包进 action 避免丢失更新。
+     * 等待超过 timeoutMs(默认 15000)抛异常。
+     *
+     * action 的 this/作用域绑定规则同 [singleFlight]:jsLib 里的函数需 fn.bind(this)。
+     */
+    fun lock(
+        name: String,
+        action: org.htmlunit.corejs.javascript.Function,
+        timeoutMs: Long
+    ) {
+        val key = "${getSource()?.getKey()}@$name"
+        SourceLock.lock(key, timeoutMs) {
+            val cx = rhinoContext
+            action.call(cx, action.parentScope, action.parentScope, emptyArray<Any?>())
+        }
+    }
+
+    fun lock(
+        name: String,
+        action: org.htmlunit.corejs.javascript.Function
+    ) = lock(name, action, 15000L)
+
+    /**
+     * 原子轮询计数器:返回自增前的非负序号(到 Int.MAX 后回绕到 0,可直接 % length 取模)。
+     * 同 name 跨线程、跨执行共享,用于多账号轮流分配等场景,替代书源自己写
+     * new Packages.java.util.concurrent.atomic.AtomicInteger + System.getProperties()。
+     */
+    fun tick(name: String): Int {
+        val key = "${getSource()?.getKey()}@$name"
+        return SourceLock.tick(key)
+    }
+
 }

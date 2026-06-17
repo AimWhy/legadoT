@@ -98,6 +98,31 @@ java.get(key)
 java.put(key, value)
 ```
 
+* 并发合并(single-flight)
+
+> 同一 name 并发时只有一个线程跑 action,其余等它完成后跳过、自行读结果;action 失败由下个线程重试,等待超 timeoutMs(默认 15000)抛异常。
+> jsLib 里的函数如需调用java/source等对象需绑定this: fn.bind(this)。
+
+```js
+java.singleFlight(name: String, action: Function, timeoutMs: Long = 15000)
+```
+
+* 互斥锁(串行化)
+
+> 同一 name 并发时逐个排队、每个都执行(与 single-flight 跳过相反),把整段读-改-写包进 action 避免并发丢失更新;超时与 this 绑定规则同 single-flight。
+
+```js
+java.lock(name: String, action: Function, timeoutMs: Long = 15000)
+```
+
+* 轮询计数器
+
+> 进程内原子自增计数器,返回非负序号,同 name 跨线程/执行共享;重启归零。
+
+```js
+java.tick(name: String): Int
+```
+
 ### [js扩展类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/JsExtensions.kt) 部分函数
 
 * 链接解析[JsURL](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/utils/JsURL.kt)
