@@ -111,6 +111,8 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
         var heightPercentage: Float? = null,
         var responsiveBreakpoint: Int? = null,
         var dialogHeight: Int? = null,
+        var expandedHeight: Int? = null,
+        var expandedHeightPercentage: Float? = null,
         var longClickSaveImg: Boolean? = null,
         var scrollNoDraggable: Boolean? = null
     )
@@ -147,8 +149,71 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
         }
     }
 
+    /** 把 px 或"占屏幕高度的百分比"解析为像素值;都没有/百分比越界则返回 null。px 优先于百分比。 */
+    private fun resolveHeightPx(px: Int?, percentage: Float?): Int? {
+        if (px != null) return px
+        if (percentage != null && percentage in 0.0..1.0) {
+            return (resources.displayMetrics.heightPixels * percentage).toInt()
+        }
+        return null
+    }
+
+    /**
+     * 根据折叠高度(dialogHeight/heightPercentage)与展开高度(expandedHeight/expandedHeightPercentage)
+     * 决定 sheet 模式,并写入"模式默认"。这些默认会被随后 setConfig 中应用的显式 config 字段覆盖。
+     *
+     * - 未设折叠高度:维持现状(first 时全屏 MATCH_PARENT)。
+     * - 设了折叠高度、未设展开高度:固定模式,切断 nested-scroll,sheet 高度不随网页滚动变化。
+     * - 设了折叠高度且展开高度 > 折叠高度:可展开模式,初始折叠,网页在顶部上滑用 nested-scroll 展开到上限。
+     * - 展开高度 ≤ 折叠高度:退化为固定模式。
+     */
+    private fun applyHeightMode(config: Config, first: Boolean) {
+        val sheet = bottomSheet ?: return
+        val collapsedPx = resolveHeightPx(config.dialogHeight, config.heightPercentage)
+        val expandedPx = resolveHeightPx(config.expandedHeight, config.expandedHeightPercentage)
+        val params = sheet.layoutParams
+
+        when {
+            collapsedPx == null -> {
+                if (first) {
+                    params.height = ViewGroup.LayoutParams.MATCH_PARENT
+                    sheet.layoutParams = params
+                }
+            }
+
+            expandedPx != null && expandedPx > collapsedPx -> {
+                params.height = expandedPx
+                sheet.layoutParams = params
+                behavior?.let { b ->
+                    b.setFitToContents(true)
+                    b.peekHeight = collapsedPx
+                    b.skipCollapsed = false
+                    b.isHideable = true
+                    b.isDraggableOnNestedScroll = true
+                    b.state = BottomSheetBehavior.STATE_COLLAPSED
+                }
+            }
+
+            else -> {
+                if (expandedPx != null && expandedPx <= collapsedPx) {
+                    AppLog.put("showBrowser: expandedHeight 不大于 height,退化为固定高度")
+                }
+                params.height = collapsedPx
+                sheet.layoutParams = params
+                behavior?.let { b ->
+                    b.setFitToContents(true)
+                    b.peekHeight = collapsedPx
+                    b.skipCollapsed = true
+                    b.isDraggableOnNestedScroll = false
+                    b.state = BottomSheetBehavior.STATE_EXPANDED
+                }
+            }
+        }
+    }
+
     private fun setConfig(config: Config, first: Boolean = false) {
         if (!isAdded || context == null) return
+        applyHeightMode(config, first)
         behavior?.let { behavior ->
             config.state?.let { behavior.state = it }
             config.peekHeight?.let { behavior.peekHeight = it }
@@ -193,27 +258,13 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
         }
 
         bottomSheet?.let { sheet ->
-            val params = sheet.layoutParams
-            var hasChanged = false
             config.widthPercentage?.let { percentage ->
                 if (percentage in 0.0..1.0) {
-                    val width = (displayMetrics.widthPixels * percentage).toInt()
-                    params.width = width
-                    hasChanged = true
+                    val params = sheet.layoutParams
+                    params.width = (displayMetrics.widthPixels * percentage).toInt()
+                    sheet.layoutParams = params
                 }
             }
-            config.heightPercentage?.let { percentage ->
-                if (percentage in 0.0..1.0) {
-                    params.height = (displayMetrics.heightPixels * percentage).toInt()
-                    hasChanged = true
-                }
-            }
-            val dialogHeight = config.dialogHeight ?: if (first) ViewGroup.LayoutParams.MATCH_PARENT else null
-            dialogHeight?.let { height ->
-                params.height = height
-                hasChanged = true
-            }
-            if (hasChanged) sheet.layoutParams = params
         }
 
         config.expandedCornersRadius?.let { radius ->
@@ -501,13 +552,7 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
                     sheet.layoutParams = params
                 }
             }
-            currentConfig?.heightPercentage?.let { percentage ->
-                if (percentage in 0.0..1.0) {
-                    val params = sheet.layoutParams
-                    params.height = (displayMetrics.heightPixels * percentage).toInt()
-                    sheet.layoutParams = params
-                }
-            }
+            currentConfig?.let { applyHeightMode(it, false) }
         }
     }
 
