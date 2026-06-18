@@ -196,6 +196,9 @@
         <activity
             android:name=".ui.config.ConfigActivity"
             android:launchMode="standard" />
+        <!-- 底栏图集 -->
+        <activity android:name=".ui.config.BottomBarSkinActivity" />
+        <activity android:name=".ui.config.BottomBarSkinAssignActivity" />
         <!-- 搜索界面 -->
         <activity
             android:name=".ui.book.search.SearchActivity"

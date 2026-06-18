@@ -197,4 +197,5 @@ object PreferKey {
 
     const val highlightLastStyle = "highlightLastStyle"
     const val highlightRulesInited = "highlightRulesInited"
+    const val bottomBarSkin = "bottomBarSkin"
 }
