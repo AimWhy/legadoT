@@ -198,6 +198,7 @@ class ThemeConfigFragment : PreferenceFragment(),
             PreferKey.bgImage -> selectBgAction(false)
             PreferKey.bgImageN -> selectBgAction(true)
             "themeList" -> ThemeListDialog().show(childFragmentManager, "themeList")
+            "bottomBarSkin" -> startActivity<BottomBarSkinActivity>()
             "saveDayTheme",
             "saveNightTheme" -> alertSaveTheme(key)
 

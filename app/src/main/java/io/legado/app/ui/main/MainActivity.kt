@@ -2,6 +2,7 @@
 
 package io.legado.app.ui.main
 
+import android.graphics.drawable.StateListDrawable
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
@@ -25,6 +26,7 @@ import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.AppWebDav
+import io.legado.app.help.BottomBarSkinManager
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
@@ -43,6 +45,7 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.isCreated
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
@@ -82,6 +85,12 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private var bottomMenuCount = 4
     private val EXIT_INTERVAL = 2000L
     private val realPositions = arrayOf(idBookshelf, idExplore, idRss, idMy)
+    private val menuIdToSlot = linkedMapOf(
+        R.id.menu_bookshelf to "bookshelf",
+        R.id.menu_discovery to "home",
+        R.id.menu_rss to "notes",
+        R.id.menu_my_config to "settings",
+    )
     private val adapter by lazy {
         TabFragmentPageAdapter(supportFragmentManager)
     }
@@ -91,6 +100,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         upBottomMenu()
         initView()
         upHomePage()
+        upBottomBarSkin()
         onBackPressedDispatcher.addCallback(this) {
             if (pagePosition != 0) {
                 binding.viewPagerMain.currentItem = 0
@@ -350,10 +360,14 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                     onUpBooksBadgeView = null
                 }
                 upBottomMenu()
+                upBottomBarSkin()
                 if (it) {
                     viewPagerMain.setCurrentItem(bottomMenuCount - 1, false)
                 }
             }
+        }
+        observeEvent<String>(EventBus.BOTTOM_BAR_SKIN) {
+            upBottomBarSkin()
         }
         observeEvent<String>(PreferKey.threadCount) {
             viewModel.upPool()
@@ -380,6 +394,20 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         realPositions[index] = idMy
         bottomMenuCount = index + 1
         adapter.notifyDataSetChanged()
+    }
+
+    private fun upBottomBarSkin() {
+        val skin = BottomBarSkinManager.active
+        if (skin.isEmpty() || !BottomBarSkinManager.skinDir(skin).exists()) {
+            binding.bottomNavigationView.applySkin(null, 0)
+            return
+        }
+        val sizePx = 30.dpToPx()
+        val map = HashMap<Int, StateListDrawable>()
+        menuIdToSlot.forEach { (id, slot) ->
+            BottomBarSkinManager.getStateDrawable(skin, slot, sizePx)?.let { map[id] = it }
+        }
+        binding.bottomNavigationView.applySkin(map, sizePx)
     }
 
     private fun upHomePage() {
