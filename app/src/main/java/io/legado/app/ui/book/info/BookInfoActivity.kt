@@ -439,9 +439,10 @@ class BookInfoActivity :
     }
 
     private fun showCover(book: Book) {
-        binding.ivCover.load(book.getDisplayCover(), book.name, book.author, false, book.origin) {
+        val coverOrigin = book.getCoverSourceOrigin()
+        binding.ivCover.load(book.getDisplayCover(), book.name, book.author, false, coverOrigin) {
             if (!AppConfig.isEInkMode) {
-                BookCover.loadBlur(this, book.getDisplayCover(), false, book.origin)
+                BookCover.loadBlur(this, book.getDisplayCover(), false, coverOrigin)
                     .into(binding.bgBook)
             }
         }

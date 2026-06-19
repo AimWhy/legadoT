@@ -30,6 +30,10 @@
         android:title="@string/check_selected_interval" />
 
     <item
+        android:id="@+id/menu_update_toc"
+        android:title="@string/update_toc" />
+
+    <item
         android:id="@+id/menu_batch_auto_task_update"
         android:title="@string/batch_auto_task_update" />
 

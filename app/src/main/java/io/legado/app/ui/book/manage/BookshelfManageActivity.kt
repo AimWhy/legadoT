@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.AppLog
+import io.legado.app.constant.EventBus
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
@@ -45,6 +46,7 @@ import io.legado.app.utils.applyTint
 import io.legado.app.utils.cnCompare
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.isAbsUrl
+import io.legado.app.utils.postEvent
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
@@ -314,8 +316,19 @@ class BookshelfManageActivity :
             R.id.menu_clear_cache -> viewModel.clearCache(adapter.selection)
             R.id.menu_check_selected_interval -> adapter.checkSelectedInterval()
             R.id.menu_batch_auto_task_update -> showBatchAutoTaskDialog()
+            R.id.menu_update_toc -> updateBooksToc()
         }
         return false
+    }
+
+    private fun updateBooksToc() {
+        val books = adapter.selection.filter { !it.isLocal && it.canUpdate }
+        if (books.isEmpty()) {
+            toastOnUi(R.string.no_book_can_update)
+            return
+        }
+        postEvent(EventBus.UP_BOOKS_TOC, books)
+        toastOnUi(getString(R.string.update_toc_started, books.size))
     }
 
     private fun showBatchAutoTaskDialog() {
