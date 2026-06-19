@@ -144,6 +144,8 @@
     <string name="batch_auto_task_update">Batch schedule update</string>
     <string name="batch_auto_task_update_dialog_title">Batch schedule update (%1$d books)</string>
     <string name="no_book_can_auto_update">No books available for scheduled update (local books excluded)</string>
+    <string name="no_book_can_update">No books available for update (local and update-disabled books excluded)</string>
+    <string name="update_toc_started">Started updating chapters of %1$d books</string>
     <string name="auto_task_notify_title">Task notification</string>
     <string name="auto_task_notify_content">%1$s</string>
     <string name="auto_task_help_title">Auto task help</string>

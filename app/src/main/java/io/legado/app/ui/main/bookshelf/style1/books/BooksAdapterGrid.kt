@@ -28,7 +28,7 @@ class BooksAdapterGrid(context: Context, private val callBack: CallBack) :
         coverCard.setCardBackgroundColor(context.cardBackgroundColor)
         if (payloads.isEmpty()) {
             tvName.text = item.name
-            ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.origin)
+            ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.getCoverSourceOrigin())
             upRefresh(binding, item)
         } else {
             for (i in payloads.indices) {
@@ -36,7 +36,7 @@ class BooksAdapterGrid(context: Context, private val callBack: CallBack) :
                 bundle.keySet().forEach {
                     when (it) {
                         "name" -> tvName.text = item.name
-                        "cover" -> ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.origin)
+                        "cover" -> ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.getCoverSourceOrigin())
                         "refresh" -> upRefresh(binding, item)
                     }
                 }

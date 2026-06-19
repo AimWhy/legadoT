@@ -143,6 +143,8 @@
     <string name="batch_auto_task_update">批量定时更新</string>
     <string name="batch_auto_task_update_dialog_title">批量定时更新（%1$d 本书）</string>
     <string name="no_book_can_auto_update">没有可定时更新的书籍（已过滤本地书籍）</string>
+    <string name="no_book_can_update">没有可更新的书籍（已过滤本地书籍和禁止更新的书籍）</string>
+    <string name="update_toc_started">已开始更新 %1$d 本书的目录</string>
     <string name="auto_task_notify_title">任务通知</string>
     <string name="auto_task_notify_content">%1$s</string>
     <string name="auto_task_help_title">定时任务帮助</string>

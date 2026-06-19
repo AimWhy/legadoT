@@ -52,7 +52,7 @@ class BooksAdapterGrid(context: Context, callBack: CallBack) :
         fun onBind(item: Book, position: Int) = binding.run {
             coverCard.setCardBackgroundColor(context.cardBackgroundColor)
             tvName.text = item.name
-            ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.origin)
+            ivCover.load(item.getDisplayCover(), item.name, item.author, false, item.getCoverSourceOrigin())
             upRefresh(this, item)
         }
 
@@ -70,7 +70,7 @@ class BooksAdapterGrid(context: Context, callBack: CallBack) :
                                 item.name,
                                 item.author,
                                 false,
-                                item.origin
+                                item.getCoverSourceOrigin()
                             )
 
                             "refresh" -> upRefresh(this, item)

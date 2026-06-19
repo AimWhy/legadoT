@@ -51,6 +51,7 @@ class MainViewModel(application: Application) : BaseViewModel(application) {
     private var upTocPool = Executors.newFixedThreadPool(poolSize).asCoroutineDispatcher()
     private val waitUpTocBooks = LinkedList<String>()
     private val onUpTocBooks = ConcurrentHashMap.newKeySet<String>()
+    private val dontPreDownloadBooks = ConcurrentHashMap.newKeySet<String>()
     val onUpBooksLiveData = MutableLiveData<Int>()
     private var upTocJob: Job? = null
     private var cacheBookJob: Job? = null
@@ -95,12 +96,15 @@ class MainViewModel(application: Application) : BaseViewModel(application) {
         }
     }
 
-    fun upToc(books: List<Book>) {
+    fun upToc(books: List<Book>, cache: Boolean = true) {
         execute(context = upTocPool) {
             books.filter {
                 !it.isLocal && it.canUpdate
-            }.let {
-                addToWaitUp(it)
+            }.let { updatableBooks ->
+                if (!cache) {
+                    updatableBooks.forEach { dontPreDownloadBooks.add(it.bookUrl) }
+                }
+                addToWaitUp(updatableBooks)
             }
         }
     }
@@ -131,6 +135,7 @@ class MainViewModel(application: Application) : BaseViewModel(application) {
                 updateToc(it)
             }.onEach {
                 onUpTocBooks.remove(it)
+                dontPreDownloadBooks.remove(it)
                 postEvent(EventBus.UP_BOOKSHELF, it)
                 postUpBooksLiveData()
             }.onCompletion {
@@ -184,7 +189,9 @@ class MainViewModel(application: Application) : BaseViewModel(application) {
             appDb.bookChapterDao.delByBook(bookUrl)
             appDb.bookChapterDao.insert(*toc.toTypedArray())
             ReadBook.onChapterListUpdated(book)
-            addDownload(source, book)
+            if (!dontPreDownloadBooks.contains(bookUrl)) {
+                addDownload(source, book)
+            }
         }.onFailure {
             currentCoroutineContext().ensureActive()
             AppLog.put("${book.name} 更新目录失败\n${it.localizedMessage}", it)

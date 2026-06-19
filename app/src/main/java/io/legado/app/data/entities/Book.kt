@@ -164,6 +164,15 @@ data class Book(
 
     fun getDisplayCover() = if (customCoverUrl.isNullOrEmpty()) coverUrl else customCoverUrl
 
+    /**
+     * 加载封面时使用的来源(书源)origin。
+     * 自定义封面(含封面规则结果)通常托管在书源以外的站点，若仍以书源身份加载，
+     * 会把书源的 Cookie/Referer 注入到第三方域名(见 AnalyzeUrl.setCookie)，
+     * 触发对方风控导致请求挂起/被拒，最终回退默认封面。
+     * 此时返回 null，仅使用 URL 自带的 headers。
+     */
+    fun getCoverSourceOrigin() = if (customCoverUrl.isNullOrEmpty()) origin else null
+
     fun getDisplayIntro() = if (customIntro.isNullOrEmpty()) intro else customIntro
 
     //自定义简介有自动更新的需求时，可通过更新intro再调用upCustomIntro()完成
