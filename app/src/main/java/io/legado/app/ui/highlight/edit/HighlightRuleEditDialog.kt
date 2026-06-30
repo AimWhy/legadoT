@@ -17,6 +17,7 @@ import io.legado.app.help.HighlightStyle
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.ReadBook
 import io.legado.app.ui.book.read.HighlightStyleDialog
+import io.legado.app.ui.font.FontSelectDialog
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
@@ -31,6 +32,7 @@ import kotlinx.coroutines.withContext
  */
 class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rule_edit, true),
     HighlightStyleDialog.StyleHost,
+    FontSelectDialog.CallBack,
     ColorPickerDialogListener {
 
     companion object {
@@ -225,6 +227,19 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
             withAlpha = withAlpha,
             listener = this@HighlightRuleEditDialog
         ).show(childFragmentManager, COLOR_PICKER_TAG)
+    }
+
+    override fun pickHighlightFont(current: String) {
+        showDialogFragment(FontSelectDialog())
+    }
+
+    // --- FontSelectDialog.CallBack ---
+    override val curFontPath: String get() = editingStyle.fontPath
+
+    override fun selectFont(path: String) {
+        editingStyle = editingStyle.copy(fontPath = path)
+        styleDialog?.refresh()
+        upPreview()
     }
 
     // --- ColorPickerDialogListener ---

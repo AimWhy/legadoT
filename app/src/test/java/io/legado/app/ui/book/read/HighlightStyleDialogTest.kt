@@ -11,6 +11,7 @@ class HighlightStyleDialogTest {
         override fun currentHighlightStyle(): HighlightStyle = HighlightStyle()
         override fun onHighlightStyleChanged(style: HighlightStyle) = Unit
         override fun pickHighlightColor(dialogId: Int, initial: Int, withAlpha: Boolean) = Unit
+        override fun pickHighlightFont(current: String) = Unit
     }
 
     @Test

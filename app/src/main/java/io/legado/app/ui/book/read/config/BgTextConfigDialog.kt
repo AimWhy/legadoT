@@ -76,6 +76,7 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
     companion object {
         const val TEXT_COLOR = 121
         const val BG_COLOR = 122
+        const val REVIEW_ICON_COLOR = 123
     }
 
     private val binding by viewBinding(DialogReadBgTextBinding::bind)
@@ -273,6 +274,25 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
                 }
                 dialog.dismiss()
             }
+        }
+        binding.tvReviewIconColor.setOnClickListener {
+            ColorPickerDialog.newBuilder()
+                .setColor(
+                    ReadBookConfig.reviewIconColor.takeIf { it != 0 }
+                        ?: ChapterProvider.reviewPaint.color
+                )
+                .setShowAlphaSlider(false)
+                .setDialogType(ColorPickerDialog.TYPE_CUSTOM)
+                .setDialogId(REVIEW_ICON_COLOR)
+                .show(requireActivity())
+        }
+        binding.tvReviewIconColor.setOnLongClickListener {
+            if (ReadBookConfig.reviewIconColor != 0) {
+                ReadBookConfig.reviewIconColor = 0
+                postEvent(EventBus.UP_CONFIG, arrayListOf(8, 9, 11))
+                toastOnUi(R.string.review_icon_color_reset)
+            }
+            true
         }
         binding.tvTextColor.setOnClickListener {
             ColorPickerDialog.newBuilder()

@@ -920,11 +920,12 @@ object ChapterProvider {
             titlePaint = it.first
             contentPaint = it.second
         }
-        reviewPaint.color = if (AppConfig.isNightTheme) {
-            ColorUtils.lightenColor(contentPaint.color)
-        } else {
-            ColorUtils.darkenColor(contentPaint.color)
-        }
+        reviewPaint.color = ReadBookConfig.reviewIconColor.takeIf { it != 0 }
+            ?: if (AppConfig.isNightTheme) {
+                ColorUtils.lightenColor(contentPaint.color)
+            } else {
+                ColorUtils.darkenColor(contentPaint.color)
+            }
         reviewPaint.textSize = contentPaint.textSize * 0.45f
         reviewPaint.textAlign = Paint.Align.CENTER
         reviewPaint.isAntiAlias = true
@@ -1233,6 +1234,33 @@ object ChapterProvider {
             ReadBookConfig.save()
             Typeface.SANS_SERIF
         } ?: Typeface.DEFAULT
+    }
+
+    private val highlightTypefaceCache = HashMap<String, Typeface?>()
+
+    /**
+     * 高亮自定义字体: 按路径解析 Typeface 并缓存。
+     * 逐列绘制时高频调用, 必须缓存(命中与未命中都缓存)。失败返回 null, 不影响阅读字体。
+     */
+    fun getHighlightTypeface(fontPath: String): Typeface? {
+        if (fontPath.isEmpty()) return null
+        if (highlightTypefaceCache.containsKey(fontPath)) return highlightTypefaceCache[fontPath]
+        val typeface = kotlin.runCatching {
+            when {
+                fontPath.isContentScheme() && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O -> {
+                    appCtx.contentResolver
+                        .openFileDescriptor(Uri.parse(fontPath), "r")!!
+                        .use { Typeface.Builder(it.fileDescriptor).build() }
+                }
+
+                fontPath.isContentScheme() ->
+                    Typeface.createFromFile(RealPathUtil.getPath(appCtx, Uri.parse(fontPath)))
+
+                else -> Typeface.createFromFile(fontPath)
+            }
+        }.getOrNull()
+        highlightTypefaceCache[fontPath] = typeface
+        return typeface
     }
 
     private fun getPaints(typeface: Typeface?): Pair<TextPaint, TextPaint> {

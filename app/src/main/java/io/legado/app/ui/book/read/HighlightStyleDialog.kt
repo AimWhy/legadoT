@@ -1,5 +1,6 @@
 package io.legado.app.ui.book.read
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -35,6 +36,8 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
         fun onHighlightStyleChanged(style: HighlightStyle)
         /** 打开某通道取色器(dialogId 用 HL_*) */
         fun pickHighlightColor(dialogId: Int, initial: Int, withAlpha: Boolean)
+        /** 打开字体选择器(current 为当前字体路径, 空表示默认) */
+        fun pickHighlightFont(current: String)
     }
 
     private var _binding: DialogHighlightStyleBinding? = null
@@ -56,6 +59,7 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
         }
         buildPresets()
         buildChannels()
+        bindFontRow()
         refresh()
     }
 
@@ -154,6 +158,22 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
         }
     }
 
+    private fun bindFontRow() {
+        binding.llHighlightFont.setOnClickListener {
+            styleHost?.pickHighlightFont(cur().fontPath)
+        }
+        binding.llHighlightFont.setOnLongClickListener {
+            if (cur().fontPath.isNotEmpty()) apply(cur().copy(fontPath = ""))
+            true
+        }
+    }
+
+    /** 把字体路径转成可读名(content uri 解码后取末段文件名);空=默认 */
+    private fun fontDisplayName(path: String): String {
+        if (path.isEmpty()) return getString(R.string.highlight_font_default)
+        return Uri.decode(path)?.substringAfterLast('/')?.ifBlank { path } ?: path
+    }
+
     fun refresh() {
         if (_binding == null) return
         val s = cur()
@@ -173,6 +193,7 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
                 rb.tvExtra.visibility = View.GONE
             }
         }
+        binding.tvHighlightFontValue.text = fontDisplayName(s.fontPath)
     }
 
     private fun kindLabel(kind: Kind?): String = when (kind) {
