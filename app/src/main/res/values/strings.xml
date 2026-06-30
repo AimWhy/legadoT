@@ -418,6 +418,8 @@ Placeholders:
     <string name="highlight_strike">删除线</string>
     <string name="highlight_box">方框</string>
     <string name="highlight_emphasis">着重号</string>
+    <string name="highlight_font">字体</string>
+    <string name="highlight_font_default">默认</string>
     <string name="highlight_underline_solid">实线</string>
     <string name="highlight_underline_wavy">波浪</string>
     <string name="highlight_underline_dashed">虚线</string>
@@ -1442,6 +1444,8 @@ Placeholders:
     <string name="review_icon_size_title">Icon size</string>
     <string name="review_icon_size_hint">Enter 50-200, where 100 is default</string>
     <string name="review_icon_size_invalid">Please enter an integer between 50 and 200</string>
+    <string name="review_icon_color_title">Icon color</string>
+    <string name="review_icon_color_reset">Icon color reset to follow theme</string>
     <!-- 发现容器 -->
     <string name="explore_container_manage">发现容器管理</string>
     <string name="explore_container_add">添加容器</string>

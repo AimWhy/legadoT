@@ -681,7 +681,8 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
             page.lines.forEachIndexed { li, line ->
                 line.columns.forEachIndexed { ci, col ->
                     if (col is TextColumn) {
-                        col.highlightStyle = colors[li][ci]
+                        // 标题行一律不画高亮(规则与手动划线皆跳过)
+                        col.highlightStyle = if (line.isTitle) null else colors[li][ci]
                     }
                 }
             }

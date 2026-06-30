@@ -4,8 +4,10 @@ import android.graphics.Canvas
 import android.graphics.DashPathEffect
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Typeface
 import io.legado.app.help.HighlightGeometry
 import io.legado.app.help.HighlightStyle
+import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.utils.dpToPx
 
 /**
@@ -26,18 +28,24 @@ object HighlightDraw {
 
     private fun lineWidth() = 1.5f.dpToPx()
 
-    /** 用样式配置文字 Paint(加粗/斜体)。返回需要还原的原值以便调用方复位。 */
-    fun applyTextStyle(paint: Paint, style: HighlightStyle): Pair<Boolean, Float> {
-        val oldBold = paint.isFakeBoldText
-        val oldSkew = paint.textSkewX
-        paint.isFakeBoldText = oldBold || style.bold
+    /** applyTextStyle 需还原的原始 Paint 状态 */
+    class SavedTextStyle(val bold: Boolean, val skew: Float, val typeface: Typeface?)
+
+    /** 用样式配置文字 Paint(加粗/斜体/自定义字体)。返回需要还原的原值以便调用方复位。 */
+    fun applyTextStyle(paint: Paint, style: HighlightStyle): SavedTextStyle {
+        val saved = SavedTextStyle(paint.isFakeBoldText, paint.textSkewX, paint.typeface)
+        paint.isFakeBoldText = saved.bold || style.bold
         if (style.italic) paint.textSkewX = -0.25f
-        return oldBold to oldSkew
+        if (style.fontPath.isNotEmpty()) {
+            ChapterProvider.getHighlightTypeface(style.fontPath)?.let { paint.typeface = it }
+        }
+        return saved
     }
 
-    fun restoreTextStyle(paint: Paint, saved: Pair<Boolean, Float>) {
-        paint.isFakeBoldText = saved.first
-        paint.textSkewX = saved.second
+    fun restoreTextStyle(paint: Paint, saved: SavedTextStyle) {
+        paint.isFakeBoldText = saved.bold
+        paint.textSkewX = saved.skew
+        paint.typeface = saved.typeface
     }
 
     /** 着重号:每列一个字下圆点(逐列调用) */

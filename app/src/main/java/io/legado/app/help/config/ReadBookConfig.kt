@@ -344,6 +344,12 @@ object ReadBookConfig {
         set(value) {
             config.reviewIconScale = value.coerceIn(50, 200)
         }
+
+    var reviewIconColor: Int
+        get() = config.reviewIconColor
+        set(value) {
+            config.reviewIconColor = value
+        }
     var paddingBottom: Int
         get() = config.paddingBottom
         set(value) {
@@ -443,6 +449,7 @@ object ReadBookConfig {
             exportConfig.titleBottomSpacing = shareConfig.titleBottomSpacing
             exportConfig.reviewIconSvg = shareConfig.reviewIconSvg
             exportConfig.reviewIconScale = shareConfig.reviewIconScale
+            exportConfig.reviewIconColor = shareConfig.reviewIconColor
             exportConfig.paddingBottom = shareConfig.paddingBottom
             exportConfig.paddingLeft = shareConfig.paddingLeft
             exportConfig.paddingRight = shareConfig.paddingRight
@@ -572,6 +579,7 @@ object ReadBookConfig {
         var underline: Boolean = false, //下划线
         var reviewIconSvg: String = "", //段评图标SVG
         var reviewIconScale: Int = 100, //段评图标大小百分比
+        var reviewIconColor: Int = 0, //段评内置图标颜色(0=跟随主题)
         var paddingBottom: Int = 6,
         var paddingLeft: Int = 16,
         var paddingRight: Int = 16,

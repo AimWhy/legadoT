@@ -84,12 +84,14 @@ import io.legado.app.ui.book.changesource.ChangeChapterSourceDialog
 import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.read.config.AutoReadDialog
 import io.legado.app.ui.book.read.config.BgTextConfigDialog.Companion.BG_COLOR
+import io.legado.app.ui.book.read.config.BgTextConfigDialog.Companion.REVIEW_ICON_COLOR
 import io.legado.app.ui.book.read.config.BgTextConfigDialog.Companion.TEXT_COLOR
 import io.legado.app.ui.book.read.config.MoreConfigDialog
 import io.legado.app.ui.book.read.config.ReadAloudDialog
 import io.legado.app.ui.book.read.config.ReadStyleDialog
 import io.legado.app.ui.book.read.config.TextSelectMenuConfigDialog
 import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_COLOR
+import io.legado.app.ui.font.FontSelectDialog
 import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_DIVIDER_COLOR
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_BOX
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_EMPHASIS
@@ -182,6 +184,7 @@ class ReadBookActivity : BaseReadBookActivity(),
     HighlightActionMenu.CallBack,
     HighlightRulePopup.CallBack,
     HighlightStyleDialog.StyleHost,
+    FontSelectDialog.CallBack,
     LayoutProgressListener {
 
     private val tocActivity =
@@ -978,6 +981,20 @@ class ReadBookActivity : BaseReadBookActivity(),
             .setPresets(if (withAlpha) HighlightColors.bg else HighlightColors.text)
             .setDialogId(dialogId)
             .show(this)
+    }
+
+    /** HighlightStyleDialog.StyleHost: 打开字体选择器(手动高亮) */
+    override fun pickHighlightFont(current: String) {
+        showDialogFragment(FontSelectDialog())
+    }
+
+    // --- FontSelectDialog.CallBack: 高亮自定义字体 ---
+    override val curFontPath: String
+        get() = currentHighlightStyle().fontPath
+
+    override fun selectFont(path: String) {
+        onHighlightStyleChanged(currentHighlightStyle().copy(fontPath = path))
+        highlightStyleDialog?.refresh()
     }
 
     override fun onHighlightNote() {
@@ -2005,6 +2022,11 @@ class ReadBookActivity : BaseReadBookActivity(),
                 if (AppConfig.readBarStyleFollowPage) {
                     postEvent(EventBus.UPDATE_READ_ACTION_BAR, true)
                 }
+            }
+
+            REVIEW_ICON_COLOR -> {
+                ReadBookConfig.reviewIconColor = color
+                postEvent(EventBus.UP_CONFIG, arrayListOf(8, 9, 11))
             }
 
             HL_FILL, HL_TEXT, HL_UNDERLINE, HL_STRIKE, HL_BOX, HL_EMPHASIS -> {
