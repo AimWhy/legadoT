@@ -138,6 +138,15 @@ object ReadAloud {
         }
     }
 
+    fun setChapterStop(context: Context, count: Int) {
+        if (BaseReadAloudService.isRun) {
+            val intent = Intent(context, aloudClass)
+            intent.action = IntentAction.setChapterStop
+            intent.putExtra("count", count)
+            context.startForegroundServiceCompat(intent)
+        }
+    }
+
     /**
      * 当前朗读引擎的显示名(系统默认 / 在线引擎名 / 系统引擎标题)
      */

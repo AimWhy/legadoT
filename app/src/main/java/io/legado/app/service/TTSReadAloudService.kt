@@ -245,7 +245,7 @@ class TTSReadAloudService : BaseReadAloudService(), TextToSpeech.OnInitListener 
                 paragraphStartPos = 0
                 nowSpeak++
                 if (nowSpeak >= contentList.size) {
-                    nextChapter()
+                    nextChapter(auto = true)
                     return
                 }
             } while (contentList[nowSpeak].matches(AppPattern.notReadAloudRegex))

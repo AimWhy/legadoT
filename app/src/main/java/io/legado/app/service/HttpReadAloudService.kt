@@ -146,7 +146,7 @@ class HttpReadAloudService : BaseReadAloudService(),
         if (nowSpeak < contentList.lastIndex) {
             nowSpeak++
         } else {
-            nextChapter()
+            nextChapter(auto = true)
         }
     }
 
