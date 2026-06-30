@@ -80,6 +80,10 @@ class AudioPlayService : BaseService(),
         @JvmStatic
         var timeMinute: Int = 0
 
+        /** 听完剩余章数后停止(0=关闭);与 timeMinute 互斥 */
+        @JvmStatic
+        var chapterToStop: Int = 0
+
         var url: String = ""
             private set
 
@@ -185,6 +189,7 @@ class AudioPlayService : BaseService(),
                 IntentAction.adjustSpeed -> upSpeed(intent.getFloatExtra("adjust", 1f))
                 IntentAction.addTimer -> addTimer()
                 IntentAction.setTimer -> setTimer(intent.getIntExtra("minute", 0))
+                IntentAction.setChapterStop -> setChapterStop(intent.getIntExtra("count", 0))
                 IntentAction.adjustProgress -> {
                     adjustProgress(intent.getIntExtra("position", position))
                 }
@@ -367,7 +372,17 @@ class AudioPlayService : BaseService(),
                 // 结束
                 upPlayProgressJob?.cancel()
                 AudioPlay.playPositionChanged(exoPlayer.duration.toInt())
-                AudioPlay.next()
+                if (chapterToStop > 0) {
+                    chapterToStop--
+                    postEvent(EventBus.AUDIO_CHAPTER, chapterToStop)
+                    if (chapterToStop == 0) {
+                        AudioPlay.stop()
+                    } else {
+                        AudioPlay.next()
+                    }
+                } else {
+                    AudioPlay.next()
+                }
             }
         }
         upAudioPlayNotification()
@@ -416,6 +431,8 @@ class AudioPlayService : BaseService(),
 
     private fun setTimer(minute: Int) {
         timeMinute = minute
+        chapterToStop = 0
+        postEvent(EventBus.AUDIO_CHAPTER, chapterToStop)
         doDs()
     }
 
@@ -426,7 +443,23 @@ class AudioPlayService : BaseService(),
             timeMinute += 10
             if (timeMinute > 180) timeMinute = 180
         }
+        chapterToStop = 0
+        postEvent(EventBus.AUDIO_CHAPTER, chapterToStop)
         doDs()
+    }
+
+    /**
+     * 按集数停止: 听完剩余 count 章后停止(0=关闭)。与定时互斥, 启用时取消定时。
+     */
+    private fun setChapterStop(count: Int) {
+        chapterToStop = count
+        if (count > 0) {
+            timeMinute = 0
+            dsJob?.cancel()
+            postEvent(EventBus.AUDIO_DS, timeMinute)
+        }
+        postEvent(EventBus.AUDIO_CHAPTER, chapterToStop)
+        upAudioPlayNotification()
     }
 
     /**
@@ -691,6 +724,7 @@ class AudioPlayService : BaseService(),
     private fun createNotification(): NotificationCompat.Builder {
         var nTitle: String = when {
             pause -> getString(R.string.audio_pause)
+            chapterToStop > 0 -> getString(R.string.playing_timer_chapter, chapterToStop)
             timeMinute in 1..60 -> getString(
                 R.string.playing_timer,
                 timeMinute

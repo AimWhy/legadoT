@@ -496,6 +496,18 @@ object AudioPlay : CoroutineScope by MainScope() {
         }
     }
 
+    fun setChapterStop(count: Int) {
+        if (AudioPlayService.isRun) {
+            val intent = Intent(context, AudioPlayService::class.java)
+            intent.action = IntentAction.setChapterStop
+            intent.putExtra("count", count)
+            context.startService(intent)
+        } else {
+            AudioPlayService.chapterToStop = count
+            postEvent(EventBus.AUDIO_CHAPTER, count)
+        }
+    }
+
     fun addTimer() {
         val intent = Intent(context, AudioPlayService::class.java)
         intent.action = IntentAction.addTimer

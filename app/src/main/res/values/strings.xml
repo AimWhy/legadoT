@@ -287,7 +287,17 @@ Placeholders:
     <string name="set_timer">Timer</string>
     <string name="read_aloud_pause">Speak Paused</string>
     <string name="read_aloud_timer">Speaking(%d min left)</string>
+    <string name="read_aloud_timer_chapter">Speaking(%d chapters left)</string>
+    <string name="read_aloud_stop_chapters">Stop after %d chapters</string>
+    <string name="sleep_timer_title">Sleep timer</string>
+    <string name="sleep_timer_by_time">Stop after time</string>
+    <string name="sleep_timer_by_chapter">Stop after chapters</string>
+    <string name="sleep_timer_minute_hint">Custom minutes</string>
+    <string name="sleep_timer_chapter_hint">Custom chapters</string>
+    <string name="sleep_timer_last">Last %s</string>
+    <string name="sleep_timer_off">Turn off</string>
     <string name="playing_timer">Playing(%d min left)</string>
+    <string name="playing_timer_chapter">Playing(%d chapters left)</string>
     <string name="ps_hide_navigation_bar">Hide virtual buttons when reading</string>
     <string name="pt_hide_navigation_bar">Hide navigation bar</string>
     <string name="re_navigation_bar_color">Navigation bar color</string>

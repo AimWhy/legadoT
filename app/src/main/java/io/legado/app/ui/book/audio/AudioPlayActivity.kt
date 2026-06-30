@@ -35,6 +35,7 @@ import io.legado.app.model.SourceCallBack
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.AudioPlayService
+import io.legado.app.ui.widget.dialog.SleepTimerDialog
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.changesource.ChangeBookSourceDialog
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
@@ -71,11 +72,11 @@ import java.util.Locale
 class AudioPlayActivity :
     VMBaseActivity<ActivityAudioPlayBinding, AudioPlayViewModel>(toolBarTheme = Theme.Dark),
     ChangeBookSourceDialog.CallBack,
-    AudioPlay.CallBack {
+    AudioPlay.CallBack,
+    SleepTimerDialog.CallBack {
 
     override val binding by viewBinding(ActivityAudioPlayBinding::inflate)
     override val viewModel by viewModels<AudioPlayViewModel>()
-    private val timerSliderPopup by lazy { TimerSliderPopup(this) }
     private var adjustProgress = false
     private var playMode = AudioPlay.PlayMode.LIST_END_STOP
     private var pendingCacheAction: (() -> Unit)? = null
@@ -236,7 +237,7 @@ class AudioPlayActivity :
             AudioPlay.adjustSpeed(-0.1f)
         }
         binding.ivTimer.setOnClickListener {
-            timerSliderPopup.showAsDropDown(it, 0, (-100).dpToPx(), Gravity.TOP)
+            showDialogFragment(SleepTimerDialog())
         }
         updateAudioSkipButtonState()
         binding.llPlayMenu.applyNavigationBarPadding()
@@ -372,10 +373,35 @@ class AudioPlayActivity :
             binding.tvSpeed.text = String.format(Locale.ROOT, "%.1fX", it)
             binding.tvSpeed.visible()
         }
-        observeEventSticky<Int>(EventBus.AUDIO_DS) {
-            binding.tvTimer.text = "${it}m"
-            binding.tvTimer.visible(it > 0)
+        observeEventSticky<Int>(EventBus.AUDIO_DS) { upTimerText() }
+        observeEventSticky<Int>(EventBus.AUDIO_CHAPTER) { upTimerText() }
+    }
+
+    /** 定时/集数停止状态显示:集数优先, 其次时间, 都无则隐藏 */
+    private fun upTimerText() {
+        val chapter = AudioPlayService.chapterToStop
+        val minute = AudioPlayService.timeMinute
+        when {
+            chapter > 0 -> {
+                binding.tvTimer.text = getString(R.string.read_aloud_stop_chapters, chapter)
+                binding.tvTimer.visible(true)
+            }
+
+            minute > 0 -> {
+                binding.tvTimer.text = getString(R.string.timer_m, minute)
+                binding.tvTimer.visible(true)
+            }
+
+            else -> binding.tvTimer.visible(false)
         }
+    }
+
+    override fun onSleepTimerMinute(minute: Int) {
+        AudioPlay.setTimer(minute)
+    }
+
+    override fun onSleepTimerChapter(count: Int) {
+        AudioPlay.setChapterStop(count)
     }
 
     override fun upLoading(loading: Boolean) {
