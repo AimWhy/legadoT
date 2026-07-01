@@ -521,7 +521,7 @@ class HttpReadAloudService : BaseReadAloudService(),
                     && readAloudNumber + i > textChapter.getReadLength(pageIndex + 1)
                 ) {
                     pageIndex++
-                    ReadBook.moveToNextPage()
+                    ReadBook.moveToNextPage(syncReadAloudFollow = true)
                     upTtsProgress(readAloudNumber + i.toInt())
                 }
                 delay(sleep)

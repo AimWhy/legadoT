@@ -28,6 +28,23 @@ object ReadAloud {
     val ttsEngine get() = ReadBook.book?.getTtsEngine() ?: AppConfig.ttsEngine
     var httpTTS: HttpTTS? = null
 
+    val followReadAloudPosition: Boolean
+        get() = BaseReadAloudService.followReadAloudPosition
+
+    val readAloudChapterIndex: Int
+        get() = BaseReadAloudService.readAloudChapterIndex
+
+    val readAloudChapterStart: Int
+        get() = BaseReadAloudService.readAloudChapterStart
+
+    fun detachReadAloudFollow() {
+        BaseReadAloudService.detachReadAloudFollow()
+    }
+
+    fun restoreReadAloudFollow() {
+        BaseReadAloudService.restoreReadAloudFollow()
+    }
+
     private fun getReadAloudClass(): Class<*> {
         val ttsEngine = ttsEngine
         if (ttsEngine.isNullOrBlank()) {
@@ -53,6 +70,9 @@ object ReadAloud {
         pageIndex: Int = ReadBook.durPageIndex,
         startPos: Int = 0
     ) {
+        if (!BaseReadAloudService.isRun) {
+            restoreReadAloudFollow()
+        }
         val intent = Intent(context, aloudClass)
         intent.action = IntentAction.play
         intent.putExtra("play", play)
@@ -117,6 +137,22 @@ object ReadAloud {
         if (BaseReadAloudService.isRun) {
             val intent = Intent(context, aloudClass)
             intent.action = IntentAction.nextParagraph
+            context.startForegroundServiceCompat(intent)
+        }
+    }
+
+    fun prevChapter(context: Context) {
+        if (BaseReadAloudService.isRun) {
+            val intent = Intent(context, aloudClass)
+            intent.action = IntentAction.prev
+            context.startForegroundServiceCompat(intent)
+        }
+    }
+
+    fun nextChapter(context: Context) {
+        if (BaseReadAloudService.isRun) {
+            val intent = Intent(context, aloudClass)
+            intent.action = IntentAction.next
             context.startForegroundServiceCompat(intent)
         }
     }
