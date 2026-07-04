@@ -120,6 +120,30 @@ class JsTest {
         Assert.assertEquals(result, 6.0)
     }
 
+    /**
+     * ES6 兼容性边界探针(2026-07-04 实测锚定),书源 skill 的兼容表依据
+     * (legado-source-skill/references/js-api.md)。引擎(htmlunit-core-js)升级后
+     * 若本测试翻红,说明支持边界变了,同步更新兼容表。
+     */
+    @Test
+    fun es6CompatBoundary() {
+        // 解析期报错的语法:class / async / 函数调用展开 / 数组剩余解构
+        listOf(
+            "class A { }; new A()",
+            "typeof (async () => 42)",
+            "Math.max(...[1, 2, 5])",
+            "let [a, ...b] = [1, 2, 3]; b.join('-')",
+        ).forEach { js ->
+            val outcome = runCatching { RhinoScriptEngine.eval(js, ScriptBindings()) }
+            Assert.assertTrue("引擎已支持(原判不支持): $js", outcome.isFailure)
+        }
+        // Promise 构造器存在、then 可注册,但无事件循环微任务不排水——回调从不执行,
+        // Promise 链在书源 JS 里实际不可用(勿作为 async/await 的替代方案)
+        @Language("js")
+        val promiseJs = "var r = 0; Promise.resolve(7).then(function(v){ r = v }); '' + r"
+        Assert.assertEquals("0", RhinoScriptEngine.eval(promiseJs, ScriptBindings()))
+    }
+
     @Test
     fun typeofString() {
         val bindings = ScriptBindings()

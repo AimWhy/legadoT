@@ -2,12 +2,15 @@ package io.legado.app.base
 
 import android.content.DialogInterface
 import android.content.DialogInterface.OnDismissListener
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import androidx.annotation.LayoutRes
+import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.Lifecycle
@@ -17,7 +20,10 @@ import io.legado.app.R
 import io.legado.app.constant.AppLog
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.coroutine.Coroutine
-import io.legado.app.lib.theme.ThemeStore
+import io.legado.app.lib.skin.SkinInflaterFactory
+import io.legado.app.lib.theme.AppColorScheme
+import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.setBackgroundKeepPadding
 import io.legado.app.utils.setRoundBackground
@@ -31,6 +37,20 @@ abstract class BaseDialogFragment(
     private val adaptationSoftKeyboard: Boolean = false
 ) : DialogFragment(layoutID) {
 
+    /** 弹窗渲染形态（adaptationSoftKeyboard 是交互形态,与此正交,二者组合见模板分支） */
+    enum class DialogForm {
+        /** 浮动弹窗:surfaceContainerHigh 容器+radius_xl 圆角+透明窗,与 AlertDialog/WaitDialog 同语言 */
+        FLOATING,
+
+        /** 全屏弹窗(大浮动形态):页面背景圆角卡+四周留边、窗口透明(方角贴边试用后弃用,2026-07-03 用户定案) */
+        FULL_SCREEN,
+
+        /** 自管背景:贴底面板/全屏遮罩/图片查看器等自设背景与 gravity,模板不介入 */
+        SELF_MANAGED,
+    }
+
+    protected open val dialogForm: DialogForm = DialogForm.FLOATING
+
     private var onDismissListener: OnDismissListener? = null
 
     fun setOnDismissListener(onDismissListener: OnDismissListener?) {
@@ -39,6 +59,14 @@ abstract class BaseDialogFragment(
 
     override fun onStart() {
         super.onStart()
+        if (!adaptationSoftKeyboard && !AppConfig.isEInkMode &&
+            dialogForm == DialogForm.FULL_SCREEN
+        ) {
+            // 大浮动形态四周留边:窗口保持子类 setLayout 的全尺寸(其只改宽高,不碰 padding),
+            // 留边区在窗口内、露出遮罩;点按不关闭与旧版系统 inset 行为一致
+            val inset = 16.dpToPx()
+            dialog?.window?.decorView?.setPadding(inset, inset, inset, inset)
+        }
         if (adaptationSoftKeyboard) {
             dialog?.window?.setBackgroundDrawableResource(R.color.transparent)
         } else if (AppConfig.isEInkMode) {
@@ -75,32 +103,59 @@ abstract class BaseDialogFragment(
         }
     }
 
+    override fun onGetLayoutInflater(savedInstanceState: Bundle?): LayoutInflater {
+        // R2 换肤引擎弹窗通路:Dialog 窗口 inflater 通常由 activity inflater 克隆而来,
+        // 工厂已随克隆继承(installOn 空转);OEM 魔改返回全新 inflater 时在此兜底补装
+        val inflater = super.onGetLayoutInflater(savedInstanceState)
+        (activity as? AppCompatActivity)?.let { SkinInflaterFactory.installOn(inflater, it) }
+        return inflater
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         if (adaptationSoftKeyboard) {
             view.findViewById<View>(R.id.vw_bg)?.setOnClickListener(null)
             view.setOnClickListener { dismiss() }
         } else if (!AppConfig.isEInkMode) {
-            view.setBackgroundColor(ThemeStore.backgroundColor())
+            view.setBackgroundColor(backgroundColor)
         }
         onFragmentCreated(view, savedInstanceState)
         observeLiveBus()
-        // 统一把对话框 Toolbar 的方角背景替换为顶部圆角（在子类 onFragmentCreated 之后执行，覆盖其 setBackgroundColor）
+        // 模板在子类 onFragmentCreated 之后执行，覆盖其 setBackgroundColor
         if (!AppConfig.isEInkMode) {
-            view.findViewById<View>(R.id.tool_bar)?.let { toolBar ->
-                val bg = toolBar.background
-                if (bg is android.graphics.drawable.ColorDrawable) {
-                    toolBar.setRoundBackground(bg.color, topOnly = true)
-                    toolBar.elevation = 0f
-                    if (!adaptationSoftKeyboard) {
-                        // 根布局四角改为圆角并裁剪子视图、窗口背景设为透明，
-                        // 否则圆角缺口处会露出根布局/窗口的方角背景（白色直角），底部也会是直角
-                        view.setRoundBackground(ThemeStore.backgroundColor())
-                        view.clipToOutline = true
-                        dialog?.window?.setBackgroundDrawableResource(R.color.transparent)
-                    }
-                }
+            when (dialogForm) {
+                DialogForm.FLOATING -> applyDialogTemplate(view)
+                // 大浮动形态:同浮动模板圆角卡,四周留边在 onStart 经 decorView padding 实现
+                DialogForm.FULL_SCREEN -> applyDialogTemplate(view)
+                DialogForm.SELF_MANAGED -> Unit
             }
+        } else if (adaptationSoftKeyboard) {
+            // adaptation 形态不走 onStart 的 eink 分支,中央卡片在此补 eink 边框
+            view.findViewById<View>(R.id.vw_bg)
+                ?.setBackgroundResource(R.drawable.bg_eink_border_dialog)
+        }
+    }
+
+    /**
+     * 浮动形态:根布局整卡圆角+裁剪、窗口透明（否则圆角缺口露出窗口方角背景）;
+     * adaptation 形态（透明窗+点外关闭）:只染中央卡片（即吃掉点击的 R.id.vw_bg）。
+     * Toolbar 顶部圆角与容器同半径;子类未设色时兜底主色。
+     * 全屏形态复用本模板,四周留边在 onStart 经视图 margin 实现（见 [DialogForm.FULL_SCREEN]）。
+     */
+    private fun applyDialogTemplate(view: View) {
+        val radius = resources.getDimension(R.dimen.radius_xl)
+        val roundTarget = if (adaptationSoftKeyboard) {
+            view.findViewById<View>(R.id.vw_bg) ?: return
+        } else {
+            dialog?.window?.setBackgroundDrawableResource(R.color.transparent)
+            view
+        }
+        roundTarget.setRoundBackground(AppColorScheme.current.surfaceContainerHigh, radius = radius)
+        roundTarget.clipToOutline = true
+        view.findViewById<View>(R.id.tool_bar)?.let { toolBar ->
+            val color = (toolBar.background as? ColorDrawable)?.color ?: primaryColor
+            toolBar.setRoundBackground(color, topOnly = true, radius = radius)
+            toolBar.elevation = 0f
         }
     }
 

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -39,6 +40,7 @@
                 android:layout_marginEnd="6dp"
                 android:ellipsize="end"
                 android:maxLines="1"
+                app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
                 android:textSize="13sp"
                 android:textStyle="bold" />
@@ -83,6 +85,7 @@
             android:paddingRight="8dp"
             android:paddingBottom="0dp"
             android:text="@string/review_play_audio"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:textSize="12sp"
             android:visibility="gone" />
@@ -94,6 +97,7 @@
             android:layout_marginTop="7dp"
             android:ellipsize="end"
             android:maxLines="1"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:textSize="12sp" />
     </LinearLayout>
@@ -112,6 +116,7 @@
             android:layout_marginTop="16dp"
             android:contentDescription="@null"
             android:src="@drawable/ic_review_like"
+            app:skin_tint="onSurfaceVariant"
             android:tint="@color/secondaryText" />
 
         <TextView
@@ -121,6 +126,7 @@
             android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:maxLines="1"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:textSize="12sp"
             android:visibility="gone" />

@@ -4,10 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/background"
+    app:skin_background="background">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/tool_bar"
+        app:skin_background="themePrimary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/background_menu"
@@ -69,6 +71,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/background"
+        app:skin_background="background"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingLeft="10dp"

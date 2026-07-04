@@ -2,6 +2,7 @@ package io.legado.app.ui.widget
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.PorterDuff
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -50,6 +51,15 @@ class SelectActionBar @JvmOverloads constructor(
             elevation = context.elevation
             binding.cbSelectedAll.setTextColor(primaryTextColor)
             TintHelper.setTint(binding.cbSelectedAll, context.accentColor, !bgIsLight)
+            // 描边钮文字/描边跟强调色,禁用色沿用 bottomBackground 亮暗感知(替代原 AccentStrokeTextView 自绘)
+            val btnColors = ColorStateList(
+                arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()),
+                intArrayOf(context.accentColor, disabledColor)
+            )
+            binding.btnRevertSelection.setTextColor(btnColors)
+            binding.btnRevertSelection.strokeColor = btnColors
+            binding.btnSelectActionMain.setTextColor(btnColors)
+            binding.btnSelectActionMain.strokeColor = btnColors
             binding.ivMenuMore.setColorFilter(disabledColor, PorterDuff.Mode.SRC_IN)
             binding.cbSelectedAll.setOnUserCheckedChangeListener { isChecked ->
                 callBack?.selectAll(isChecked)

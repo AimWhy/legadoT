@@ -18,6 +18,7 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.Target
+import io.legado.app.R
 import io.legado.app.constant.AppPattern
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.glide.ImageLoader
@@ -39,8 +40,11 @@ class CoverImageView @JvmOverloads constructor(
     private var filletPath = Path()
     private var viewWidth: Float = 0f
     private var viewHeight: Float = 0f
-    /** 封面圆角（现代极简：12dp，全局统一） */
-    private val cornerRadius: Float = 12f.dpToPx()
+    /**
+     * 封面自绘圆角半径（现代极简：默认 12dp）。设 0（布局 app:coverCornerRadius="0dp"）则不自绘，
+     * 由外层 MaterialCardView 统一裁圆角——避免"卡片裁一次+此处再裁一次"的双层裁剪。
+     */
+    private val cornerRadius: Float
     private var defaultCover = true
     var bitmapPath: String? = null
         private set
@@ -61,6 +65,14 @@ class CoverImageView @JvmOverloads constructor(
         textPaint.isAntiAlias = true
         textPaint.textAlign = Paint.Align.CENTER
         textPaint
+    }
+
+    init {
+        val a = context.obtainStyledAttributes(attrs, R.styleable.CoverImageView)
+        cornerRadius = a.getDimension(
+            R.styleable.CoverImageView_coverCornerRadius, 12f.dpToPx()
+        )
+        a.recycle()
     }
 
     override fun setLayoutParams(params: ViewGroup.LayoutParams?) {
@@ -89,7 +101,8 @@ class CoverImageView @JvmOverloads constructor(
         viewWidth = width.toFloat()
         viewHeight = height.toFloat()
         filletPath.reset()
-        if (width > 10 && viewHeight > 10) {
+        // cornerRadius=0:不自绘圆角(交外层卡片裁),filletPath 留空,onDraw 跳过 clipPath
+        if (cornerRadius > 0f && width > 10 && viewHeight > 10) {
             val r = cornerRadius.coerceAtMost(viewWidth / 2).coerceAtMost(viewHeight / 2)
             filletPath.apply {
                 moveTo(r, 0f)

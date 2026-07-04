@@ -14,8 +14,12 @@ class MenuPopupStyleTest {
 
         assertContains(popupBackgroundXml, "<solid android:color=\"@color/background_card\"")
         assertContains(popupBackgroundXml, "<corners android:radius=\"@dimen/radius_m\"")
-        assertContains(popupBackgroundXml, "<stroke")
-        assertContains(popupBackgroundXml, "android:color=\"@color/divider\"")
+        // M3 菜单靠阴影分层,不用描边(系统 overflow 走 popupElevation,自定义弹窗走 applyMd3PopupStyle 的 elevation)
+        assertFalse(
+            "popup menu surface should rely on elevation instead of stroke",
+            popupBackgroundXml.contains("<stroke")
+        )
+        assertContains(stylesXml, "<item name=\"android:popupElevation\">3dp</item>")
         assertContains(stylesXml, "<item name=\"android:listPreferredItemHeightSmall\">48dp</item>")
     }
 

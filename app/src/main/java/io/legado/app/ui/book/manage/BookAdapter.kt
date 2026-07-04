@@ -14,9 +14,10 @@ import io.legado.app.data.entities.BookGroup
 import io.legado.app.databinding.ItemArrangeBookBinding
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.config.AppConfig
-import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
+import io.legado.app.utils.dpToPx
 import java.util.Collections
 
 class BookAdapter(context: Context, val callBack: CallBack) :
@@ -49,7 +50,9 @@ class BookAdapter(context: Context, val callBack: CallBack) :
         payloads: MutableList<Any>
     ) {
         binding.apply {
-            root.setBackgroundColor(context.backgroundColor)
+            // 卡底色由换肤引擎按布局 skin_background 施加;选中态=2dp 描边
+            rootCard.strokeColor = context.accentColor
+            rootCard.strokeWidth = if (selectedBooks.contains(item)) 2.dpToPx() else 0
             tvName.text = item.name
             tvAuthor.text = item.author
             tvAuthor.visibility = if (item.author.isEmpty()) View.GONE else View.VISIBLE
@@ -72,10 +75,11 @@ class BookAdapter(context: Context, val callBack: CallBack) :
                     } else {
                         selectedBooks.remove(it)
                     }
+                    rootCard.strokeWidth = if (isChecked) 2.dpToPx() else 0
                     callBack.upSelectCount()
                 }
             }
-            root.setOnClickListener {
+            contentLayout.setOnClickListener {
                 getItem(holder.layoutPosition)?.let {
                     checkbox.isChecked = !checkbox.isChecked
                     if (checkbox.isChecked) {
@@ -83,6 +87,7 @@ class BookAdapter(context: Context, val callBack: CallBack) :
                     } else {
                         selectedBooks.remove(it)
                     }
+                    rootCard.strokeWidth = if (checkbox.isChecked) 2.dpToPx() else 0
                     callBack.upSelectCount()
                 }
             }

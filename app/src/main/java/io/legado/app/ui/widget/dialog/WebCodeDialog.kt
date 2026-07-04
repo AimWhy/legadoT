@@ -13,13 +13,15 @@ import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogWebCodeViewBinding
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 
 class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
     CodeEditorWebViewPool.Client {
+
+    /** 全屏弹窗:大浮动形态,圆角+四周留边 */
+    override val dialogForm = DialogForm.FULL_SCREEN
 
     companion object {
         private const val DIALOG_TAG = "WebCodeDialog"
@@ -73,7 +75,6 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         arguments?.getString("title")?.let {
             binding.toolBar.title = it
         }

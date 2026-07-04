@@ -4,7 +4,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_card"
     style="@style/Style.ItemManageCard"
-    app:checkedIconVisible="false">
+    app:skin_background="surfaceContainerLow">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/content_layout"
@@ -49,6 +49,7 @@
             android:paddingStart="5dp"
             android:scrollbars="none"
             android:singleLine="true"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             app:layout_constraintBottom_toTopOf="@id/iv_debug_text"
             app:layout_constraintLeft_toLeftOf="parent"
@@ -79,6 +80,7 @@
             android:padding="6dp"
             android:scrollbars="none"
             android:src="@drawable/ic_edit"
+            app:skin_tint="onSurface"
             android:tint="@color/primaryText"
             app:layout_constraintBottom_toTopOf="@id/iv_debug_text"
             app:layout_constraintRight_toLeftOf="@id/iv_menu_more"
@@ -93,6 +95,7 @@
             android:padding="6dp"
             android:scrollbars="none"
             android:src="@drawable/ic_more_vert"
+            app:skin_tint="onSurface"
             android:tint="@color/primaryText"
             app:layout_constraintBottom_toTopOf="@id/iv_debug_text"
             app:layout_constraintRight_toRightOf="parent"
@@ -124,7 +127,7 @@
             tools:text="@string/debug_hint"
             tools:visibility="visible" />
 
-        <io.legado.app.lib.theme.view.ThemeProgressBar
+        <ProgressBar
             android:id="@+id/iv_progressBar"
             android:layout_width="25dp"
             android:layout_height="25dp"
@@ -140,15 +143,5 @@
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <View
-        android:id="@+id/selection_bar"
-        android:layout_width="3dp"
-        android:layout_height="match_parent"
-        android:layout_gravity="start"
-        android:background="@color/accent"
-        android:visibility="gone" />
-
-    <include layout="@layout/view_item_manage_divider" />
 
 </com.google.android.material.card.MaterialCardView>

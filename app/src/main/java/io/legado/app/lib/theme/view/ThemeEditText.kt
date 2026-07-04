@@ -8,8 +8,6 @@ import android.util.AttributeSet
 import android.view.View
 import androidx.appcompat.widget.AppCompatEditText
 import io.legado.app.constant.AppLog
-import io.legado.app.lib.theme.accentColor
-import io.legado.app.utils.applyTint
 import kotlin.math.max
 import kotlin.math.min
 
@@ -18,10 +16,8 @@ class ThemeEditText @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : AppCompatEditText(context, attrs) {
 
+    // 施色由换肤引擎规则 A 接管(SkinInflaterFactory);本类保留粘贴防崩与行高修正等行为
     init {
-        if (!isInEditMode) {
-            applyTint(context.accentColor)
-        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             isLocalePreferredLineHeightForMinimumUsed = false
         }

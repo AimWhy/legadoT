@@ -22,6 +22,8 @@ import io.legado.app.databinding.DialogBottomBarSkinPaletteBinding
 import io.legado.app.databinding.ItemBottomBarSkinAssignRowBinding
 import io.legado.app.databinding.ItemBottomBarSkinPaletteBinding
 import io.legado.app.help.BottomBarSkinManager
+import io.legado.app.utils.applyAppSheetBackground
+import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.toastOnUi
@@ -72,6 +74,8 @@ class BottomBarSkinAssignActivity : BaseActivity<ActivityBottomBarSkinAssignBind
         }
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
+        // A15+ 强制 e2e:保留 xml 的 8dp 基础 padding,再叠加导航栏高度
+        binding.recyclerView.applyNavigationBarPadding(withInitialPadding = true)
         loadData()
     }
 
@@ -142,6 +146,7 @@ class BottomBarSkinAssignActivity : BaseActivity<ActivityBottomBarSkinAssignBind
         }
         dialog.setContentView(db.root)
         dialog.show()
+        dialog.applyAppSheetBackground()
     }
 
     private fun bindThumb(iv: ImageView, file: File?) {

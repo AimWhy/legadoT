@@ -28,6 +28,7 @@
             android:scaleType="center"
             android:visibility="invisible"
             android:src="@drawable/ic_folder"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText" />
     </FrameLayout>
 

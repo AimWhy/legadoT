@@ -10,7 +10,6 @@ import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogTextViewBinding
 import io.legado.app.help.IntentData
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.setHtml
 import io.legado.app.utils.setLayout
@@ -26,6 +25,9 @@ import kotlinx.coroutines.withContext
 
 
 class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
+
+    /** 全宽大弹窗(更新日志/帮助/教程/源码查看):大浮动形态,圆角+四周留边 */
+    override val dialogForm = DialogForm.FULL_SCREEN
 
     enum class Mode {
         MD, HTML, TEXT
@@ -58,7 +60,6 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         binding.toolBar.inflateMenu(R.menu.dialog_text)
         binding.toolBar.menu.applyTint(requireContext())
         binding.toolBar.setOnMenuItemClickListener {

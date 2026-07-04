@@ -14,6 +14,7 @@
         android:layout_height="24dp"
         android:layout_marginEnd="12dp"
         android:visibility="gone"
+        app:skin_tint="onSurface"
         app:tint="@color/primaryText"
         tools:src="@drawable/ic_more_vert"
         tools:visibility="visible" />
@@ -26,6 +27,7 @@
         android:ellipsize="end"
         android:maxLines="1"
         android:padding="5dp"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="14sp"
         tools:text="菜单项" />
@@ -37,6 +39,7 @@
         android:layout_marginStart="8dp"
         android:src="@drawable/ic_check"
         android:visibility="gone"
+        app:skin_tint="onSurface"
         app:tint="@color/primaryText"
         tools:visibility="visible" />
 

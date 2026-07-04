@@ -11,6 +11,7 @@
         android:layout_height="wrap_content"
         android:padding="18dp"
         android:text="@string/add_to_bookshelf"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="16sp"
         android:textStyle="bold"
@@ -41,6 +42,7 @@
             app:layout_constraintBottom_toBottomOf="@+id/tv_author"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="@id/tv_author"
+            app:skin_tint="onSurfaceVariant"
             app:tint="@color/tv_text_summary"
             tools:ignore="RtlHardcoded,RtlSymmetry" />
 
@@ -64,6 +66,7 @@
             app:layout_constraintBottom_toBottomOf="@+id/tv_origin"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toTopOf="@id/tv_origin"
+            app:skin_tint="onSurfaceVariant"
             app:tint="@color/tv_text_summary"
             tools:ignore="RtlHardcoded,RtlSymmetry" />
 

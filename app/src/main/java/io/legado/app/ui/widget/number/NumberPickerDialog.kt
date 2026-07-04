@@ -2,14 +2,16 @@ package io.legado.app.ui.widget.number
 
 import android.content.Context
 import android.widget.NumberPicker
-import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.legado.app.R
+import io.legado.app.help.config.AppConfig
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.hideSoftInput
 
 
 class NumberPickerDialog(context: Context) {
-    private val builder = AlertDialog.Builder(context)
+    // MaterialAlertDialogBuilder:与 alert DSL 同步的 M3 容器(28dp/surfaceContainerHigh),applyTint 兜底染按钮
+    private val builder = MaterialAlertDialogBuilder(context)
     private var numberPicker: NumberPicker? = null
     private var maxValue: Int? = null
     private var minValue: Int? = null
@@ -60,6 +62,16 @@ class NumberPickerDialog(context: Context) {
         }
         builder.setNegativeButton(R.string.cancel, null)
         val dialog = builder.show().applyTint()
+        if (AppConfig.isEInkMode) {
+            // 与 AndroidAlertBuilder.show() 的 eink 分支同款(此类不走 alert DSL,自行补齐)
+            dialog.window?.run {
+                val attr = attributes
+                attr.dimAmount = 0f
+                attr.windowAnimations = 0
+                attributes = attr
+                setBackgroundDrawableResource(R.drawable.bg_eink_border_dialog)
+            }
+        }
         numberPicker = dialog.findViewById(R.id.number_picker)
         numberPicker?.let { np ->
             minValue?.let {

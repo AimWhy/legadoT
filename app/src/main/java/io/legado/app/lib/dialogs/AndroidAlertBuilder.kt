@@ -6,12 +6,13 @@ import android.graphics.drawable.Drawable
 import android.view.KeyEvent
 import android.view.View
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.legado.app.R
 import io.legado.app.help.config.AppConfig
 import io.legado.app.utils.applyTint
 
 internal class AndroidAlertBuilder(override val ctx: Context) : AlertBuilder<AlertDialog> {
-    private val builder = AlertDialog.Builder(ctx)
+    private val builder = MaterialAlertDialogBuilder(ctx)
 
     override fun setTitle(title: CharSequence) {
         builder.setTitle(title)
@@ -141,6 +142,10 @@ internal class AndroidAlertBuilder(override val ctx: Context) : AlertBuilder<Ale
         }
     }
 
+    /**
+     * 只创建不显示;与 [show] 不同,未做 applyTint(窗口圆角背景/按钮染色在 show 后才生效),
+     * 调用方自行 show 后如需统一观感应调 applyTint()。
+     */
     override fun build(): AlertDialog {
         val dialog = builder.create()
         if (AppConfig.isEInkMode) {

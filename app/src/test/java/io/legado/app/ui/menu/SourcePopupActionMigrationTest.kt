@@ -10,8 +10,8 @@ class SourcePopupActionMigrationTest {
     @Test
     fun `source related adapter menus use custom vertical popup action`() {
         listOf(
-            "src/main/java/io/legado/app/ui/book/changesource/ChangeBookSourceAdapter.kt",
-            "src/main/java/io/legado/app/ui/book/changesource/ChangeChapterSourceAdapter.kt",
+            // R1 组件化:书/章换源两 adapter 已合一
+            "src/main/java/io/legado/app/ui/book/changesource/ChangeSourceAdapter.kt",
             "src/main/java/io/legado/app/ui/book/source/manage/BookSourceAdapter.kt"
         ).forEach { path ->
             val kt = readProjectFile(path)

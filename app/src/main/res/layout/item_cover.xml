@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -25,6 +26,7 @@
         android:gravity="center"
         android:singleLine="true"
         android:text="@string/book_source"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="16sp"
         tools:ignore="RtlHardcoded,RtlSymmetry" />

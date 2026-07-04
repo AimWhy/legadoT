@@ -2,6 +2,8 @@ package io.legado.app.ui.book.search
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -28,7 +30,7 @@ import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.SearchKeyword
 import io.legado.app.databinding.ActivityBookSearchBinding
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.theme.Selector
+import io.legado.app.lib.theme.AppColorScheme
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
@@ -36,7 +38,6 @@ import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.source.manage.BookSourceActivity
-import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.applyNavigationBarMargin
 import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.applyTint
@@ -270,10 +271,14 @@ class SearchActivity : VMBaseActivity<ActivityBookSearchBinding, SearchViewModel
 
     private fun initOtherView() {
         binding.fbStartStop.backgroundTintList =
-            Selector.colorBuild()
-                .setDefaultColor(accentColor)
-                .setPressedColor(ColorUtils.darkenColor(accentColor))
-                .create()
+            ColorStateList.valueOf(AppColorScheme.current.primaryContainer)
+        binding.fbStartStop.imageTintList =
+            ColorStateList.valueOf(AppColorScheme.current.onPrimaryContainer)
+        binding.tvSearchProgress.background = GradientDrawable().apply {
+            cornerRadius = 999f
+            setColor(AppColorScheme.current.inverseSurface)
+        }
+        binding.tvSearchProgress.setTextColor(AppColorScheme.current.inverseOnSurface)
         binding.fbStartStop.setOnClickListener {
             if (viewModel.isSearchLiveData.value == true) {
                 isManualStopSearch = true

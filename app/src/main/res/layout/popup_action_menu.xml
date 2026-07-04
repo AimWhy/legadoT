@@ -30,6 +30,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/more_menu"
             android:src="@drawable/ic_more_vert"
+            app:skin_tint="onSurface"
             android:tint="@color/primaryText"
             android:visibility="gone" />
 

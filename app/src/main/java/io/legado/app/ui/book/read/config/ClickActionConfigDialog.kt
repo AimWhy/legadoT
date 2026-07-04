@@ -12,6 +12,7 @@ import io.legado.app.databinding.DialogClickActionConfigBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.ui.book.read.ReadBookActivity
+import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.getCompatColor
 import io.legado.app.utils.putPrefInt
 import io.legado.app.utils.viewbindingdelegate.viewBinding
@@ -20,6 +21,10 @@ import io.legado.app.utils.viewbindingdelegate.viewBinding
  * 点击区域设置
  */
 class ClickActionConfigDialog : BaseDialogFragment(R.layout.dialog_click_action_config) {
+
+    /** 全屏半透明遮罩,豁免统一圆角模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
+
     private val binding by viewBinding(DialogClickActionConfigBinding::bind)
     private val actions by lazy {
         linkedMapOf(
@@ -57,6 +62,8 @@ class ClickActionConfigDialog : BaseDialogFragment(R.layout.dialog_click_action_
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         (activity as ReadBookActivity).bottomDialog++
         view.setBackgroundColor(getCompatColor(R.color.translucent))
+        // A15+ 强制 e2e:全屏遮罩自行消化导航栏 inset,底行标签不落入手势条区(背景仍满屏)
+        binding.rootView.applyNavigationBarPadding(withInitialPadding = true)
         initData()
         initViewEvent()
     }

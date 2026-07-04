@@ -30,6 +30,7 @@
         android:gravity="top|center_horizontal"
         android:lines="2"
         android:scrollbars="none"
+        app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
         android:textSize="13sp"
         app:layout_constraintLeft_toLeftOf="parent"

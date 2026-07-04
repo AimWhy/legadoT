@@ -39,7 +39,8 @@
         android:id="@+id/fl_loading"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/background">
+        android:background="@color/background"
+        app:skin_background="background">
 
         <LinearLayout
             android:id="@+id/ll_loading"
@@ -66,6 +67,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
                 android:text="@string/loading"
+                app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText" />
         </LinearLayout>
 
@@ -81,6 +83,7 @@
                 android:id="@+id/tv_msg"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText" />
 
             <com.google.android.material.button.MaterialButton

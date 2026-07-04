@@ -10,7 +10,6 @@ import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.databinding.ItemExploreManageBinding
-import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.ui.widget.popupActionMenu
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 
@@ -49,7 +48,7 @@ class ExploreManageAdapter(context: Context, val callBack: CallBack) :
         payloads: MutableList<Any>
     ) {
         binding.run {
-            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
+            // 卡底色由换肤引擎按布局 skin_background 施加
             tvName.text = item.getDisplayTitle()
             tvSource.text = "${item.sourceName} · ${styleText(item)}"
             swtEnabled.isChecked = item.enabled

@@ -13,18 +13,16 @@ import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
+import io.legado.app.base.adapter.SimpleSelectableAdapter
 import io.legado.app.data.entities.BookSourcePart
 import io.legado.app.databinding.ItemBookSourceBinding
-import io.legado.app.lib.theme.ThemeStore
-import io.legado.app.lib.theme.backgroundColor
-import io.legado.app.lib.theme.cardBackgroundColor
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.model.Debug
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
-import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.buildMainHandler
 import io.legado.app.utils.gone
@@ -39,19 +37,17 @@ class BookSourceAdapter(
     private val callBack: CallBack,
     private val recyclerView: RecyclerView
 ) : RecyclerAdapter<BookSourcePart, ItemBookSourceBinding>(context),
-    ItemTouchCallback.Callback {
+    ItemTouchCallback.Callback,
+    SimpleSelectableAdapter<BookSourcePart> {
 
-    private val selected = linkedSetOf<BookSourcePart>()
+    override val selectedKeys = linkedSetOf<BookSourcePart>()
     private val finalMessageRegex = Regex("成功|失败")
     private val handler = buildMainHandler()
     var showSourceHost = false
 
-    val selection: List<BookSourcePart>
-        get() {
-            return getItems().filter {
-                selected.contains(it)
-            }
-        }
+    override fun onSelectionChanged() {
+        callBack.upCountView()
+    }
 
     val diffItemCallback = object : DiffUtil.ItemCallback<BookSourcePart>() {
 
@@ -101,12 +97,11 @@ class BookSourceAdapter(
         payloads: MutableList<Any>
     ) {
         binding.run {
-            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
-            selectionBar.setBackgroundColor(ThemeStore.accentColor(context))
+            // 卡底色由换肤引擎按布局 skin_background 施加;沉浸式同样呈卡片
             if (payloads.isEmpty()) {
                 cbBookSource.text = item.getDisPlayNameGroup()
                 swtEnabled.isChecked = item.enabled
-                cbBookSource.isChecked = selected.contains(item)
+                cbBookSource.isChecked = isSelected(item)
                 upSelectStroke(binding, item)
                 upCheckSourceMessage(binding, item)
                 upShowExplore(ivExplore, item)
@@ -120,7 +115,7 @@ class BookSourceAdapter(
                             "upName" -> cbBookSource.text = item.getDisPlayNameGroup()
                             "upExplore" -> upShowExplore(ivExplore, item)
                             "selected" -> {
-                                cbBookSource.isChecked = selected.contains(item)
+                                cbBookSource.isChecked = isSelected(item)
                                 upSelectStroke(binding, item)
                             }
                             "checkSourceMessage" -> upCheckSourceMessage(binding, item)
@@ -142,11 +137,7 @@ class BookSourceAdapter(
             }
             cbBookSource.setOnUserCheckedChangeListener { checked ->
                 getItem(holder.layoutPosition)?.let {
-                    if (checked) {
-                        selected.add(it)
-                    } else {
-                        selected.remove(it)
-                    }
+                    setSelected(it, checked)
                     upSelectStroke(binding, it)
                     callBack.upCountView()
                 }
@@ -161,8 +152,8 @@ class BookSourceAdapter(
             }
             contentLayout.setOnClickListener {
                 getItem(holder.layoutPosition)?.let {
-                    val nowSelected = !selected.contains(it)
-                    if (nowSelected) selected.add(it) else selected.remove(it)
+                    val nowSelected = !isSelected(it)
+                    setSelected(it, nowSelected)
                     cbBookSource.isChecked = nowSelected
                     upSelectStroke(binding, it)
                     callBack.upCountView()
@@ -221,7 +212,7 @@ class BookSourceAdapter(
                     "debug" -> callBack.debug(source)
                     "delete" -> {
                         callBack.del(source)
-                        selected.remove(source)
+                        setSelected(source, false)
                     }
 
                     "toggleExplore" -> callBack.enableExplore(!source.enabledExplore, source)
@@ -233,7 +224,8 @@ class BookSourceAdapter(
     }
 
     private fun upSelectStroke(binding: ItemBookSourceBinding, source: BookSourcePart) {
-        binding.selectionBar.visibility = if (selected.contains(source)) View.VISIBLE else View.GONE
+        binding.rootCard.strokeColor = context.accentColor
+        binding.rootCard.strokeWidth = if (isSelected(source)) 2.dpToPx() else 0
     }
 
     private fun upShowExplore(iv: ImageView, source: BookSourcePart) {
@@ -284,30 +276,10 @@ class BookSourceAdapter(
         }
     }
 
-    fun selectAll() {
-        getItems().forEach {
-            selected.add(it)
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
-    fun revertSelection() {
-        getItems().forEach {
-            if (selected.contains(it)) {
-                selected.remove(it)
-            } else {
-                selected.add(it)
-            }
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
     fun checkSelectedInterval() {
         val selectedPosition = linkedSetOf<Int>()
         getItems().forEachIndexed { index, it ->
-            if (selected.contains(it)) {
+            if (isSelected(it)) {
                 selectedPosition.add(index)
             }
         }
@@ -316,7 +288,7 @@ class BookSourceAdapter(
         val itemCount = maxPosition - minPosition + 1
         for (i in minPosition..maxPosition) {
             getItem(i)?.let {
-                selected.add(it)
+                setSelected(it, true)
             }
         }
         notifyItemRangeChanged(minPosition, itemCount, bundleOf(Pair("selected", null)))
@@ -372,7 +344,7 @@ class BookSourceAdapter(
     val dragSelectCallback: DragSelectTouchHelper.Callback =
         object : DragSelectTouchHelper.AdvanceCallback<BookSourcePart>(Mode.ToggleAndReverse) {
             override fun currentSelectedId(): MutableSet<BookSourcePart> {
-                return selected
+                return selectedKeys
             }
 
             override fun getItemId(position: Int): BookSourcePart {
@@ -381,11 +353,7 @@ class BookSourceAdapter(
 
             override fun updateSelectState(position: Int, isSelected: Boolean): Boolean {
                 getItem(position)?.let {
-                    if (isSelected) {
-                        selected.add(it)
-                    } else {
-                        selected.remove(it)
-                    }
+                    setSelected(it, isSelected)
                     notifyItemChanged(position, bundleOf(Pair("selected", null)))
                     callBack.upCountView()
                     return true

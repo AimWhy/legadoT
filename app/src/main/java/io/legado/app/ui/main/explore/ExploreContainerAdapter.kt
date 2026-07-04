@@ -61,6 +61,7 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
         payloads: MutableList<Any>
     ) {
         binding.run {
+            // 卡底色(surfaceContainerLow)+1dp 阴影由布局声明,换肤引擎接管;不再走沉浸式透明
             if (payloads.isNotEmpty()) {
                 upBookshelfBadge(binding, item)
                 return
@@ -71,7 +72,7 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
             if (item.loading) rlLoading.visible() else rlLoading.inVisible()
             when {
                 item.books.isEmpty() && item.error != null -> {
-                    rvBooks.gone()
+                    hostBooks.gone()
                     llBooks.gone()
                     tvError.text = item.error
                     tvError.visible()
@@ -80,7 +81,7 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
 
                 container.style == ExploreContainer.STYLE_LIST -> {
                     upLightError(binding, item)
-                    rvBooks.gone()
+                    hostBooks.gone()
                     llBooks.visible()
                     rvBooks.tag = null
                     upListBooks(binding, item, holder)
@@ -89,7 +90,7 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
                 else -> {
                     upLightError(binding, item)
                     llBooks.gone()
-                    rvBooks.visible()
+                    hostBooks.visible()
                     val coverAdapter = rvBooks.adapter as ExploreCoverAdapter
                     coverAdapter.onItemLongClick = {
                         showMenu(root, holder.layoutPosition)

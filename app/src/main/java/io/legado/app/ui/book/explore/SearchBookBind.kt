@@ -11,26 +11,15 @@ import io.legado.app.utils.visible
 
 /**
  * SearchBook -> item_search 行的通用绑定
- * (发现完整列表 / 发现页列表样式容器共用)
+ * (发现完整列表 / 发现页列表样式容器 / 搜索结果共用;搜索页的源数角标由调用方另补)
  */
 fun ItemSearchBinding.bindSearchBook(context: Context, item: SearchBook, inBookshelf: Boolean) {
     tvName.text = item.name
     tvAuthor.text = context.getString(R.string.author_show, item.author)
     ivInBookshelf.isVisible = inBookshelf
-    if (item.latestChapterTitle.isNullOrEmpty()) {
-        tvLasted.gone()
-    } else {
-        tvLasted.text = context.getString(R.string.lasted_show, item.latestChapterTitle)
-        tvLasted.visible()
-    }
+    upLasted(context, item.latestChapterTitle)
     tvIntroduce.text = item.trimIntro(context)
-    val kinds = item.getKindList()
-    if (kinds.isEmpty()) {
-        llKind.gone()
-    } else {
-        llKind.visible()
-        llKind.setLabels(kinds)
-    }
+    upKind(item.getKindList())
     ivCover.load(
         item.coverUrl,
         item.name,
@@ -38,4 +27,24 @@ fun ItemSearchBinding.bindSearchBook(context: Context, item: SearchBook, inBooks
         AppConfig.loadCoverOnlyWifi,
         item.origin
     )
+}
+
+/** 最新章节行:空则整行隐藏(增量 payload 路径亦可单独调用) */
+fun ItemSearchBinding.upLasted(context: Context, latestChapterTitle: String?) {
+    if (latestChapterTitle.isNullOrEmpty()) {
+        tvLasted.gone()
+    } else {
+        tvLasted.text = context.getString(R.string.lasted_show, latestChapterTitle)
+        tvLasted.visible()
+    }
+}
+
+/** 分类标签流:空则隐藏(增量 payload 路径亦可单独调用) */
+fun ItemSearchBinding.upKind(kinds: List<String>) {
+    if (kinds.isEmpty()) {
+        llKind.gone()
+    } else {
+        llKind.visible()
+        llKind.setLabels(kinds)
+    }
 }

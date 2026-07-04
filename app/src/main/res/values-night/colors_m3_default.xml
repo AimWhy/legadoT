@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 由 AppColorSchemeTest 生成:默认种子派生的完整 M3 色板,与运行时 AppColorScheme 同源。改默认种子后重新生成。 -->
+    <color name="m3_primary">#FFABC7FF</color>
+    <color name="m3_on_primary">#FF002F66</color>
+    <color name="m3_primary_container">#FF5E9BFF</color>
+    <color name="m3_on_primary_container">#FF00326B</color>
+    <color name="m3_secondary">#FFB2C7F3</color>
+    <color name="m3_on_secondary">#FF1B3054</color>
+    <color name="m3_secondary_container">#FF32476C</color>
+    <color name="m3_on_secondary_container">#FFA1B5E0</color>
+    <color name="m3_tertiary">#FFF6ADFF</color>
+    <color name="m3_on_tertiary">#FF560068</color>
+    <color name="m3_tertiary_container">#FFD07CDE</color>
+    <color name="m3_on_tertiary_container">#FF5A066C</color>
+    <color name="m3_error">#FFFFB4AB</color>
+    <color name="m3_on_error">#FF690005</color>
+    <color name="m3_error_container">#FF93000A</color>
+    <color name="m3_on_error_container">#FFFFDAD6</color>
+    <color name="m3_outline">#FF8C919E</color>
+    <color name="m3_outline_variant">#FF424752</color>
+    <color name="m3_inverse_primary">#FF005CBB</color>
+    <color name="m3_inverse_surface">#FFE1E2EB</color>
+    <color name="m3_inverse_on_surface">#FF2E3037</color>
+    <color name="m3_background">#FF121212</color>
+    <color name="m3_on_background">#FFE5E2E1</color>
+    <color name="m3_surface">#FF121212</color>
+    <color name="m3_on_surface">#FFE5E2E1</color>
+    <color name="m3_surface_variant">#FF464545</color>
+    <color name="m3_on_surface_variant">#FFC8C6C5</color>
+    <color name="m3_surface_container_lowest">#FF0C0C0D</color>
+    <color name="m3_surface_container_low">#FF1B1A1A</color>
+    <color name="m3_surface_container">#FF1F1E1E</color>
+    <color name="m3_surface_container_high">#FF292929</color>
+    <color name="m3_surface_container_highest">#FF343333</color>
+</resources>

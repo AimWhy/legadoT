@@ -10,13 +10,14 @@ import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.data.entities.HighlightRule
-import io.legado.app.databinding.ItemHighlightRuleBinding
-import io.legado.app.lib.theme.cardBackgroundColor
+import io.legado.app.databinding.ItemManageBinding
 import io.legado.app.ui.widget.popupActionMenu
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
+import io.legado.app.utils.gone
+import io.legado.app.utils.visible
 
 class HighlightRuleAdapter(context: Context, val callBack: CallBack) :
-    RecyclerAdapter<HighlightRule, ItemHighlightRuleBinding>(context),
+    RecyclerAdapter<HighlightRule, ItemManageBinding>(context),
     ItemTouchCallback.Callback {
 
     val diffItemCallBack = object : DiffUtil.ItemCallback<HighlightRule>() {
@@ -37,18 +38,21 @@ class HighlightRuleAdapter(context: Context, val callBack: CallBack) :
         }
     }
 
-    override fun getViewBinding(parent: ViewGroup): ItemHighlightRuleBinding {
-        return ItemHighlightRuleBinding.inflate(inflater, parent, false)
+    override fun getViewBinding(parent: ViewGroup): ItemManageBinding {
+        return ItemManageBinding.inflate(inflater, parent, false).apply {
+            cbName.gone()
+            tvName.visible()
+        }
     }
 
     override fun convert(
         holder: ItemViewHolder,
-        binding: ItemHighlightRuleBinding,
+        binding: ItemManageBinding,
         item: HighlightRule,
         payloads: MutableList<Any>
     ) {
         binding.run {
-            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
+            // 卡底色由换肤引擎按布局 skin_background 施加
             if (payloads.isEmpty()) {
                 tvName.text = item.getDisplayName()
                 swtEnabled.isChecked = item.isEnabled
@@ -66,7 +70,7 @@ class HighlightRuleAdapter(context: Context, val callBack: CallBack) :
         }
     }
 
-    override fun registerListener(holder: ItemViewHolder, binding: ItemHighlightRuleBinding) {
+    override fun registerListener(holder: ItemViewHolder, binding: ItemManageBinding) {
         binding.apply {
             swtEnabled.setOnUserCheckedChangeListener { isChecked ->
                 getItem(holder.layoutPosition)?.let {

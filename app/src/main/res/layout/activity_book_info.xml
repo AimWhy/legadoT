@@ -80,6 +80,7 @@
                                 android:layout_height="160dp"
                                 android:contentDescription="@string/img_cover"
                                 android:scaleType="centerCrop"
+                                app:coverCornerRadius="0dp"
                                 android:src="@drawable/image_cover_default" />
 
                         </com.google.android.material.card.MaterialCardView>
@@ -91,6 +92,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@color/background"
+                        app:skin_background="background"
                         android:orientation="vertical"
                         android:paddingLeft="8dp"
                         android:paddingRight="8dp"
@@ -119,6 +121,7 @@
                                     android:includeFontPadding="false"
                                     android:singleLine="true"
                                     android:text="@string/book_name"
+                                    app:skin_textColor="onSurface"
                                     android:textColor="@color/primaryText"
                                     android:textSize="18sp"
                                     tools:ignore="RtlHardcoded" />
@@ -163,6 +166,7 @@
                                     android:contentDescription="@string/author"
                                     android:paddingRight="2dp"
                                     android:src="@drawable/ic_author"
+                                    app:skin_tint="onSurfaceVariant"
                                     app:tint="@color/tv_text_summary"
                                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 
@@ -176,6 +180,7 @@
                                     android:paddingRight="6dp"
                                     android:singleLine="true"
                                     android:text="@string/author"
+                                    app:skin_textColor="onSurfaceVariant"
                                     android:textColor="@color/tv_text_summary"
                                     android:textSize="13sp"
                                     tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry" />
@@ -197,6 +202,7 @@
                                     android:contentDescription="@string/origin_format"
                                     android:paddingRight="2dp"
                                     android:src="@drawable/ic_web_outline"
+                                    app:skin_tint="onSurfaceVariant"
                                     app:tint="@color/tv_text_summary"
                                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 
@@ -209,6 +215,7 @@
                                     android:includeFontPadding="false"
                                     android:paddingRight="6dp"
                                     android:singleLine="true"
+                                    app:skin_textColor="onSurfaceVariant"
                                     android:textColor="@color/tv_text_summary"
                                     android:textSize="13sp"
                                     tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
@@ -243,6 +250,7 @@
                                     android:contentDescription="@string/read_dur_progress"
                                     android:paddingRight="2dp"
                                     android:src="@drawable/ic_book_last"
+                                    app:skin_tint="onSurfaceVariant"
                                     app:tint="@color/tv_text_summary"
                                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 
@@ -255,6 +263,7 @@
                                     android:includeFontPadding="false"
                                     android:paddingRight="6dp"
                                     android:singleLine="true"
+                                    app:skin_textColor="onSurfaceVariant"
                                     android:textColor="@color/tv_text_summary"
                                     android:textSize="13sp"
                                     tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
@@ -276,6 +285,7 @@
                                     android:contentDescription="@string/read_dur_progress"
                                     android:paddingRight="2dp"
                                     android:src="@drawable/ic_groups"
+                                    app:skin_tint="onSurfaceVariant"
                                     app:tint="@color/tv_text_summary"
                                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 
@@ -288,6 +298,7 @@
                                     android:includeFontPadding="false"
                                     android:paddingRight="6dp"
                                     android:singleLine="true"
+                                    app:skin_textColor="onSurfaceVariant"
                                     android:textColor="@color/tv_text_summary"
                                     android:textSize="13sp"
                                     tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
@@ -321,6 +332,7 @@
                                     android:contentDescription="@string/read_dur_progress"
                                     android:paddingRight="2dp"
                                     android:src="@drawable/ic_folder_open"
+                                    app:skin_tint="onSurfaceVariant"
                                     app:tint="@color/tv_text_summary"
                                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 
@@ -333,6 +345,7 @@
                                     android:includeFontPadding="false"
                                     android:paddingRight="6dp"
                                     android:singleLine="true"
+                                    app:skin_textColor="onSurfaceVariant"
                                     android:textColor="@color/tv_text_summary"
                                     android:textSize="13sp"
                                     tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
@@ -364,6 +377,7 @@
                             android:paddingLeft="8dp"
                             android:paddingBottom="8dp"
                             android:text="@string/book_intro"
+                            app:skin_textColor="onSurfaceVariant"
                             android:textColor="@color/secondaryText"
                             android:textIsSelectable="true"
                             android:textSize="14sp"
@@ -388,6 +402,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@color/background_menu"
+            app:skin_background="themeBottomBackground"
             android:gravity="center_vertical"
             android:orientation="horizontal"
             android:paddingHorizontal="@dimen/space_m"

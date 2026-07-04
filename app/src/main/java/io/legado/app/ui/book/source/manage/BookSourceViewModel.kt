@@ -2,6 +2,7 @@ package io.legado.app.ui.book.source.manage
 
 import android.app.Application
 import android.text.TextUtils
+import io.legado.app.ui.widget.dialog.GroupManageDialog
 import io.legado.app.R
 import io.legado.app.base.BaseViewModel
 import io.legado.app.data.appDb
@@ -24,7 +25,8 @@ import java.io.File
  * 书源管理数据修改
  * 修改数据要copy,直接修改会导致界面不刷新
  */
-class BookSourceViewModel(application: Application) : BaseViewModel(application) {
+class BookSourceViewModel(application: Application) : BaseViewModel(application),
+    GroupManageDialog.GroupOps {
 
     fun topSource(vararg sources: BookSourcePart) {
         execute {
@@ -248,7 +250,7 @@ class BookSourceViewModel(application: Application) : BaseViewModel(application)
         }
     }
 
-    fun addGroup(group: String) {
+    override fun addGroup(group: String) {
         execute {
             val sources = appDb.bookSourceDao.noGroup
             sources.forEach { source ->
@@ -258,7 +260,7 @@ class BookSourceViewModel(application: Application) : BaseViewModel(application)
         }
     }
 
-    fun upGroup(oldGroup: String, newGroup: String?) {
+    override fun upGroup(oldGroup: String, newGroup: String?) {
         execute {
             val sources = appDb.bookSourceDao.getByGroup(oldGroup)
             sources.forEach { source ->
@@ -273,7 +275,7 @@ class BookSourceViewModel(application: Application) : BaseViewModel(application)
         }
     }
 
-    fun delGroup(group: String) {
+    override fun delGroup(group: String) {
         execute {
             execute {
                 val sources = appDb.bookSourceDao.getByGroup(group)

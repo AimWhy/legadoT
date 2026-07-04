@@ -2,6 +2,7 @@ package io.legado.app.ui.rss.source.manage
 
 import android.app.Application
 import android.text.TextUtils
+import io.legado.app.ui.widget.dialog.GroupManageDialog
 import io.legado.app.base.BaseViewModel
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.RssSource
@@ -18,7 +19,8 @@ import java.io.File
  * 订阅源管理数据修改
  * 修改数据要copy,直接修改会导致界面不刷新
  */
-class RssSourceViewModel(application: Application) : BaseViewModel(application) {
+class RssSourceViewModel(application: Application) : BaseViewModel(application),
+    GroupManageDialog.GroupOps {
 
     fun topSource(vararg sources: RssSource) {
         execute {
@@ -112,7 +114,7 @@ class RssSourceViewModel(application: Application) : BaseViewModel(application) 
         }
     }
 
-    fun addGroup(group: String) {
+    override fun addGroup(group: String) {
         execute {
             val sources = appDb.rssSourceDao.noGroup
             sources.forEach { source ->
@@ -122,7 +124,7 @@ class RssSourceViewModel(application: Application) : BaseViewModel(application) 
         }
     }
 
-    fun upGroup(oldGroup: String, newGroup: String?) {
+    override fun upGroup(oldGroup: String, newGroup: String?) {
         execute {
             val sources = appDb.rssSourceDao.getByGroup(oldGroup)
             sources.forEach { source ->
@@ -137,7 +139,7 @@ class RssSourceViewModel(application: Application) : BaseViewModel(application) 
         }
     }
 
-    fun delGroup(group: String) {
+    override fun delGroup(group: String) {
         execute {
             execute {
                 val sources = appDb.rssSourceDao.getByGroup(group)

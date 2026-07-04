@@ -7,13 +7,11 @@ import androidx.activity.viewModels
 import androidx.appcompat.widget.PopupMenu
 import androidx.appcompat.widget.SearchView
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ItemTouchHelper
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.databinding.ActivityAutoTaskBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
@@ -22,15 +20,13 @@ import io.legado.app.utils.applyTint
 import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.CronSchedule
 import io.legado.app.utils.sendToClip
-import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.ACache
 import io.legado.app.utils.splitNotBlank
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
-import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
-import io.legado.app.ui.widget.recycler.VerticalDivider
+import io.legado.app.ui.widget.recycler.setupManagePage
 import io.legado.app.ui.widget.SelectActionBar
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.file.HandleFileContract
@@ -108,15 +104,8 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
     }
 
     private fun initView() = binding.run {
-        recyclerView.setEdgeEffectColor(primaryColor)
-        recyclerView.adapter = adapter
-        recyclerView.addItemDecoration(VerticalDivider(this@AutoTaskActivity))
-        val dragSelectTouchHelper =
-            DragSelectTouchHelper(adapter.dragSelectCallback).setSlideArea(16, 50)
-        dragSelectTouchHelper.attachToRecyclerView(recyclerView)
-        dragSelectTouchHelper.activeSlideSelect()
         itemTouchCallback.isCanDrag = true
-        ItemTouchHelper(itemTouchCallback).attachToRecyclerView(recyclerView)
+        recyclerView.setupManagePage(adapter, itemTouchCallback, adapter.dragSelectCallback)
     }
 
     private fun initSearchView() {

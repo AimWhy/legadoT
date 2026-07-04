@@ -11,6 +11,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:singleLine="true"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/iv_download"
@@ -22,6 +23,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:singleLine="true"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/iv_download"
@@ -33,6 +35,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:singleLine="true"
+        app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toLeftOf="@+id/iv_download"
@@ -50,16 +53,16 @@
         app:layout_constraintBottom_toBottomOf="@+id/tv_download"
         app:layout_constraintRight_toLeftOf="@+id/tv_export"
         app:layout_constraintTop_toTopOf="@id/tv_name"
+        app:skin_tint="onSurface"
         app:tint="@color/primaryText" />
 
-    <TextView
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/tv_export"
+        style="@style/Widget.App.Button.Outlined.Compact"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="?attr/selectableItemBackground"
-        android:padding="10dp"
+        android:paddingHorizontal="10dp"
         android:text="@string/export"
-        android:textColor="@color/primaryText"
         app:layout_constraintBottom_toBottomOf="@+id/tv_download"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@id/tv_name" />
@@ -68,11 +71,12 @@
         android:id="@+id/tv_msg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/tv_download" />
 
-    <io.legado.app.lib.theme.view.ThemeProgressBar
+    <ProgressBar
         android:id="@+id/progress_export"
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"

@@ -4,15 +4,14 @@ import android.content.Context
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
 import io.legado.app.R
+import io.legado.app.lib.theme.AppColorScheme
 import io.legado.app.lib.theme.Selector
-import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getCompatColor
 
 /**
- * Tonal(淡色填充)按钮:强调色 12% 填充 + 强调色文字,圆角随 app:radius。
- * 跟随运行时换肤(ThemeStore.accentColor),用作详情页「加入书架」次按钮。
+ * Tonal(淡色填充)按钮:M3 secondaryContainer 底 + onSecondaryContainer 文字,圆角随 app:radius。
  */
 class AccentTonalBgTextView @JvmOverloads constructor(
     context: Context,
@@ -34,16 +33,22 @@ class AccentTonalBgTextView @JvmOverloads constructor(
     }
 
     private fun upBackground() {
-        val accentColor = if (isInEditMode) {
-            context.getCompatColor(R.color.accent)
+        val bg: Int
+        val onBg: Int
+        if (isInEditMode) {
+            val accent = context.getCompatColor(R.color.accent)
+            bg = ColorUtils.adjustAlpha(accent, 0.12f)
+            onBg = accent
         } else {
-            ThemeStore.accentColor(context)
+            val scheme = AppColorScheme.current
+            bg = scheme.secondaryContainer
+            onBg = scheme.onSecondaryContainer
         }
         background = Selector.shapeBuild()
             .setCornerRadius(radius)
-            .setDefaultBgColor(ColorUtils.adjustAlpha(accentColor, 0.12f))
-            .setPressedBgColor(ColorUtils.adjustAlpha(accentColor, 0.22f))
+            .setDefaultBgColor(bg)
+            .setPressedBgColor(ColorUtils.darkenColor(bg))
             .create()
-        setTextColor(accentColor)
+        setTextColor(onBg)
     }
 }

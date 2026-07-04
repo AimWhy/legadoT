@@ -18,7 +18,6 @@ import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemTextSelectMenuConfigBinding
 import io.legado.app.help.TextSelectMenuConfig
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.book.read.TextSelectMenuItem
 import io.legado.app.ui.book.read.loadTextSelectMenuConfig
 import io.legado.app.ui.book.read.saveTextSelectMenuConfig
@@ -53,7 +52,6 @@ class TextSelectMenuConfigDialog : BaseDialogFragment(R.layout.dialog_recycler_v
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         binding.toolBar.setTitle(R.string.text_select_menu_config)
         initView()
         initMenu()

@@ -12,7 +12,6 @@ import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemAppLogBinding
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.AutoTask
 import io.legado.app.utils.LogUtils
 import io.legado.app.utils.setLayout
@@ -41,7 +40,6 @@ class AutoTaskLogDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         val taskId = arguments?.getString("taskId").orEmpty()
         val taskName = arguments?.getString("taskName").orEmpty()
-        binding.toolBar.setBackgroundColor(primaryColor)
         binding.toolBar.setTitle(taskName.ifBlank { getString(R.string.log) })
         binding.toolBar.inflateMenu(R.menu.app_log)
         binding.toolBar.setOnMenuItemClickListener(this)

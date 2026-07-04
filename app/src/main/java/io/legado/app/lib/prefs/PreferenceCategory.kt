@@ -9,7 +9,6 @@ import androidx.core.view.isVisible
 import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceViewHolder
 import io.legado.app.R
-import io.legado.app.lib.theme.accentColor
 
 
 class PreferenceCategory(context: Context, attrs: AttributeSet) :
@@ -26,7 +25,7 @@ class PreferenceCategory(context: Context, attrs: AttributeSet) :
         if (view is TextView) {  //  && !view.isInEditMode
             view.text = title
             if (view.isInEditMode) return
-            view.setTextColor(context.accentColor)
+            // 标题强调色由布局 skin_textColor="primary" 声明,引擎 inflate 时施加(R2d 删同值重涂)
             view.isVisible = !title.isNullOrEmpty()
 
             // 去掉分类标题上下的色块分隔线（保留 View 占位以维持间距），提升沉浸感

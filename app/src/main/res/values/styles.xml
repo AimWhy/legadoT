@@ -25,25 +25,42 @@
 
     <!-- Base application theme. -->
     <style name="Base.AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/primary</item>
+        <item name="colorPrimary">@color/m3_primary</item>
         <item name="colorPrimaryDark">@color/primaryDark</item>
         <item name="colorAccent">@color/accent</item>
-        <!-- M3 必需色板 token：保证 M3 控件不显示默认紫 -->
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorPrimaryContainer">@color/primary</item>
-        <item name="colorOnPrimaryContainer">@color/white</item>
-        <item name="colorSecondary">@color/accent</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="colorSecondaryContainer">@color/accent</item>
-        <item name="colorOnSecondaryContainer">@color/white</item>
-        <item name="colorTertiary">@color/accent</item>
+        <!-- M3 完整默认色板:默认种子(md_theme_day/night_accent)预生成,与 AppColorScheme 运行时派生同源。
+             Android 12+ 会被 DynamicColors 按用户种子覆盖;12 以下 attr 控件用此静态兜底。 -->
+        <item name="colorOnPrimary">@color/m3_on_primary</item>
+        <item name="colorPrimaryContainer">@color/m3_primary_container</item>
+        <item name="colorOnPrimaryContainer">@color/m3_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/m3_inverse_primary</item>
+        <item name="colorSecondary">@color/m3_secondary</item>
+        <item name="colorOnSecondary">@color/m3_on_secondary</item>
+        <item name="colorSecondaryContainer">@color/m3_secondary_container</item>
+        <item name="colorOnSecondaryContainer">@color/m3_on_secondary_container</item>
+        <item name="colorTertiary">@color/m3_tertiary</item>
+        <item name="colorOnTertiary">@color/m3_on_tertiary</item>
+        <item name="colorTertiaryContainer">@color/m3_tertiary_container</item>
+        <item name="colorOnTertiaryContainer">@color/m3_on_tertiary_container</item>
+        <item name="colorError">@color/m3_error</item>
+        <item name="colorOnError">@color/m3_on_error</item>
+        <item name="colorErrorContainer">@color/m3_error_container</item>
+        <item name="colorOnErrorContainer">@color/m3_on_error_container</item>
         <item name="android:colorBackground">@color/background</item>
-        <item name="colorSurface">@color/background_card</item>
-        <item name="colorOnSurface">@color/primaryText</item>
-        <item name="colorSurfaceVariant">@color/background_menu</item>
-        <item name="colorOnSurfaceVariant">@color/secondaryText</item>
-        <item name="colorOutline">@color/divider</item>
-        <item name="colorError">@color/error</item>
+        <item name="colorOnBackground">@color/m3_on_background</item>
+        <item name="colorSurface">@color/m3_surface</item>
+        <item name="colorOnSurface">@color/m3_on_surface</item>
+        <item name="colorSurfaceVariant">@color/m3_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/m3_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/m3_surface_container_lowest</item>
+        <item name="colorSurfaceContainerLow">@color/m3_surface_container_low</item>
+        <item name="colorSurfaceContainer">@color/m3_surface_container</item>
+        <item name="colorSurfaceContainerHigh">@color/m3_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/m3_surface_container_highest</item>
+        <item name="colorSurfaceInverse">@color/m3_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/m3_inverse_on_surface</item>
+        <item name="colorOutline">@color/m3_outline</item>
+        <item name="colorOutlineVariant">@color/m3_outline_variant</item>
         <item name="tabStyle">@style/Widget.App.TabLayout</item>
         <item name="actionOverflowMenuStyle">@style/Style.PopupMenu</item>
         <item name="android:itemTextAppearance">@style/Style.MenuItemText</item>
@@ -52,6 +69,28 @@
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
         <!-- 关闭 M3 默认的 elevation overlay tinting，避免 surface 自动染主色 -->
         <item name="elevationOverlayEnabled">false</item>
+        <!-- 形状体系:M3 五档 + M2 组件兼容属性 -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.App.ExtraSmall</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.App.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.App.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.App.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.App.ExtraLarge</item>
+        <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.App.Small</item>
+        <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.App.Medium</item>
+        <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.App.ExtraLarge</item>
+        <!-- 字体挂接:弹窗标题=Headline(22sp),按钮=Label(14sp medium) -->
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.App.Headline</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.App.Title</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.App.Subtitle</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.App.Body</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.App.Caption</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.App.Label</item>
+        <!-- BottomSheet 统一形状入口(容器色由 applyAppSheetBackground 代码锚定) -->
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.App.BottomSheetDialog</item>
+    </style>
+
+    <style name="ThemeOverlay.App.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/Widget.App.BottomSheet</item>
     </style>
 
     <style name="AppTheme.AppBarOverlay.Light" parent="ThemeOverlay.Material3.Light">
@@ -89,6 +128,116 @@
         <item name="cornerSize">50%</item>
     </style>
 
+    <!-- E-ink:把关键 M3 attr 压成黑白灰,与 AppColorScheme 的 eink 表同源(attr 控件兜底) -->
+    <style name="ThemeOverlay.App.EInk" parent="">
+        <item name="colorPrimary">@color/black</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondaryContainer">#FFEBEBEB</item>
+        <item name="colorOnSecondaryContainer">@color/black</item>
+    </style>
+
+    <!-- 平台 NumberPicker 的 Holo 分隔线靠 colorControlNormal 着色,透明化=去分隔线(M3 无分隔线语义) -->
+    <style name="ThemeOverlay.App.NumberPicker" parent="">
+        <item name="android:colorControlNormal">@color/transparent</item>
+    </style>
+
+    <!-- M3 五档形状:全 app 唯一圆角来源 -->
+    <style name="ShapeAppearance.App.ExtraSmall" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_xs</item>
+    </style>
+    <style name="ShapeAppearance.App.Small" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_s</item>
+    </style>
+    <style name="ShapeAppearance.App.Medium" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_m</item>
+    </style>
+    <style name="ShapeAppearance.App.Large" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_l</item>
+    </style>
+    <style name="ShapeAppearance.App.ExtraLarge" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_xl</item>
+    </style>
+
+    <!-- 字体体系:对齐 M3 type scale,落在既有 text_* token 上 -->
+    <style name="TextAppearance.App.Headline" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/text_headline</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="TextAppearance.App.Title" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/text_title</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="TextAppearance.App.Subtitle" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/text_subtitle</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="TextAppearance.App.Body" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/text_body</item>
+    </style>
+    <style name="TextAppearance.App.Caption" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/text_caption</item>
+    </style>
+    <style name="TextAppearance.App.Label" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- ============ 组件模板族:全 app 组件唯一样式来源(P2-P5 逐处替换消费) ============ -->
+    <style name="Widget.App.Button" parent="Widget.Material3.Button" />
+    <style name="Widget.App.Button.Tonal" parent="Widget.Material3.Button.TonalButton" />
+    <style name="Widget.App.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton" />
+    <style name="Widget.App.Button.Text" parent="Widget.Material3.Button.TextButton" />
+    <!-- 紧凑描边钮:阅读面板/编辑页行内按钮用,压掉 M3 默认最小尺寸与大写 -->
+    <style name="Widget.App.Button.Outlined.Compact">
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Widget.App.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxCornerRadiusTopStart">@dimen/radius_m</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/radius_m</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/radius_m</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/radius_m</item>
+    </style>
+
+    <style name="Widget.App.Chip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.App.Small</item>
+    </style>
+
+    <style name="Widget.App.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="shapeAppearance">@style/ShapeAppearance.App.Medium</item>
+        <item name="cardBackgroundColor">@color/background_card</item>
+    </style>
+    <style name="Widget.App.Card.Elevated" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/ShapeAppearance.App.Medium</item>
+        <item name="cardBackgroundColor">@color/background_card</item>
+    </style>
+    <style name="Widget.App.Card.Outlined" parent="Widget.Material3.CardView.Outlined">
+        <item name="shapeAppearance">@style/ShapeAppearance.App.Medium</item>
+        <item name="strokeColor">@color/m3_outline_variant</item>
+    </style>
+
+    <style name="Widget.App.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="shapeAppearance">@style/ShapeAppearance.App.ExtraLarge</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearanceOverlay.App.SheetTop</item>
+    </style>
+    <!-- sheet 只圆顶部两角 -->
+    <style name="ShapeAppearanceOverlay.App.SheetTop" parent="">
+        <item name="cornerSizeBottomLeft">0dp</item>
+        <item name="cornerSizeBottomRight">0dp</item>
+    </style>
+
     //**********System Style******************//
 
     <style name="Style.NavigationView" parent="android:Widget">
@@ -106,6 +255,7 @@
 
     <style name="Style.PopupMenu" parent="Widget.Material3.PopupMenu">
         <item name="android:popupBackground">@drawable/bg_popup_menu</item>
+        <item name="android:popupElevation">3dp</item>
         <item name="android:listPreferredItemHeightSmall">48dp</item>
         <item name="android:listPreferredItemPaddingStart">16dp</item>
         <item name="android:listPreferredItemPaddingEnd">16dp</item>
@@ -125,20 +275,19 @@
 
     //*******************Widget Style**********************************//
 
-    <!-- 管理列表项卡片：书源/RSS/替换/字典/目录规则/定时任务 共用 -->
+    <!-- 管理列表项真卡片：六大规则管理/高亮/发现容器 共用。
+         容器色运行时由 adapter 设 surfaceContainerLow(用户背景锚定);选中态=代码驱动 2dp 描边 -->
     <style name="Style.ItemManageCard" parent="android:Widget">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginHorizontal">0dp</item>
-        <item name="android:layout_marginVertical">0dp</item>
-        <item name="android:layout_marginBottom">0.5dp</item>
+        <item name="android:layout_marginHorizontal">10dp</item>
+        <item name="android:layout_marginVertical">3dp</item>
         <item name="android:clickable">false</item>
         <item name="android:focusable">false</item>
         <item name="cardBackgroundColor">@color/background_card</item>
-        <item name="cardCornerRadius">0dp</item>
+        <item name="cardCornerRadius">@dimen/radius_m</item>
         <item name="cardElevation">0dp</item>
-        <item name="strokeColor">@color/accent</item>
-        <item name="strokeWidth">0dp</item>
+        <item name="checkedIconVisible">false</item>
     </style>
 
     <style name="Style.Shadow.Top" parent="android:Widget">

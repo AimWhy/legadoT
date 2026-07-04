@@ -29,6 +29,10 @@ import io.legado.app.utils.viewbindingdelegate.viewBinding
 class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
     SpeakEngineDialog.CallBack,
     SleepTimerDialog.CallBack {
+
+    /** 贴底面板自设背景(bottomBackground),豁免统一圆角模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
+
     private val callBack: CallBack? get() = activity as? CallBack
     private val binding by viewBinding(DialogReadAloudBinding::bind)
 

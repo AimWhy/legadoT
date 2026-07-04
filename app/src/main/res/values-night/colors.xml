@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#1C1C1E</color>
     <color name="primaryDark">#121214</color>
     <color name="accent">#5E9BFF</color>
 
@@ -9,12 +8,8 @@
     <color name="background">#121212</color>
     <color name="background_card">#1E1E1E</color>
     <color name="background_menu">#262626</color>
-    <color name="background_prefs">#10303030</color>
-
-    <color name="night_mask">#69000000</color>
 
     <color name="transparent10">#10ffffff</color>
-    <color name="transparent20">#20ffffff</color>
     <color name="transparent30">#30ffffff</color>
     <color name="transparent50">#50ffffff</color>
 
@@ -22,7 +17,6 @@
 
     <color name="btn_bg_press">#634D4D4D</color>
     <color name="btn_bg_press_2">#63686868</color>
-    <color name="btn_bg_press_tp">#63C7C7C7</color>
 
     <color name="darker_gray">#66666666</color>
 
@@ -34,12 +28,6 @@
     <color name="reviewContentText">#e6ffffff</color>
     <color name="tv_text_summary">#B3B3B3</color>
     <color name="menu_color_default">#b7b7b7</color>
-
-
-    <color name="tv_text_button_nor">#303030</color>
-
-    <!--statusBarBackground-->
-    <color name="navigation_bar_bag">#222222</color>
 
     <!-- Review dialog -->
     <color name="reviewHandle">#4DFFFFFF</color>

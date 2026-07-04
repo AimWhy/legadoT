@@ -18,7 +18,6 @@ import io.legado.app.databinding.DialogLoginBinding
 import io.legado.app.databinding.ItemFilletTextBinding
 import io.legado.app.databinding.ItemSourceEditBinding
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.utils.GSON
 import io.legado.app.utils.applyTint
@@ -54,7 +53,6 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         val source = viewModel.source ?: return
-        binding.toolBar.setBackgroundColor(primaryColor)
         binding.toolBar.title = getString(R.string.login_source, source.getTag())
         renderLoginUi(source, source.getLoginInfoMap())
         binding.toolBar.inflateMenu(R.menu.source_login)

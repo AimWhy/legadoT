@@ -8,23 +8,19 @@
         android:summary="@string/custom_welcome_summary"
         android:title="@string/custom_welcome"
         app:allowDividerAbove="false"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false" />
+        app:allowDividerBelow="false" />
 
     <io.legado.app.lib.prefs.PreferenceCategory
         android:key="dayThemeCategory"
         android:title="@string/day"
         app:allowDividerAbove="true"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false"
-        app:layout="@layout/view_preference_category">
+        app:allowDividerBelow="false">
 
         <io.legado.app.lib.prefs.Preference
             android:key="welcomeImagePath"
             android:title="@string/background_image"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -32,8 +28,7 @@
             android:summary="@string/welcome_text"
             android:title="@string/show_welcome_text"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -41,8 +36,7 @@
             android:summary="@string/show_default_book_icon"
             android:title="@string/show_icon"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
     </io.legado.app.lib.prefs.PreferenceCategory>
 
@@ -50,16 +44,13 @@
         android:key="nightThemeCategory"
         android:title="@string/night"
         app:allowDividerAbove="true"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false"
-        app:layout="@layout/view_preference_category">
+        app:allowDividerBelow="false">
 
         <io.legado.app.lib.prefs.Preference
             android:key="welcomeImagePathDark"
             android:title="@string/background_image"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -67,8 +58,7 @@
             android:summary="@string/welcome_text"
             android:title="@string/show_welcome_text"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -76,8 +66,7 @@
             android:summary="@string/show_default_book_icon"
             android:title="@string/show_icon"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
     </io.legado.app.lib.prefs.PreferenceCategory>
 

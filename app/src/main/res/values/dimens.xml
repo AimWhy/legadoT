@@ -45,10 +45,13 @@
     <dimen name="space_l">16dp</dimen>
     <dimen name="space_xl">24dp</dimen>
 
-    <!-- 圆角层级 -->
+    <!-- 圆角层级(对齐 M3 五档:XS4/S8/M12/L16/XL28;full=胶囊) -->
+    <dimen name="radius_xs">4dp</dimen>
     <dimen name="radius_s">8dp</dimen>
     <dimen name="radius_m">12dp</dimen>
     <dimen name="radius_l">16dp</dimen>
+    <dimen name="radius_xl">28dp</dimen>
+    <dimen name="radius_full">999dp</dimen>
     <dimen name="cover_radius">12dp</dimen>
 
     <!-- 字号层级 -->

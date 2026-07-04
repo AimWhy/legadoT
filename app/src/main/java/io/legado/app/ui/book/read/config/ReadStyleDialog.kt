@@ -1,6 +1,8 @@
 package io.legado.app.ui.book.read.config
 
 import android.content.DialogInterface
+import android.content.res.ColorStateList
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -27,6 +29,7 @@ import io.legado.app.ui.font.FontSelectDialog
 import io.legado.app.utils.ChineseUtils
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.dpToPx
+import io.legado.app.utils.getCompatColor
 import io.legado.app.utils.getIndexById
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.showDialogFragment
@@ -36,6 +39,9 @@ import splitties.views.onLongClick
 class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
     FontSelectDialog.CallBack {
 
+    /** 贴底面板自设背景(bottomBackground),豁免统一圆角模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
+
     private val binding by viewBinding(DialogReadBookStyleBinding::bind)
     private val callBack get() = activity as? ReadBookActivity
     private lateinit var styleAdapter: StyleAdapter
@@ -44,7 +50,8 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
         super.onStart()
         dialog?.window?.run {
             clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setBackgroundDrawableResource(R.color.background)
+            // 透明窗:否则顶部圆角缺口露出窗口的方角背景
+            setBackgroundDrawableResource(android.R.color.transparent)
             decorView.setPadding(0, 0, 0, 0)
             val attr = attributes
             attr.dimAmount = 0.0f
@@ -71,10 +78,24 @@ class ReadStyleDialog : BaseDialogFragment(R.layout.dialog_read_book_style),
         val bg = requireContext().bottomBackground
         val isLight = ColorUtils.isColorLight(bg)
         val textColor = requireContext().getPrimaryTextColor(isLight)
-        rootView.setBackgroundColor(bg)
+        // 顶部圆角与其他阅读面板(ReadAloud/AutoRead/BgText)对齐
+        val radius = requireContext().resources.getDimension(R.dimen.radius_l)
+        rootView.background = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadii = floatArrayOf(radius, radius, radius, radius, 0f, 0f, 0f, 0f)
+            setColor(bg)
+        }
         tvPageAnim.setTextColor(textColor)
         tvBgTs.setTextColor(textColor)
         swShareLayout.setTextColor(textColor)
+        // 描边钮随 bottomBackground 亮暗染色(替代原 StrokeTextView 自绘)
+        val btnColor = ColorStateList.valueOf(textColor)
+        arrayOf(tvTextFont, tvTextIndent, tvPadding, tvTip).forEach {
+            it.setTextColor(btnColor)
+            it.strokeColor = btnColor
+            it.rippleColor =
+                ColorStateList.valueOf(requireContext().getCompatColor(R.color.transparent30))
+        }
         dsbTextSize.valueFormat = {
             (it + 5).toString()
         }

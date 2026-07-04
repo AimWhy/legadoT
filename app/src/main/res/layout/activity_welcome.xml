@@ -22,6 +22,7 @@
             android:layout_width="6dp"
             android:layout_height="0dp"
             android:background="@color/accent"
+            app:skin_background="primary"
             app:layout_constraintTop_toTopOf="@+id/tv_title"
             app:layout_constraintBottom_toBottomOf="@+id/tv_title"
             app:layout_constraintLeft_toLeftOf="parent" />

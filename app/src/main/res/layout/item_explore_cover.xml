@@ -26,6 +26,7 @@
             android:layout_height="wrap_content"
             android:contentDescription="@string/img_cover"
             android:scaleType="centerCrop"
+            app:coverCornerRadius="0dp"
             android:src="@drawable/image_cover_default" />
 
         <io.legado.app.ui.widget.image.CircleImageView
@@ -50,6 +51,7 @@
         android:lineSpacingExtra="2dp"
         android:lines="2"
         android:text="@string/book_name"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="@dimen/text_caption"
         app:layout_constraintStart_toStartOf="parent"

@@ -6,16 +6,14 @@ import android.graphics.drawable.StateListDrawable
 import android.os.Bundle
 import android.text.format.DateUtils
 import android.view.MenuItem
-import android.view.ViewGroup
 import androidx.activity.addCallback
 import androidx.activity.viewModels
 import androidx.core.view.get
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentStatePagerAdapter
 import androidx.lifecycle.lifecycleScope
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.legado.app.BuildConfig
 import io.legado.app.R
@@ -47,11 +45,9 @@ import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
 import io.legado.app.utils.dpToPx
-import io.legado.app.utils.isCreated
-import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.observeEvent
+import io.legado.app.utils.reduceDragSensitivity
 import io.legado.app.utils.setEdgeEffectColor
-import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
@@ -59,7 +55,6 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
-import splitties.views.bottomPadding
 import kotlin.coroutines.resume
 
 /**
@@ -82,7 +77,6 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private var bookshelfReselected: Long = 0
     private var exploreReselected: Long = 0
     private var pagePosition = 0
-    private val fragmentMap = hashMapOf<Int, Fragment>()
     private var bottomMenuCount = 4
     private val EXIT_INTERVAL = 2000L
     private val realPositions = arrayOf(idBookshelf, idExplore, idRss, idMy)
@@ -93,7 +87,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         R.id.menu_my_config to "settings",
     )
     private val adapter by lazy {
-        TabFragmentPageAdapter(supportFragmentManager)
+        TabFragmentPageAdapter()
     }
     private var onUpBooksBadgeView: BadgeView? = null
 
@@ -107,7 +101,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 binding.viewPagerMain.currentItem = 0
                 return@addCallback
             }
-            (fragmentMap[getFragmentId(0)] as? BookshelfFragment2)?.let {
+            (findFragmentById(getFragmentId(0)) as? BookshelfFragment2)?.let {
                 if (it.back()) {
                     return@addCallback
                 }
@@ -173,7 +167,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 if (System.currentTimeMillis() - bookshelfReselected > 300) {
                     bookshelfReselected = System.currentTimeMillis()
                 } else {
-                    (fragmentMap[getFragmentId(0)] as? BaseBookshelfFragment)?.gotoTop()
+                    (findFragmentById(getFragmentId(0)) as? BaseBookshelfFragment)?.gotoTop()
                 }
             }
 
@@ -181,7 +175,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
                 if (System.currentTimeMillis() - exploreReselected > 300) {
                     exploreReselected = System.currentTimeMillis()
                 } else {
-                    (fragmentMap[1] as? ExploreFragment)?.gotoTop()
+                    (findFragmentById(idExplore) as? ExploreFragment)?.gotoTop()
                 }
             }
         }
@@ -190,19 +184,17 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private fun initView() = binding.run {
         viewPagerMain.setEdgeEffectColor(primaryColor)
         viewPagerMain.offscreenPageLimit = 3
+        // 主 tab 翻页降敏:书架分组/发现横滑封面时,轻微横移不再误切标签(需更明确横拖)
+        viewPagerMain.reduceDragSensitivity()
         viewPagerMain.adapter = adapter
-        viewPagerMain.addOnPageChangeListener(PageChangeCallback())
+        viewPagerMain.registerOnPageChangeCallback(PageChangeCallback())
         bottomNavigationView.elevation = elevation
         bottomNavigationView.setOnNavigationItemSelectedListener(this@MainActivity)
         bottomNavigationView.setOnNavigationItemReselectedListener(this@MainActivity)
         if (AppConfig.isEInkMode) {
             bottomNavigationView.setBackgroundResource(R.drawable.bg_eink_border_top)
         }
-        bottomNavigationView.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
-            val height = windowInsets.navigationBarHeight
-            view.bottomPadding = height
-            windowInsets.inset(0, 0, 0, height)
-        }
+        // 导航栏 inset 由 ThemeBottomNavigationVIew.init 的 applyNavigationBarPadding 接管
     }
 
     /**
@@ -337,7 +329,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
      * 如果重启太快fragment不会重建,这里更新一下书架的排序
      */
     override fun recreate() {
-        (fragmentMap[getFragmentId(0)] as? BaseBookshelfFragment)?.run {
+        (findFragmentById(getFragmentId(0)) as? BaseBookshelfFragment)?.run {
             upSort()
         }
         super.recreate()
@@ -437,7 +429,15 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         return id
     }
 
-    private inner class PageChangeCallback : ViewPager.SimpleOnPageChangeListener() {
+    /**
+     * FragmentStateAdapter 固定按 "f" + itemId 建 tag,本页 itemId = getFragmentId(position)。
+     * 书架样式/tab 显隐会改变各 position 的 fragmentId,故用 fragmentId(而非 position)定位存活 fragment。
+     */
+    private fun findFragmentById(fragmentId: Int): Fragment? {
+        return supportFragmentManager.findFragmentByTag("f$fragmentId")
+    }
+
+    private inner class PageChangeCallback : ViewPager2.OnPageChangeCallback() {
 
         override fun onPageSelected(position: Int) {
             pagePosition = position
@@ -446,51 +446,33 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
     }
 
-    @Suppress("DEPRECATION")
-    private inner class TabFragmentPageAdapter(fm: FragmentManager) :
-        FragmentStatePagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
+    private inner class TabFragmentPageAdapter :
+        FragmentStateAdapter(this@MainActivity) {
 
-        private fun getId(position: Int): Int {
-            return getFragmentId(position)
+        override fun getItemCount(): Int {
+            return bottomMenuCount
         }
 
-        override fun getItemPosition(any: Any): Int {
-            val position = (any as MainFragmentInterface).position
-                ?: return POSITION_NONE
-            val fragmentId = getId(position)
-            if ((fragmentId == idBookshelf1 && any is BookshelfFragment1)
-                || (fragmentId == idBookshelf2 && any is BookshelfFragment2)
-                || (fragmentId == idExplore && any is ExploreFragment)
-                || (fragmentId == idRss && any is RssFragment)
-                || (fragmentId == idMy && any is MyFragment)
-            ) {
-                return POSITION_UNCHANGED
-            }
-            return POSITION_NONE
+        /**
+         * itemId 编码 fragment 身份(书架样式/tab 显隐决定)。样式切换或 tab 增删使某 position 的
+         * fragmentId 改变→id 变→自动销毁重建,等价原 getItemPosition 的 POSITION_NONE 强刷协议。
+         */
+        override fun getItemId(position: Int): Long {
+            return getFragmentId(position).toLong()
         }
 
-        override fun getItem(position: Int): Fragment {
-            return when (getId(position)) {
+        override fun containsItem(itemId: Long): Boolean {
+            return (0 until itemCount).any { getItemId(it) == itemId }
+        }
+
+        override fun createFragment(position: Int): Fragment {
+            return when (getFragmentId(position)) {
                 idBookshelf1 -> BookshelfFragment1(position)
                 idBookshelf2 -> BookshelfFragment2(position)
                 idExplore -> ExploreFragment(position)
                 idRss -> RssFragment(position)
                 else -> MyFragment(position)
             }
-        }
-
-        override fun getCount(): Int {
-            return bottomMenuCount
-        }
-
-        override fun instantiateItem(container: ViewGroup, position: Int): Any {
-            var fragment = super.instantiateItem(container, position) as Fragment
-            if (fragment.isCreated && getItemPosition(fragment) == POSITION_NONE) {
-                destroyItem(container, position, fragment)
-                fragment = super.instantiateItem(container, position) as Fragment
-            }
-            fragmentMap[getId(position)] = fragment
-            return fragment
         }
 
     }

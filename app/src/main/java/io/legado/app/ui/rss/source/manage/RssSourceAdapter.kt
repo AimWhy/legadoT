@@ -11,28 +11,26 @@ import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
+import io.legado.app.base.adapter.SimpleSelectableAdapter
 import io.legado.app.data.entities.RssSource
-import io.legado.app.databinding.ItemRssSourceBinding
-import io.legado.app.lib.theme.backgroundColor
-import io.legado.app.lib.theme.cardBackgroundColor
+import io.legado.app.databinding.ItemManageBinding
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
-import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.dpToPx
 import java.util.Collections
 
 
 class RssSourceAdapter(context: Context, val callBack: CallBack) :
-    RecyclerAdapter<RssSource, ItemRssSourceBinding>(context),
-    ItemTouchCallback.Callback {
+    RecyclerAdapter<RssSource, ItemManageBinding>(context),
+    ItemTouchCallback.Callback,
+    SimpleSelectableAdapter<RssSource> {
 
-    private val selected = linkedSetOf<RssSource>()
+    override val selectedKeys = linkedSetOf<RssSource>()
 
-    val selection: List<RssSource>
-        get() {
-            return getItems().filter {
-                selected.contains(it)
-            }
-        }
+    override fun onSelectionChanged() {
+        callBack.upCountView()
+    }
 
     val diffItemCallback = object : DiffUtil.ItemCallback<RssSource>() {
 
@@ -63,30 +61,32 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
         }
     }
 
-    override fun getViewBinding(parent: ViewGroup): ItemRssSourceBinding {
-        return ItemRssSourceBinding.inflate(inflater, parent, false)
+    override fun getViewBinding(parent: ViewGroup): ItemManageBinding {
+        return ItemManageBinding.inflate(inflater, parent, false)
     }
 
     override fun convert(
         holder: ItemViewHolder,
-        binding: ItemRssSourceBinding,
+        binding: ItemManageBinding,
         item: RssSource,
         payloads: MutableList<Any>
     ) {
         binding.run {
-            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
+            // 卡底色由换肤引擎按布局 skin_background 施加;选中态=2dp 描边
+            rootCard.strokeColor = context.accentColor
+            rootCard.strokeWidth = if (isSelected(item)) 2.dpToPx() else 0
             if (payloads.isEmpty()) {
-                cbSource.text = item.getDisplayNameGroup()
+                cbName.text = item.getDisplayNameGroup()
                 swtEnabled.isChecked = item.enabled
-                cbSource.isChecked = selected.contains(item)
+                cbName.isChecked = isSelected(item)
             } else {
                 for (i in payloads.indices) {
                     val bundle = payloads[i] as Bundle
                     bundle.keySet().forEach {
                         when (it) {
-                            "upName" -> cbSource.text = item.getDisplayNameGroup()
+                            "upName" -> cbName.text = item.getDisplayNameGroup()
                             "enabled" -> swtEnabled.isChecked = bundle.getBoolean("enabled")
-                            "selected" -> cbSource.isChecked = selected.contains(item)
+                            "selected" -> cbName.isChecked = isSelected(item)
                         }
                     }
                 }
@@ -94,7 +94,7 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
         }
     }
 
-    override fun registerListener(holder: ItemViewHolder, binding: ItemRssSourceBinding) {
+    override fun registerListener(holder: ItemViewHolder, binding: ItemManageBinding) {
         binding.apply {
             swtEnabled.setOnUserCheckedChangeListener { checked ->
                 getItem(holder.layoutPosition)?.let {
@@ -102,13 +102,10 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
                     callBack.update(it)
                 }
             }
-            cbSource.setOnUserCheckedChangeListener { checked ->
+            cbName.setOnUserCheckedChangeListener { checked ->
                 getItem(holder.layoutPosition)?.let {
-                    if (checked) {
-                        selected.add(it)
-                    } else {
-                        selected.remove(it)
-                    }
+                    setSelected(it, checked)
+                    rootCard.strokeWidth = if (checked) 2.dpToPx() else 0
                     callBack.upCountView()
                 }
             }
@@ -127,30 +124,10 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
         callBack.upCountView()
     }
 
-    fun selectAll() {
-        getItems().forEach {
-            selected.add(it)
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
-    fun revertSelection() {
-        getItems().forEach {
-            if (selected.contains(it)) {
-                selected.remove(it)
-            } else {
-                selected.add(it)
-            }
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
     fun checkSelectedInterval() {
         val selectedPosition = linkedSetOf<Int>()
         getItems().forEachIndexed { index, it ->
-            if (selected.contains(it)) {
+            if (isSelected(it)) {
                 selectedPosition.add(index)
             }
         }
@@ -159,7 +136,7 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
         val itemCount = maxPosition - minPosition + 1
         for (i in minPosition..maxPosition) {
             getItem(i)?.let {
-                selected.add(it)
+                setSelected(it, true)
             }
         }
         notifyItemRangeChanged(minPosition, itemCount, bundleOf(Pair("selected", null)))
@@ -179,7 +156,7 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
                 "bottom" -> callBack.toBottom(source)
                 "del" -> {
                     callBack.del(source)
-                    selected.remove(source)
+                    setSelected(source, false)
                 }
             }
         }
@@ -215,7 +192,7 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
     val dragSelectCallback: DragSelectTouchHelper.Callback =
         object : DragSelectTouchHelper.AdvanceCallback<RssSource>(Mode.ToggleAndReverse) {
             override fun currentSelectedId(): MutableSet<RssSource> {
-                return selected
+                return selectedKeys
             }
 
             override fun getItemId(position: Int): RssSource {
@@ -224,11 +201,7 @@ class RssSourceAdapter(context: Context, val callBack: CallBack) :
 
             override fun updateSelectState(position: Int, isSelected: Boolean): Boolean {
                 getItem(position)?.let {
-                    if (isSelected) {
-                        selected.add(it)
-                    } else {
-                        selected.remove(it)
-                    }
+                    setSelected(it, isSelected)
                     notifyItemChanged(position, bundleOf(Pair("selected", null)))
                     callBack.upCountView()
                     return true

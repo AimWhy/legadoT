@@ -7,7 +7,6 @@ import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogCodeViewBinding
 import io.legado.app.help.IntentData
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.widget.code.addJsPattern
 import io.legado.app.ui.widget.code.addJsonPattern
 import io.legado.app.ui.widget.code.addLegadoPattern
@@ -17,6 +16,9 @@ import io.legado.app.utils.setLayout
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 
 class CodeDialog() : BaseDialogFragment(R.layout.dialog_code_view) {
+
+    /** 全屏弹窗:大浮动形态,圆角+四周留边 */
+    override val dialogForm = DialogForm.FULL_SCREEN
 
     constructor(code: String, disableEdit: Boolean = true, requestId: String? = null) : this() {
         arguments = Bundle().apply {
@@ -34,7 +36,6 @@ class CodeDialog() : BaseDialogFragment(R.layout.dialog_code_view) {
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         if (arguments?.getBoolean("disableEdit") == true) {
             binding.toolBar.title = "code view"
             binding.codeView.disableEdit()

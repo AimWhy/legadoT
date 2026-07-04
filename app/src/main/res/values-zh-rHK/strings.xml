@@ -67,7 +67,6 @@
     <string name="other_setting">其它設定</string>
     <string name="other_setting_s">與功能相關的一些設定</string>
     <string name="about">關於</string>
-    <string name="donate">捐贈</string>
     <string name="exit">退出</string>
     <string name="exit_no_save">尚未保存，是否繼續編輯</string>
     <string name="read_style">閲讀樣式設定</string>
@@ -775,7 +774,6 @@
     <string name="show_brightness_view">顯示亮度調節控制項</string>
     <string name="language">語言</string>
     <string name="import_rss_source">匯入訂閱源</string>
-    <string name="donate_summary">您嘅支援喺我更新嘅動力</string>
     <string name="about_summary">公眾號[开源阅读软件]</string>
     <string name="read_record">閲讀記錄</string>
     <string name="del_read_record">刪除閲讀記錄</string>

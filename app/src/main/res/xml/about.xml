@@ -3,61 +3,59 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <io.legado.app.lib.prefs.Preference
+        android:icon="@drawable/ic_groups"
         android:key="contributors"
         android:summary="@string/contributors_summary"
-        android:title="@string/contributors"
-        app:iconSpaceReserved="false" />
+        android:title="@string/contributors" />
 
     <io.legado.app.lib.prefs.Preference
+        android:icon="@drawable/ic_history"
         android:key="update_log"
         android:title="@string/update_log"
         app:allowDividerAbove="false"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false" />
+        app:allowDividerBelow="false" />
 
     <io.legado.app.lib.prefs.Preference
+        android:icon="@drawable/ic_update"
         android:key="check_update"
         android:title="@string/check_update"
         app:allowDividerAbove="false"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false" />
+        app:allowDividerBelow="false" />
 
     <io.legado.app.lib.prefs.PreferenceCategory
         android:title="@string/other"
         app:allowDividerAbove="true"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false"
-        app:layout="@layout/view_preference_category">
+        app:allowDividerBelow="false">
 
         <io.legado.app.lib.prefs.Preference
+            android:icon="@drawable/ic_bug_report"
             android:key="crashLog"
-            android:title="@string/crash_log"
-            app:iconSpaceReserved="false" />
+            android:title="@string/crash_log" />
 
         <io.legado.app.lib.prefs.Preference
+            android:icon="@drawable/ic_export"
             android:key="saveLog"
-            android:title="@string/save_log"
-            app:iconSpaceReserved="false" />
+            android:title="@string/save_log" />
 
         <io.legado.app.lib.prefs.Preference
+            android:icon="@drawable/ic_storage_black_24dp"
             android:key="createHeapDump"
-            android:title="@string/create_heap_dump"
-            app:iconSpaceReserved="false" />
+            android:title="@string/create_heap_dump" />
 
         <io.legado.app.lib.prefs.Preference
+            android:icon="@drawable/ic_lock_outline"
             android:key="privacyPolicy"
-            android:title="@string/privacy_policy"
-            app:iconSpaceReserved="false" />
+            android:title="@string/privacy_policy" />
 
         <io.legado.app.lib.prefs.Preference
+            android:icon="@drawable/ic_description"
             android:key="license"
-            android:title="@string/license"
-            app:iconSpaceReserved="false" />
+            android:title="@string/license" />
 
         <io.legado.app.lib.prefs.Preference
+            android:icon="@drawable/ic_cfg_about"
             android:key="disclaimer"
-            android:title="@string/disclaimer"
-            app:iconSpaceReserved="false" />
+            android:title="@string/disclaimer" />
 
     </io.legado.app.lib.prefs.PreferenceCategory>
 

@@ -17,6 +17,7 @@
         android:maxLines="1"
         android:padding="5dp"
         android:text="@string/edit"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="14sp" />
 
@@ -30,6 +31,7 @@
         android:padding="5dp"
         android:text="@string/highlight_rule_disable"
         android:textColor="@color/error"
+        app:skin_textColor="error"
         android:textSize="14sp" />
 
 </com.google.android.flexbox.FlexboxLayout>

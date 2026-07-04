@@ -25,6 +25,9 @@ import java.util.Locale
 
 class AutoReadDialog : BaseDialogFragment(R.layout.dialog_auto_read) {
 
+    /** 贴底面板自设背景(bottomBackground),豁免统一圆角模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
+
     private val binding by viewBinding(DialogAutoReadBinding::bind)
     private val callBack: CallBack? get() = activity as? CallBack
 
@@ -32,7 +35,8 @@ class AutoReadDialog : BaseDialogFragment(R.layout.dialog_auto_read) {
         super.onStart()
         dialog?.window?.run {
             clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
-            setBackgroundDrawableResource(R.color.background)
+            // 透明窗:否则顶部圆角缺口露出窗口的方角背景
+            setBackgroundDrawableResource(android.R.color.transparent)
             decorView.setPadding(0, 0, 0, 0)
             val attr = attributes
             attr.dimAmount = 0.0f

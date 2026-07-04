@@ -23,6 +23,7 @@
         android:contentDescription="上个结果"
         android:rotation="180"
         android:src="@drawable/ic_arrow_right"
+        app:skin_tint="onSurface"
         android:tint="@color/primaryText"
         android:tooltipText="@string/search_content"
         app:backgroundTint="@color/background_menu"
@@ -41,6 +42,7 @@
         android:layout_margin="16dp"
         android:contentDescription="下个结果"
         android:src="@drawable/ic_arrow_right"
+        app:skin_tint="onSurface"
         android:tint="@color/primaryText"
         android:tooltipText="@string/search_content"
         app:backgroundTint="@color/background_menu"
@@ -77,6 +79,7 @@
                 android:contentDescription="@string/go_to_top"
                 android:src="@drawable/ic_arrow_drop_up"
                 android:tooltipText="@string/go_to_top"
+                app:skin_tint="onSurface"
                 app:tint="@color/primaryText"
                 tools:ignore="UnusedAttribute" />
 
@@ -88,6 +91,7 @@
                 android:contentDescription="@string/go_to_bottom"
                 android:src="@drawable/ic_arrow_drop_down"
                 android:tooltipText="@string/go_to_bottom"
+                app:skin_tint="onSurface"
                 app:tint="@color/primaryText"
                 tools:ignore="UnusedAttribute" />
 
@@ -102,6 +106,7 @@
                 android:paddingLeft="10dp"
                 android:paddingRight="10dp"
                 android:singleLine="true"
+                app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
                 android:textSize="12sp" />
         </LinearLayout>
@@ -141,6 +146,7 @@
                     android:contentDescription="结果"
                     android:maxHeight="20dp"
                     android:src="@drawable/ic_toc"
+                    app:skin_tint="onSurface"
                     app:tint="@color/primaryText"
                     tools:ignore="NestedWeights" />
 
@@ -152,6 +158,7 @@
                     android:layout_marginTop="3dp"
                     android:maxLines="1"
                     android:text="结果"
+                    app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -182,6 +189,7 @@
                     android:contentDescription="@string/main_menu"
                     android:maxHeight="20dp"
                     android:src="@drawable/ic_menu"
+                    app:skin_tint="onSurface"
                     app:tint="@color/primaryText"
                     tools:ignore="NestedWeights" />
 
@@ -193,6 +201,7 @@
                     android:layout_marginTop="3dp"
                     android:maxLines="1"
                     android:text="@string/main_menu"
+                    app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
                     android:textSize="12sp" />
             </LinearLayout>
@@ -222,6 +231,7 @@
                     android:contentDescription="退出"
                     android:maxHeight="20dp"
                     android:src="@drawable/ic_auto_page_stop"
+                    app:skin_tint="onSurface"
                     app:tint="@color/primaryText"
                     tools:ignore="NestedWeights" />
 
@@ -233,6 +243,7 @@
                     android:layout_marginTop="3dp"
                     android:maxLines="1"
                     android:text="退出"
+                    app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
                     android:textSize="12sp" />
             </LinearLayout>

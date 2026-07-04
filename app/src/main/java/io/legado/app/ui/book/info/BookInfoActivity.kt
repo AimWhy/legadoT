@@ -38,8 +38,6 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.backgroundColor
-import io.legado.app.lib.theme.bottomBackground
-import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.model.BookCover
@@ -62,7 +60,6 @@ import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.dialog.PhotoDialog
 import io.legado.app.ui.widget.dialog.VariableDialog
 import io.legado.app.ui.widget.dialog.WaitDialog
-import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.ConvertUtils
 import io.legado.app.utils.FileDoc
 import io.legado.app.utils.GSON
@@ -164,10 +161,9 @@ class BookInfoActivity :
         binding.titleBar.setBackgroundResource(R.color.transparent)
         binding.refreshLayout?.setColorSchemeColors(accentColor)
         binding.arcView.setBgColor(backgroundColor)
-        binding.llInfo.setBackgroundColor(backgroundColor)
-        binding.flAction.setBackgroundColor(bottomBackground)
         binding.flAction.applyNavigationBarPadding()
-        binding.tvShelf.setTextColor(getPrimaryTextColor(ColorUtils.isColorLight(bottomBackground)))
+        // tvShelf 是 AccentTonalBgTextView(P1 已角色化 secondaryContainer/onSecondaryContainer),
+        // 不再手动按 bottomBackground 覆盖文字色,避免破坏容器对比度配对
         binding.tvToc.text = getString(R.string.toc_s, getString(R.string.loading))
         binding.tvIntro.revealOnFocusHint = false
         viewModel.bookData.observe(this) { showBook(it) }

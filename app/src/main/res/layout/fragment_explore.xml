@@ -49,6 +49,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="@string/explore_container_empty"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText" />
 
         <io.legado.app.ui.widget.text.AccentTextView

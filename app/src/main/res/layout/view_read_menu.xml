@@ -242,11 +242,12 @@
                     android:paddingTop="@dimen/space_s"
                     android:paddingBottom="@dimen/space_s"
                     android:text="@string/previous_chapter"
+                    app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
 
-                <io.legado.app.lib.theme.view.ThemeSeekBar
+                <SeekBar
                     android:id="@+id/seek_read_page"
                     android:layout_width="0dp"
                     android:layout_height="25dp"
@@ -267,6 +268,7 @@
                     android:paddingTop="@dimen/space_s"
                     android:paddingBottom="@dimen/space_s"
                     android:text="@string/next_chapter"
+                    app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />

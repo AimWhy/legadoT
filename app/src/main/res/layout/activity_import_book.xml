@@ -19,6 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/background"
+        app:skin_background="background"
         android:elevation="1dp"
         android:gravity="center_vertical"
         android:minHeight="36dp"
@@ -34,6 +35,7 @@
             android:focusable="true"
             android:gravity="center_vertical"
             android:singleLine="true"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:textSize="13sp"
             tools:text="/" />

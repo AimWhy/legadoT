@@ -10,25 +10,26 @@ import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
+import io.legado.app.base.adapter.SimpleSelectableAdapter
 import io.legado.app.data.entities.TxtTocRule
-import io.legado.app.databinding.ItemTxtTocRuleBinding
-import io.legado.app.lib.theme.backgroundColor
-import io.legado.app.lib.theme.cardBackgroundColor
+import io.legado.app.databinding.ItemManageBinding
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.widget.popupActionMenu
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
-import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.dpToPx
+import io.legado.app.utils.visible
 
 class TxtTocRuleAdapter(context: Context, private val callBack: CallBack) :
-    RecyclerAdapter<TxtTocRule, ItemTxtTocRuleBinding>(context),
-    ItemTouchCallback.Callback {
+    RecyclerAdapter<TxtTocRule, ItemManageBinding>(context),
+    ItemTouchCallback.Callback,
+    SimpleSelectableAdapter<TxtTocRule> {
 
-    private val selected = linkedSetOf<TxtTocRule>()
+    override val selectedKeys = linkedSetOf<TxtTocRule>()
 
-    val selection: List<TxtTocRule>
-        get() = getItems().filter {
-            selected.contains(it)
-        }
+    override fun onSelectionChanged() {
+        callBack.upCountView()
+    }
 
     val diffItemCallBack = object : DiffUtil.ItemCallback<TxtTocRule>() {
 
@@ -67,31 +68,35 @@ class TxtTocRuleAdapter(context: Context, private val callBack: CallBack) :
         }
     }
 
-    override fun getViewBinding(parent: ViewGroup): ItemTxtTocRuleBinding {
-        return ItemTxtTocRuleBinding.inflate(inflater, parent, false)
+    override fun getViewBinding(parent: ViewGroup): ItemManageBinding {
+        return ItemManageBinding.inflate(inflater, parent, false).apply {
+            tvSubtitle.visible()
+        }
     }
 
     override fun convert(
         holder: ItemViewHolder,
-        binding: ItemTxtTocRuleBinding,
+        binding: ItemManageBinding,
         item: TxtTocRule,
         payloads: MutableList<Any>
     ) {
         binding.run {
-            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
+            // 卡底色由换肤引擎按布局 skin_background 施加;选中态=2dp 描边
+            rootCard.strokeColor = context.accentColor
+            rootCard.strokeWidth = if (isSelected(item)) 2.dpToPx() else 0
             if (payloads.isEmpty()) {
-                cbSource.text = item.name
+                cbName.text = item.name
                 swtEnabled.isChecked = item.enable
-                cbSource.isChecked = selected.contains(item)
-                titleExample.text = item.example
+                cbName.isChecked = isSelected(item)
+                tvSubtitle.text = item.example
             } else {
                 for (i in payloads.indices) {
                     val bundle = payloads[i] as Bundle
                     bundle.keySet().forEach {
                         when (it) {
-                            "selected" -> cbSource.isChecked = selected.contains(item)
-                            "upName" -> cbSource.text = item.name
-                            "upExample" -> titleExample.text = item.example
+                            "selected" -> cbName.isChecked = isSelected(item)
+                            "upName" -> cbName.text = item.name
+                            "upExample" -> tvSubtitle.text = item.example
                             "enabled" -> swtEnabled.isChecked = item.enable
                         }
                     }
@@ -100,14 +105,11 @@ class TxtTocRuleAdapter(context: Context, private val callBack: CallBack) :
         }
     }
 
-    override fun registerListener(holder: ItemViewHolder, binding: ItemTxtTocRuleBinding) {
-        binding.cbSource.setOnUserCheckedChangeListener { isChecked ->
+    override fun registerListener(holder: ItemViewHolder, binding: ItemManageBinding) {
+        binding.cbName.setOnUserCheckedChangeListener { isChecked ->
             getItem(holder.layoutPosition)?.let {
-                if (isChecked) {
-                    selected.add(it)
-                } else {
-                    selected.remove(it)
-                }
+                setSelected(it, isChecked)
+                binding.rootCard.strokeWidth = if (isChecked) 2.dpToPx() else 0
                 callBack.upCountView()
             }
         }
@@ -127,9 +129,10 @@ class TxtTocRuleAdapter(context: Context, private val callBack: CallBack) :
         }
         binding.contentLayout.setOnClickListener {
             getItem(holder.layoutPosition)?.let {
-                val nowSelected = !selected.contains(it)
-                if (nowSelected) selected.add(it) else selected.remove(it)
-                binding.cbSource.isChecked = nowSelected
+                val nowSelected = !isSelected(it)
+                setSelected(it, nowSelected)
+                binding.cbName.isChecked = nowSelected
+                binding.rootCard.strokeWidth = if (nowSelected) 2.dpToPx() else 0
                 callBack.upCountView()
             }
         }
@@ -152,30 +155,10 @@ class TxtTocRuleAdapter(context: Context, private val callBack: CallBack) :
                 "bottom" -> callBack.toBottom(source)
                 "del" -> {
                     callBack.del(source)
-                    selected.remove(source)
+                    setSelected(source, false)
                 }
             }
         }
-    }
-
-    fun selectAll() {
-        getItems().forEach {
-            selected.add(it)
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
-    fun revertSelection() {
-        getItems().forEach {
-            if (selected.contains(it)) {
-                selected.remove(it)
-            } else {
-                selected.add(it)
-            }
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
     }
 
     override fun swap(srcPosition: Int, targetPosition: Int): Boolean {
@@ -208,7 +191,7 @@ class TxtTocRuleAdapter(context: Context, private val callBack: CallBack) :
     val dragSelectCallback: DragSelectTouchHelper.Callback =
         object : DragSelectTouchHelper.AdvanceCallback<TxtTocRule>(Mode.ToggleAndReverse) {
             override fun currentSelectedId(): MutableSet<TxtTocRule> {
-                return selected
+                return selectedKeys
             }
 
             override fun getItemId(position: Int): TxtTocRule {
@@ -217,11 +200,7 @@ class TxtTocRuleAdapter(context: Context, private val callBack: CallBack) :
 
             override fun updateSelectState(position: Int, isSelected: Boolean): Boolean {
                 getItem(position)?.let {
-                    if (isSelected) {
-                        selected.add(it)
-                    } else {
-                        selected.remove(it)
-                    }
+                    setSelected(it, isSelected)
                     notifyItemChanged(position, bundleOf(Pair("selected", null)))
                     callBack.upCountView()
                     return true

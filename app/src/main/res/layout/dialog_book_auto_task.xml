@@ -19,6 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/auto_task_enable"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textAppearance="?attr/textAppearanceBodyLarge" />
 
@@ -40,6 +41,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/auto_task_notify_switch"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textAppearance="?attr/textAppearanceBodyLarge" />
 
@@ -61,6 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/auto_task_cache_switch"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textAppearance="?attr/textAppearanceBodyLarge" />
 
@@ -83,6 +86,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/auto_task_interval"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textAppearance="?attr/textAppearanceBodyLarge" />
 
@@ -102,6 +106,7 @@
                 android:maxLength="4"
                 android:paddingStart="6dp"
                 android:paddingEnd="6dp"
+                app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
                 android:textAppearance="?attr/textAppearanceBodyLarge"
                 android:textSize="14sp" />

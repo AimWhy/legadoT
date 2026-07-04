@@ -87,7 +87,6 @@ class TxtTocRuleDialog() : BaseDialogFragment(R.layout.dialog_toc_regex),
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         durRegex = arguments?.getString("tocRegex")
         binding.toolBar.setTitle(R.string.txt_toc_rule)
         binding.toolBar.inflateMenu(R.menu.txt_toc_rule)
