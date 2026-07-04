@@ -27,6 +27,7 @@ class BookAdapter(context: Context, val callBack: CallBack) :
     ) {
         binding.run {
             textView.text = item.name
+            textView.background = filletChipBackground(context)
         }
     }
 

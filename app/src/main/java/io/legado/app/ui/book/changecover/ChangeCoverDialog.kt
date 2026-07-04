@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.GridLayoutManager
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogChangeCoverBinding
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.viewbindingdelegate.viewBinding
@@ -27,6 +26,9 @@ import kotlinx.coroutines.launch
 class ChangeCoverDialog() : BaseDialogFragment(R.layout.dialog_change_cover),
     Toolbar.OnMenuItemClickListener,
     CoverAdapter.CallBack {
+
+    /** 全屏弹窗:大浮动形态,圆角+四周留边 */
+    override val dialogForm = DialogForm.FULL_SCREEN
 
     constructor(name: String, author: String) : this() {
         arguments = Bundle().apply {
@@ -49,7 +51,6 @@ class ChangeCoverDialog() : BaseDialogFragment(R.layout.dialog_change_cover),
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         binding.toolBar.setTitle(R.string.change_cover_source)
         viewModel.initData(arguments)
         initMenu()

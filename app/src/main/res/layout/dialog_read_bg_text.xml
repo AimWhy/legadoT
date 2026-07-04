@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
+    app:skin_background="background"
     android:orientation="vertical"
     android:padding="10dp">
 
@@ -20,6 +21,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/style_name"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="16sp" />
 
@@ -29,6 +31,7 @@
             android:layout_height="wrap_content"
             android:paddingLeft="6dp"
             android:paddingRight="6dp"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             tools:text="文字" />
 
@@ -38,6 +41,7 @@
             android:layout_height="20dp"
             android:contentDescription="@string/edit"
             android:src="@drawable/ic_edit"
+            app:skin_tint="onSurfaceVariant"
             app:tint="@color/secondaryText" />
 
         <Space
@@ -50,6 +54,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/restore"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText" />
 
     </LinearLayout>
@@ -78,56 +83,47 @@
         android:paddingRight="6dp"
         android:paddingBottom="3dp">
 
-        <io.legado.app.ui.widget.text.StrokeTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/tv_review_icon_svg"
+            style="@style/Widget.App.Button.Outlined.Compact"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
             android:ellipsize="end"
-            android:gravity="center"
             android:padding="6dp"
             android:singleLine="true"
             android:text="@string/review_icon_svg_title"
-            android:textAlignment="center"
-            android:textSize="14sp"
-            app:isBottomBackground="true"
-            app:radius="@dimen/radius_m" />
+            android:textSize="14sp" />
 
-        <io.legado.app.ui.widget.text.StrokeTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/tv_review_icon_size"
+            style="@style/Widget.App.Button.Outlined.Compact"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
             android:ellipsize="end"
-            android:gravity="center"
             android:padding="6dp"
             android:singleLine="true"
             android:text="@string/review_icon_size_title"
-            android:textAlignment="center"
-            android:textSize="14sp"
-            app:isBottomBackground="true"
-            app:radius="@dimen/radius_m" />
+            android:textSize="14sp" />
 
-        <io.legado.app.ui.widget.text.StrokeTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/tv_review_icon_color"
+            style="@style/Widget.App.Button.Outlined.Compact"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
             android:ellipsize="end"
-            android:gravity="center"
             android:padding="6dp"
             android:singleLine="true"
             android:text="@string/review_icon_color_title"
-            android:textAlignment="center"
-            android:textSize="14sp"
-            app:isBottomBackground="true"
-            app:radius="@dimen/radius_m" />
+            android:textSize="14sp" />
     </LinearLayout>
     <LinearLayout
         android:layout_width="match_parent"
@@ -136,38 +132,34 @@
         android:orientation="horizontal"
         android:padding="6dp">
 
-        <io.legado.app.ui.widget.text.StrokeTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/tv_text_color"
+            style="@style/Widget.App.Button.Outlined.Compact"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
             android:layout_weight="5"
-            android:gravity="center"
             android:padding="6dp"
             android:singleLine="true"
             android:text="@string/text_color"
             android:textSize="14sp"
-            app:isBottomBackground="true"
-            app:radius="@dimen/radius_m"
             tools:ignore="HardcodedText" />
 
-        <io.legado.app.ui.widget.text.StrokeTextView
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/tv_bg_color"
+            style="@style/Widget.App.Button.Outlined.Compact"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_marginLeft="6dp"
             android:layout_marginRight="6dp"
             android:layout_weight="5"
-            android:gravity="center"
             android:padding="6dp"
             android:singleLine="true"
             android:text="@string/bg_color"
             android:textSize="14sp"
-            app:isBottomBackground="true"
-            app:radius="@dimen/radius_m"
             tools:ignore="HardcodedText" />
 
         <ImageView
@@ -216,7 +208,7 @@
         android:paddingRight="6dp"
         android:text="@string/bg_alpha" />
 
-    <io.legado.app.lib.theme.view.ThemeSeekBar
+    <SeekBar
         android:id="@+id/sb_bg_alpha"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

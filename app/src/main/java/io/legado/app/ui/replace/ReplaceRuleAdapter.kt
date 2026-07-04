@@ -11,27 +11,25 @@ import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
+import io.legado.app.base.adapter.SimpleSelectableAdapter
 import io.legado.app.data.entities.ReplaceRule
-import io.legado.app.databinding.ItemReplaceRuleBinding
-import io.legado.app.lib.theme.backgroundColor
-import io.legado.app.lib.theme.cardBackgroundColor
+import io.legado.app.databinding.ItemManageBinding
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
-import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.dpToPx
 
 
 class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
-    RecyclerAdapter<ReplaceRule, ItemReplaceRuleBinding>(context),
-    ItemTouchCallback.Callback {
+    RecyclerAdapter<ReplaceRule, ItemManageBinding>(context),
+    ItemTouchCallback.Callback,
+    SimpleSelectableAdapter<ReplaceRule> {
 
-    private val selected = linkedSetOf<ReplaceRule>()
+    override val selectedKeys = linkedSetOf<ReplaceRule>()
 
-    val selection: List<ReplaceRule>
-        get() {
-            return getItems().filter {
-                selected.contains(it)
-            }
-        }
+    override fun onSelectionChanged() {
+        callBack.upCountView()
+    }
 
     val diffItemCallBack = object : DiffUtil.ItemCallback<ReplaceRule>() {
 
@@ -69,28 +67,8 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
         }
     }
 
-    fun selectAll() {
-        getItems().forEach {
-            selected.add(it)
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
-    fun revertSelection() {
-        getItems().forEach {
-            if (selected.contains(it)) {
-                selected.remove(it)
-            } else {
-                selected.add(it)
-            }
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
-    override fun getViewBinding(parent: ViewGroup): ItemReplaceRuleBinding {
-        return ItemReplaceRuleBinding.inflate(inflater, parent, false)
+    override fun getViewBinding(parent: ViewGroup): ItemManageBinding {
+        return ItemManageBinding.inflate(inflater, parent, false)
     }
 
     override fun onCurrentListChanged() {
@@ -99,22 +77,24 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
 
     override fun convert(
         holder: ItemViewHolder,
-        binding: ItemReplaceRuleBinding,
+        binding: ItemManageBinding,
         item: ReplaceRule,
         payloads: MutableList<Any>
     ) {
         binding.run {
-            rootCard.setCardBackgroundColor(context.cardBackgroundColor)
+            // 卡底色由换肤引擎按布局 skin_background 施加;选中态=2dp 描边
+            rootCard.strokeColor = context.accentColor
+            rootCard.strokeWidth = if (isSelected(item)) 2.dpToPx() else 0
             if (payloads.isEmpty()) {
                 cbName.text = item.getDisplayNameGroup()
                 swtEnabled.isChecked = item.isEnabled
-                cbName.isChecked = selected.contains(item)
+                cbName.isChecked = isSelected(item)
             } else {
                 for (i in payloads.indices) {
                     val bundle = payloads[i] as Bundle
                     bundle.keySet().forEach {
                         when (it) {
-                            "selected" -> cbName.isChecked = selected.contains(item)
+                            "selected" -> cbName.isChecked = isSelected(item)
                             "upName" -> cbName.text = item.getDisplayNameGroup()
                             "enabled" -> swtEnabled.isChecked = item.isEnabled
                         }
@@ -124,7 +104,7 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
         }
     }
 
-    override fun registerListener(holder: ItemViewHolder, binding: ItemReplaceRuleBinding) {
+    override fun registerListener(holder: ItemViewHolder, binding: ItemManageBinding) {
         binding.apply {
             swtEnabled.setOnUserCheckedChangeListener { isChecked ->
                 getItem(holder.layoutPosition)?.let {
@@ -140,10 +120,11 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
             cbName.setOnClickListener {
                 getItem(holder.layoutPosition)?.let {
                     if (cbName.isChecked) {
-                        selected.add(it)
+                        setSelected(it, true)
                     } else {
-                        selected.remove(it)
+                        setSelected(it, false)
                     }
+                    rootCard.strokeWidth = if (isSelected(it)) 2.dpToPx() else 0
                 }
                 callBack.upCountView()
             }
@@ -152,9 +133,10 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
             }
             contentLayout.setOnClickListener {
                 getItem(holder.layoutPosition)?.let {
-                    val nowSelected = !selected.contains(it)
-                    if (nowSelected) selected.add(it) else selected.remove(it)
+                    val nowSelected = !isSelected(it)
+                    setSelected(it, nowSelected)
                     cbName.isChecked = nowSelected
+                    rootCard.strokeWidth = if (nowSelected) 2.dpToPx() else 0
                     callBack.upCountView()
                 }
             }
@@ -174,7 +156,7 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
                 "bottom" -> callBack.toBottom(item)
                 "del" -> {
                     callBack.delete(item)
-                    selected.remove(item)
+                    setSelected(item, false)
                 }
             }
         }
@@ -210,7 +192,7 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
     val dragSelectCallback: DragSelectTouchHelper.Callback =
         object : DragSelectTouchHelper.AdvanceCallback<ReplaceRule>(Mode.ToggleAndReverse) {
             override fun currentSelectedId(): MutableSet<ReplaceRule> {
-                return selected
+                return selectedKeys
             }
 
             override fun getItemId(position: Int): ReplaceRule {
@@ -220,9 +202,9 @@ class ReplaceRuleAdapter(context: Context, var callBack: CallBack) :
             override fun updateSelectState(position: Int, isSelected: Boolean): Boolean {
                 getItem(position)?.let {
                     if (isSelected) {
-                        selected.add(it)
+                        setSelected(it, true)
                     } else {
-                        selected.remove(it)
+                        setSelected(it, false)
                     }
                     notifyItemChanged(position, bundleOf(Pair("selected", null)))
                     callBack.upCountView()

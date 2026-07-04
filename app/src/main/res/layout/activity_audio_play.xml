@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
+    app:skin_background="background"
     android:orientation="vertical"
     tools:context=".ui.book.audio.AudioPlayActivity">
 
@@ -143,7 +144,7 @@
             android:textColor="@color/md_white_1000"
             tools:ignore="HardcodedText,RtlSymmetry,TextContrastCheck" />
 
-        <io.legado.app.lib.theme.view.ThemeSeekBar
+        <SeekBar
             android:id="@+id/player_progress"
             android:layout_width="0dp"
             android:layout_height="25dp"
@@ -236,7 +237,7 @@
                 app:pressedTranslationZ="2dp"
                 tools:ignore="ImageContrastCheck" />
 
-            <io.legado.app.lib.theme.view.ThemeProgressBar
+            <ProgressBar
                 android:id="@+id/progress_loading"
                 android:layout_width="0dp"
                 android:layout_height="0dp"

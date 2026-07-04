@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- M3 菜单容器:圆角+阴影分层(popupElevation),不用描边 -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 
     <solid android:color="@color/background_card" />
 
     <corners android:radius="@dimen/radius_m" />
-
-    <stroke
-        android:width="0.5dp"
-        android:color="@color/divider" />
 
 </shape>

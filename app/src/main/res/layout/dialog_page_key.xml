@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/content_view"
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background"
+    app:skin_background="background"
     android:padding="16dp">
 
     <TextView
@@ -48,6 +50,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="5dp"
+        app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
         android:text="@string/page_key_set_help" />
 
@@ -69,6 +72,7 @@
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
             android:text="@string/reset"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText" />
 
         <Space
@@ -87,6 +91,7 @@
             android:paddingTop="5dp"
             android:paddingBottom="5dp"
             android:text="@string/ok"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText" />
 
     </LinearLayout>

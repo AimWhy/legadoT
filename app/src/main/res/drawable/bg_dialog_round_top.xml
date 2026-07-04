@@ -5,6 +5,6 @@
         android:width="1dp"
         android:color="@color/reviewCardStroke" />
     <corners
-        android:topLeftRadius="22dp"
-        android:topRightRadius="22dp" />
+        android:topLeftRadius="@dimen/radius_xl"
+        android:topRightRadius="@dimen/radius_xl" />
 </shape>

@@ -19,6 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/background"
+        app:skin_background="background"
         android:elevation="5dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
@@ -37,6 +38,7 @@
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
             android:singleLine="true"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="12sp" />
 
@@ -48,6 +50,7 @@
             android:contentDescription="@string/go_to_top"
             android:src="@drawable/ic_arrow_drop_up"
             android:tooltipText="@string/go_to_top"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
 
@@ -59,6 +62,7 @@
             android:contentDescription="@string/go_to_bottom"
             android:src="@drawable/ic_arrow_drop_down"
             android:tooltipText="@string/go_to_bottom"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
     </LinearLayout>

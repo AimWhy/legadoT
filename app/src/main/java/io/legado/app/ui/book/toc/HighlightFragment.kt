@@ -45,6 +45,14 @@ class HighlightFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_bookmar
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // FragmentStateAdapter 会真正销毁离屏页,置空回避免野指针;恒等判断防止清掉新实例的注册
+        if (viewModel.highlightCallBack === this) {
+            viewModel.highlightCallBack = null
+        }
+    }
+
     private fun initRecyclerView() {
         binding.recyclerView.setEdgeEffectColor(primaryColor)
         mLayoutManager = UpLinearLayoutManager(requireContext())

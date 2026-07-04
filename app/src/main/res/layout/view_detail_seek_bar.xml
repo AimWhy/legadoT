@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -12,6 +13,7 @@
         android:layout_height="wrap_content"
         android:singleLine="true"
         android:text="seek"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         tools:ignore="HardcodedText" />
 
@@ -22,9 +24,10 @@
         android:contentDescription="@string/reduce"
         android:src="@drawable/ic_reduce"
         android:background="?android:attr/selectableItemBackgroundBorderless"
+        app:skin_tint="onSurface"
         android:tint="@color/primaryText" />
 
-    <io.legado.app.lib.theme.view.ThemeSeekBar
+    <SeekBar
         android:id="@+id/seek_bar"
         android:layout_width="0dp"
         android:layout_height="25dp"
@@ -39,6 +42,7 @@
         android:contentDescription="@string/plus"
         android:src="@drawable/ic_add"
         android:background="?android:attr/selectableItemBackgroundBorderless"
+        app:skin_tint="onSurface"
         android:tint="@color/primaryText" />
 
     <TextView
@@ -48,6 +52,7 @@
         android:gravity="right"
         android:singleLine="true"
         android:text="0"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         tools:ignore="HardcodedText,RtlHardcoded" />
 

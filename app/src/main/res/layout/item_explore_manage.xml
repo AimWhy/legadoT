@@ -3,7 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_card"
-    style="@style/Style.ItemManageCard">
+    style="@style/Style.ItemManageCard"
+    app:skin_background="surfaceContainerLow">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/content_layout"
@@ -22,6 +23,7 @@
             android:layout_height="wrap_content"
             android:paddingStart="5dp"
             android:singleLine="true"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toLeftOf="@+id/swt_enabled"
@@ -36,6 +38,7 @@
             android:layout_marginTop="2dp"
             android:paddingStart="5dp"
             android:singleLine="true"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:textSize="11sp"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -65,6 +68,7 @@
             android:contentDescription="@string/more_menu"
             android:padding="6dp"
             android:src="@drawable/ic_more_vert"
+            app:skin_tint="onSurface"
             android:tint="@color/primaryText"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintRight_toRightOf="parent"
@@ -73,6 +77,5 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <include layout="@layout/view_item_manage_divider" />
 
 </com.google.android.material.card.MaterialCardView>

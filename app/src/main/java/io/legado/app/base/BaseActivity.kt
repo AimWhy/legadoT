@@ -24,12 +24,13 @@ import com.google.android.material.color.DynamicColorsOptions
 import io.legado.app.R
 import io.legado.app.constant.AppConst
 import io.legado.app.constant.AppLog
-import io.legado.app.constant.PreferKey
 import io.legado.app.constant.Theme
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ThemeConfig
+import io.legado.app.lib.skin.SkinInflaterFactory
 import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.widget.TitleBar
 import io.legado.app.utils.ColorUtils
@@ -38,7 +39,6 @@ import io.legado.app.utils.applyOpenTint
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.disableAutoFill
 import io.legado.app.utils.fullScreen
-import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.hideSoftInput
 import io.legado.app.utils.installMd3OverflowMenu
 import io.legado.app.utils.setLightStatusBar
@@ -94,6 +94,9 @@ abstract class BaseActivity<VB : ViewBinding>(
     override fun onCreate(savedInstanceState: Bundle?) {
         window.decorView.disableAutoFill()
         initTheme()
+        // R2 换肤引擎:须先于 super.onCreate 占工厂位(AppCompat 让位并被委托);
+        // 弹窗/菜单/item 的 inflater 经 clone 链继承本工厂,全 app 一次安装
+        SkinInflaterFactory.install(this)
         super.onCreate(savedInstanceState)
         setupSystemBar()
         setContentView(binding.root)
@@ -180,20 +183,22 @@ abstract class BaseActivity<VB : ViewBinding>(
             }
         }
         applyDynamicColors()
+        if (AppConfig.isEInkMode) {
+            // eink:attr 控件(M3 按钮等)也压黑白,与 AppColorScheme eink 表一致
+            // getTheme() 显式调用:构造参数 theme(constant.Theme)遮蔽了 Activity.theme
+            getTheme().applyStyle(R.style.ThemeOverlay_App_EInk, true)
+        }
     }
 
     /**
-     * 用用户主色作种子，注入 M3 动态 colorScheme，让纯 ?attr 着色的 M3 控件也跟随换肤。
+     * 用用户强调色作种子，注入 M3 动态 colorScheme，让纯 ?attr 着色的 M3 控件也跟随换肤。
      * EInk 模式旁路（黑白不经动态取色）。
      */
     private fun applyDynamicColors() {
         if (AppConfig.isEInkMode) return
         kotlin.runCatching {
-            val seed = if (AppConfig.isNightTheme) {
-                getPrefInt(PreferKey.cNPrimary, primaryColor)
-            } else {
-                getPrefInt(PreferKey.cPrimary, primaryColor)
-            }
+            // 种子与 AppColorScheme 一致取强调色,保证 12+ attr 控件与代码染色控件同源
+            val seed = ThemeStore.accentColor(this)
             val options = DynamicColorsOptions.Builder()
                 .setContentBasedSource(seed)
                 .build()
@@ -220,7 +225,12 @@ abstract class BaseActivity<VB : ViewBinding>(
             fullScreen()
         }
         val isTransparentStatusBar = AppConfig.isTransparentStatusBar
-        val statusBarColor = ThemeStore.statusBarColor(this, isTransparentStatusBar)
+        // 沉浸式=主色(与 toolbar 同色);非沉浸=加深主色(原 ATH statusBarColor 键从未写入,恒为此默认)
+        val statusBarColor = if (isTransparentStatusBar) {
+            primaryColor
+        } else {
+            ColorUtils.darkenColor(primaryColor)
+        }
         setStatusBarColorAuto(statusBarColor, isTransparentStatusBar, fullScreen)
         if (toolBarTheme == Theme.Dark) {
             setLightStatusBar(false)
@@ -235,9 +245,9 @@ abstract class BaseActivity<VB : ViewBinding>(
             // 沉浸模式：导航栏透明，手势条直接浮在页面背景上
             Color.TRANSPARENT
         } else if (AppConfig.immNavigationBar) {
-            ThemeStore.navigationBarColor(this)
+            bottomBackground
         } else {
-            ColorUtils.darkenColor(ThemeStore.navigationBarColor(this))
+            ColorUtils.darkenColor(bottomBackground)
         }
         setNavigationBarColorAuto(nbColor)
     }

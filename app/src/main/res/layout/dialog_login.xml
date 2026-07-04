@@ -17,9 +17,9 @@
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/tool_bar"
+            app:skin_background="themePrimary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_dialog_toolbar_top_round"
             android:elevation="5dp"
             android:theme="?attr/actionBarStyle"
             app:title="@string/login"

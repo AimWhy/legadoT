@@ -8,6 +8,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import io.legado.app.R
 import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.DialogSleepTimerBinding
+import io.legado.app.utils.applyAppSheetBackground
 import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.gone
 import io.legado.app.utils.putPrefInt
@@ -47,8 +48,7 @@ class SleepTimerDialog : BottomSheetDialogFragment() {
             decorView.setPadding(0, 0, 0, 0)
             setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
         }
-        dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-            ?.setBackgroundResource(android.R.color.transparent)
+        dialog?.applyAppSheetBackground()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

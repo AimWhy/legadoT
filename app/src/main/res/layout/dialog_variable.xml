@@ -7,6 +7,7 @@
     android:padding="16dp">
 
     <LinearLayout
+        android:id="@+id/vw_bg"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
@@ -16,9 +17,9 @@
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/tool_bar"
+            app:skin_background="themePrimary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_dialog_toolbar_top_round"
             android:elevation="5dp"
             android:theme="?attr/actionBarStyle"
             app:displayHomeAsUp="false"
@@ -63,6 +64,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:padding="3dp"
+                    app:skin_textColor="onSurfaceVariant"
                     android:textColor="@color/secondaryText"
                     android:textIsSelectable="true" />
 

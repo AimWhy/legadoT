@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     xmlns:tools="http://schemas.android.com/tools"
     android:background="@color/background"
+    app:skin_background="background"
     android:padding="8dp"
     android:gravity="center_vertical"
     android:orientation="horizontal">
@@ -15,6 +17,7 @@
         android:layout_gravity="center"
         android:layout_weight="1"
         android:singleLine="true"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText" />
 
 
@@ -27,6 +30,7 @@
         android:contentDescription="@string/edit"
         android:padding="6dp"
         android:src="@drawable/ic_edit"
+        app:skin_tint="onSurface"
         android:tint="@color/primaryText" />
 
     <androidx.appcompat.widget.AppCompatImageView
@@ -36,6 +40,7 @@
         android:padding="6dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:src="@drawable/ic_outline_delete"
+        app:skin_tint="onSurface"
         android:tint="@color/primaryText"
         android:contentDescription="@string/delete"
         tools:ignore="RtlHardcoded" />

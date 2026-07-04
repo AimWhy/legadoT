@@ -97,9 +97,10 @@ class AdapterPopupActionMenuBuilderMigrationTest {
         assertContains("AutoTaskAdapter.kt", autoTask, "visible = !task.loginUrl.isNullOrBlank()")
         assertContains("AutoTaskAdapter.kt", autoTask, "context.startActivity<SourceLoginActivity>")
         assertContains("AutoTaskAdapter.kt", autoTask, "putExtra(\"type\", \"autoTask\")")
-        assertContains("RssSourceAdapter.kt", rssSource, "selected.remove(source)")
-        assertContains("ReplaceRuleAdapter.kt", replaceRule, "selected.remove(item)")
-        assertContains("TxtTocRuleAdapter.kt", txtTocRule, "selected.remove(source)")
+        // R1d:选择态收进 SelectableAdapter,删除项的"取消选中"副作用改由 setSelected(_, false) 表达
+        assertContains("RssSourceAdapter.kt", rssSource, "setSelected(source, false)")
+        assertContains("ReplaceRuleAdapter.kt", replaceRule, "setSelected(item, false)")
+        assertContains("TxtTocRuleAdapter.kt", txtTocRule, "setSelected(source, false)")
     }
 
     private val adapterMenuFiles = listOf(

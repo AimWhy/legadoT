@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
@@ -14,6 +15,7 @@ import io.legado.app.data.entities.SearchBook
 import io.legado.app.databinding.ItemChangeSourceBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.SelectItem
+import io.legado.app.lib.dialogs.alert
 import io.legado.app.ui.widget.PopupAction
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getCompatColor
@@ -23,10 +25,12 @@ import io.legado.app.utils.visible
 import splitties.init.appCtx
 import splitties.views.onLongClick
 
-
-class ChangeChapterSourceAdapter(
+/**
+ * 换源列表 adapter（书换源/章换源共用,R1 由两份近似拷贝合一）。
+ * 点击语义由 [CallBack.onSelect] 承载:书换源=changeTo(防重入 if 在 Dialog 实现),章换源=openToc(当前源也放行)。
+ */
+class ChangeSourceAdapter(
     context: Context,
-    val viewModel: ChangeChapterSourceViewModel,
     val callBack: CallBack
 ) : DiffRecyclerAdapter<SearchBook, ItemChangeSourceBinding>(context) {
 
@@ -38,6 +42,8 @@ class ChangeChapterSourceAdapter(
         override fun areContentsTheSame(oldItem: SearchBook, newItem: SearchBook): Boolean {
             return oldItem.originName == newItem.originName
                     && oldItem.getDisplayLastChapterTitle() == newItem.getDisplayLastChapterTitle()
+                    && oldItem.chapterWordCountText == newItem.chapterWordCountText
+                    && oldItem.respondTime == newItem.respondTime
         }
 
     }
@@ -84,30 +90,18 @@ class ChangeChapterSourceAdapter(
             if (score > 0) {
                 binding.ivBad.gone()
                 binding.ivGood.visible()
-                DrawableCompat.setTint(binding.ivGood.drawable, appCtx.getCompatColor(R.color.md_red_A200))
-                DrawableCompat.setTint(binding.ivBad.drawable, appCtx.getCompatColor(R.color.md_blue_100))
+                tintPraise(binding.ivGood, active = true)
+                tintDislike(binding.ivBad, active = false)
             } else if (score < 0) {
                 binding.ivGood.gone()
                 binding.ivBad.visible()
-                DrawableCompat.setTint(
-                    binding.ivGood.drawable,
-                    appCtx.getCompatColor(R.color.md_red_100)
-                )
-                DrawableCompat.setTint(
-                    binding.ivBad.drawable,
-                    appCtx.getCompatColor(R.color.md_blue_A200)
-                )
+                tintPraise(binding.ivGood, active = false)
+                tintDislike(binding.ivBad, active = true)
             } else {
                 binding.ivGood.visible()
                 binding.ivBad.visible()
-                DrawableCompat.setTint(
-                    binding.ivGood.drawable,
-                    appCtx.getCompatColor(R.color.md_red_100)
-                )
-                DrawableCompat.setTint(
-                    binding.ivBad.drawable,
-                    appCtx.getCompatColor(R.color.md_blue_100)
-                )
+                tintPraise(binding.ivGood, active = false)
+                tintDislike(binding.ivBad, active = false)
             }
 
             if (AppConfig.changeSourceLoadWordCount && !item.chapterWordCountText.isNullOrBlank()) {
@@ -124,16 +118,31 @@ class ChangeChapterSourceAdapter(
         }
     }
 
+    /** 赞踩语义色集中染色:active=A200 饱和,否则 100 淡 */
+    private fun tintPraise(iv: ImageView, active: Boolean) {
+        DrawableCompat.setTint(
+            iv.drawable,
+            appCtx.getCompatColor(if (active) R.color.praise_active else R.color.praise_inactive)
+        )
+    }
+
+    private fun tintDislike(iv: ImageView, active: Boolean) {
+        DrawableCompat.setTint(
+            iv.drawable,
+            appCtx.getCompatColor(if (active) R.color.dislike_active else R.color.dislike_inactive)
+        )
+    }
+
     override fun registerListener(holder: ItemViewHolder, binding: ItemChangeSourceBinding) {
         binding.ivGood.setOnClickListener {
             if (binding.ivBad.isVisible) {
-                DrawableCompat.setTint(binding.ivGood.drawable, appCtx.getCompatColor(R.color.md_red_A200))
+                tintPraise(binding.ivGood, active = true)
                 binding.ivBad.gone()
                 getItem(holder.layoutPosition)?.let {
                     callBack.setBookScore(it, 1)
                 }
             } else {
-                DrawableCompat.setTint(binding.ivGood.drawable, appCtx.getCompatColor(R.color.md_red_100))
+                tintPraise(binding.ivGood, active = false)
                 binding.ivBad.visible()
                 getItem(holder.layoutPosition)?.let {
                     callBack.setBookScore(it, 0)
@@ -142,13 +151,13 @@ class ChangeChapterSourceAdapter(
         }
         binding.ivBad.setOnClickListener {
             if (binding.ivGood.isVisible) {
-                DrawableCompat.setTint(binding.ivBad.drawable, appCtx.getCompatColor(R.color.md_blue_A200))
+                tintDislike(binding.ivBad, active = true)
                 binding.ivGood.gone()
                 getItem(holder.layoutPosition)?.let {
                     callBack.setBookScore(it, -1)
                 }
             } else {
-                DrawableCompat.setTint(binding.ivBad.drawable, appCtx.getCompatColor(R.color.md_blue_100))
+                tintDislike(binding.ivBad, active = false)
                 binding.ivGood.visible()
                 getItem(holder.layoutPosition)?.let {
                     callBack.setBookScore(it, 0)
@@ -157,7 +166,7 @@ class ChangeChapterSourceAdapter(
         }
         holder.itemView.setOnClickListener {
             getItem(holder.layoutPosition)?.let {
-                callBack.openToc(it)
+                callBack.onSelect(it)
             }
         }
         holder.itemView.onLongClick {
@@ -185,9 +194,13 @@ class ChangeChapterSourceAdapter(
                     "bottomSource" -> callBack.bottomSource(searchBook)
                     "editSource" -> callBack.editSource(searchBook)
                     "disableSource" -> callBack.disableSource(searchBook)
-                    "deleteSource" -> {
-                        callBack.deleteSource(searchBook)
-                        updateItems(0, itemCount, listOf<Int>())
+                    "deleteSource" -> context.alert(R.string.draw) {
+                        setMessage(context.getString(R.string.sure_del) + "\n" + searchBook.originName)
+                        noButton()
+                        yesButton {
+                            callBack.deleteSource(searchBook)
+                            updateItems(0, itemCount, listOf<Int>())
+                        }
                     }
                 }
                 dismiss()
@@ -198,7 +211,9 @@ class ChangeChapterSourceAdapter(
 
     interface CallBack {
         val oldBookUrl: String?
-        fun openToc(searchBook: SearchBook)
+
+        /** item 点击:书换源=changeTo(实现方自行防重入当前源),章换源=openToc(当前源放行) */
+        fun onSelect(searchBook: SearchBook)
         fun topSource(searchBook: SearchBook)
         fun bottomSource(searchBook: SearchBook)
         fun editSource(searchBook: SearchBook)

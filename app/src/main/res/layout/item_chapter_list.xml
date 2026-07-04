@@ -19,6 +19,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:skin_tint="onSurfaceVariant"
         app:tint="@color/secondaryText" />
 
     <ImageView
@@ -30,6 +31,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:skin_tint="onSurfaceVariant"
         app:tint="@color/secondaryText"
         tools:visibility="visible" />
 
@@ -86,6 +88,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:skin_tint="onSurfaceVariant"
         app:tint="@color/secondaryText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

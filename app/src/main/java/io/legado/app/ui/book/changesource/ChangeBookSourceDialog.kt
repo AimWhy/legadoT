@@ -57,7 +57,10 @@ import kotlinx.coroutines.launch
  */
 class ChangeBookSourceDialog() : BaseDialogFragment(R.layout.dialog_book_change_source),
     Toolbar.OnMenuItemClickListener,
-    ChangeBookSourceAdapter.CallBack {
+    ChangeSourceAdapter.CallBack {
+
+    /** 全屏弹窗:大浮动形态,圆角+四周留边 */
+    override val dialogForm = DialogForm.FULL_SCREEN
 
     constructor(name: String, author: String) : this() {
         arguments = Bundle().apply {
@@ -71,7 +74,7 @@ class ChangeBookSourceDialog() : BaseDialogFragment(R.layout.dialog_book_change_
     private val callBack: CallBack? get() = activity as? CallBack
     private val viewModel: ChangeBookSourceViewModel by viewModels()
     private val waitDialog by lazy { WaitDialog(requireContext()) }
-    private val adapter by lazy { ChangeBookSourceAdapter(requireContext(), viewModel, this) }
+    private val adapter by lazy { ChangeSourceAdapter(requireContext(), this) }
     private val editSourceResult =
         registerForActivityResult(StartActivityContract(BookSourceEditActivity::class.java)) {
             val origin = it.data?.getStringExtra("origin") ?: return@registerForActivityResult
@@ -102,7 +105,6 @@ class ChangeBookSourceDialog() : BaseDialogFragment(R.layout.dialog_book_change_
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         viewModel.initData(arguments, callBack?.oldBook, activity is ReadBookActivity)
         showTitle()
         initMenu()
@@ -326,7 +328,9 @@ class ChangeBookSourceDialog() : BaseDialogFragment(R.layout.dialog_book_change_
         }
     }
 
-    override fun changeTo(searchBook: SearchBook) {
+    override fun onSelect(searchBook: SearchBook) {
+        // 防重入:点当前源不换(原 adapter 内联逻辑,合并后移到书换源实现侧;章换源无此限制)
+        if (searchBook.bookUrl == oldBookUrl) return
         val oldBookType = callBack?.oldBook?.type ?: 0
         if (searchBook.sameBookTypeLocal(oldBookType)) {
             changeSource(searchBook) {

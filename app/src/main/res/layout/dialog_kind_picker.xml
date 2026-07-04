@@ -17,6 +17,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/explore_select_kinds"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -46,6 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/explore_default_style"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:textSize="12sp" />
 
@@ -83,6 +85,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/explore_list_count"
+                app:skin_textColor="onSurfaceVariant"
                 android:textColor="@color/secondaryText"
                 android:textSize="13sp" />
 
@@ -110,22 +113,19 @@
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_cancel"
+                style="@style/Widget.App.Button.Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="?android:attr/selectableItemBackground"
-                android:padding="8dp"
-                android:text="@string/cancel"
-                android:textColor="@color/secondaryText" />
+                android:text="@string/cancel" />
 
-            <io.legado.app.ui.widget.text.AccentTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_ok"
+                style="@style/Widget.App.Button.Tonal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:background="?android:attr/selectableItemBackground"
-                android:padding="8dp"
                 android:text="@string/ok" />
 
         </LinearLayout>

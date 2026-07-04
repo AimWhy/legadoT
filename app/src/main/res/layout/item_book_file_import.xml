@@ -10,6 +10,7 @@
         android:id="@+id/cb_file_name"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="14sp"
         app:layout_constrainedWidth="true"

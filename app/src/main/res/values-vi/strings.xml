@@ -74,7 +74,6 @@
     <string name="other_setting">Cài đặt khác</string>
     <string name="other_setting_s">Một số cài đặt liên quan đến chức năng</string>
     <string name="about">Giới thiệu</string>
-    <string name="donate">Ủng hộ</string>
     <string name="exit">Thoát</string>
     <string name="exit_no_save">Chưa được lưu. Bạn có muốn tiếp tục chỉnh sửa?</string>
     <string name="read_style">Kiểu đọc</string>
@@ -772,7 +771,6 @@
     <string name="show_brightness_view">Hiển thị widget độ sáng</string>
     <string name="language">Ngôn ngữ</string>
     <string name="import_rss_source">Nhập nguồn RSS</string>
-    <string name="donate_summary">Sự ủng hộ của bạn làm cho ứng dụng này tốt hơn</string>
     <string name="about_summary">Tài khoản chính thức Wechat [开源阅读软件]</string>
     <string name="read_record">Lịch sử đọc</string>
     <string name="del_read_record">Xóa lịch sử đọc</string>

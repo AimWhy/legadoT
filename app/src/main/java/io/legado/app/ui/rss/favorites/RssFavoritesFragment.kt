@@ -21,6 +21,7 @@ import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ class RssFavoritesFragment() : VMBaseFragment<RssFavoritesViewModel>(R.layout.fr
     private val adapter: RssFavoritesAdapter by lazy {
         RssFavoritesAdapter(requireContext(), this@RssFavoritesFragment)
     }
+    private var articlesFlowJob: Job? = null
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         initView()
@@ -57,7 +59,10 @@ class RssFavoritesFragment() : VMBaseFragment<RssFavoritesViewModel>(R.layout.fr
     }
 
     private fun loadArticles() {
-        lifecycleScope.launch {
+        // FragmentStateAdapter 下 Fragment 对象可跨 View 销毁复用:
+        // 用 viewLifecycleOwner 作用域+Job 去重,防重复 collector 累积(对照 RssArticlesFragment 同款)
+        articlesFlowJob?.cancel()
+        articlesFlowJob = viewLifecycleOwner.lifecycleScope.launch {
             val group = arguments?.getString("group") ?: "默认分组"
             appDb.rssStarDao.flowByGroup(group).catch {
                 AppLog.put("订阅文章界面获取数据失败\n${it.localizedMessage}", it)

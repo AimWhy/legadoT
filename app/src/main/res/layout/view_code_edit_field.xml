@@ -35,6 +35,7 @@
         android:contentDescription="@string/webview_edit"
         android:scaleType="center"
         android:src="@drawable/ic_code_tag"
-        android:tint="@color/accent" />
+        android:tint="@color/accent"
+        app:skin_tint="primary" />
 
 </FrameLayout>

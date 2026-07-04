@@ -32,6 +32,7 @@
             android:layout_marginEnd="@dimen/space_s"
             android:contentDescription="@string/speak_engine"
             android:src="@drawable/ic_volume_up"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText" />
 
         <TextView
@@ -41,6 +42,7 @@
             android:layout_weight="1"
             android:ellipsize="end"
             android:singleLine="true"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="14sp"
             tools:text="系统默认" />
@@ -51,6 +53,7 @@
             android:layout_height="20dp"
             android:contentDescription="@string/speak_engine"
             android:src="@drawable/ic_arrow_drop_down"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText" />
 
     </LinearLayout>
@@ -74,6 +77,7 @@
             android:paddingTop="@dimen/space_s"
             android:paddingBottom="@dimen/space_s"
             android:text="@string/previous_chapter"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="14sp"
             tools:ignore="TouchTargetSizeCheck" />
@@ -93,6 +97,7 @@
             android:contentDescription="@string/prev_sentence"
             android:src="@drawable/ic_skip_previous"
             android:tooltipText="@string/prev_sentence"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
 
@@ -106,6 +111,7 @@
             android:contentDescription="@string/audio_play"
             android:src="@drawable/ic_play_24dp"
             android:tooltipText="@string/audio_play"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
 
@@ -119,6 +125,7 @@
             android:contentDescription="@string/stop"
             android:src="@drawable/ic_stop_black_24dp"
             android:tooltipText="@string/stop"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
 
@@ -132,6 +139,7 @@
             android:contentDescription="@string/next_sentence"
             android:src="@drawable/ic_skip_next"
             android:tooltipText="@string/next_sentence"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
 
@@ -145,6 +153,7 @@
             android:contentDescription="@string/back_to_speaking_position"
             android:src="@drawable/ic_read_aloud"
             android:tooltipText="@string/back_to_speaking_position"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
 
@@ -166,6 +175,7 @@
             android:paddingTop="@dimen/space_s"
             android:paddingBottom="@dimen/space_s"
             android:text="@string/next_chapter"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="14sp"
             tools:ignore="TouchTargetSizeCheck" />
@@ -186,11 +196,12 @@
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/set_timer"
             android:src="@drawable/ic_time_add_24dp"
+            app:skin_tint="onSurface"
             android:tint="@color/primaryText"
             android:tooltipText="@string/set_timer"
             tools:ignore="UnusedAttribute" />
 
-        <io.legado.app.lib.theme.view.ThemeSeekBar
+        <SeekBar
             android:id="@+id/seek_timer"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -203,6 +214,7 @@
             android:layout_height="wrap_content"
             android:background="?android:attr/selectableItemBackgroundBorderless"
             android:text="@string/timer_m"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText" />
 
     </LinearLayout>
@@ -226,6 +238,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:text="@string/read_aloud_speed"
+                app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
                 android:textSize="14sp" />
 
@@ -235,6 +248,7 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:paddingHorizontal="3dp"
+                app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
                 android:textSize="14sp" />
 
@@ -269,11 +283,12 @@
                 android:layout_height="30dp"
                 android:contentDescription="@string/tts_speech_reduce"
                 android:src="@drawable/ic_reduce"
+                app:skin_tint="onSurface"
                 android:tint="@color/primaryText"
                 android:tooltipText="@string/tts_speech_reduce"
                 tools:ignore="UnusedAttribute" />
 
-            <io.legado.app.lib.theme.view.ThemeSeekBar
+            <SeekBar
                 android:id="@+id/seek_tts_speechRate"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -286,6 +301,7 @@
                 android:layout_height="30dp"
                 android:contentDescription="@string/tts_speech_add"
                 android:src="@drawable/ic_add"
+                app:skin_tint="onSurface"
                 android:tint="@color/primaryText"
                 android:tooltipText="@string/tts_speech_add"
                 tools:ignore="UnusedAttribute" />

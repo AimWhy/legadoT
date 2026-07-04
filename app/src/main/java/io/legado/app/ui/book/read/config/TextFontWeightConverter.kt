@@ -5,15 +5,20 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.util.AttributeSet
+import androidx.appcompat.widget.AppCompatTextView
 import io.legado.app.R
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.accentColor
-import io.legado.app.ui.widget.text.StrokeTextView
+import io.legado.app.utils.applyBottomPanelStrokeStyle
 
 
+/**
+ * 字重切换指示器(细/中/粗):激活档用 accent 字符 span 标示,
+ * 描边外观与阅读面板 MaterialButton 描边钮对齐(bottomBackground 亮暗感知)。
+ */
 class TextFontWeightConverter(context: Context, attrs: AttributeSet?) :
-    StrokeTextView(context, attrs) {
+    AppCompatTextView(context, attrs) {
 
     private val spannableString = SpannableString(context.getString(R.string.font_weight_text))
     private var enabledSpan: ForegroundColorSpan = ForegroundColorSpan(context.accentColor)
@@ -22,6 +27,7 @@ class TextFontWeightConverter(context: Context, attrs: AttributeSet?) :
     init {
         text = spannableString
         if (!isInEditMode) {
+            applyBottomPanelStrokeStyle()
             upUi(ReadBookConfig.textBold)
         }
         setOnClickListener {

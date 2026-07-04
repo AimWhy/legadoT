@@ -20,7 +20,9 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withTimeout
 import java.util.concurrent.ConcurrentHashMap
 
@@ -44,6 +46,9 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
     private val states = linkedMapOf<Long, ExploreContainerState>()
     private val stateMutex = Mutex()
     private val loadingIds = ConcurrentHashMap.newKeySet<Long>()
+
+    /** 容器加载并发上限:refreshAll 对几十个容器同时发起时,限流网络请求段避免打爆连接池 */
+    private val loadLimiter = Semaphore(4)
 
     init {
         execute {
@@ -137,8 +142,10 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
                 val url = ExploreContainerHelp.resolveKindUrl(
                     kinds, container.kindTitle, container.kindUrl
                 )
-                withTimeout(30_000L) {
-                    WebBook.exploreBookAwait(source, url, 1)
+                loadLimiter.withPermit {
+                    withTimeout(30_000L) {
+                        WebBook.exploreBookAwait(source, url, 1)
+                    }
                 }
             }.onSuccess { books ->
                 val accepted = upStateIfSameTarget(container) {

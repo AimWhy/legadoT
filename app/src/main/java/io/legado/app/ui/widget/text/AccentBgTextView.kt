@@ -5,8 +5,8 @@ import android.graphics.Color
 import android.util.AttributeSet
 import androidx.appcompat.widget.AppCompatTextView
 import io.legado.app.R
+import io.legado.app.lib.theme.AppColorScheme
 import io.legado.app.lib.theme.Selector
-import io.legado.app.lib.theme.ThemeStore
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getCompatColor
@@ -31,22 +31,21 @@ class AccentBgTextView @JvmOverloads constructor(
     }
 
     private fun upBackground() {
-        val accentColor = if (isInEditMode) {
-            context.getCompatColor(R.color.accent)
+        val bg: Int
+        val onBg: Int
+        if (isInEditMode) {
+            bg = context.getCompatColor(R.color.accent)
+            onBg = Color.WHITE
         } else {
-            ThemeStore.accentColor(context)
+            val scheme = AppColorScheme.current
+            bg = scheme.primary
+            onBg = scheme.onPrimary
         }
         background = Selector.shapeBuild()
             .setCornerRadius(radius)
-            .setDefaultBgColor(accentColor)
-            .setPressedBgColor(ColorUtils.darkenColor(accentColor))
+            .setDefaultBgColor(bg)
+            .setPressedBgColor(ColorUtils.darkenColor(bg))
             .create()
-        setTextColor(
-            if (ColorUtils.isColorLight(accentColor)) {
-                Color.BLACK
-            } else {
-                Color.WHITE
-            }
-        )
+        setTextColor(onBg)
     }
 }

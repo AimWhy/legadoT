@@ -29,7 +29,6 @@ import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.elevation
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
 import io.legado.app.ui.book.source.manage.BookSourceActivity
@@ -54,8 +53,11 @@ import kotlinx.coroutines.launch
 
 class ChangeChapterSourceDialog() : BaseDialogFragment(R.layout.dialog_chapter_change_source),
     Toolbar.OnMenuItemClickListener,
-    ChangeChapterSourceAdapter.CallBack,
+    ChangeSourceAdapter.CallBack,
     ChangeChapterTocAdapter.Callback {
+
+    /** 全屏弹窗:大浮动形态,圆角+四周留边 */
+    override val dialogForm = DialogForm.FULL_SCREEN
 
     constructor(name: String, author: String, chapterIndex: Int, chapterTitle: String) : this() {
         arguments = Bundle().apply {
@@ -75,7 +77,7 @@ class ChangeChapterSourceDialog() : BaseDialogFragment(R.layout.dialog_chapter_c
             viewModel.startSearch()
         }
     private val searchBookAdapter by lazy {
-        ChangeChapterSourceAdapter(requireContext(), viewModel, this)
+        ChangeSourceAdapter(requireContext(), this)
     }
     private val tocAdapter by lazy {
         ChangeChapterTocAdapter(requireContext(), this)
@@ -111,7 +113,6 @@ class ChangeChapterSourceDialog() : BaseDialogFragment(R.layout.dialog_chapter_c
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         viewModel.initData(arguments, callBack?.oldBook, activity is ReadBookActivity)
         showTitle()
         initMenu()
@@ -304,7 +305,8 @@ class ChangeChapterSourceDialog() : BaseDialogFragment(R.layout.dialog_chapter_c
         }
     }
 
-    override fun openToc(searchBook: SearchBook) {
+    override fun onSelect(searchBook: SearchBook) {
+        // 章换源:当前源也放行(打开目录选章),无防重入限制
         this.searchBook = searchBook
         tocAdapter.setItems(null)
         binding.clToc.visible()

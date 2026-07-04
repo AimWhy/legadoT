@@ -17,6 +17,7 @@
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/tool_bar"
+            app:skin_background="themePrimary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:theme="?attr/actionBarStyle"
@@ -41,6 +42,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:paddingBottom="8dp"
+                    app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText" />
 
                 <io.legado.app.ui.widget.text.TextInputLayout
@@ -91,6 +93,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/delete"
                 android:textColor="@color/error"
+                app:skin_textColor="error"
                 tools:ignore="RtlHardcoded" />
 
             <LinearLayout

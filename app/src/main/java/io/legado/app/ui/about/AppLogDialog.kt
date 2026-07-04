@@ -14,7 +14,6 @@ import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.constant.AppLog
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemAppLogBinding
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.HttpLogger
 import io.legado.app.model.HttpRecord
 import io.legado.app.ui.widget.dialog.TextDialog
@@ -40,7 +39,6 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         binding.run {
-            toolBar.setBackgroundColor(primaryColor)
             toolBar.setTitle(R.string.log)
             toolBar.inflateMenu(R.menu.app_log)
             toolBar.setOnMenuItemClickListener(this@AppLogDialog)

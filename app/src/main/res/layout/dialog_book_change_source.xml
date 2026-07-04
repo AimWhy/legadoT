@@ -4,10 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/background">
+    android:background="@color/background"
+    app:skin_background="background">
 
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/tool_bar"
+        app:skin_background="themePrimary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/background_menu"
@@ -39,6 +41,7 @@
         android:layout_width="match_parent"
         android:layout_height="36dp"
         android:background="@color/background"
+        app:skin_background="background"
         android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingLeft="10dp"
@@ -56,6 +59,7 @@
             android:paddingLeft="10dp"
             android:paddingRight="10dp"
             android:singleLine="true"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="12sp" />
 
@@ -67,6 +71,7 @@
             android:contentDescription="@string/go_to_top"
             android:src="@drawable/ic_arrow_drop_up"
             android:tooltipText="@string/go_to_top"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
 
@@ -78,6 +83,7 @@
             android:contentDescription="@string/go_to_bottom"
             android:src="@drawable/ic_arrow_drop_down"
             android:tooltipText="@string/go_to_bottom"
+            app:skin_tint="onSurface"
             app:tint="@color/primaryText"
             tools:ignore="UnusedAttribute" />
     </LinearLayout>

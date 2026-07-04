@@ -140,7 +140,11 @@ class AnalyzeUrl(
             }
         }
         initUrl()
-        domain = NetworkUtils.getSubDomain(source?.getKey() ?: url)
+        // cookie 域按请求 URL 取,不按书源域:封面/图片等跨域资源不应携带书源 cookie
+        // (对方风控会挂起请求直至 60s callTimeout)。同域请求(绝大多数)取值不变;
+        // 保存侧(CookieManager.saveResponse/cookieJar)本就按请求域,至此读写对称。
+        // 跨域自定义 Cookie 仍可经 urlOption headers 显式携带(setCookie 合并时后者胜)。
+        domain = NetworkUtils.getSubDomain(url)
     }
 
     /**
@@ -673,22 +677,6 @@ class AnalyzeUrl(
             headerMap[CookieManager.cookieJarHeader] = "1"
         } else {
             headerMap.remove(CookieManager.cookieJarHeader)
-        }
-    }
-
-    /**
-     * 保存cookieJar中的cookie在访问结束时就保存,不等到下次访问
-     */
-    private fun saveCookie() {
-        //书源启用保存cookie时 添加内存中的cookie到数据库
-        if (enabledCookieJar) {
-            val key = "${domain}_cookieJar"
-            CacheManager.getFromMemory(key)?.let {
-                if (it is String) {
-                    CookieStore.replaceCookie(domain, it)
-                    CacheManager.deleteMemory(key)
-                }
-            }
         }
     }
 

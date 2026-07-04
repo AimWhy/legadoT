@@ -37,8 +37,12 @@ import androidx.core.view.marginBottom
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.widget.ViewPager2
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.Selector
 import io.legado.app.lib.theme.TintHelper
+import io.legado.app.lib.theme.bottomBackground
+import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.utils.canvasrecorder.CanvasRecorder
 import io.legado.app.utils.canvasrecorder.record
 import splitties.systemservices.inputMethodManager
@@ -110,6 +114,10 @@ fun ViewPager.setEdgeEffectColor(@ColorInt color: Int) {
         }
     } catch (ignored: Exception) {
     }
+}
+
+fun ViewPager2.setEdgeEffectColor(@ColorInt color: Int) {
+    (getChildAt(0) as? RecyclerView)?.setEdgeEffectColor(color)
 }
 
 fun EditText.disableEdit() {
@@ -304,12 +312,35 @@ fun View.setOnApplyWindowInsetsListenerCompat(listener: (View, WindowInsetsCompa
 }
 
 /**
+ * 阅读底部面板文字指示器的描边外观:radius_m 圆角 + 1dp 描边,
+ * 描边/文字色按 bottomBackground 亮暗取主文字色,按压=transparent30,禁用=md_grey_500
+ * (原 StrokeTextView isBottomBackground 分支的等价复刻,选中态腿为死代码未保留)。
+ */
+fun TextView.applyBottomPanelStrokeStyle() {
+    val isLight = ColorUtils.isColorLight(context.bottomBackground)
+    val textColor = context.getPrimaryTextColor(isLight)
+    background = Selector.shapeBuild()
+        .setCornerRadius(context.resources.getDimensionPixelOffset(io.legado.app.R.dimen.radius_m))
+        .setStrokeWidth(1.dpToPx())
+        .setDisabledStrokeColor(context.getCompatColor(io.legado.app.R.color.md_grey_500))
+        .setDefaultStrokeColor(textColor)
+        .setPressedBgColor(context.getCompatColor(io.legado.app.R.color.transparent30))
+        .create()
+    setTextColor(
+        Selector.colorBuild()
+            .setDefaultColor(textColor)
+            .setDisabledColor(context.getCompatColor(io.legado.app.R.color.md_grey_500))
+            .create()
+    )
+}
+
+/**
  * 给视图设置“圆角 + 指定颜色”的纯色背景，
  * 替代直接 setBackgroundColor 造成的方角，使对话框与圆角卡片一致。
  * @param topOnly 仅圆顶部两角（用于对话框 Toolbar）；false 时四角全圆。
+ * @param radius 圆角半径 px，默认 12dp；对话框模板传 radius_xl 与 AlertDialog 对齐。
  */
-fun View.setRoundBackground(color: Int, topOnly: Boolean = false) {
-    val radius = 12f.dpToPx()
+fun View.setRoundBackground(color: Int, topOnly: Boolean = false, radius: Float = 12f.dpToPx()) {
     val drawable = android.graphics.drawable.GradientDrawable().apply {
         shape = android.graphics.drawable.GradientDrawable.RECTANGLE
         if (topOnly) {
@@ -322,3 +353,20 @@ fun View.setRoundBackground(color: Int, topOnly: Boolean = false) {
     background = drawable
 }
 
+
+/**
+ * 降低 ViewPager2 的横/纵向拖动灵敏度:把内部 RecyclerView 的 touchSlop 放大数倍,
+ * 令翻页需要更明确的拖动距离。用于主 tab pager,避免书架分组/发现横滑时轻微横移即误切标签。
+ * 反射改私有 mTouchSlop,失败静默(不影响功能,只是维持默认灵敏度)。
+ */
+fun ViewPager2.reduceDragSensitivity(factor: Int = 4) {
+    runCatching {
+        val recyclerViewField = ViewPager2::class.java.getDeclaredField("mRecyclerView")
+        recyclerViewField.isAccessible = true
+        val recyclerView = recyclerViewField.get(this) as RecyclerView
+        val touchSlopField = RecyclerView::class.java.getDeclaredField("mTouchSlop")
+        touchSlopField.isAccessible = true
+        val touchSlop = touchSlopField.get(recyclerView) as Int
+        touchSlopField.set(recyclerView, touchSlop * factor)
+    }
+}

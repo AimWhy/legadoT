@@ -115,14 +115,17 @@ fun Context.getSecondaryDisabledTextColor(dark: Boolean): Int {
 val Context.primaryColor: Int
     get() = ThemeStore.primaryColor(this)
 
-val Context.primaryColorDark: Int
-    get() = ThemeStore.primaryColorDark(this)
+/** 完整 M3 色板(种子=用户强调色,中性面锚定用户背景色),全 app 角色取色入口 */
+val Context.m3Colors: AppSchemeColors
+    get() = AppColorScheme.current
 
+/** 已重定向:返回种子派生的 scheme.primary(对比度修正 tone,与原始选色可有可感知差异;保真色在 primaryContainer) */
 val Context.accentColor: Int
-    get() = ThemeStore.accentColor(this)
+    get() = AppColorScheme.current.primary
 
+/** 已直通 scheme:scheme.background=surfaceAnchor 即 ThemeStore 背景原值(含 eink 白),同源零漂移 */
 val Context.backgroundColor: Int
-    get() = ThemeStore.backgroundColor(this)
+    get() = AppColorScheme.current.background
 
 val Context.bottomBackground: Int
     get() = ThemeStore.bottomBackground(this)
@@ -158,14 +161,14 @@ val Fragment.primaryColor: Int
 val Fragment.toolbarTextColor: Int
     get() = requireContext().toolbarTextColor
 
-val Fragment.primaryColorDark: Int
-    get() = ThemeStore.primaryColorDark(requireContext())
+val Fragment.m3Colors: AppSchemeColors
+    get() = AppColorScheme.current
 
 val Fragment.accentColor: Int
-    get() = ThemeStore.accentColor(requireContext())
+    get() = AppColorScheme.current.primary
 
 val Fragment.backgroundColor: Int
-    get() = ThemeStore.backgroundColor(requireContext())
+    get() = AppColorScheme.current.background
 
 val Fragment.bottomBackground: Int
     get() = ThemeStore.bottomBackground(requireContext())
@@ -209,11 +212,12 @@ val Context.elevation: Float
         }
     }
 
+/** 弹窗容器背景:XL 圆角 + surfaceContainerHigh(与页面背景分层),AlertDialog/WaitDialog/Preference 弹窗窗口背景及 About 卡片共用 */
 val Context.filletBackground: GradientDrawable
     get() {
         val background = GradientDrawable()
-        background.cornerRadius = 28f.dpToPx()
-        background.setColor(backgroundColor)
+        background.cornerRadius = resources.getDimension(R.dimen.radius_xl)
+        background.setColor(AppColorScheme.current.surfaceContainerHigh)
         return background
     }
 

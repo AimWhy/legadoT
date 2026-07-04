@@ -21,7 +21,6 @@ import io.legado.app.data.entities.BookSourcePart
 import io.legado.app.databinding.DialogSourcePickerBinding
 import io.legado.app.databinding.Item1lineTextBinding
 import io.legado.app.help.config.AppConfig
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.ui.widget.number.NumberPickerDialog
 import io.legado.app.utils.applyTint
@@ -40,6 +39,9 @@ import splitties.views.onClick
  */
 class SourcePickerDialog : BaseDialogFragment(R.layout.dialog_source_picker),
     Toolbar.OnMenuItemClickListener {
+
+    /** 全屏弹窗:大浮动形态,圆角+四周留边 */
+    override val dialogForm = DialogForm.FULL_SCREEN
 
     private val binding by viewBinding(DialogSourcePickerBinding::bind)
     private val searchView: SearchView by lazy {
@@ -65,7 +67,6 @@ class SourcePickerDialog : BaseDialogFragment(R.layout.dialog_source_picker),
     }
 
     private fun initView() {
-        binding.toolBar.setBackgroundColor(primaryColor)
         binding.toolBar.title = "选择书源"
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -14,6 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:singleLine="true"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="14sp"
         tools:text="笔趣阁" />
@@ -24,6 +26,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:singleLine="true"
+        app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
         android:textSize="10sp"
         tools:text="https://www.example.com" />

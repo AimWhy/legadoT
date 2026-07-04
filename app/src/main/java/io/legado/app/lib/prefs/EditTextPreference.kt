@@ -6,15 +6,13 @@ import android.widget.TextView
 import androidx.preference.EditTextPreference.OnBindEditTextListener
 import androidx.preference.PreferenceViewHolder
 import io.legado.app.R
-import io.legado.app.lib.theme.accentColor
-import io.legado.app.utils.applyTint
 
 class EditTextPreference(context: Context, attrs: AttributeSet) :
     androidx.preference.EditTextPreference(context, attrs) {
 
     private var mOnBindEditTextListener: OnBindEditTextListener? = null
+    // 输入框强调色由引擎规则 A 在 inflate 时接管(AppCompatEditText 同值施色,R2d 删手动双写)
     private val onBindEditTextListener = OnBindEditTextListener { editText ->
-        editText.applyTint(context.accentColor)
         mOnBindEditTextListener?.onBindEditText(editText)
     }
 

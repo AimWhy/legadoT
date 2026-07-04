@@ -24,6 +24,9 @@ import io.legado.app.utils.viewbindingdelegate.viewBinding
  */
 class PhotoDialog() : BaseDialogFragment(R.layout.dialog_photo_view) {
 
+    /** 全屏图片查看器(从未被圆角),圆角+裁剪会切图,豁免统一圆角模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
+
     constructor(src: String, sourceOrigin: String? = null) : this() {
         arguments = Bundle().apply {
             putString("src", src)

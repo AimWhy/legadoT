@@ -29,6 +29,7 @@
         android:maxLines="2"
         android:ellipsize="end"
         android:text="@string/app_name"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="13sp"
         android:paddingTop="10dp"

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:background="?android:attr/selectableItemBackground"
     android:layout_width="match_parent"
@@ -8,7 +9,7 @@
     android:paddingTop="8dp"
     android:paddingRight="16dp"
     android:paddingBottom="8dp"
-    android:minHeight="50dp"
+    android:minHeight="56dp"
     android:clickable="true"
     android:orientation="horizontal"
     android:gravity="center_vertical"
@@ -20,6 +21,7 @@
         android:scaleType="fitCenter"
         android:visibility="visible"
         android:paddingTop="1dp"
+        app:skin_tint="primary"
         android:layout_width="24dp"
         android:layout_height="24dp"
         tools:ignore="ContentDescription,RtlHardcoded" />
@@ -33,15 +35,17 @@
         <TextView
             android:id="@+id/preference_title"
             android:singleLine="true"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:text="@string/title"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/preference_desc"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/tv_text_summary"
             android:text="@string/default1"
             android:layout_width="match_parent"

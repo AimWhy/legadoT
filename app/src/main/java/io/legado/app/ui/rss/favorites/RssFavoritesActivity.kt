@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package io.legado.app.ui.rss.favorites
 
 import android.os.Bundle
@@ -7,9 +5,11 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.SubMenu
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentStatePagerAdapter
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
-import androidx.viewpager.widget.ViewPager
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayoutMediator
 import io.legado.app.R
 import io.legado.app.base.BaseActivity
 import io.legado.app.constant.AppLog
@@ -33,8 +33,9 @@ import kotlinx.coroutines.launch
 class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
 
     override val binding by viewBinding(ActivityRssFavoritesBinding::inflate)
-    private val adapter by lazy { TabFragmentPageAdapter() }
+    private val adapter by lazy { TabFragmentPageAdapter(this) }
     private var groupList = mutableListOf<String>()
+    private var fragmentGeneration = 0L
     private var groupsMenu: SubMenu? = null
     private var currentGroup = ""
 
@@ -65,22 +66,14 @@ class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
 
     private fun initView() {
         binding.viewPager.adapter = adapter
-        binding.viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
-            override fun onPageScrolled(
-                position: Int,
-                positionOffset: Float,
-                positionOffsetPixels: Int
-            ) {
-            }
-
+        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
             override fun onPageSelected(position: Int) {
                 currentGroup = groupList[position]
             }
-
-            override fun onPageScrollStateChanged(state: Int) {}
-
         })
-        binding.tabLayout.setupWithViewPager(binding.viewPager)
+        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+            tab.text = groupList[position]
+        }.attach()
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
     }
 
@@ -125,6 +118,8 @@ class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
                 if (groupsMenu != null) {
                     upGroupsMenu()
                 }
+                // 原 getItemPosition 恒 POSITION_NONE:分组变化时全量重建
+                fragmentGeneration++
                 adapter.notifyDataSetChanged()
             }
         }
@@ -160,24 +155,25 @@ class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
         }
     }
 
-    private inner class TabFragmentPageAdapter :
-        FragmentStatePagerAdapter(supportFragmentManager, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
+    private inner class TabFragmentPageAdapter(activity: FragmentActivity) :
+        FragmentStateAdapter(activity) {
 
-        override fun getItemPosition(`object`: Any): Int {
-            return POSITION_NONE
+        override fun getItemCount(): Int {
+            return groupList.size
         }
 
-        override fun getPageTitle(position: Int): CharSequence {
-            return groupList[position]
+        override fun getItemId(position: Int): Long {
+            // 高位=generation,低位=position:分组变化后 generation 变→全量重建,等价原 POSITION_NONE
+            return (fragmentGeneration shl 20) or position.toLong()
         }
 
-        override fun getItem(position: Int): Fragment {
+        override fun containsItem(itemId: Long): Boolean {
+            return (itemId ushr 20) == fragmentGeneration && (itemId and 0xFFFFF) < groupList.size
+        }
+
+        override fun createFragment(position: Int): Fragment {
             val group = groupList[position]
             return RssFavoritesFragment(group)
-        }
-
-        override fun getCount(): Int {
-            return groupList.size
         }
 
     }

@@ -21,6 +21,7 @@ import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_FILL
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_STRIKE
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_TEXT
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_UNDERLINE
+import io.legado.app.utils.applyAppSheetBackground
 
 /**
  * 高亮样式底部面板。逐通道开关 + 取色 + 下划线线型 + 预设。
@@ -50,6 +51,11 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
     ): View {
         _binding = DialogHighlightStyleBinding.inflate(inflater, container, false)
         return binding.root
+    }
+
+    override fun onStart() {
+        super.onStart()
+        dialog?.applyAppSheetBackground()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

@@ -8,6 +8,7 @@
 
     <io.legado.app.ui.widget.TitleBar
         android:id="@+id/tool_bar"
+        app:skin_background="themePrimary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="?attr/actionBarStyle"
@@ -45,6 +46,7 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:padding="16dp"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:visibility="gone" />
 

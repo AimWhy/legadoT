@@ -1,25 +1,13 @@
 package io.legado.app.lib.theme.view
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.util.AttributeSet
 import com.google.android.material.checkbox.MaterialCheckBox
-import io.legado.app.lib.theme.accentColor
-import io.legado.app.utils.ColorUtils
 
+/** 行为壳:performClick 的 isUserAction 追踪+setOnUserCheckedChangeListener;施色由换肤引擎规则 A 接管(SkinInflaterFactory) */
 class ThemeCheckBox(context: Context, attrs: AttributeSet) : MaterialCheckBox(context, attrs) {
 
     private var isUserAction = false
-
-    init {
-        if (!isInEditMode) {
-            val accent = context.accentColor
-            buttonTintList = ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(accent, ColorUtils.withAlpha(0x888888, 0.6f))
-            )
-        }
-    }
 
     override fun performClick(): Boolean {
         isUserAction = true

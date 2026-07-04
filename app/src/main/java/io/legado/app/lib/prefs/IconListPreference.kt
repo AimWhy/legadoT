@@ -18,7 +18,6 @@ import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemIconPreferenceBinding
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.getCompatDrawable
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.viewbindingdelegate.viewBinding
@@ -134,7 +133,7 @@ class IconListPreference(context: Context, attrs: AttributeSet) : ListPreference
         }
 
         override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-            binding.toolBar.setBackgroundColor(primaryColor)
+            // toolbar 主色由 dialog_recycler_view 布局 themePrimary 声明接管(w1 漏网点,R2d 补删)
             binding.toolBar.setTitle(R.string.change_icon)
             binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
             val adapter = Adapter(requireContext())

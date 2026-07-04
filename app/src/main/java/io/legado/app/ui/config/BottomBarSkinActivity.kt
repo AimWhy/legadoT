@@ -27,6 +27,7 @@ import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.utils.FileDoc
+import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.inputStream
 import io.legado.app.utils.postEvent
@@ -80,6 +81,8 @@ class BottomBarSkinActivity : BaseActivity<ActivityBottomBarSkinBinding>() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         binding.recyclerView.layoutManager = GridLayoutManager(this, 3)
         binding.recyclerView.adapter = adapter
+        // A15+ 强制 e2e:保留 xml 的 8dp 基础 padding,再叠加导航栏高度
+        binding.recyclerView.applyNavigationBarPadding(withInitialPadding = true)
     }
 
     override fun onResume() {

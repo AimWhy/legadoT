@@ -8,6 +8,7 @@ import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.databinding.ItemExploreCoverBinding
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.cardBackgroundColor
 import splitties.views.onLongClick
 
 /**
@@ -39,6 +40,7 @@ class ExploreCoverAdapter(context: Context, val callBack: CallBack) :
         payloads: MutableList<Any>
     ) {
         binding.run {
+            coverCard.setCardBackgroundColor(context.cardBackgroundColor)
             if (payloads.isEmpty()) {
                 tvName.text = item.name
                 ivInBookshelf.isVisible = callBack.isInBookshelf(item)

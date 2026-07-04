@@ -61,6 +61,9 @@ import splitties.systemservices.windowManager
 
 class ReviewDetailDialog() : BaseDialogFragment(R.layout.dialog_recycler_view) {
 
+    /** 贴底弹窗自设背景(bg_dialog_round_top/bg_review_toolbar),豁免统一圆角模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
+
     constructor(paragraphNum: Int, totalCount: Int) : this() {
         arguments = Bundle().apply {
             putInt("paragraphNum", paragraphNum)

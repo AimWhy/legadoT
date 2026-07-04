@@ -9,7 +9,6 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import io.legado.app.R
 import io.legado.app.databinding.ViewNavigationBadgeBinding
@@ -21,6 +20,7 @@ import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.getSecondaryTextColor
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.dpToPx
 
 class ThemeBottomNavigationVIew(context: Context, attrs: AttributeSet) :
@@ -62,7 +62,9 @@ class ThemeBottomNavigationVIew(context: Context, attrs: AttributeSet) :
             itemBackground = ColorDrawable(Color.TRANSPARENT)
         }
 
-        ViewCompat.setOnApplyWindowInsetsListener(this, null)
+        // A15+ 强制 edge-to-edge:底栏自行消化导航栏 inset(非 e2e 时 inset 为 0,无副作用);
+        // 自设监听同时取代了 MDC 默认的 inset 逻辑,避免双重 padding
+        applyNavigationBarPadding(withInitialPadding = true)
     }
 
     /**

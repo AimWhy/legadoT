@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
@@ -16,6 +17,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/explore_container_edit"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
             android:textSize="16sp"
             android:textStyle="bold" />
@@ -34,6 +36,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="2"
+                app:skin_textColor="onSurfaceVariant"
                 android:textColor="@color/secondaryText"
                 android:textSize="12sp"
                 tools:text="笔趣阁 · 玄幻" />
@@ -74,6 +77,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:text="@string/explore_style"
+            app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             android:textSize="12sp" />
 
@@ -111,6 +115,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/explore_list_count"
+                app:skin_textColor="onSurfaceVariant"
                 android:textColor="@color/secondaryText"
                 android:textSize="13sp" />
 
@@ -133,12 +138,11 @@
             android:gravity="center_vertical"
             android:orientation="horizontal">
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_delete"
+                style="@style/Widget.App.Button.Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="?android:attr/selectableItemBackground"
-                android:padding="8dp"
                 android:text="@string/delete"
                 android:textColor="@color/md_red_600" />
 
@@ -147,22 +151,19 @@
                 android:layout_height="1dp"
                 android:layout_weight="1" />
 
-            <TextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_cancel"
+                style="@style/Widget.App.Button.Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:background="?android:attr/selectableItemBackground"
-                android:padding="8dp"
-                android:text="@string/cancel"
-                android:textColor="@color/secondaryText" />
+                android:text="@string/cancel" />
 
-            <io.legado.app.ui.widget.text.AccentTextView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/tv_ok"
+                style="@style/Widget.App.Button.Tonal"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:background="?android:attr/selectableItemBackground"
-                android:padding="8dp"
                 android:text="@string/ok" />
 
         </LinearLayout>

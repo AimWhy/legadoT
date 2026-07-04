@@ -75,7 +75,6 @@
     <string name="other_setting">Otros ajustes</string>
     <string name="other_setting_s">Algunas configuraciones relacionadas a su funcionamiento</string>
     <string name="about">Acerca de</string>
-    <string name="donate">Donaciones</string>
     <string name="exit">Sair</string>
     <string name="exit_no_save">Todavía se guardó. ¿Desea continuar editando?</string>
     <string name="read_style">Tipos de libros</string>
@@ -774,7 +773,6 @@
     <string name="show_brightness_view">Mostrar widget de brillo</string>
     <string name="language">Idioma</string>
     <string name="import_rss_source">Importar fuente RSS</string>
-    <string name="donate_summary">Su donación mejora esta aplicación</string>
     <string name="about_summary">Cuenta oficial de Wechat [开源阅读软件]</string>
     <string name="read_record">Leer historial</string>
     <string name="del_read_record">Eliminar historial de lectura</string>

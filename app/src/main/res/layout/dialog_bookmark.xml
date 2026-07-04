@@ -17,6 +17,7 @@
 
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/tool_bar"
+            app:skin_background="themePrimary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:theme="?attr/actionBarStyle"
@@ -30,6 +31,7 @@
             android:layout_height="wrap_content"
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
+            app:skin_textColor="onSurface"
             android:textColor="@color/primaryText" />
 
         <androidx.core.widget.NestedScrollView
@@ -91,6 +93,7 @@
                 android:layout_height="wrap_content"
                 android:text="@string/delete"
                 android:textColor="@color/error"
+                app:skin_textColor="error"
                 android:visibility="invisible"
                 tools:ignore="RtlHardcoded" />
 

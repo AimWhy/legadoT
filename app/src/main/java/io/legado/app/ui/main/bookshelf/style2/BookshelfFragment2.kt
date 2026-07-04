@@ -58,12 +58,8 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
 
     private val binding by viewBinding(FragmentBookshelf2Binding::bind)
     private val bookshelfLayout by lazy { AppConfig.bookshelfLayout }
-    private val booksAdapter: BaseBooksAdapter<*> by lazy {
-        if (bookshelfLayout == 0) {
-            BooksAdapterList(requireContext(), this)
-        } else {
-            BooksAdapterGrid(requireContext(), this)
-        }
+    private val booksAdapter: BooksAdapter by lazy {
+        BooksAdapter(requireContext(), this, isGrid = bookshelfLayout != 0)
     }
     private var bookGroups: List<BookGroup> = emptyList()
     private var booksFlowJob: Job? = null

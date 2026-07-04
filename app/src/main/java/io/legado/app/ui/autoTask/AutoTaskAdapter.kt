@@ -10,9 +10,9 @@ import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
-import io.legado.app.databinding.ItemAutoTaskBinding
-import io.legado.app.lib.theme.ThemeStore
-import io.legado.app.lib.theme.cardBackgroundColor
+import io.legado.app.base.adapter.SelectableAdapter
+import io.legado.app.databinding.ItemManageBinding
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.popupActionMenu
@@ -20,21 +20,25 @@ import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.dpToPx
+import io.legado.app.utils.visible
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
-    RecyclerAdapter<AutoTaskRule, ItemAutoTaskBinding>(context),
-    ItemTouchCallback.Callback {
+    RecyclerAdapter<AutoTaskRule, ItemManageBinding>(context),
+    ItemTouchCallback.Callback,
+    SelectableAdapter<AutoTaskRule, String> {
 
     private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-    private val selectedIds = linkedSetOf<String>()
 
-    val selection: List<AutoTaskRule>
-        get() {
-            return getItems().filter { selectedIds.contains(it.id) }
-        }
+    override val selectedKeys = linkedSetOf<String>()
+
+    override fun keyOf(item: AutoTaskRule): String = item.id
+
+    override fun onSelectionChanged() {
+        callBack.upCountView()
+    }
 
     val diffItemCallBack = object : DiffUtil.ItemCallback<AutoTaskRule>() {
         override fun areItemsTheSame(oldItem: AutoTaskRule, newItem: AutoTaskRule): Boolean {
@@ -63,49 +67,46 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
         }
     }
 
-    override fun getViewBinding(parent: ViewGroup): ItemAutoTaskBinding {
-        return ItemAutoTaskBinding.inflate(inflater, parent, false)
+    override fun getViewBinding(parent: ViewGroup): ItemManageBinding {
+        return ItemManageBinding.inflate(inflater, parent, false).apply {
+            tvSubtitle.visible()
+        }
     }
 
     override fun convert(
         holder: ItemViewHolder,
-        binding: ItemAutoTaskBinding,
+        binding: ItemManageBinding,
         item: AutoTaskRule,
         payloads: MutableList<Any>
     ) {
+        // 卡底色由换肤引擎按布局 skin_background 施加;沉浸式同样呈卡片
         if (payloads.isEmpty()) {
-            binding.rootCard.setCardBackgroundColor(context.cardBackgroundColor)
-            binding.selectionBar.setBackgroundColor(ThemeStore.accentColor(context))
-            binding.cbTask.text = item.name.ifBlank { item.id }
+            binding.cbName.text = item.name.ifBlank { item.id }
             binding.swtEnabled.isChecked = item.enable
-            binding.titleDesc.text = buildSummary(item)
-            binding.cbTask.isChecked = selectedIds.contains(item.id)
+            binding.tvSubtitle.text = buildSummary(item)
+            binding.cbName.isChecked = isSelected(item)
             upSelectStroke(binding, item)
         } else {
             for (i in payloads.indices) {
                 val bundle = payloads[i] as? Bundle ?: continue
                 bundle.keySet().forEach {
                     when (it) {
-                        "name" -> binding.cbTask.text = item.name.ifBlank { item.id }
+                        "name" -> binding.cbName.text = item.name.ifBlank { item.id }
                         "enabled" -> binding.swtEnabled.isChecked = item.enable
-                        "summary" -> binding.titleDesc.text = buildSummary(item)
+                        "summary" -> binding.tvSubtitle.text = buildSummary(item)
                     }
                 }
             }
-            binding.cbTask.isChecked = selectedIds.contains(item.id)
+            binding.cbName.isChecked = isSelected(item)
             upSelectStroke(binding, item)
         }
     }
 
-    override fun registerListener(holder: ItemViewHolder, binding: ItemAutoTaskBinding) {
-        binding.cbTask.setOnCheckedChangeListener { buttonView, isChecked ->
+    override fun registerListener(holder: ItemViewHolder, binding: ItemManageBinding) {
+        binding.cbName.setOnCheckedChangeListener { buttonView, isChecked ->
             if (buttonView.isPressed) {
                 getItem(holder.layoutPosition)?.let { task ->
-                    if (isChecked) {
-                        selectedIds.add(task.id)
-                    } else {
-                        selectedIds.remove(task.id)
-                    }
+                    setSelected(task, isChecked)
                     upSelectStroke(binding, task)
                     callBack.upCountView()
                 }
@@ -125,13 +126,9 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
         }
         binding.contentLayout.setOnClickListener {
             getItem(holder.layoutPosition)?.let { task ->
-                val nowSelected = !selectedIds.contains(task.id)
-                if (nowSelected) {
-                    selectedIds.add(task.id)
-                } else {
-                    selectedIds.remove(task.id)
-                }
-                binding.cbTask.isChecked = nowSelected
+                val nowSelected = !isSelected(task)
+                setSelected(task, nowSelected)
+                binding.cbName.isChecked = nowSelected
                 upSelectStroke(binding, task)
                 callBack.upCountView()
             }
@@ -140,30 +137,12 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
 
     override fun onCurrentListChanged() {
         val currentIds = getItems().map { it.id }.toHashSet()
-        val iterator = selectedIds.iterator()
+        val iterator = selectedKeys.iterator()
         while (iterator.hasNext()) {
             if (!currentIds.contains(iterator.next())) {
                 iterator.remove()
             }
         }
-        callBack.upCountView()
-    }
-
-    fun selectAll() {
-        getItems().forEach { selectedIds.add(it.id) }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
-        callBack.upCountView()
-    }
-
-    fun revertSelection() {
-        getItems().forEach {
-            if (selectedIds.contains(it.id)) {
-                selectedIds.remove(it.id)
-            } else {
-                selectedIds.add(it.id)
-            }
-        }
-        notifyItemRangeChanged(0, itemCount, bundleOf(Pair("selected", null)))
         callBack.upCountView()
     }
 
@@ -180,7 +159,7 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
     val dragSelectCallback: DragSelectTouchHelper.Callback =
         object : DragSelectTouchHelper.AdvanceCallback<String>(DragSelectTouchHelper.AdvanceCallback.Mode.ToggleAndReverse) {
             override fun currentSelectedId(): Set<String> {
-                return selectedIds
+                return selectedKeys
             }
 
             override fun getItemId(position: Int): String {
@@ -189,11 +168,7 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
 
             override fun updateSelectState(position: Int, isSelected: Boolean): Boolean {
                 getItem(position)?.let { task ->
-                    if (isSelected) {
-                        selectedIds.add(task.id)
-                    } else {
-                        selectedIds.remove(task.id)
-                    }
+                    setSelected(task, isSelected)
                     notifyItemChanged(position, bundleOf(Pair("selected", null)))
                     callBack.upCountView()
                     return true
@@ -202,8 +177,9 @@ class AutoTaskAdapter(context: Context, private val callBack: CallBack) :
             }
         }
 
-    private fun upSelectStroke(binding: ItemAutoTaskBinding, task: AutoTaskRule) {
-        binding.selectionBar.visibility = if (selectedIds.contains(task.id)) View.VISIBLE else View.GONE
+    private fun upSelectStroke(binding: ItemManageBinding, task: AutoTaskRule) {
+        binding.rootCard.strokeColor = context.accentColor
+        binding.rootCard.strokeWidth = if (isSelected(task)) 2.dpToPx() else 0
     }
 
     private fun buildSummary(task: AutoTaskRule): String {

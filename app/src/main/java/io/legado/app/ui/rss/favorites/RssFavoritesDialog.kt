@@ -7,7 +7,6 @@ import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.data.entities.RssArticle
 import io.legado.app.databinding.DialogRssFavoriteConfigBinding
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 
@@ -28,7 +27,6 @@ class RssFavoritesDialog() : BaseDialogFragment(R.layout.dialog_rss_favorite_con
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         val arguments = arguments ?: let {
             dismiss()
             return

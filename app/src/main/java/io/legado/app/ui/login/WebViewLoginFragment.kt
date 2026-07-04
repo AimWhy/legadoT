@@ -15,6 +15,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.activityViewModels
 import io.legado.app.R
 import io.legado.app.base.BaseFragment
@@ -29,9 +30,11 @@ import io.legado.app.utils.applyCompatibilitySettings
 import io.legado.app.utils.gone
 import io.legado.app.utils.longSnackbar
 import io.legado.app.utils.openUrl
+import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.snackbar
 import io.legado.app.utils.toWebViewRequestHeaders
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import splitties.views.bottomPadding
 
 class WebViewLoginFragment : BaseFragment(R.layout.fragment_web_view_login) {
 
@@ -42,6 +45,13 @@ class WebViewLoginFragment : BaseFragment(R.layout.fragment_web_view_login) {
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         binding.root.setBackgroundColor(requireContext().backgroundColor)
+        // A15+ 强制 e2e:登录页底部表单/提交按钮不被手势条遮挡;含 IME(登录必有输入)
+        binding.root.setOnApplyWindowInsetsListenerCompat { v, windowInsets ->
+            val typeMask = WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.ime()
+            val insets = windowInsets.getInsets(typeMask)
+            v.bottomPadding = insets.bottom
+            windowInsets
+        }
         setSupportToolbar(binding.titleBar.toolbar)
         viewModel.source?.let {
             binding.titleBar.title = getString(R.string.login_source, it.getTag())

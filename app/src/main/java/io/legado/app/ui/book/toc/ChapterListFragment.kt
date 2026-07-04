@@ -77,6 +77,14 @@ class ChapterListFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_chapt
         }
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        // FragmentStateAdapter 会真正销毁离屏页,置空回避免野指针;恒等判断防止清掉新实例的注册
+        if (viewModel.chapterListCallBack === this) {
+            viewModel.chapterListCallBack = null
+        }
+    }
+
     private fun initRecyclerView() {
         mLayoutManager = UpLinearLayoutManager(requireContext())
         binding.recyclerView.layoutManager = mLayoutManager

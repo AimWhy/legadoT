@@ -13,8 +13,7 @@
         android:title="@string/cover_rule"
         android:summary="@string/cover_rule_summary"
         app:allowDividerAbove="false"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false" />
+        app:allowDividerBelow="false" />
 
     <io.legado.app.lib.prefs.SwitchPreference
         android:defaultValue="false"
@@ -22,23 +21,19 @@
         android:summary="@string/use_default_cover_s"
         android:title="@string/use_default_cover"
         app:allowDividerAbove="false"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false" />
+        app:allowDividerBelow="false" />
 
     <io.legado.app.lib.prefs.PreferenceCategory
         android:key="dayThemeCategory"
         android:title="@string/day"
         app:allowDividerAbove="true"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false"
-        app:layout="@layout/view_preference_category">
+        app:allowDividerBelow="false">
 
         <io.legado.app.lib.prefs.Preference
             android:key="defaultCover"
             android:title="@string/default_cover"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -46,8 +41,7 @@
             android:title="@string/cover_show_name"
             android:summary="@string/cover_show_name_summary"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -55,8 +49,7 @@
             android:title="@string/cover_show_author"
             android:summary="@string/cover_show_author_summary"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
     </io.legado.app.lib.prefs.PreferenceCategory>
 
@@ -64,16 +57,13 @@
         android:key="nightThemeCategory"
         android:title="@string/night"
         app:allowDividerAbove="true"
-        app:allowDividerBelow="false"
-        app:iconSpaceReserved="false"
-        app:layout="@layout/view_preference_category">
+        app:allowDividerBelow="false">
 
         <io.legado.app.lib.prefs.Preference
             android:key="defaultCoverDark"
             android:title="@string/default_cover"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -81,8 +71,7 @@
             android:title="@string/cover_show_name"
             android:summary="@string/cover_show_name_summary"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
         <io.legado.app.lib.prefs.SwitchPreference
             android:defaultValue="true"
@@ -90,8 +79,7 @@
             android:title="@string/cover_show_author"
             android:summary="@string/cover_show_author_summary"
             app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:iconSpaceReserved="false" />
+            app:allowDividerBelow="false" />
 
     </io.legado.app.lib.prefs.PreferenceCategory>
 

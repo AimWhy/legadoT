@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_popup_menu"
@@ -11,9 +12,10 @@
         android:id="@+id/tv_seek_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText" />
 
-    <io.legado.app.lib.theme.view.ThemeSeekBar
+    <SeekBar
         android:id="@+id/seek_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />

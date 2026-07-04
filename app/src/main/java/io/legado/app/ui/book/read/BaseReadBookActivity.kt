@@ -26,8 +26,7 @@ import io.legado.app.help.config.LocalConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
-import io.legado.app.lib.theme.ThemeStore
-import io.legado.app.lib.theme.bottomBackground
+import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.CacheBook
 import io.legado.app.model.ReadBook
 import io.legado.app.ui.book.read.config.BgTextConfigDialog
@@ -94,7 +93,6 @@ abstract class BaseReadBookActivity :
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
-        binding.navigationBar.setBackgroundColor(bottomBackground)
         viewModel.permissionDenialLiveData.observe(this) {
             selectBookFolderResult.launch {
                 mode = HandleFileContract.DIR_SYS
@@ -187,8 +185,11 @@ abstract class BaseReadBookActivity :
                     || useBgMeanColor
                 ) {
                     ReadBookConfig.bgMeanColor
+                } else if (AppConfig.isTransparentStatusBar) {
+                    // 与 BaseActivity.setupSystemBar 同式:沉浸式=主色,非沉浸=加深主色
+                    primaryColor
                 } else {
-                    ThemeStore.statusBarColor(this, AppConfig.isTransparentStatusBar)
+                    ColorUtils.darkenColor(primaryColor)
                 }
             setLightStatusBar(ColorUtils.isColorLight(statusBarColor))
         }

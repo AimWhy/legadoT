@@ -2,6 +2,7 @@ package io.legado.app.ui.book.read.config
 
 import android.annotation.SuppressLint
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.graphics.PorterDuff
 import android.graphics.drawable.GradientDrawable
 import android.net.Uri
@@ -42,6 +43,7 @@ import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.FileDoc
+import io.legado.app.utils.getCompatColor
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.MD5Utils
@@ -72,6 +74,9 @@ import java.io.File
 import java.io.FileOutputStream
 
 class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
+
+    /** 贴底面板自设背景(bottomBackground),豁免统一圆角模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
 
     companion object {
         const val TEXT_COLOR = 121
@@ -154,6 +159,15 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
         ivDelete.setColorFilter(primaryTextColor, PorterDuff.Mode.SRC_IN)
         tvBgAlpha.setTextColor(primaryTextColor)
         tvBgImage.setTextColor(primaryTextColor)
+        // 描边钮随 bottomBackground 亮暗染色(替代原 StrokeTextView 自绘)
+        val btnColor = ColorStateList.valueOf(primaryTextColor)
+        arrayOf(tvReviewIconSvg, tvReviewIconSize, tvReviewIconColor, tvTextColor, tvBgColor)
+            .forEach {
+                it.setTextColor(btnColor)
+                it.strokeColor = btnColor
+                it.rippleColor =
+                    ColorStateList.valueOf(requireContext().getCompatColor(R.color.transparent30))
+            }
         swUnderline.isGone = ReadBook.book?.isImage == true
         recyclerView.adapter = adapter
         adapter.addHeaderView {

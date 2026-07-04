@@ -19,6 +19,7 @@
         android:layout_width="match_parent"
         android:layout_height="24dp"
         android:background="@color/background_card"
+        app:skin_background="surfaceContainerLow"
         android:elevation="5dp"
         android:paddingLeft="10dp"
         android:paddingRight="10dp"

@@ -14,7 +14,6 @@ import io.legado.app.data.entities.HighlightRule
 import io.legado.app.databinding.DialogHighlightRuleEditBinding
 import io.legado.app.help.HighlightColors
 import io.legado.app.help.HighlightStyle
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.ReadBook
 import io.legado.app.ui.book.read.HighlightStyleDialog
 import io.legado.app.ui.font.FontSelectDialog
@@ -121,7 +120,6 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        binding.toolBar.setBackgroundColor(primaryColor)
         binding.btnStyle.setOnClickListener {
             val d = HighlightStyleDialog()
             styleDialog = d

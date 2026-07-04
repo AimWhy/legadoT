@@ -165,16 +165,6 @@
         <attr name="radius" />
     </declare-styleable>
 
-    <declare-styleable name="AccentStrokeTextView">
-        <attr name="radius" />
-        <attr name="isBottomBackground" />
-    </declare-styleable>
-
-    <declare-styleable name="StrokeTextView">
-        <attr name="radius" />
-        <attr name="isBottomBackground" />
-    </declare-styleable>
-
     <declare-styleable name="BadgeView">
         <attr name="radius" />
         <attr name="up_flat_angle" format="boolean" />
@@ -248,5 +238,10 @@
 
     <declare-styleable name="LabeledValueRow">
         <attr name="title" />
+    </declare-styleable>
+
+    <declare-styleable name="CoverImageView">
+        <!-- 自绘圆角半径,默认 12dp;设 0 则不自绘,交外层 MaterialCardView 统一裁(避免双层裁剪) -->
+        <attr name="coverCornerRadius" format="dimension" />
     </declare-styleable>
 </resources>

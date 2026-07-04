@@ -14,7 +14,6 @@ import io.legado.app.data.entities.HttpTTS
 import io.legado.app.databinding.DialogHttpTtsEditBinding
 import io.legado.app.databinding.ViewCodeEditFieldBinding
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.code.CodeView
@@ -93,7 +92,6 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         // 覆盖 BaseDialogFragment(adaptationSoftKeyboard=true) 的默认外部点击关闭行为
         view.setOnClickListener(null)
-        binding.toolBar.setBackgroundColor(primaryColor)
         initCodeFields()
         urlField.textInputLayout.hint = "url"
         contentTypeField.textInputLayout.hint = "Content-Type"

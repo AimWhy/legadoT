@@ -28,6 +28,7 @@
             android:layout_height="wrap_content"
             android:scaleType="centerCrop"
             android:scrollbars="none"
+            app:coverCornerRadius="0dp"
             android:src="@drawable/image_cover_default"
             android:transitionName="img_cover"
             tools:ignore="UnusedAttribute,ImageContrastCheck" />
@@ -66,6 +67,7 @@
         android:lines="2"
         android:scrollbars="none"
         android:text="@string/book_name"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="@dimen/text_caption"
         app:layout_constraintTop_toBottomOf="@id/cover_card"

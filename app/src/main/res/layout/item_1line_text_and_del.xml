@@ -20,6 +20,7 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:singleLine="true"
+        app:skin_textColor="onSurface"
         android:textColor="@color/primaryText" />
 
     <ImageView
@@ -31,6 +32,7 @@
         android:padding="8dp"
         android:src="@drawable/ic_clear_all"
         android:visibility="gone"
+        app:skin_tint="onSurface"
         app:tint="@color/primaryText" />
 
 </LinearLayout>
