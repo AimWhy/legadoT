@@ -4,6 +4,8 @@ import com.script.ScriptBindings
 import com.script.buildScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import io.legado.app.exception.NoStackTraceException
+import org.htmlunit.corejs.javascript.ScriptableObject
+import org.htmlunit.corejs.javascript.Function as JsFunction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
@@ -23,6 +25,32 @@ class JsSourceCallProbeTest {
         val scope = RhinoScriptEngine.getRuntimeScope(bindings)
         RhinoScriptEngine.eval(mainJs, scope)
         return RhinoScriptEngine.eval(callExpr, scope)
+    }
+
+    /**
+     * callFunctionIfExists 的行为镜像(不走真实 JsSourceEngine 实例):
+     * buildScope() 会无条件调用 source.getShareScope() → SharedJsScope,其 companion
+     * 属性初始化(cacheFolder = File(appCtx.cacheDir, ...))在裸 JUnit(无 Robolectric)下
+     * 类初始化即崩(ClassNotFoundException: android.app.ActivityThread)——与 callFunction
+     * 共享同一 buildScope,并非本次重构引入。按简报 Step 1 预案回退 callViaEval 风格,
+     * 镜像同一段判定逻辑(ScriptableObject.getProperty(...) is JsFunction 后条件 eval)。
+     */
+    private fun callFunctionIfExistsViaEval(
+        mainJs: String,
+        name: String,
+        args: List<Pair<String, Any?>> = emptyList(),
+    ): String? {
+        val bindings = buildScriptBindings { b ->
+            args.forEach { (k, v) -> b[k] = v }
+        }
+        val scope = RhinoScriptEngine.getRuntimeScope(bindings)
+        RhinoScriptEngine.eval(mainJs, scope)
+        if (ScriptableObject.getProperty(scope, name) !is JsFunction) {
+            return null
+        }
+        val callExpr = "$name(${args.joinToString(", ") { it.first }})"
+        val raw = RhinoScriptEngine.eval(callExpr, scope)
+        return JsSourceEngine.normalizeJsResult(raw)
     }
 
     @Test
@@ -90,5 +118,23 @@ class JsSourceCallProbeTest {
             JsSourceEngine.normalizeJsResult(raw)
         }
         assertTrue(error.message.orEmpty().contains("JSON.stringify 失败"))
+    }
+
+    @Test
+    fun callFunctionIfExistsReturnsNullWhenMissing() {
+        val result = callFunctionIfExistsViaEval(
+            "function search(key, page) { return [] }",
+            "getBookInfo",
+        )
+        assertNull(result)
+    }
+
+    @Test
+    fun callFunctionIfExistsInvokesWhenPresent() {
+        val json = callFunctionIfExistsViaEval(
+            "function getBookInfo(book) { return {intro: 'ok'} }",
+            "getBookInfo",
+        )!!
+        assertTrue(json.contains("\"intro\""))
     }
 }
