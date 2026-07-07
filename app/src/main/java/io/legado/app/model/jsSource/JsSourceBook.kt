@@ -40,10 +40,11 @@ object JsSourceBook {
         book.removeAllBookType()
         book.addType(bookSource.getBookType())
         val engine = JsSourceEngine(bookSource, coroutineContext)
-        if (engine.hasFunction("getBookInfo")) {
-            val json = engine.callFunction("getBookInfo", listOf("book" to book))
-            JsSourceMarshaller.mergeBookInfo(book, json, bookSource)
-        }
+        JsSourceMarshaller.mergeBookInfo(
+            book,
+            engine.callFunctionIfExists("getBookInfo", listOf("book" to book)),
+            bookSource,
+        )
         if (book.tocUrl.isBlank()) {
             book.tocUrl = book.bookUrl   // 声明式同款兜底:无目录页则详情页即目录页
         }

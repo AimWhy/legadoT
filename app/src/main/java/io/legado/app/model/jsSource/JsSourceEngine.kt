@@ -36,17 +36,22 @@ class JsSourceEngine(
 
     override fun getSource(): BaseSource = source
 
-    /** 主脚本是否定义了顶层函数 name(会执行一次主脚本) */
-    fun hasFunction(name: String): Boolean {
-        val scope = buildScope(emptyList())
-        return ScriptableObject.getProperty(scope, name) is JsFunction
-    }
-
     /** 调用顶层函数并归一化返回值;函数缺失抛出明确错误 */
     fun callFunction(name: String, args: List<Pair<String, Any?>>): String? {
         val scope = buildScope(args)
         if (ScriptableObject.getProperty(scope, name) !is JsFunction) {
             throw NoStackTraceException("JS源缺少函数 $name")
+        }
+        val callExpr = "$name(${args.joinToString(", ") { it.first }})"
+        val raw = compile(callExpr).eval(scope, coroutineContext)
+        return normalizeJsResult(raw, coroutineContext)
+    }
+
+    /** 调用可选顶层函数:缺失返回 null(单次 eval,不做 hasFunction 预探测) */
+    fun callFunctionIfExists(name: String, args: List<Pair<String, Any?>>): String? {
+        val scope = buildScope(args)
+        if (ScriptableObject.getProperty(scope, name) !is JsFunction) {
+            return null
         }
         val callExpr = "$name(${args.joinToString(", ") { it.first }})"
         val raw = compile(callExpr).eval(scope, coroutineContext)
@@ -79,11 +84,12 @@ class JsSourceEngine(
 
         /**
          * 主脚本与调用表达式共用的编译缓存。AnalyzeRule 的先例是每个实例一个 HashMap +
-         * getOrPutLimit(16)(实例私有,天然无并发问题);这里选 androidx LruCache(16) 是因为
+         * getOrPutLimit(16)(实例私有,天然无并发问题);这里选 androidx LruCache(64) 是因为
          * scriptCache 挂在 companion object 上,被所有 JsSourceEngine 实例/线程全局共享,
-         * 需要自带同步的实现,LruCache 内部方法自带 synchronized。
+         * 需要自带同步的实现,LruCache 内部方法自带 synchronized。多源并发下 16 格易被
+         * 主脚本+调用表达式挤爆致反复重编译,扩容到 64。
          */
-        private val scriptCache = LruCache<String, CompiledScript>(16)
+        private val scriptCache = LruCache<String, CompiledScript>(64)
 
         private fun compile(js: String): CompiledScript {
             scriptCache[js]?.let { return it }
