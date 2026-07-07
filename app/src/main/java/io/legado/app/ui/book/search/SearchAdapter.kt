@@ -2,6 +2,7 @@ package io.legado.app.ui.book.search
 
 import android.content.Context
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
@@ -61,6 +62,7 @@ class SearchAdapter(context: Context, val callBack: CallBack) :
         item: SearchBook,
         payloads: MutableList<Any>
     ) {
+        binding.ivCover.transitionName = "book_cover_" + item.name + item.author
         if (payloads.isEmpty()) {
             bind(binding, item)
         } else {
@@ -74,7 +76,7 @@ class SearchAdapter(context: Context, val callBack: CallBack) :
     override fun registerListener(holder: ItemViewHolder, binding: ItemSearchBinding) {
         binding.root.setOnClickListener {
             getItem(holder.layoutPosition)?.let {
-                callBack.showBookInfo(it.name, it.author, it.bookUrl)
+                callBack.showBookInfo(it.name, it.author, it.bookUrl, binding.ivCover)
             }
         }
     }
@@ -116,6 +118,6 @@ class SearchAdapter(context: Context, val callBack: CallBack) :
         /**
          * 显示书籍详情
          */
-        fun showBookInfo(name: String, author: String, bookUrl: String)
+        fun showBookInfo(name: String, author: String, bookUrl: String, cover: View? = null)
     }
 }

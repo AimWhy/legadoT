@@ -2,13 +2,14 @@ package io.legado.app.ui.book.read.config
 
 import android.annotation.SuppressLint
 import android.content.DialogInterface
+import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.SeekBar
+import com.google.android.material.slider.Slider
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.constant.EventBus
@@ -21,7 +22,6 @@ import io.legado.app.model.ReadBook
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.widget.dialog.SleepTimerDialog
-import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.*
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 
@@ -84,6 +84,9 @@ class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
             tvTtsSpeed.setTextColor(textColor)
             tvTtsSpeedValue.setTextColor(textColor)
             ivTtsSpeechAdd.setColorFilter(textColor)
+            arrayOf(seekTimer, seekTtsSpeechRate).forEach { slider ->
+                slider.applyAppTint(textColor)
+            }
             llCatalog.setTint(textColor)
             llMainMenu.setTint(textColor)
             llToBackstage.setTint(textColor)
@@ -138,43 +141,46 @@ class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
             upTtsSpeechRate()
         }
         ivTtsSpeechReduce.setOnClickListener {
-            seekTtsSpeechRate.progress = AppConfig.ttsSpeechRate - 1
+            seekTtsSpeechRate.value = (AppConfig.ttsSpeechRate - 1).toFloat()
+                .coerceIn(seekTtsSpeechRate.valueFrom, seekTtsSpeechRate.valueTo)
             AppConfig.ttsSpeechRate -= 1
             upTtsSpeechRate()
         }
         ivTtsSpeechAdd.setOnClickListener {
-            seekTtsSpeechRate.progress = AppConfig.ttsSpeechRate + 1
+            seekTtsSpeechRate.value = (AppConfig.ttsSpeechRate + 1).toFloat()
+                .coerceIn(seekTtsSpeechRate.valueFrom, seekTtsSpeechRate.valueTo)
             AppConfig.ttsSpeechRate += 1
             upTtsSpeechRate()
         }
         ivTimer.setOnClickListener {
-            AppConfig.ttsTimer = seekTimer.progress
+            AppConfig.ttsTimer = seekTimer.value.toInt()
             toastOnUi("保存设定时间成功！")
         }
         tvTimer.setOnClickListener {
             showDialogFragment(SleepTimerDialog())
         }
         //设置保存的默认值
-        seekTtsSpeechRate.progress = AppConfig.ttsSpeechRate
-        seekTtsSpeechRate.setOnSeekBarChangeListener(object : SeekBarChangeListener {
+        seekTtsSpeechRate.value = AppConfig.ttsSpeechRate.toFloat()
+            .coerceIn(seekTtsSpeechRate.valueFrom, seekTtsSpeechRate.valueTo)
+        seekTtsSpeechRate.addOnChangeListener { _, value, _ ->
+            upTtsSpeechRateText(value.toInt())
+        }
+        seekTtsSpeechRate.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) = Unit
 
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                super.onProgressChanged(seekBar, progress, fromUser)
-                upTtsSpeechRateText(progress)
-            }
-
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                AppConfig.ttsSpeechRate = seekBar.progress
+            override fun onStopTrackingTouch(slider: Slider) {
+                AppConfig.ttsSpeechRate = slider.value.toInt()
                 upTtsSpeechRate()
             }
         })
-        seekTimer.setOnSeekBarChangeListener(object : SeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) upTimerText(progress)
-            }
+        seekTimer.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) upTimerText(value.toInt())
+        }
+        seekTimer.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) = Unit
 
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                ReadAloud.setTimer(requireContext(), seekTimer.progress)
+            override fun onStopTrackingTouch(slider: Slider) {
+                ReadAloud.setTimer(requireContext(), slider.value.toInt())
             }
         })
     }
@@ -205,11 +211,13 @@ class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
 
     private fun upSeekTimer() {
         binding.seekTimer.post {
-            binding.seekTimer.progress = when {
+            val progress = when {
                 BaseReadAloudService.timeMinute > 0 -> BaseReadAloudService.timeMinute
                 BaseReadAloudService.chapterToStop > 0 -> 0
                 else -> AppConfig.ttsTimer
             }
+            binding.seekTimer.value = progress.toFloat()
+                .coerceIn(binding.seekTimer.valueFrom, binding.seekTimer.valueTo)
         }
     }
 
@@ -264,7 +272,8 @@ class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
     override fun observeLiveBus() {
         observeEvent<Int>(EventBus.ALOUD_STATE) { upPlayState() }
         observeEvent<Int>(EventBus.READ_ALOUD_DS) {
-            binding.seekTimer.progress = it
+            binding.seekTimer.value = it.toFloat()
+                .coerceIn(binding.seekTimer.valueFrom, binding.seekTimer.valueTo)
             upStopText()
         }
         observeEvent<Int>(EventBus.READ_ALOUD_CHAPTER) { upStopText() }

@@ -140,11 +140,13 @@ class ImportHttpTtsDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
                 cbSourceName.isChecked = viewModel.selectStatus[holder.layoutPosition]
                 cbSourceName.text = item.name
                 val localSource = viewModel.checkSources[holder.layoutPosition]
-                tvSourceState.text = when {
-                    localSource == null -> "新增"
-                    item.lastUpdateTime > localSource.lastUpdateTime -> "更新"
-                    else -> "已有"
-                }
+                tvSourceState.showImportState(
+                    when {
+                        localSource == null -> ImportState.NEW
+                        item.lastUpdateTime > localSource.lastUpdateTime -> ImportState.UPDATE
+                        else -> ImportState.EXIST
+                    }
+                )
             }
         }
 

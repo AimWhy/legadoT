@@ -21,6 +21,7 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.radiobutton.MaterialRadioButton
+import com.google.android.material.slider.Slider
 import io.legado.app.R
 import io.legado.app.constant.AppConst
 import io.legado.app.lib.theme.AppColorScheme
@@ -30,6 +31,7 @@ import io.legado.app.lib.theme.view.ThemeEditText
 import io.legado.app.lib.theme.view.ThemeRadioButton
 import io.legado.app.lib.theme.view.ThemeSwitch
 import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.applyAppTint
 import io.legado.app.utils.applyTint
 import java.lang.reflect.Constructor
 
@@ -131,6 +133,8 @@ class SkinInflaterFactory(activity: AppCompatActivity) : LayoutInflater.Factory2
             AppCompatSeekBar::class.java, ProgressBar::class.java,
             AppCompatEditText::class.java, ThemeEditText::class.java,
                 -> view.applyTint(view.context.accentColor)
+
+            Slider::class.java -> applySliderTint(view as Slider)
         }
     }
 
@@ -151,6 +155,11 @@ class SkinInflaterFactory(activity: AppCompatActivity) : LayoutInflater.Factory2
             checkedStates,
             intArrayOf(0xFFFFFFFF.toInt(), 0xFFBDBDBD.toInt())
         )
+    }
+
+    /** Slider 默认强调色:双态施色(禁用降透明)统一走 applyAppTint,未激活轨 24%(引擎档) */
+    private fun applySliderTint(slider: Slider) {
+        slider.applyAppTint(slider.context.accentColor, inactiveAlpha = 0.24f)
     }
 
     /** 规则 B:读 skin_* 角色声明施色(TypedArray 生命周期由调用方管理) */
@@ -206,6 +215,7 @@ class SkinInflaterFactory(activity: AppCompatActivity) : LayoutInflater.Factory2
             "com.google.android.material.materialswitch.MaterialSwitch",
             "com.google.android.material.checkbox.MaterialCheckBox",
             "com.google.android.material.radiobutton.MaterialRadioButton",
+            "com.google.android.material.slider.Slider",
             "androidx.appcompat.widget.AppCompatCheckBox",
             "androidx.appcompat.widget.AppCompatRadioButton",
             "androidx.appcompat.widget.AppCompatSeekBar",

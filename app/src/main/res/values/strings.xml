@@ -319,6 +319,8 @@ Placeholders:
     <string name="edit_book_source">Edit Book source</string>
     <string name="disable_book_source">Disable Book source</string>
     <string name="add_book_source">Add Book source</string>
+    <string name="js_source">JS源</string>
+    <string name="js_source_new">新建JS源</string>
     <string name="add_rss_source">Add RSS source</string>
     <string name="book_file_selector">Add books</string>
     <string name="scan_book_source">Scan</string>

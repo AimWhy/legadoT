@@ -6,10 +6,10 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewStub
 import android.widget.FrameLayout
-import android.widget.ProgressBar
 import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
+import com.google.android.material.loadingindicator.LoadingIndicator
 import io.legado.app.R
 
 @Suppress("unused")
@@ -24,7 +24,13 @@ class DynamicFrameLayout @JvmOverloads constructor(
     private var actionBtn: AppCompatButton? = null
 
     private var progressView: View? = null
-    private var progressBar: ProgressBar? = null
+
+    // view_loading.xml 的 loading_progress 已从 ContentLoadingProgressBar(extends ProgressBar)
+    // 换成 M3 LoadingIndicator(直接 extends View，不再是 ProgressBar 子类)。
+    // 该字段本身只写不读（无 show()/hide() 调用点），但类型必须跟着换，否则这里的
+    // findViewById<ProgressBar> 在运行时会对 LoadingIndicator 实例做非法 checkcast，直接抛
+    // ClassCastException——编译期完全不会报错，是纯运行时炸弹。
+    private var progressBar: LoadingIndicator? = null
 
     private var contentView: View? = null
 

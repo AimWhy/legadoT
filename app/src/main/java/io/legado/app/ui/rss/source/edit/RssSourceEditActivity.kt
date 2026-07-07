@@ -212,15 +212,18 @@ class RssSourceEditActivity :
             softKeyboardTool.initialPadding = imeHeight
             windowInsets
         }
+        binding.fieldNav.attachToRecyclerView(binding.recyclerView)
     }
 
     private fun setEditEntities(tabPosition: Int?) {
-        when (tabPosition) {
-            1 -> adapter.editEntities = listEntities
-            2 -> adapter.editEntities = webViewEntities
-            else -> adapter.editEntities = sourceEntities
+        val entities = when (tabPosition) {
+            1 -> listEntities
+            2 -> webViewEntities
+            else -> sourceEntities
         }
+        adapter.editEntities = entities
         binding.recyclerView.scrollToPosition(0)
+        binding.fieldNav.setLabels(entities.map { it.hint.replace(Regex("[（(].+?[）)]"), "").trim() })
     }
 
     private fun upSourceView(rssSource: RssSource?) {

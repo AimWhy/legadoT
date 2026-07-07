@@ -2,6 +2,7 @@ package io.legado.app.ui.main.bookshelf.style2
 
 import android.content.Context
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.data.entities.Book
@@ -70,11 +71,16 @@ class BooksAdapter(
     }
 
     private fun registerListener(holder: RecyclerView.ViewHolder, item: Any) {
+        val cover: View? = when (holder) {
+            is ListBookViewHolder -> holder.binding.ivCover
+            is GridBookViewHolder -> holder.binding.ivCover
+            else -> null
+        }
         holder.itemView.setOnClickListener {
             callBack.onItemClick(item)
         }
         holder.itemView.onLongClick {
-            callBack.onItemLongClick(item)
+            callBack.onItemLongClick(item, cover)
         }
     }
 

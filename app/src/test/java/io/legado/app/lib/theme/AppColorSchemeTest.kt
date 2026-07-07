@@ -95,6 +95,22 @@ class AppColorSchemeTest {
     }
 
     @Test
+    fun `ambient scheme derives from arbitrary seed without global anchor`() {
+        val red = AppColorScheme.ambientScheme(0xFFB3261E.toInt(), isDark = false, isEInk = false)
+        val blue = AppColorScheme.ambientScheme(0xFF3D7EFF.toInt(), isDark = false, isEInk = false)
+        val hueGap = abs(Hct.fromInt(red.primary).hue - Hct.fromInt(blue.primary).hue)
+        assertTrue("不同种子应派生不同色相", hueGap > 30.0 && hueGap < 330.0)
+        val dark = AppColorScheme.ambientScheme(0xFF3D7EFF.toInt(), isDark = true, isEInk = false)
+        assertTrue("深色氛围面应是深色", tone(dark.surface) < 30.0)
+    }
+
+    @Test
+    fun `ambient scheme falls back to eink table`() {
+        val s = AppColorScheme.ambientScheme(0xFFB3261E.toInt(), isDark = false, isEInk = true)
+        assertEquals(0xFF000000.toInt(), s.primary)
+    }
+
+    @Test
     fun `generate default palette xml into build dir`() {
         fun AppSchemeColors.toXml(): String = buildString {
             appendLine("""<?xml version="1.0" encoding="utf-8"?>""")

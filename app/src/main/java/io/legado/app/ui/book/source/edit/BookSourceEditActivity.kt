@@ -7,12 +7,8 @@ import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import android.view.MenuItem
 import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.tabs.TabLayout
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import io.legado.app.R
@@ -123,6 +119,17 @@ class BookSourceEditActivity :
         softKeyboardTool.attachToWindow(window)
         initView()
         viewModel.initData(intent) {
+            val source = viewModel.bookSource
+            if (source != null && source.isJsSource()) {
+                startActivity<JsSourceEditActivity> {
+                    putExtra("sourceUrl", source.bookSourceUrl)
+                }
+                // 此处 UI 尚未初始化(sourceEntities 空、控件是布局默认值),
+                // 覆写版 finish() 的 getSource()/equal() 未保存比对在此无意义甚至会误判,
+                // 必须绕过它直接结束,否则可能弹出虚假的"未保存退出"确认且 Activity 未真正结束
+                super.finish()
+                return@initData
+            }
             upSourceView(viewModel.bookSource)
         }
     }
@@ -259,22 +266,7 @@ class BookSourceEditActivity :
             softKeyboardTool.initialPadding = imeHeight
             windowInsets
         }
-        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    navClickScrolling = false
-                }
-            }
-
-            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-                if (navClickScrolling) return
-                val lm = rv.layoutManager as? LinearLayoutManager ?: return
-                val firstVisible = lm.findFirstVisibleItemPosition()
-                if (firstVisible >= 0 && firstVisible != selectedNavIndex) {
-                    highlightNavItem(firstVisible)
-                }
-            }
-        })
+        binding.fieldNav.attachToRecyclerView(binding.recyclerView)
     }
 
     override fun finish() {
@@ -324,7 +316,8 @@ class BookSourceEditActivity :
         binding.tvTopSummary.text = parts.joinToString(" · ")
     }
 
-    private fun setEditEntities(tabPosition: Int?) {        val entities = when (tabPosition) {
+    private fun setEditEntities(tabPosition: Int?) {
+        val entities = when (tabPosition) {
             1 -> searchEntities
             2 -> exploreEntities
             3 -> infoEntities
@@ -335,75 +328,7 @@ class BookSourceEditActivity :
         }
         adapter.editEntities = entities
         binding.recyclerView.scrollToPosition(0)
-        updateFieldNav(entities)
-    }
-
-    private var selectedNavIndex = 0
-    private var navClickScrolling = false
-
-    private fun updateFieldNav(entities: List<EditEntity>) {
-        val container = binding.fieldNavGroup
-        container.removeAllViews()
-        entities.forEachIndexed { index, entity ->
-            val label = entity.hint.replace(Regex("[（(].+?[）)]"), "").trim()
-            val tv = TextView(this).apply {
-                text = label
-                textSize = 12f
-                setPadding(24, 8, 24, 8)
-                setBackgroundResource(R.drawable.bg_field_nav_item)
-                setTextColor(context.getColor(R.color.primaryText))
-                gravity = android.view.Gravity.CENTER
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                lp.marginEnd = 6
-                layoutParams = lp
-                setOnClickListener {
-                    navClickScrolling = true
-                    val lm = binding.recyclerView.layoutManager as? LinearLayoutManager
-                    if (lm != null) {
-                        val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(context) {
-                            override fun getVerticalSnapPreference() = SNAP_TO_START
-                            override fun calculateDtToFit(
-                                viewStart: Int, viewEnd: Int,
-                                boxStart: Int, boxEnd: Int,
-                                snapPreference: Int
-                            ): Int {
-                                // 向下偏移 4dp，补偿定位偏差
-                                val offset = (resources.displayMetrics.density * 4).toInt()
-                                return boxStart - viewStart + offset
-                            }
-                        }
-                        scroller.targetPosition = index
-                        lm.startSmoothScroll(scroller)
-                    }
-                    highlightNavItem(index)
-                }
-            }
-            container.addView(tv)
-        }
-        highlightNavItem(0)
-    }
-
-    private fun highlightNavItem(index: Int) {
-        val container = binding.fieldNavGroup
-        if (selectedNavIndex in 0 until container.childCount) {
-            val prev = container.getChildAt(selectedNavIndex) as? TextView
-            prev?.isSelected = false
-            prev?.setTextColor(getColor(R.color.primaryText))
-        }
-        if (index in 0 until container.childCount) {
-            val curr = container.getChildAt(index) as? TextView
-            curr?.isSelected = true
-            curr?.setTextColor(android.graphics.Color.WHITE)
-            curr?.let {
-                binding.fieldNavScroll.smoothScrollTo(
-                    (it.left - 16).coerceAtLeast(0), 0
-                )
-            }
-        }
-        selectedNavIndex = index
+        binding.fieldNav.setLabels(entities.map { it.hint.replace(Regex("[（(].+?[）)]"), "").trim() })
     }
 
     private fun upSourceView(bookSource: BookSource?) {

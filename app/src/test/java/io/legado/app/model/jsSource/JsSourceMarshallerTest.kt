@@ -1,0 +1,123 @@
+package io.legado.app.model.jsSource
+
+import io.legado.app.constant.BookType
+import io.legado.app.data.entities.Book
+import io.legado.app.data.entities.BookSource
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class JsSourceMarshallerTest {
+
+    private val textSource = BookSource(
+        bookSourceUrl = "https://src.com", bookSourceName = "文本源",
+        bookSourceType = 0, customOrder = 7,
+    )
+    private val audioSource = BookSource(
+        bookSourceUrl = "https://audio.com", bookSourceName = "音频源",
+        bookSourceType = 1,
+    )
+
+    @Test
+    fun validateBookTypeAcceptsOnlyKnownBits() {
+        assertEquals(BookType.text, JsSourceMarshaller.validateBookType(BookType.text))
+        assertEquals(BookType.audio, JsSourceMarshaller.validateBookType(BookType.audio))
+        assertEquals(
+            BookType.text or BookType.webFile,
+            JsSourceMarshaller.validateBookType(BookType.text or BookType.webFile),
+        )
+        assertNull(JsSourceMarshaller.validateBookType(0))
+        assertNull(JsSourceMarshaller.validateBookType(1))    // BookSourceType.audio 误传形态,必须拒
+        assertNull(JsSourceMarshaller.validateBookType(BookType.updateError)) // 非源可设位
+    }
+
+    @Test
+    fun parseSearchBooksInjectsOriginAndType() {
+        val json = """[
+          {"name":"书A","author":"作者A","bookUrl":"https://src.com/b/1",
+           "origin":"evil","originName":"evil","type":1},
+          {"name":"书B","bookUrl":"https://src.com/b/2"}
+        ]"""
+        val books = JsSourceMarshaller.parseSearchBooks(json, audioSource)
+        assertEquals(2, books.size)
+        // origin 族强制注入,JS 返回的 evil 被覆盖
+        assertEquals("https://audio.com", books[0].origin)
+        assertEquals("音频源", books[0].originName)
+        // type=1 是 BookSourceType 误传 → 拒收,回退源类型(audio=32)
+        assertEquals(BookType.audio, books[0].type)
+        // 未返回 type → 源类型
+        assertEquals(BookType.audio, books[1].type)
+    }
+
+    @Test
+    fun parseSearchBooksHonorsExplicitValidType() {
+        val json = """[{"name":"书A","bookUrl":"u1","type":${BookType.text}}]"""
+        val books = JsSourceMarshaller.parseSearchBooks(json, audioSource)
+        assertEquals(BookType.text, books[0].type)   // 合法位值显式覆写生效(spec §3)
+    }
+
+    @Test
+    fun parseSearchBooksDropsItemsMissingRequiredFields() {
+        val json = """[
+          {"name":"无url"},
+          {"bookUrl":"无name"},
+          {"name":"好","bookUrl":"u"}
+        ]"""
+        val books = JsSourceMarshaller.parseSearchBooks(json, textSource)
+        assertEquals(1, books.size)
+        assertEquals("好", books[0].name)
+    }
+
+    @Test
+    fun parseSearchBooksLazyDelegateSurvivesGson() {
+        val json = """[{"name":"书","bookUrl":"u","variable":"{\"k\":\"v\"}"}]"""
+        val books = JsSourceMarshaller.parseSearchBooks(json, textSource)
+        // 锁 lazy 委托在 GSON 实例化路径下可用
+        assertEquals("v", books[0].variableMap["k"])
+    }
+
+    @Test
+    fun mergeBookInfoOnlyTouchesPresentKeys() {
+        val book = Book(bookUrl = "u", name = "原名", author = "原作者")
+        book.intro = "原简介"
+        JsSourceMarshaller.mergeBookInfo(book, """{"intro":"新简介","tocUrl":"t"}""", textSource)
+        assertEquals("新简介", book.intro)
+        assertEquals("t", book.tocUrl)
+        assertEquals("原名", book.name)       // 未出现的 key 不动
+        assertEquals("原作者", book.author)
+    }
+
+    @Test
+    fun mergeBookInfoIgnoresPrimaryKeyAndUserState() {
+        val book = Book(bookUrl = "keep")
+        book.durChapterIndex = 5
+        JsSourceMarshaller.mergeBookInfo(
+            book,
+            """{"bookUrl":"hack","durChapterIndex":0,"customTag":"hack"}""",
+            textSource,
+        )
+        assertEquals("keep", book.bookUrl)
+        assertEquals(5, book.durChapterIndex)
+        assertNull(book.customTag)
+    }
+
+    @Test
+    fun parseChaptersInjectsAndResolves() {
+        val book = Book(bookUrl = "https://src.com/b/1")
+        book.tocUrl = "https://src.com/toc/1"
+        val json = """[
+          {"title":"第1章","url":"/read/1"},
+          {"title":"第2章","url":"https://other.com/read/2","isVip":true},
+          {"url":"无标题"}
+        ]"""
+        val chapters = JsSourceMarshaller.parseChapters(json, book, textSource)
+        assertEquals(2, chapters.size)
+        assertEquals("https://src.com/read/1", chapters[0].url)     // 相对 → 绝对
+        assertEquals("https://src.com/b/1", chapters[0].bookUrl)    // 注入
+        assertEquals("https://src.com/toc/1", chapters[0].baseUrl)  // 注入
+        assertEquals(0, chapters[0].index)
+        assertEquals(1, chapters[1].index)                          // 按数组序注入
+        assertTrue(chapters[1].isVip)                               // 可选字段透传
+    }
+}

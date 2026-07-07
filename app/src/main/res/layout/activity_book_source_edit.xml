@@ -99,7 +99,7 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_type_text"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.App.Chip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:checked="true"
@@ -107,21 +107,21 @@
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_type_audio"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.App.Chip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/audio" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_type_image"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.App.Chip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Image" />
 
                         <com.google.android.material.chip.Chip
                             android:id="@+id/chip_type_file"
-                            style="@style/Widget.Material3.Chip.Filter"
+                            style="@style/Widget.App.Chip"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="File" />
@@ -139,7 +139,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/cb_is_enable"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Widget.App.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="@dimen/space_s"
@@ -148,7 +148,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/cb_is_enable_explore"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Widget.App.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="@dimen/space_s"
@@ -157,7 +157,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/cb_is_enable_cookie"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Widget.App.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="@dimen/space_s"
@@ -166,7 +166,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/cb_is_enable_review"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Widget.App.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="@dimen/space_s"
@@ -175,7 +175,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/cb_is_event_listener"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Widget.App.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="@dimen/space_s"
@@ -184,7 +184,7 @@
 
                     <com.google.android.material.chip.Chip
                         android:id="@+id/cb_is_custom_button"
-                        style="@style/Widget.Material3.Chip.Filter"
+                        style="@style/Widget.App.Chip"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginEnd="@dimen/space_s"
@@ -208,21 +208,10 @@
         android:elevation="2dp"
         tools:ignore="SpeakableTextPresentCheck" />
 
-    <HorizontalScrollView
-        android:id="@+id/field_nav_scroll"
+    <io.legado.app.ui.widget.FieldNavBar
+        android:id="@+id/field_nav"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:id="@+id/field_nav_group"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingHorizontal="@dimen/space_xs"
-            android:paddingVertical="@dimen/space_xs" />
-
-    </HorizontalScrollView>
+        android:layout_height="wrap_content" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"

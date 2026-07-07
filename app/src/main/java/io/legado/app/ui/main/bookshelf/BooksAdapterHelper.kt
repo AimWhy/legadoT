@@ -54,6 +54,8 @@ fun ItemBookshelfListBinding.bindBook(
     coverFragment: Fragment? = null,
     coverLifecycle: Lifecycle? = null,
 ) {
+    ivCover.transitionName = "book_cover_" + item.name + item.author
+
     fun loadCover() = ivCover.load(
         item.getDisplayCover(), item.name, item.author, false,
         item.getCoverSourceOrigin(), coverFragment, coverLifecycle
@@ -103,6 +105,7 @@ fun ItemBookshelfGridBinding.bindBook(
     isUpdate: Boolean,
     payloads: MutableList<Any>,
 ) {
+    ivCover.transitionName = "book_cover_" + item.name + item.author
     coverCard.setCardBackgroundColor(root.context.cardBackgroundColor)
 
     fun loadCover() = ivCover.load(

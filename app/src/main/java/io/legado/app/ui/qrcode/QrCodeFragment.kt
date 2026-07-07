@@ -1,12 +1,16 @@
 package io.legado.app.ui.qrcode
 
+import android.os.Bundle
+import android.view.View
 import com.google.zxing.Result
 import com.king.camera.scan.AnalyzeResult
 import com.king.camera.scan.CameraScan
+import com.king.view.viewfinderview.ViewfinderView
 import com.king.zxing.BarcodeCameraScanFragment
 import com.king.zxing.DecodeConfig
 import com.king.zxing.DecodeFormatManager
 import com.king.zxing.analyze.MultiFormatAnalyzer
+import io.legado.app.lib.theme.accentColor
 
 class QrCodeFragment : BarcodeCameraScanFragment() {
 
@@ -23,6 +27,18 @@ class QrCodeFragment : BarcodeCameraScanFragment() {
 
         //在启动预览之前，设置分析器，只识别二维码
         cameraScan.setAnalyzer(MultiFormatAnalyzer(decodeConfig))
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        //取景框施色跟随四色换肤：运行时 setter 优于 vvViewfinderStyle 静态主题挂钩
+        view.findViewById<ViewfinderView>(com.king.zxing.R.id.viewfinderView)?.apply {
+            val accent = requireContext().accentColor
+            setFrameCornerColor(accent)
+            setLaserColor(accent)
+            setFrameColor(accent)
+            setFrameCornerRadius(resources.getDimensionPixelSize(io.legado.app.R.dimen.radius_s))
+        }
     }
 
     override fun onScanResultCallback(result: AnalyzeResult<Result>) {

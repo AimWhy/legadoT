@@ -16,6 +16,8 @@ import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemSourceImportBinding
 import io.legado.app.model.AutoTaskRule
+import io.legado.app.ui.association.ImportState
+import io.legado.app.ui.association.showImportState
 import io.legado.app.ui.widget.dialog.CodeDialog
 import io.legado.app.ui.widget.dialog.WaitDialog
 import io.legado.app.utils.GSON
@@ -148,11 +150,13 @@ class ImportAutoTaskDialog() : BaseDialogFragment(R.layout.dialog_recycler_view)
                 cbSourceName.isChecked = viewModel.selectStatus[holder.layoutPosition]
                 cbSourceName.text = if (item.name.isBlank()) item.id else item.name
                 val localTask = viewModel.checkTasks[holder.layoutPosition]
-                tvSourceState.text = when {
-                    localTask == null -> getString(R.string.import_status_new)
-                    item != localTask -> getString(R.string.import_status_update)
-                    else -> getString(R.string.import_status_exist)
-                }
+                tvSourceState.showImportState(
+                    when {
+                        localTask == null -> ImportState.NEW
+                        item != localTask -> ImportState.UPDATE
+                        else -> ImportState.EXIST
+                    }
+                )
             }
         }
 

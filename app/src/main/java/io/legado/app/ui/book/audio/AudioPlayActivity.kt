@@ -1,21 +1,25 @@
 package io.legado.app.ui.book.audio
 
 import android.annotation.SuppressLint
+import android.content.res.ColorStateList
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.SeekBar
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.shape.CornerFamily
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.slider.Slider
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.BookType
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.Status
-import io.legado.app.constant.Theme
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
@@ -27,7 +31,11 @@ import io.legado.app.help.book.isAudio
 import io.legado.app.help.book.removeType
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.exoplayer.ExoPlayerHelper
+import io.legado.app.help.motion.MotionTokens
+import io.legado.app.help.motion.PressSpringEffect
+import io.legado.app.help.motion.ShapeMorph
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.AudioCache
 import io.legado.app.model.AudioPlay
 import io.legado.app.model.BookCover
@@ -42,8 +50,8 @@ import io.legado.app.ui.book.source.edit.BookSourceEditActivity
 import io.legado.app.ui.book.toc.TocActivityResult
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.login.SourceLoginActivity
-import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.StartActivityContract
+import io.legado.app.utils.applyAmbientBackground
 import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.invisible
@@ -70,7 +78,7 @@ import java.util.Locale
  */
 @SuppressLint("ObsoleteSdkInt")
 class AudioPlayActivity :
-    VMBaseActivity<ActivityAudioPlayBinding, AudioPlayViewModel>(toolBarTheme = Theme.Dark),
+    VMBaseActivity<ActivityAudioPlayBinding, AudioPlayViewModel>(),
     ChangeBookSourceDialog.CallBack,
     AudioPlay.CallBack,
     SleepTimerDialog.CallBack {
@@ -81,6 +89,10 @@ class AudioPlayActivity :
     private var playMode = AudioPlay.PlayMode.LIST_END_STOP
     private var pendingCacheAction: (() -> Unit)? = null
     private var menuCustomBtn: MenuItem? = null
+
+    /** 播放键可 morph 的形状背景引用:见 initView 中 setupPlayButtonShape 的获取实况 */
+    private var fabPlayShape: MaterialShapeDrawable? = null
+    private var playShapeCornerFull = 0f
 
     private val tocActivityResult = registerForActivityResult(TocActivityResult()) {
         it?.let {
@@ -207,18 +219,17 @@ class AudioPlayActivity :
         binding.ivSkipPrevious.setOnClickListener {
             AudioPlay.prev()
         }
-        binding.playerProgress.setOnSeekBarChangeListener(object : SeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                binding.tvDurTime.text = progress.toDurationTime()
-            }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar) {
+        binding.playerProgress.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) binding.tvDurTime.text = value.toInt().toDurationTime()
+        }
+        binding.playerProgress.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) {
                 adjustProgress = true
             }
 
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
+            override fun onStopTrackingTouch(slider: Slider) {
                 adjustProgress = false
-                AudioPlay.adjustProgress(seekBar.progress)
+                AudioPlay.adjustProgress(slider.value.toInt())
             }
         })
         binding.ivChapter.setOnClickListener {
@@ -241,6 +252,65 @@ class AudioPlayActivity :
         }
         updateAudioSkipButtonState()
         binding.llPlayMenu.applyNavigationBarPadding()
+        setupPlayButtonShape()
+        attachTransportSpring()
+    }
+
+    /**
+     * 播放键 morph 引用获取实况:MaterialButton filled 背景在 inflate 后是 RippleDrawable
+     * 包裹 MaterialShapeDrawable(其 backgroundTintList 已按 backgroundTint 施 primary)。
+     * 直接改其 shapeAppearanceModel 会被 ripple 层遮蔽,故取 ripple 内层 content 的
+     * MaterialShapeDrawable 作为可 morph 引用;取不到时兜底自建一只并回填为按钮背景。
+     */
+    private fun setupPlayButtonShape() {
+        val fab = binding.fabPlayStop
+        val model = ShapeAppearanceModel.builder()
+            .setAllCorners(CornerFamily.ROUNDED, 999f)
+            .build()
+        val shape = ((fab.background as? RippleDrawable)
+            ?.let { rd ->
+                (0 until rd.numberOfLayers)
+                    .map { rd.getDrawable(it) }
+                    .firstOrNull { it is MaterialShapeDrawable } as? MaterialShapeDrawable
+            } ?: (fab.background as? MaterialShapeDrawable))
+            ?: MaterialShapeDrawable(model).also { sd ->
+                sd.fillColor = ColorStateList.valueOf(fab.context.primaryColor)
+                fab.background = sd
+            }
+        shape.shapeAppearanceModel = model
+        fabPlayShape = shape
+        // full 圆的 cornerSize=真实半边(M3 clamp 上限≈半边;首帧宽未测得时用 post 补测,
+        // 否则兜底 999 会被 clamp 到半边→morph 起点(999)与终点(半边)渲染同形,尾部截断)
+        fab.post {
+            playShapeCornerFull = fab.width.coerceAtLeast(fab.height).let {
+                if (it > 0) it / 2f else 999f
+            }
+            shape.setCornerSize(playShapeCornerFull)
+        }
+        shape.setCornerSize(999f)
+    }
+
+    private fun attachTransportSpring() {
+        listOf(
+            binding.ivSkipPrevious, binding.ivSkipNext,
+            binding.ivFastRewind, binding.ivFastForward,
+            binding.ivPlayMode, binding.ivAudioSkip, binding.ivAudioCache,
+            binding.ivTimer, binding.ivChapter
+        ).forEach { PressSpringEffect.attach(it) }
+    }
+
+    /** 播放态圆↔暂停态圆角方:走 MotionTokens 门,关动效直接落终值 */
+    private fun morphPlayShape(toPause: Boolean) {
+        val shape = fabPlayShape ?: return
+        val full = playShapeCornerFull.takeIf { it > 0 } ?: (binding.fabPlayStop.width / 2f)
+        val pauseCorner = binding.fabPlayStop.context.resources.getDimension(R.dimen.radius_l)
+        val from = shape.topLeftCornerResolvedSize
+        val to = if (toPause) pauseCorner else full
+        if (!MotionTokens.enabled) {
+            shape.setCornerSize(to)
+            return
+        }
+        ShapeMorph.animateCornerSize(shape, from, to, this)
     }
 
     private fun updatePlayModeIcon() {
@@ -249,8 +319,12 @@ class AudioPlayActivity :
 
     private fun upCover(path: String?) {
         BookCover.load(this, path, sourceOrigin = AudioPlay.bookSource?.bookSourceUrl) {
-            BookCover.loadBlur(this, path, sourceOrigin = AudioPlay.bookSource?.bookSourceUrl)
-                .into(binding.ivBg)
+            binding.ivCover.post {
+                binding.root.applyAmbientBackground(
+                    binding.ivCover.drawable, lifecycleScope,
+                    io.legado.app.utils.AmbientIntensity.IMMERSIVE,
+                ) { isDestroyed }
+            }
         }.into(binding.ivCover)
     }
 
@@ -345,9 +419,11 @@ class AudioPlayActivity :
         observeEventSticky<Int>(EventBus.AUDIO_STATE) {
             AudioPlay.status = it
             if (it == Status.PLAY) {
-                binding.fabPlayStop.setImageResource(R.drawable.ic_pause_24dp)
+                binding.fabPlayStop.setIconResource(R.drawable.ic_pause_24dp)
+                morphPlayShape(toPause = true)
             } else {
-                binding.fabPlayStop.setImageResource(R.drawable.ic_play_24dp)
+                binding.fabPlayStop.setIconResource(R.drawable.ic_play_24dp)
+                morphPlayShape(toPause = false)
             }
         }
         observeEventSticky<String>(EventBus.AUDIO_SUB_TITLE) {
@@ -358,16 +434,18 @@ class AudioPlayActivity :
             updateAudioSkipButtonState()
         }
         observeEventSticky<Int>(EventBus.AUDIO_SIZE) {
-            binding.playerProgress.max = it
+            binding.playerProgress.valueTo = it.coerceAtLeast(1).toFloat()
             binding.tvAllTime.text = it.toDurationTime()
         }
         observeEventSticky<Int>(EventBus.AUDIO_PROGRESS) {
-            if (!adjustProgress) binding.playerProgress.progress = it
+            if (!adjustProgress) {
+                binding.playerProgress.value =
+                    it.toFloat().coerceIn(binding.playerProgress.valueFrom, binding.playerProgress.valueTo)
+            }
             binding.tvDurTime.text = it.toDurationTime()
         }
         observeEventSticky<Int>(EventBus.AUDIO_BUFFER_PROGRESS) {
-            binding.playerProgress.secondaryProgress = it
-
+            // Slider 无二级进度语义,缓冲进度不再单独绘制
         }
         observeEventSticky<Float>(EventBus.AUDIO_SPEED) {
             binding.tvSpeed.text = String.format(Locale.ROOT, "%.1fX", it)

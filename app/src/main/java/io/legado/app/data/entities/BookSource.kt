@@ -100,7 +100,9 @@ data class BookSource(
     @ColumnInfo(defaultValue = "0")
     var customButton: Boolean = false,
     // 段评规则
-    var ruleReview: ReviewRule? = null
+    var ruleReview: ReviewRule? = null,
+    // 纯JS单文件源主脚本;非空即为JS源(spec: docs/superpowers/specs/2026-07-07-js-single-file-source-design.md)
+    var mainJs: String? = null,
 ) : Parcelable, BaseSource {
 
     override fun getTag(): String {
@@ -234,6 +236,10 @@ data class BookSource(
         }
     }
 
+    fun isJsSource(): Boolean {
+        return !mainJs.isNullOrBlank()
+    }
+
     fun equal(source: BookSource): Boolean {
         return equal(bookSourceName, source.bookSourceName)
                 && equal(bookSourceUrl, source.bookSourceUrl)
@@ -248,6 +254,7 @@ data class BookSource(
                 && equal(variableComment, source.variableComment)
                 && equal(concurrentRate, source.concurrentRate)
                 && equal(jsLib, source.jsLib)
+                && equal(mainJs, source.mainJs)
                 && equal(header, source.header)
                 && equal(loginUrl, source.loginUrl)
                 && equal(loginUi, source.loginUi)

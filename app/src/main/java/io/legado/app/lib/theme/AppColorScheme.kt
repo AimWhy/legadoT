@@ -125,6 +125,22 @@ object AppColorScheme {
         )
     }
 
+    /**
+     * 氛围色派生：从任意种子（封面/壁纸主色）生成局部 scheme。
+     * 与 [current] 无关——不读不写全局缓存，锚=种子自身的 M3 中性背景。
+     * 消费方：N3a 详情头图、N3b 音频氛围场景、N4 壁纸取色。
+     * 纯 JVM 环境（单测）必须显式传 isEInk——默认参数会触发 AppConfig 的 Android 初始化。
+     */
+    fun ambientScheme(
+        @ColorInt seed: Int,
+        isDark: Boolean,
+        isEInk: Boolean = AppConfig.isEInkMode,
+    ): AppSchemeColors {
+        if (isEInk) return einkScheme()
+        val neutralAnchor = M3ColorScheme.generate(seed, isDark).background
+        return buildScheme(seed, isDark, neutralAnchor, false)
+    }
+
     private fun einkScheme() = AppSchemeColors(
         primary = BLACK, onPrimary = WHITE,
         primaryContainer = EINK_CONTAINER, onPrimaryContainer = BLACK,

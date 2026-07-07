@@ -1,439 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/background"
+    app:skin_background="background"
     android:orientation="vertical">
 
-    <ImageView
-        android:id="@+id/bg_book"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:contentDescription="@string/bg_image"
-        android:scaleType="centerCrop"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-    <LinearLayout
-        android:id="@+id/vw_bg"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#50000000"
-        android:orientation="vertical">
-
-        <io.legado.app.ui.widget.TitleBar
-            android:id="@+id/title_bar"
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/app_bar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:layout_constraintTop_toTopOf="parent"
-            app:themeMode="dark"
-            app:title="@string/book_info" />
+            android:background="@color/background"
+            app:skin_background="background"
+            android:stateListAnimator="@null"
+            app:elevation="0dp"
+            app:liftOnScroll="false">
+
+            <com.google.android.material.appbar.CollapsingToolbarLayout
+                android:id="@+id/collapsing_layout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_scrollFlags="scroll|exitUntilCollapsed"
+                app:titleEnabled="false">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/ll_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="?attr/actionBarSize"
+                    android:paddingHorizontal="@dimen/space_l"
+                    android:paddingBottom="@dimen/space_l"
+                    app:layout_collapseMode="parallax"
+                    app:layout_collapseParallaxMultiplier="0.6">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/card_cover"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:cardCornerRadius="@dimen/radius_m"
+                        app:cardElevation="4dp"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
+
+                        <io.legado.app.ui.widget.image.CoverImageView
+                            android:id="@+id/iv_cover"
+                            android:layout_width="110dp"
+                            android:layout_height="160dp"
+                            android:contentDescription="@string/img_cover"
+                            android:scaleType="centerCrop"
+                            android:src="@drawable/image_cover_default"
+                            app:coverCornerRadius="0dp" />
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <TextView
+                        android:id="@+id/tv_name"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_l"
+                        android:ellipsize="end"
+                        android:maxLines="2"
+                        android:text="@string/book_name"
+                        android:textAppearance="@style/TextAppearance.App.Display"
+                        app:skin_textColor="onSurface"
+                        android:textColor="@color/primaryText"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/card_cover"
+                        app:layout_constraintTop_toTopOf="@id/card_cover" />
+
+                    <TextView
+                        android:id="@+id/tv_author"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_l"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:ellipsize="end"
+                        android:singleLine="true"
+                        android:text="@string/author"
+                        android:textSize="@dimen/text_body"
+                        app:skin_textColor="onSurfaceVariant"
+                        android:textColor="@color/tv_text_summary"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/card_cover"
+                        app:layout_constraintTop_toBottomOf="@id/tv_name" />
+
+                    <io.legado.app.ui.widget.LabelsBar
+                        android:id="@+id/lb_kind"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_l"
+                        android:layout_marginTop="@dimen/space_s"
+                        android:visibility="gone"
+                        app:layout_constraintBottom_toBottomOf="@id/card_cover"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toEndOf="@id/card_cover"
+                        app:layout_constraintTop_toBottomOf="@id/tv_author"
+                        app:layout_constraintVertical_bias="1.0"
+                        tools:visibility="visible" />
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+                <com.google.android.material.appbar.MaterialToolbar
+                    android:id="@+id/tool_bar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="?attr/actionBarSize"
+                    app:layout_collapseMode="pin">
+
+                    <TextView
+                        android:id="@+id/tv_toolbar_title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:alpha="0"
+                        android:ellipsize="end"
+                        android:singleLine="true"
+                        android:textAppearance="@style/TextAppearance.App.Title"
+                        app:skin_textColor="onSurface"
+                        android:textColor="@color/primaryText" />
+                </com.google.android.material.appbar.MaterialToolbar>
+
+            </com.google.android.material.appbar.CollapsingToolbarLayout>
+        </com.google.android.material.appbar.AppBarLayout>
 
         <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
             android:id="@+id/refresh_layout"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1">
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <io.legado.app.ui.widget.NoChildScrollNestedScrollView
-                android:id="@+id/scroll_view"
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1.0"
-                android:fillViewport="true"
-                android:fitsSystemWindows="false"
-                android:focusable="true"
-                android:padding="0dp"
-                android:scrollbarStyle="outsideOverlay"
-                android:scrollbars="vertical">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:orientation="vertical">
-
-                    <RelativeLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp">
-
-                        <io.legado.app.ui.widget.image.ArcView
-                            android:id="@+id/arc_view"
-                            android:layout_width="match_parent"
-                            android:layout_height="78dp"
-                            android:layout_marginTop="90dp"
-                            app:arcDirectionTop="true"
-                            app:arcHeight="36dp"
-                            app:bgColor="@color/background" />
-
-                        <com.google.android.material.card.MaterialCardView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_centerHorizontal="true"
-                            android:layout_margin="3dp"
-                            app:cardCornerRadius="@dimen/radius_m"
-                            app:cardElevation="6dp">
-
-                            <io.legado.app.ui.widget.image.CoverImageView
-                                android:id="@+id/iv_cover"
-                                android:layout_width="110dp"
-                                android:layout_height="160dp"
-                                android:contentDescription="@string/img_cover"
-                                android:scaleType="centerCrop"
-                                app:coverCornerRadius="0dp"
-                                android:src="@drawable/image_cover_default" />
-
-                        </com.google.android.material.card.MaterialCardView>
-
-                    </RelativeLayout>
-
-                    <LinearLayout
-                        android:id="@+id/ll_info"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:background="@color/background"
-                        app:skin_background="background"
-                        android:orientation="vertical"
-                        android:paddingLeft="8dp"
-                        android:paddingRight="8dp"
-                        android:paddingBottom="8dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:paddingLeft="10dp"
-                            android:paddingTop="8dp"
-                            android:paddingRight="10dp"
-                            android:paddingBottom="3dp">
-
-                            <HorizontalScrollView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:layout_marginBottom="6dp"
-                                android:scrollbars="none">
-
-                                <TextView
-                                    android:id="@+id/tv_name"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:includeFontPadding="false"
-                                    android:singleLine="true"
-                                    android:text="@string/book_name"
-                                    app:skin_textColor="onSurface"
-                                    android:textColor="@color/primaryText"
-                                    android:textSize="18sp"
-                                    tools:ignore="RtlHardcoded" />
-                            </HorizontalScrollView>
-
-                            <HorizontalScrollView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_gravity="center"
-                                android:layout_marginBottom="6dp"
-                                android:scrollbars="none">
-
-                                <io.legado.app.ui.widget.LabelsBar
-                                    android:id="@+id/lb_kind"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:visibility="gone" />
-                            </HorizontalScrollView>
-
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:paddingLeft="8dp"
-                            android:paddingRight="8dp"
-                            android:paddingBottom="8dp">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingTop="3dp"
-                                android:paddingBottom="3dp"
-                                tools:ignore="UseCompoundDrawables">
-
-                                <ImageView
-                                    android:layout_width="18sp"
-                                    android:layout_height="18sp"
-                                    android:contentDescription="@string/author"
-                                    android:paddingRight="2dp"
-                                    android:src="@drawable/ic_author"
-                                    app:skin_tint="onSurfaceVariant"
-                                    app:tint="@color/tv_text_summary"
-                                    tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                                <TextView
-                                    android:id="@+id/tv_author"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:ellipsize="end"
-                                    android:includeFontPadding="false"
-                                    android:paddingRight="6dp"
-                                    android:singleLine="true"
-                                    android:text="@string/author"
-                                    app:skin_textColor="onSurfaceVariant"
-                                    android:textColor="@color/tv_text_summary"
-                                    android:textSize="13sp"
-                                    tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry" />
-
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingTop="3dp"
-                                android:paddingBottom="3dp">
-
-                                <ImageView
-                                    android:id="@+id/iv_web"
-                                    android:layout_width="18sp"
-                                    android:layout_height="18sp"
-                                    android:contentDescription="@string/origin_format"
-                                    android:paddingRight="2dp"
-                                    android:src="@drawable/ic_web_outline"
-                                    app:skin_tint="onSurfaceVariant"
-                                    app:tint="@color/tv_text_summary"
-                                    tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                                <TextView
-                                    android:id="@+id/tv_origin"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:ellipsize="end"
-                                    android:includeFontPadding="false"
-                                    android:paddingRight="6dp"
-                                    android:singleLine="true"
-                                    app:skin_textColor="onSurfaceVariant"
-                                    android:textColor="@color/tv_text_summary"
-                                    android:textSize="13sp"
-                                    tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
-                                    tools:text="@string/origin_format" />
-
-                                <io.legado.app.ui.widget.text.AccentBgTextView
-                                    android:id="@+id/tv_change_source"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="8dp"
-                                    android:paddingLeft="5dp"
-                                    android:paddingRight="5dp"
-                                    android:text="@string/change_origin"
-                                    android:textSize="13sp"
-                                    app:radius="2dp" />
-
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingTop="3dp"
-                                android:paddingBottom="3dp"
-                                tools:ignore="UseCompoundDrawables">
-
-                                <ImageView
-                                    android:id="@+id/ic_book_last"
-                                    android:layout_width="18sp"
-                                    android:layout_height="18sp"
-                                    android:contentDescription="@string/read_dur_progress"
-                                    android:paddingRight="2dp"
-                                    android:src="@drawable/ic_book_last"
-                                    app:skin_tint="onSurfaceVariant"
-                                    app:tint="@color/tv_text_summary"
-                                    tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                                <TextView
-                                    android:id="@+id/tv_lasted"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:ellipsize="end"
-                                    android:includeFontPadding="false"
-                                    android:paddingRight="6dp"
-                                    android:singleLine="true"
-                                    app:skin_textColor="onSurfaceVariant"
-                                    android:textColor="@color/tv_text_summary"
-                                    android:textSize="13sp"
-                                    tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
-                                    tools:text="@string/read_dur_progress" />
-
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingTop="3dp"
-                                android:paddingBottom="3dp">
-
-                                <ImageView
-                                    android:layout_width="18sp"
-                                    android:layout_height="18sp"
-                                    android:contentDescription="@string/read_dur_progress"
-                                    android:paddingRight="2dp"
-                                    android:src="@drawable/ic_groups"
-                                    app:skin_tint="onSurfaceVariant"
-                                    app:tint="@color/tv_text_summary"
-                                    tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                                <TextView
-                                    android:id="@+id/tv_group"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:ellipsize="end"
-                                    android:includeFontPadding="false"
-                                    android:paddingRight="6dp"
-                                    android:singleLine="true"
-                                    app:skin_textColor="onSurfaceVariant"
-                                    android:textColor="@color/tv_text_summary"
-                                    android:textSize="13sp"
-                                    tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
-                                    tools:text="@string/group_s" />
-
-                                <io.legado.app.ui.widget.text.AccentBgTextView
-                                    android:id="@+id/tv_change_group"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="8dp"
-                                    android:paddingLeft="5dp"
-                                    android:paddingRight="5dp"
-                                    android:text="@string/change_group"
-                                    android:textSize="13sp"
-                                    app:radius="2dp" />
-
-                            </LinearLayout>
-
-                            <LinearLayout
-                                android:id="@+id/ll_toc"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingTop="3dp"
-                                android:paddingBottom="3dp">
-
-                                <ImageView
-                                    android:layout_width="18sp"
-                                    android:layout_height="18sp"
-                                    android:contentDescription="@string/read_dur_progress"
-                                    android:paddingRight="2dp"
-                                    android:src="@drawable/ic_folder_open"
-                                    app:skin_tint="onSurfaceVariant"
-                                    app:tint="@color/tv_text_summary"
-                                    tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                                <TextView
-                                    android:id="@+id/tv_toc"
-                                    android:layout_width="0dp"
-                                    android:layout_height="wrap_content"
-                                    android:layout_weight="1"
-                                    android:ellipsize="end"
-                                    android:includeFontPadding="false"
-                                    android:paddingRight="6dp"
-                                    android:singleLine="true"
-                                    app:skin_textColor="onSurfaceVariant"
-                                    android:textColor="@color/tv_text_summary"
-                                    android:textSize="13sp"
-                                    tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
-                                    tools:text="@string/toc_s" />
-
-                                <io.legado.app.ui.widget.text.AccentBgTextView
-                                    android:id="@+id/tv_toc_view"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="8dp"
-                                    android:paddingLeft="5dp"
-                                    android:paddingRight="5dp"
-                                    android:text="@string/view_toc"
-                                    android:textSize="13sp"
-                                    app:radius="2dp" />
-
-                            </LinearLayout>
-
-                        </LinearLayout>
-
-                        <io.legado.app.ui.widget.text.ScrollTextView
-                            android:id="@+id/tv_intro"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:minHeight="48dp"
-                            android:paddingLeft="8dp"
-                            android:paddingBottom="8dp"
-                            android:text="@string/book_intro"
-                            app:skin_textColor="onSurfaceVariant"
-                            android:textColor="@color/secondaryText"
-                            android:textIsSelectable="true"
-                            android:textSize="14sp"
-                            android:visibility="visible"
-                            tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </io.legado.app.ui.widget.NoChildScrollNestedScrollView>
-
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="@dimen/space_l" />
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1px"
-            android:background="@color/bg_divider_line" />
+    <LinearLayout
+        android:id="@+id/fl_action"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background_menu"
+        app:skin_background="themeBottomBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/space_m"
+        android:paddingVertical="@dimen/space_s">
 
-        <LinearLayout
-            android:id="@+id/fl_action"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/background_menu"
-            app:skin_background="themeBottomBackground"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="@dimen/space_m"
-            android:paddingVertical="@dimen/space_s"
-            app:layout_constraintBottom_toBottomOf="parent">
+        <io.legado.app.ui.widget.text.AccentTonalBgTextView
+            android:id="@+id/tv_shelf"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:text="@string/remove_from_bookshelf"
+            android:textSize="15sp"
+            app:radius="@dimen/radius_full" />
 
-            <io.legado.app.ui.widget.text.AccentTonalBgTextView
-                android:id="@+id/tv_shelf"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:includeFontPadding="false"
-                android:text="@string/remove_from_bookshelf"
-                android:textSize="15sp"
-                app:radius="@dimen/radius_l" />
-
-            <io.legado.app.ui.widget.text.AccentBgTextView
-                android:id="@+id/tv_read"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:layout_marginStart="@dimen/space_m"
-                android:gravity="center"
-                android:includeFontPadding="false"
-                android:text="@string/reading"
-                android:textSize="15sp"
-                app:radius="@dimen/radius_l" />
-
-        </LinearLayout>
-
+        <io.legado.app.ui.widget.text.AccentBgTextView
+            android:id="@+id/tv_read"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:layout_marginStart="@dimen/space_m"
+            android:gravity="center"
+            android:includeFontPadding="false"
+            android:text="@string/reading"
+            android:textSize="15sp"
+            app:radius="@dimen/radius_full" />
     </LinearLayout>
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

@@ -5,8 +5,7 @@ package io.legado.app.ui.widget.code
 import android.content.Context
 import android.widget.ArrayAdapter
 import io.legado.app.R
-import splitties.init.appCtx
-import splitties.resources.color
+import io.legado.app.utils.getCompatColor
 import java.util.regex.Pattern
 
 val legadoPattern: Pattern = Pattern.compile("\\|\\||&&|%%|@js:|@Json:|@css:|@@|@XPath:")
@@ -16,18 +15,26 @@ val operationPattern: Pattern =
     Pattern.compile(":|==|>|<|!=|>=|<=|->|=|%|-|-=|%=|\\+|\\-|\\-=|\\+=|\\^|\\&|\\|::|\\?|\\*")
 val jsPattern: Pattern = Pattern.compile("var")
 
+/**
+ * 语义高亮色取自调用方（CodeView）自身的 [Context]，而非 appCtx —— 保证在夜间模式下解析到
+ * values-night/colors.xml 中的 code_* 覆盖值。
+ *
+ * 颜色在 pattern 注册时捕获——两个编辑 adapter 于 onCreateViewHolder 注册（每次日夜切换 recreate 重建
+ * adapter 取新色），两个弹窗消费者（CodeDialog/HttpTtsEditDialog）于 Fragment 创建时注册；
+ * 不得在 onBindViewHolder 注册（每次回收重绑会重复注册）。
+ */
 fun CodeView.addLegadoPattern() {
-    addSyntaxPattern(legadoPattern, appCtx.color(R.color.md_orange_900))
+    addSyntaxPattern(legadoPattern, context.getCompatColor(R.color.code_rule_symbol))
 }
 
 fun CodeView.addJsonPattern() {
-    addSyntaxPattern(jsonPattern, appCtx.color(R.color.md_blue_800))
+    addSyntaxPattern(jsonPattern, context.getCompatColor(R.color.code_json_token))
 }
 
 fun CodeView.addJsPattern() {
-    addSyntaxPattern(wrapPattern, appCtx.color(R.color.md_blue_grey_500))
-    addSyntaxPattern(operationPattern, appCtx.color(R.color.md_orange_900))
-    addSyntaxPattern(jsPattern, appCtx.color(R.color.md_light_blue_600))
+    addSyntaxPattern(wrapPattern, context.getCompatColor(R.color.code_escape))
+    addSyntaxPattern(operationPattern, context.getCompatColor(R.color.code_operator))
+    addSyntaxPattern(jsPattern, context.getCompatColor(R.color.code_keyword))
 }
 
 fun Context.arrayAdapter(keywords: Array<String>): ArrayAdapter<String> {
