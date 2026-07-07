@@ -14,7 +14,6 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.Window
 import android.widget.FrameLayout
-import androidx.activity.addCallback
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -105,9 +104,6 @@ abstract class BaseActivity<VB : ViewBinding>(
             findViewById<TitleBar>(R.id.title_bar)
                 ?.onMultiWindowModeChanged(isInMultiWindowMode, fullScreen)
         }
-        onBackPressedDispatcher.addCallback(this) {
-            finish()
-        }
         observeLiveBus()
         onActivityCreated(savedInstanceState)
     }
@@ -132,7 +128,8 @@ abstract class BaseActivity<VB : ViewBinding>(
     final override fun onCreateOptionsMenu(menu: Menu): Boolean {
         val bool = onCompatCreateOptionsMenu(menu)
         menu.applyTint(this, toolBarTheme)
-        findViewById<TitleBar>(R.id.title_bar)?.toolbar?.installMd3OverflowMenu(
+        (findViewById<TitleBar>(R.id.title_bar)?.toolbar
+            ?: findViewById<Toolbar>(R.id.tool_bar))?.installMd3OverflowMenu(
             onPrepareMenu = { menu ->
                 onPrepareOptionsMenu(menu)
                 onMenuOpened(Window.FEATURE_OPTIONS_PANEL, menu)

@@ -2,25 +2,27 @@ package io.legado.app.ui.book.read
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.drawable.GradientDrawable
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.animation.Animation
 import android.widget.FrameLayout
-import android.widget.SeekBar
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import com.google.android.material.slider.Slider
 import io.legado.app.R
 import io.legado.app.databinding.ViewMangaMenuBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.source.getSourceType
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.bottomBackground
+import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.model.ReadBook
 import io.legado.app.model.ReadManga
 import io.legado.app.ui.browser.WebViewActivity
-import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.applyAppTint
 import io.legado.app.utils.ConstraintModify
 import io.legado.app.utils.activity
 import io.legado.app.utils.applyNavigationBarPadding
@@ -112,6 +114,8 @@ class MangaMenu @JvmOverloads constructor(
             titleBarAddition.gone()
         }
         upBrightnessVwPos()
+        val textColor = context.getPrimaryTextColor(ColorUtils.isColorLight(bgColor))
+        seekReadPage.applyAppTint(textColor)
         /**
          * 确保视图不被导航栏遮挡
          */
@@ -210,18 +214,17 @@ class MangaMenu @JvmOverloads constructor(
             ReadManga.moveToPrevChapter(true)
         }
 
-        seekReadPage.setOnSeekBarChangeListener(object : SeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    callBack.skipToPage(seekBar.progress)
-                }
+        seekReadPage.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                callBack.skipToPage(value.toInt())
             }
-
-            override fun onStartTrackingTouch(seekBar: SeekBar) {
+        }
+        seekReadPage.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) {
                 binding.vwMenuBg.setOnClickListener(null)
             }
 
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
+            override fun onStopTrackingTouch(slider: Slider) {
                 binding.vwMenuBg.setOnClickListener { runMenuOut() }
             }
         })
@@ -229,8 +232,8 @@ class MangaMenu @JvmOverloads constructor(
 
     fun upSeekBar(value: Int, count: Int) {
         binding.seekReadPage.apply {
-            max = count.minus(1)
-            progress = value
+            valueTo = count.minus(1).coerceAtLeast(1).toFloat()
+            this.value = value.toFloat().coerceIn(valueFrom, valueTo)
         }
     }
 

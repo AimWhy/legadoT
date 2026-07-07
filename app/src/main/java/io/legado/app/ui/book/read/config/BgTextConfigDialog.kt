@@ -12,11 +12,11 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.widget.SeekBar
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.TooltipCompat
 import androidx.core.graphics.toColorInt
 import androidx.core.view.isGone
+import com.google.android.material.slider.Slider
 import com.jaredrummler.android.colorpicker.ColorPickerDialog
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
@@ -40,8 +40,8 @@ import io.legado.app.model.ReadBook
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.ui.file.HandleFileContract
-import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.applyAppTint
 import io.legado.app.utils.FileDoc
 import io.legado.app.utils.getCompatColor
 import io.legado.app.utils.FileUtils
@@ -159,6 +159,7 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
         ivDelete.setColorFilter(primaryTextColor, PorterDuff.Mode.SRC_IN)
         tvBgAlpha.setTextColor(primaryTextColor)
         tvBgImage.setTextColor(primaryTextColor)
+        sbBgAlpha.applyAppTint(primaryTextColor)
         // 描边钮随 bottomBackground 亮暗染色(替代原 StrokeTextView 自绘)
         val btnColor = ColorStateList.valueOf(primaryTextColor)
         arrayOf(tvReviewIconSvg, tvReviewIconSize, tvReviewIconColor, tvTextColor, tvBgColor)
@@ -193,7 +194,8 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
         binding.tvName.text = name.ifBlank { "文字" }
         binding.swDarkStatusIcon.isChecked = curStatusIconDark()
         binding.swUnderline.isChecked = underline
-        binding.sbBgAlpha.progress = bgAlpha
+        binding.sbBgAlpha.value = bgAlpha.toFloat()
+            .coerceIn(binding.sbBgAlpha.valueFrom, binding.sbBgAlpha.valueTo)
     }
 
     @SuppressLint("InflateParams")
@@ -351,13 +353,14 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
                 toastOnUi("数量已是最少,不能删除.")
             }
         }
-        binding.sbBgAlpha.setOnSeekBarChangeListener(object : SeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                ReadBookConfig.bgAlpha = progress
-                postEvent(EventBus.UP_CONFIG, arrayListOf(3))
-            }
+        binding.sbBgAlpha.addOnChangeListener { _, value, _ ->
+            ReadBookConfig.bgAlpha = value.toInt()
+            postEvent(EventBus.UP_CONFIG, arrayListOf(3))
+        }
+        binding.sbBgAlpha.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) = Unit
 
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
+            override fun onStopTrackingTouch(slider: Slider) {
                 postEvent(EventBus.UP_CONFIG, arrayListOf(3))
             }
         })

@@ -11,9 +11,9 @@ import android.view.LayoutInflater
 import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
 import android.view.animation.Animation
 import android.widget.FrameLayout
-import android.widget.SeekBar
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
+import com.google.android.material.slider.Slider
 import io.legado.app.R
 import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.ViewReadMenuBinding
@@ -36,8 +36,8 @@ import io.legado.app.model.ReadBook
 import io.legado.app.model.SourceCallBack
 import io.legado.app.ui.browser.WebViewActivity
 import io.legado.app.ui.widget.PopupAction
-import io.legado.app.ui.widget.seekbar.SeekBarChangeListener
 import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.applyAppTint
 import io.legado.app.utils.ConstraintModify
 import io.legado.app.utils.activity
 import io.legado.app.utils.applyNavigationBarPadding
@@ -228,12 +228,12 @@ class ReadMenu @JvmOverloads constructor(
         llSetting.setTint(textColor)
         vwBrightnessPosAdjust.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
         llBrightness.setOnClickListener(null)
-        val accent = context.accentColor
-        seekBrightness.progressTintList = ColorStateList.valueOf(accent)
-        seekBrightness.thumbTintList = ColorStateList.valueOf(accent)
-        seekBrightness.post {
-            seekBrightness.progress = AppConfig.readBrightness
+        seekBrightness.slider.applyAppTint(context.accentColor)
+        seekBrightness.slider.post {
+            seekBrightness.slider.value = AppConfig.readBrightness.toFloat()
+                .coerceIn(seekBrightness.slider.valueFrom, seekBrightness.slider.valueTo)
         }
+        seekReadPage.applyAppTint(textColor)
         if (AppConfig.showReadTitleBarAddition) {
             titleBarAddition.visible()
         } else {
@@ -285,10 +285,10 @@ class ReadMenu @JvmOverloads constructor(
     fun upBrightnessState() {
         if (brightnessAuto()) {
             binding.ivBrightnessAuto.setColorFilter(context.accentColor)
-            binding.seekBrightness.isEnabled = false
+            binding.seekBrightness.slider.isEnabled = false
         } else {
             binding.ivBrightnessAuto.setColorFilter(context.buttonDisabledColor)
-            binding.seekBrightness.isEnabled = true
+            binding.seekBrightness.slider.isEnabled = true
         }
         setScreenBrightness(AppConfig.readBrightness.toFloat())
     }
@@ -438,16 +438,17 @@ class ReadMenu @JvmOverloads constructor(
             upBrightnessState()
         }
         //亮度调节
-        seekBrightness.setOnSeekBarChangeListener(object : SeekBarChangeListener {
-
-            override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                if (fromUser) {
-                    setScreenBrightness(progress.toFloat())
-                }
+        seekBrightness.slider.addOnChangeListener { _, value, fromUser ->
+            if (fromUser) {
+                setScreenBrightness(value)
             }
+        }
+        seekBrightness.slider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
 
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
-                AppConfig.readBrightness = seekBar.progress
+            override fun onStartTrackingTouch(slider: Slider) = Unit
+
+            override fun onStopTrackingTouch(slider: Slider) {
+                AppConfig.readBrightness = slider.value.toInt()
             }
 
         })
@@ -456,24 +457,25 @@ class ReadMenu @JvmOverloads constructor(
             upBrightnessVwPos()
         }
         //阅读进度
-        seekReadPage.setOnSeekBarChangeListener(object : SeekBarChangeListener {
+        seekReadPage.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
 
-            override fun onStartTrackingTouch(seekBar: SeekBar) {
+            override fun onStartTrackingTouch(slider: Slider) {
                 binding.vwMenuBg.setOnClickListener(null)
             }
 
-            override fun onStopTrackingTouch(seekBar: SeekBar) {
+            override fun onStopTrackingTouch(slider: Slider) {
                 binding.vwMenuBg.setOnClickListener { runMenuOut() }
+                val progress = slider.value.toInt()
                 when (AppConfig.progressBarBehavior) {
-                    "page" -> ReadBook.skipToPage(seekBar.progress)
+                    "page" -> ReadBook.skipToPage(progress)
                     "chapter" -> {
                         if (confirmSkipToChapter) {
-                            callBack.skipToChapter(seekBar.progress)
+                            callBack.skipToChapter(progress)
                         } else {
                             context.alert("章节跳转确认", "确定要跳转章节吗？") {
                                 yesButton {
                                     confirmSkipToChapter = true
-                                    callBack.skipToChapter(seekBar.progress)
+                                    callBack.skipToChapter(progress)
                                 }
                                 noButton {
                                     upSeekBar()
@@ -581,21 +583,22 @@ class ReadMenu @JvmOverloads constructor(
             when (AppConfig.progressBarBehavior) {
                 "page" -> {
                     ReadBook.curTextChapter?.let {
-                        max = it.pageSize.minus(1)
-                        progress = ReadBook.durPageIndex
+                        valueTo = it.pageSize.minus(1).coerceAtLeast(1).toFloat()
+                        value = ReadBook.durPageIndex.toFloat().coerceIn(valueFrom, valueTo)
                     }
                 }
 
                 "chapter" -> {
-                    max = ReadBook.simulatedChapterSize - 1
-                    progress = ReadBook.durChapterIndex
+                    valueTo = (ReadBook.simulatedChapterSize - 1).coerceAtLeast(1).toFloat()
+                    value = ReadBook.durChapterIndex.toFloat().coerceIn(valueFrom, valueTo)
                 }
             }
         }
     }
 
     fun setSeekPage(seek: Int) {
-        binding.seekReadPage.progress = seek
+        binding.seekReadPage.value = seek.toFloat()
+            .coerceIn(binding.seekReadPage.valueFrom, binding.seekReadPage.valueTo)
     }
 
     fun setAutoPage(autoPage: Boolean) = binding.run {

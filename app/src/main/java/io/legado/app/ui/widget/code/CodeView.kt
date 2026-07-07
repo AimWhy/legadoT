@@ -65,6 +65,7 @@ class CodeView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
             if (highlightWhileTextChanging) {
                 if (mSyntaxPatternMap.isNotEmpty()) {
                     convertTabs(editableText, start, count)
+                    cancelHighlighterRender()
                     mUpdateHandler.postDelayed(mUpdateRunnable, mUpdateDelayTime.toLong())
                 }
             }
@@ -216,8 +217,7 @@ class CodeView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
     }
 
     private fun highlight(editable: Editable): Editable {
-        // if (editable.isEmpty() || editable.length > 1024) return editable
-        if (editable.length !in 1..1024) {
+        if (editable.length !in 1..HIGHLIGHT_MAX_LENGTH) {
             return editable
         }
         try {
@@ -408,5 +408,8 @@ class CodeView @JvmOverloads constructor(context: Context, attrs: AttributeSet? 
     companion object {
         private val PATTERN_LINE = Pattern.compile("(^.+$)+", Pattern.MULTILINE)
         private val PATTERN_TRAILING_WHITE_SPACE = Pattern.compile("[\\t ]+$", Pattern.MULTILINE)
+
+        /** 高亮悬崖：超过此长度的文本跳过语法高亮渲染，避免大文本卡顿。 */
+        private const val HIGHLIGHT_MAX_LENGTH = 8192
     }
 }

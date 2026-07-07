@@ -62,6 +62,8 @@
         <item name="colorOutline">@color/m3_outline</item>
         <item name="colorOutlineVariant">@color/m3_outline_variant</item>
         <item name="tabStyle">@style/Widget.App.TabLayout</item>
+        <!-- textInputStyle 全局挂接 OutlinedBox+radius_m;chipStyle 不挂全局——Filter 变体做全局默认会让普通 action chip 也变成可勾选外观 -->
+        <item name="textInputStyle">@style/Widget.App.TextInputLayout</item>
         <item name="actionOverflowMenuStyle">@style/Style.PopupMenu</item>
         <item name="android:itemTextAppearance">@style/Style.MenuItemText</item>
         <item name="android:popupMenuStyle">@style/Style.PopupMenu</item>
@@ -78,7 +80,8 @@
         <item name="shapeAppearanceSmallComponent">@style/ShapeAppearance.App.Small</item>
         <item name="shapeAppearanceMediumComponent">@style/ShapeAppearance.App.Medium</item>
         <item name="shapeAppearanceLargeComponent">@style/ShapeAppearance.App.ExtraLarge</item>
-        <!-- 字体挂接:弹窗标题=Headline(22sp),按钮=Label(14sp medium) -->
+        <!-- 字体挂接:弹窗标题=Headline(22sp 真粗体),按钮=Label(14sp medium),超大数字/空状态=Display(32sp 真粗体) -->
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.App.Display</item>
         <item name="textAppearanceHeadlineSmall">@style/TextAppearance.App.Headline</item>
         <item name="textAppearanceTitleLarge">@style/TextAppearance.App.Title</item>
         <item name="textAppearanceTitleMedium">@style/TextAppearance.App.Subtitle</item>
@@ -164,9 +167,16 @@
     </style>
 
     <!-- 字体体系:对齐 M3 type scale,落在既有 text_* token 上 -->
+    <!-- Headline 用真粗体(Roboto Bold 700),而非 sans-serif-medium 的假粗,强化 M3 Expressive 字阶层级 -->
     <style name="TextAppearance.App.Headline" parent="TextAppearance.AppCompat">
         <item name="android:textSize">@dimen/text_headline</item>
-        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="TextAppearance.App.Display" parent="TextAppearance.AppCompat">
+        <item name="android:textSize">@dimen/text_display</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textStyle">bold</item>
     </style>
     <style name="TextAppearance.App.Title" parent="TextAppearance.AppCompat">
         <item name="android:textSize">@dimen/text_title</item>

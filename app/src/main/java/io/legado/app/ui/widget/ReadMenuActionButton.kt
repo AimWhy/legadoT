@@ -8,6 +8,7 @@ import androidx.annotation.DrawableRes
 import androidx.core.view.isVisible
 import io.legado.app.R
 import io.legado.app.databinding.ViewReadMenuButtonBinding
+import io.legado.app.help.motion.PressSpringEffect
 import io.legado.app.utils.dpToPx
 
 /**
@@ -38,6 +39,7 @@ class ReadMenuActionButton @JvmOverloads constructor(
         binding.tvLabel.isVisible =
             a.getBoolean(R.styleable.ReadMenuActionButton_menuShowLabel, false)
         a.recycle()
+        PressSpringEffect.attach(this)
     }
 
     fun setIconResource(@DrawableRes resId: Int) {

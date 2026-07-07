@@ -111,19 +111,11 @@
             android:src="@drawable/ic_brightness_auto"
             tools:ignore="ImageContrastCheck" />
 
-        <io.legado.app.ui.widget.seekbar.VerticalSeekBarWrapper
+        <io.legado.app.ui.widget.seekbar.VerticalSliderWrapper
+            android:id="@+id/seek_brightness"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <io.legado.app.ui.widget.seekbar.VerticalSeekBar
-                android:id="@+id/seek_brightness"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:max="255"
-                app:seekBarRotation="CW270" />
-
-        </io.legado.app.ui.widget.seekbar.VerticalSeekBarWrapper>
+            android:layout_weight="1" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/vw_brightness_pos_adjust"
@@ -247,12 +239,17 @@
                     android:textSize="14sp"
                     tools:ignore="TouchTargetSizeCheck" />
 
-                <SeekBar
+                <com.google.android.material.slider.Slider
                     android:id="@+id/seek_read_page"
                     android:layout_width="0dp"
                     android:layout_height="25dp"
                     android:layout_gravity="center_vertical"
-                    android:layout_weight="1" />
+                    android:layout_weight="1"
+                    app:labelBehavior="gone"
+                    app:tickVisible="false"
+                    android:valueFrom="0"
+                    android:valueTo="1"
+                    android:stepSize="1" />
 
                 <TextView
                     android:id="@+id/tv_next"

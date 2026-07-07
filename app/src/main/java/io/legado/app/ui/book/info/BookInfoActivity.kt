@@ -2,26 +2,39 @@ package io.legado.app.ui.book.info
 
 import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.os.Bundle
+import android.text.TextUtils
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
+import android.view.Window
 import android.widget.CheckBox
 import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.shape.MaterialShapeDrawable
+import com.google.android.material.shape.ShapeAppearanceModel
+import com.google.android.material.transition.platform.MaterialContainerTransform
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.BookType
-import io.legado.app.constant.Theme
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityBookInfoBinding
 import io.legado.app.databinding.DialogBookAutoTaskBinding
+import io.legado.app.databinding.ItemBookInfoHeaderBinding
+import io.legado.app.databinding.ItemBookInfoTocHeaderBinding
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.book.addType
@@ -34,13 +47,16 @@ import io.legado.app.help.book.isWebFile
 import io.legado.app.help.book.removeType
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
+import io.legado.app.help.motion.MotionTokens
+import io.legado.app.help.motion.PressSpringEffect
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.AppColorScheme
 import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.ThemeUtils
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
-import io.legado.app.model.BookCover
 import io.legado.app.model.SourceCallBack
 import io.legado.app.model.remote.RemoteBookWebDav
 import io.legado.app.ui.about.AppLogDialog
@@ -54,7 +70,9 @@ import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.read.ReadBookActivity.Companion.RESULT_DELETED
 import io.legado.app.ui.book.search.SearchActivity
 import io.legado.app.ui.book.source.edit.BookSourceEditActivity
+import io.legado.app.ui.book.toc.ChapterListAdapter
 import io.legado.app.ui.book.toc.TocActivityResult
+import io.legado.app.ui.book.toc.TocListItem
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.dialog.PhotoDialog
@@ -62,9 +80,11 @@ import io.legado.app.ui.widget.dialog.VariableDialog
 import io.legado.app.ui.widget.dialog.WaitDialog
 import io.legado.app.utils.ConvertUtils
 import io.legado.app.utils.FileDoc
+import io.legado.app.utils.applyAmbientBackground
 import io.legado.app.utils.GSON
 import io.legado.app.utils.StartActivityContract
 import io.legado.app.utils.applyNavigationBarPadding
+import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.gone
@@ -83,7 +103,7 @@ import kotlinx.coroutines.withContext
 import kotlin.math.ceil
 
 class BookInfoActivity :
-    VMBaseActivity<ActivityBookInfoBinding, BookInfoViewModel>(toolBarTheme = Theme.Dark),
+    VMBaseActivity<ActivityBookInfoBinding, BookInfoViewModel>(),
     GroupSelectDialog.CallBack,
     ChangeBookSourceDialog.CallBack,
     ChangeCoverDialog.CallBack,
@@ -91,17 +111,7 @@ class BookInfoActivity :
 
     private val tocActivityResult = registerForActivityResult(TocActivityResult()) {
         it?.let {
-            viewModel.getBook(false)?.let { book ->
-                lifecycleScope.launch {
-                    withContext(IO) {
-                        book.durChapterIndex = it.first
-                        book.durChapterPos = it.second
-                        chapterChanged = it.third
-                        appDb.bookDao.update(book)
-                    }
-                    startReadActivity(book)
-                }
-            }
+            readFromChapter(it.first, it.second, it.third)
         } ?: let {
             if (!viewModel.inBookshelf) {
                 viewModel.delBook()
@@ -153,19 +163,100 @@ class BookInfoActivity :
     private var menuCustomBtn: MenuItem? = null
     private val book get() = viewModel.getBook(false)
 
+    // N3a toc-listify: 详情页(portrait)内容区从"NestedScroll + 手搓预览"换成 RecyclerView
+    // 承载完整目录,复用目录页既有的 ChapterListAdapter,不新建章节行布局/适配器。
+    // headerBinding/tocHeaderBinding 可能晚于 viewModel 数据就绪才 inflate(addHeaderView 异步),
+    // 故 bindInfoHeader/upTocHeader 内都做"回填当前已有数据"处理,showBook/upChapterList 侧也留 null-safe 更新。
+    private var headerBinding: ItemBookInfoHeaderBinding? = null
+    private var tocHeaderBinding: ItemBookInfoTocHeaderBinding? = null
+    private var tocReversed = true   // 默认倒序(最新章在前)
+    private var fullChapters: List<BookChapter> = emptyList()
+    private val chapterAdapter by lazy { ChapterListAdapter(this, chapterCallback) }
+
+    private val chapterCallback = object : ChapterListAdapter.Callback {
+        override val scope get() = lifecycleScope
+        override val book get() = viewModel.getBook(false)
+        override val isLocalBook get() = viewModel.getBook(false)?.isLocal == true
+        override val isAudioBook get() = viewModel.getBook(false)?.isAudio == true
+        override val isAudioCacheStateReady get() = true
+        override fun openChapter(bookChapter: BookChapter) {
+            readFromChapter(bookChapter.index)
+        }
+
+        override fun durChapterIndex() = viewModel.getBook(false)?.durChapterIndex ?: 0
+        override fun onListChanged() {}
+        override fun onVolumeToggled(volumeIndex: Int) {}
+        override fun onItemsUpdated() {}
+    }
+
     override val binding by viewBinding(ActivityBookInfoBinding::inflate)
     override val viewModel by viewModels<BookInfoViewModel>()
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        if (MotionTokens.enabled) {
+            window.requestFeature(Window.FEATURE_ACTIVITY_TRANSITIONS)
+            val transform = MaterialContainerTransform(this, true).apply {
+                addTarget(R.id.iv_cover)
+                duration = 320L
+                fadeMode = MaterialContainerTransform.FADE_MODE_THROUGH
+            }
+            window.sharedElementEnterTransition = transform
+            window.sharedElementReturnTransition = MaterialContainerTransform(this, false).apply {
+                addTarget(R.id.iv_cover)
+                duration = 280L
+            }
+        }
+        super.onCreate(savedInstanceState)
+    }
+
     @SuppressLint("PrivateResource")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
-        binding.titleBar.setBackgroundResource(R.color.transparent)
-        binding.refreshLayout?.setColorSchemeColors(accentColor)
-        binding.arcView.setBgColor(backgroundColor)
+        binding.ivCover.transitionName =
+            "book_cover_" + intent.getStringExtra("name").orEmpty() +
+            intent.getStringExtra("author").orEmpty()
+        binding.refreshLayout.setColorSchemeColors(accentColor)
         binding.flAction.applyNavigationBarPadding()
-        // tvShelf 是 AccentTonalBgTextView(P1 已角色化 secondaryContainer/onSecondaryContainer),
-        // 不再手动按 bottomBackground 覆盖文字色,避免破坏容器对比度配对
-        binding.tvToc.text = getString(R.string.toc_s, getString(R.string.loading))
-        binding.tvIntro.revealOnFocusHint = false
+        // tv_intro 在 land 仍是 binding 自己的字段(portrait 侧已迁入 header,在 bindInfoHeader 内单独设置)
+        binding.tvIntro?.revealOnFocusHint = false
+        setSupportActionBar(binding.toolBar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayShowTitleEnabled(false)
+        // CollapsingToolbarLayout 构造器无条件挂 inset 监听且 onWindowInsetChanged 恒
+        // consumeSystemWindowInsets()(1.13.0 字节码实证)——其子级(tool_bar/ll_header)的
+        // applyStatusBarPadding 永远收到被吞掉的 insets。让位必须在消费点之前:root 监听取值直接下发。
+        binding.root.setOnApplyWindowInsetsListenerCompat { _, windowInsets ->
+            val statusBarTop = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            binding.toolBar.updatePadding(top = statusBarTop)
+            binding.llHeader?.updatePadding(top = statusBarTop)
+            windowInsets
+        }
+        binding.appBar?.addOnOffsetChangedListener { appBar, verticalOffset ->
+            val range = appBar.totalScrollRange.takeIf { it > 0 } ?: return@addOnOffsetChangedListener
+            val ratio = -verticalOffset.toFloat() / range
+            binding.llHeader?.alpha = (1f - ratio * 1.4f).coerceIn(0f, 1f)
+            binding.tvToolbarTitle.alpha = ((ratio - 0.6f) / 0.4f).coerceIn(0f, 1f)
+            binding.refreshLayout.isEnabled = verticalOffset == 0
+        }
+        // N3a toc-listify: portrait 内容区列表化,仅在 recyclerView 非空(即 portrait)时装配;
+        // land 仍是纯 ScrollView + 手搓预览(upTocPreview),recyclerView 为 null,不受影响。
+        binding.recyclerView?.let { rv ->
+            rv.layoutManager = LinearLayoutManager(this)
+            rv.adapter = chapterAdapter
+            chapterAdapter.addHeaderView { parent ->
+                ItemBookInfoHeaderBinding.inflate(layoutInflater, parent, false).also {
+                    headerBinding = it
+                    bindInfoHeader(it)
+                }
+            }
+            chapterAdapter.addHeaderView { parent ->
+                ItemBookInfoTocHeaderBinding.inflate(layoutInflater, parent, false).also {
+                    tocHeaderBinding = it
+                    it.ivTocSort.rotationX = if (tocReversed) 0f else 180f
+                    it.ivTocSort.setOnClickListener { toggleTocOrder() }
+                    upTocHeader()
+                }
+            }
+        }
         viewModel.bookData.observe(this) { showBook(it) }
         viewModel.chapterListData.observe(this) { upLoading(false, it) }
         viewModel.waitDialogData.observe(this) { upWaitDialogStatus(it) }
@@ -337,8 +428,10 @@ class BookInfoActivity :
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.action == MotionEvent.ACTION_DOWN) {
+            // tv_intro 存在于且仅存在于其中一侧(portrait=headerBinding,land=binding),elvis 取现存的那个
+            val tvIntro = headerBinding?.tvIntro ?: binding.tvIntro
             currentFocus?.let {
-                if (it === binding.tvIntro && binding.tvIntro.hasSelection()) {
+                if (it === tvIntro && tvIntro.hasSelection()) {
                     it.clearFocus()
                 }
             }
@@ -378,15 +471,105 @@ class BookInfoActivity :
     private fun showBook(book: Book) = binding.run {
         showCover(book)
         tvName.text = book.name
+        tvToolbarTitle.text = book.name
         tvAuthor.text = getString(R.string.author_show, book.getRealAuthor())
-        tvOrigin.text = getString(R.string.origin_show, book.originName)
-        tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-        tvIntro.text = book.getDisplayIntro()
+        // tvOrigin/tvLasted/tvIntro/llToc 存在于且仅存在于其中一侧:
+        // portrait 已随 ll_info 迁入 header(RecyclerView addHeaderView 异步 inflate,可能晚于本次数据到达,
+        // 故 headerBinding 用 null-safe 更新,header 自己 inflate 时也会在 bindInfoHeader 内主动拉一次);
+        // land 未改动,字段仍在 binding 本身(nullable,因 portrait 侧同 id 已不存在于 activity 布局)。
+        headerBinding?.let { h ->
+            h.tvOrigin.text = getString(R.string.origin_show, book.originName)
+            h.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
+            h.tvIntro.text = book.getDisplayIntro()
+            h.llToc.visible(!book.isWebFile)
+        }
+        tvOrigin?.text = getString(R.string.origin_show, book.originName)
+        tvLasted?.text = getString(R.string.lasted_show, book.latestChapterTitle)
+        tvIntro?.text = book.getDisplayIntro()
         llToc?.visible(!book.isWebFile)
         menuCustomBtn?.isVisible = viewModel.bookSource?.customButton == true
         upTvBookshelf()
         upKinds(book)
         upGroup(book.group)
+    }
+
+    /**
+     * header(信息卡+简介+目录区头)绑定:施色卡角(运行时 MaterialShapeDrawable,复刻原 ll_info 逻辑,
+     * 仅 portrait 需要——appBar!=null 即 portrait,land 无 recyclerView/header 不会走到这里)+
+     * 监听迁移(原 initViewEvent 里对这些 view 的 setOnClickListener/setOnLongClickListener 整体搬入,
+     * SourceCallBack 钩子体一字不改)+数据回填(header 可能晚于 showBook 到达,主动拉一次当前数据)。
+     */
+    private fun bindInfoHeader(h: ItemBookInfoHeaderBinding) {
+        if (binding.appBar != null) {
+            h.root.background = MaterialShapeDrawable(
+                ShapeAppearanceModel.builder()
+                    .setTopLeftCornerSize(resources.getDimension(R.dimen.radius_xl))
+                    .setTopRightCornerSize(resources.getDimension(R.dimen.radius_xl))
+                    .build()
+            ).apply {
+                fillColor = ColorStateList.valueOf(backgroundColor)
+            }
+        }
+        h.tvIntro.revealOnFocusHint = false
+        h.tvOrigin.setOnClickListener {
+            viewModel.getBook()?.let { book ->
+                if (book.isLocal) return@let
+                if (!appDb.bookSourceDao.has(book.origin)) {
+                    toastOnUi(R.string.error_no_source)
+                    return@let
+                }
+                editSourceResult.launch {
+                    putExtra("sourceUrl", book.origin)
+                }
+            }
+        }
+        h.tvChangeSource.setOnClickListener {
+            viewModel.getBook()?.let { book ->
+                showDialogFragment(ChangeBookSourceDialog(book.name, book.author))
+            }
+        }
+        h.tvTocView.setOnClickListener {
+            if (viewModel.chapterListData.value.isNullOrEmpty()) {
+                toastOnUi(R.string.chapter_list_empty)
+                return@setOnClickListener
+            }
+            viewModel.getBook()?.let { book ->
+                if (!viewModel.inBookshelf) {
+                    viewModel.saveBook(book) {
+                        viewModel.saveChapterList {
+                            openChapterList()
+                        }
+                    }
+                } else {
+                    openChapterList()
+                }
+            }
+        }
+        h.llToc.setOnClickListener { h.tvTocView.performClick() }
+        h.tvChangeGroup.setOnClickListener {
+            viewModel.getBook()?.let {
+                showDialogFragment(
+                    GroupSelectDialog(it.group)
+                )
+            }
+        }
+        PressSpringEffect.attach(h.tvChangeSource)
+        PressSpringEffect.attach(h.tvChangeGroup)
+        PressSpringEffect.attach(h.tvTocView)
+        // header 可能晚于 viewModel 数据就绪才 inflate,主动拉一次当前数据回填
+        viewModel.bookData.value?.let { book ->
+            h.tvOrigin.text = getString(R.string.origin_show, book.originName)
+            h.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
+            h.tvIntro.text = book.getDisplayIntro()
+            h.llToc.visible(!book.isWebFile)
+        }
+        // tv_toc 同理回填:章节列表可能已到达(或仍在 loading/失败态),按 upLoading 的三态口径补一次
+        val chapterList = viewModel.chapterListData.value
+        h.tvToc.text = when {
+            chapterList == null -> getString(R.string.toc_s, getString(R.string.loading))
+            chapterList.isEmpty() -> getString(R.string.toc_s, getString(R.string.error_load_toc))
+            else -> getString(R.string.toc_s, book?.durChapterTitle ?: getString(R.string.loading))
+        }
     }
 
     private fun upKinds(book: Book) = binding.run {
@@ -437,21 +620,32 @@ class BookInfoActivity :
     private fun showCover(book: Book) {
         val coverOrigin = book.getCoverSourceOrigin()
         binding.ivCover.load(book.getDisplayCover(), book.name, book.author, false, coverOrigin) {
-            if (!AppConfig.isEInkMode) {
-                BookCover.loadBlur(this, book.getDisplayCover(), false, coverOrigin)
-                    .into(binding.bgBook)
-            }
+            binding.ivCover.post { applyAmbientHeader() }
         }
     }
 
+    private fun applyAmbientHeader() {
+        // N3a 详情头图与 N3b 音频页共用氛围背景实现(utils/AmbientBackground.kt)
+        (binding.appBar ?: binding.llHeaderPanel)
+            ?.applyAmbientBackground(binding.ivCover.drawable, lifecycleScope) { isDestroyed }
+    }
+
+    /**
+     * N3a toc-listify 分治:portrait 有 recyclerView(tv_toc/tv_lasted 已迁入 header),
+     * land 无 recyclerView(tv_toc/tv_lasted 仍是 activity 自己的旧字段)——与 appBar 判别器同理。
+     * tvToc/tvLasted 均按此discriminator 取目标 view,when 分支结构不变,仅目标 view 来源变化。
+     */
     private fun upLoading(isLoading: Boolean, chapterList: List<BookChapter>? = null) {
+        val isPortrait = binding.recyclerView != null
+        val tvToc = if (isPortrait) headerBinding?.tvToc else binding.tvToc
+        val tvLasted = if (isPortrait) headerBinding?.tvLasted else binding.tvLasted
         when {
             isLoading -> {
-                binding.tvToc.text = getString(R.string.toc_s, getString(R.string.loading))
+                tvToc?.text = getString(R.string.toc_s, getString(R.string.loading))
             }
 
             chapterList.isNullOrEmpty() -> {
-                binding.tvToc.text = getString(
+                tvToc?.text = getString(
                     R.string.toc_s,
                     getString(R.string.error_load_toc)
                 )
@@ -459,11 +653,78 @@ class BookInfoActivity :
 
             else -> {
                 book?.let {
-                    binding.tvToc.text = getString(R.string.toc_s, it.durChapterTitle)
-                    binding.tvLasted.text = getString(R.string.lasted_show, it.latestChapterTitle)
+                    tvToc?.text = getString(R.string.toc_s, it.durChapterTitle)
+                    tvLasted?.text = getString(R.string.lasted_show, it.latestChapterTitle)
                 }
             }
         }
+        if (isPortrait) {
+            chapterList?.let { upChapterList(it) }
+        } else {
+            upTocPreview(chapterList)
+        }
+    }
+
+    /**
+     * portrait 专属:详情页内嵌完整目录(RecyclerView + ChapterListAdapter),FLAT 喂入
+     * (无 TocListState 分卷分组,保持"倒序即最新在前"的干净反转——N3a 计划最大偏差点)。
+     */
+    private fun upChapterList(chapters: List<BookChapter>) {
+        fullChapters = chapters
+        submitTocItems()
+    }
+
+    private fun submitTocItems() {
+        val ordered = if (tocReversed) fullChapters.asReversed() else fullChapters
+        chapterAdapter.setItems(ordered.map { TocListItem.Chapter(chapter = it, depth = 0) })
+        upTocHeader()
+    }
+
+    private fun toggleTocOrder() {
+        tocReversed = !tocReversed
+        tocHeaderBinding?.ivTocSort?.rotationX = if (tocReversed) 0f else 180f
+        submitTocItems()
+    }
+
+    private fun upTocHeader() {
+        tocHeaderBinding?.tvTocCount?.text = getString(R.string.toc_s, fullChapters.size.toString())
+    }
+
+    /**
+     * 详情页内嵌目录预览(land 专属)：取最新 5 章倒序（列表尾=最新）填充可点行，
+     * 点击直接定位到该章开始阅读，无需先进入目录页。
+     */
+    private fun upTocPreview(chapterList: List<BookChapter>?) {
+        if (chapterList.isNullOrEmpty()) {
+            binding.llTocPreview?.gone()
+            return
+        }
+        binding.llTocPreview?.removeAllViews()
+        val total = chapterList.size
+        chapterList.takeLast(5).reversed().forEachIndexed { i, chapter ->
+            binding.llTocPreview?.addView(buildTocPreviewRow(chapter, total - 1 - i))
+        }
+        binding.llTocPreview?.visible()
+    }
+
+    private fun buildTocPreviewRow(chapter: BookChapter, index: Int) = TextView(this).apply {
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        // M3 单行列表标准 56dp(同全 app 偏好/管理行),44dp 曾致行密+误触(真机验收实锤)
+        minHeight = 56.dpToPx()
+        setSingleLine()
+        ellipsize = TextUtils.TruncateAt.END
+        textSize = 14f
+        gravity = Gravity.CENTER_VERTICAL
+        setTextColor(AppColorScheme.current.onSurfaceVariant)
+        val hPad = resources.getDimensionPixelSize(R.dimen.space_l)
+        setPadding(hPad, 0, hPad, 0)
+        background = ThemeUtils.resolveDrawable(context, android.R.attr.selectableItemBackground)
+        isClickable = true
+        isFocusable = true
+        text = chapter.title
+        setOnClickListener { readFromChapter(index) }
     }
 
     private fun upTvBookshelf() {
@@ -477,15 +738,18 @@ class BookInfoActivity :
 
     private fun upGroup(groupId: Long) {
         viewModel.loadGroup(groupId) {
-            if (it.isNullOrEmpty()) {
-                binding.tvGroup.text = if (book?.isLocal == true) {
+            val text = if (it.isNullOrEmpty()) {
+                if (book?.isLocal == true) {
                     getString(R.string.group_s, getString(R.string.local_no_group))
                 } else {
                     getString(R.string.group_s, getString(R.string.no_group))
                 }
             } else {
-                binding.tvGroup.text = getString(R.string.group_s, it)
+                getString(R.string.group_s, it)
             }
+            // tv_group 存在于且仅存在于其中一侧(portrait=headerBinding,land=binding)
+            headerBinding?.tvGroup?.text = text
+            binding.tvGroup?.text = text
         }
     }
 
@@ -529,7 +793,7 @@ class BookInfoActivity :
                 }
             }
         }
-        tvOrigin.setOnClickListener {
+        tvOrigin?.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 if (book.isLocal) return@let
                 if (!appDb.bookSourceDao.has(book.origin)) {
@@ -541,12 +805,12 @@ class BookInfoActivity :
                 }
             }
         }
-        tvChangeSource.setOnClickListener {
+        tvChangeSource?.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 showDialogFragment(ChangeBookSourceDialog(book.name, book.author))
             }
         }
-        tvTocView.setOnClickListener {
+        tvTocView?.setOnClickListener {
             if (viewModel.chapterListData.value.isNullOrEmpty()) {
                 toastOnUi(R.string.chapter_list_empty)
                 return@setOnClickListener
@@ -563,7 +827,8 @@ class BookInfoActivity :
                 }
             }
         }
-        tvChangeGroup.setOnClickListener {
+        llToc?.setOnClickListener { tvTocView?.performClick() }
+        tvChangeGroup?.setOnClickListener {
             viewModel.getBook()?.let {
                 showDialogFragment(
                     GroupSelectDialog(it.group)
@@ -618,10 +883,15 @@ class BookInfoActivity :
             }
             true
         }
-        refreshLayout?.setOnRefreshListener {
+        refreshLayout.setOnRefreshListener {
             refreshLayout.isRefreshing = false
             refreshBook()
         }
+        PressSpringEffect.attach(tvShelf)
+        PressSpringEffect.attach(tvRead)
+        tvChangeSource?.let { PressSpringEffect.attach(it) }
+        tvChangeGroup?.let { PressSpringEffect.attach(it) }
+        tvTocView?.let { PressSpringEffect.attach(it) }
     }
 
     private fun setSourceVariable() {
@@ -723,6 +993,24 @@ class BookInfoActivity :
     private fun openChapterList() {
         viewModel.getBook()?.let {
             tocActivityResult.launch(it.bookUrl)
+        }
+    }
+
+    /**
+     * 定位到指定章节并进入阅读界面。原为 tocActivityResult 回调内联逻辑，
+     * 现同时供目录页返回与详情页目录预览行点击复用。
+     */
+    private fun readFromChapter(index: Int, pos: Int = 0, changed: Boolean = false) {
+        viewModel.getBook(false)?.let { book ->
+            lifecycleScope.launch {
+                withContext(IO) {
+                    book.durChapterIndex = index
+                    book.durChapterPos = pos
+                    chapterChanged = changed
+                    appDb.bookDao.update(book)
+                }
+                startReadActivity(book)
+            }
         }
     }
 
@@ -1007,11 +1295,17 @@ class BookInfoActivity :
     }
 
     private fun startReadActivity(book: Book) {
+        val options = if (MotionTokens.enabled) {
+            ActivityOptionsCompat.makeCustomAnimation(
+                this, android.R.anim.fade_in, android.R.anim.fade_out
+            )
+        } else null
         when {
             book.isAudio -> readBookResult.launch(
                 Intent(this, AudioPlayActivity::class.java)
                     .putExtra("bookUrl", book.bookUrl)
-                    .putExtra("inBookshelf", viewModel.inBookshelf)
+                    .putExtra("inBookshelf", viewModel.inBookshelf),
+                options,
             )
 
             else -> readBookResult.launch(
@@ -1022,7 +1316,8 @@ class BookInfoActivity :
                 )
                     .putExtra("bookUrl", book.bookUrl)
                     .putExtra("inBookshelf", viewModel.inBookshelf)
-                    .putExtra("chapterChanged", chapterChanged)
+                    .putExtra("chapterChanged", chapterChanged),
+                options,
             )
         }
     }

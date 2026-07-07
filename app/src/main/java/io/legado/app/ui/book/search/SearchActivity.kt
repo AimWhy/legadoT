@@ -7,11 +7,14 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.view.View.GONE
 import android.view.View.VISIBLE
+import android.view.animation.AnimationUtils
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.widget.SearchView
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
@@ -29,6 +32,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.SearchKeyword
 import io.legado.app.databinding.ActivityBookSearchBinding
+import io.legado.app.help.motion.MotionTokens
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.AppColorScheme
 import io.legado.app.lib.theme.accentColor
@@ -229,6 +233,10 @@ class SearchActivity : VMBaseActivity<ActivityBookSearchBinding, SearchViewModel
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
         binding.recyclerView.itemAnimator = null
+        if (MotionTokens.enabled) {
+            binding.recyclerView.layoutAnimation =
+                AnimationUtils.loadLayoutAnimation(this, R.anim.motion_layout_stagger)
+        }
         binding.recyclerView.applyNavigationBarPadding()
         adapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
@@ -471,11 +479,18 @@ class SearchActivity : VMBaseActivity<ActivityBookSearchBinding, SearchViewModel
     /**
      * 显示书籍详情
      */
-    override fun showBookInfo(name: String, author: String, bookUrl: String) {
-        startActivity<BookInfoActivity> {
-            putExtra("name", name)
-            putExtra("author", author)
-            putExtra("bookUrl", bookUrl)
+    override fun showBookInfo(name: String, author: String, bookUrl: String, cover: View?) {
+        val intent = Intent(this, BookInfoActivity::class.java)
+            .putExtra("name", name)
+            .putExtra("author", author)
+            .putExtra("bookUrl", bookUrl)
+        if (cover != null && MotionTokens.enabled) {
+            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                this, cover, cover.transitionName
+            )
+            startActivity(intent, options.toBundle())
+        } else {
+            startActivity(intent)
         }
     }
 

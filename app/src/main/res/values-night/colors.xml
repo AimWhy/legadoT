@@ -35,4 +35,11 @@
     <color name="reviewReplyBg">#FF23262B</color>
     <color name="reviewCardStroke">#33FFFFFF</color>
     <color name="reviewBadgeBg">#26FFFFFF</color>
+
+    <!-- 代码高亮语义色(夜):300 系提亮,#121212 底上可读 -->
+    <color name="code_rule_symbol">#FFB74D</color>
+    <color name="code_json_token">#64B5F6</color>
+    <color name="code_escape">#90A4AE</color>
+    <color name="code_operator">#FFB74D</color>
+    <color name="code_keyword">#4FC3F7</color>
 </resources>

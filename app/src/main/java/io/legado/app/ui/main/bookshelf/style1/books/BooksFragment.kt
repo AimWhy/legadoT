@@ -1,9 +1,12 @@
 package io.legado.app.ui.main.bookshelf.style1.books
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.view.ViewConfiguration
+import android.view.animation.AnimationUtils
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.isGone
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -23,6 +26,7 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
 import io.legado.app.databinding.FragmentBooksBinding
 import io.legado.app.help.config.AppConfig
+import io.legado.app.help.motion.MotionTokens
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.book.info.BookInfoActivity
@@ -31,7 +35,6 @@ import io.legado.app.utils.cnCompare
 import io.legado.app.utils.flowWithLifecycleAndDatabaseChangeFirst
 import io.legado.app.utils.observeEvent
 import io.legado.app.utils.setEdgeEffectColor
-import io.legado.app.utils.startActivity
 import io.legado.app.utils.startActivityForBook
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers
@@ -112,6 +115,11 @@ class BooksFragment() : BaseFragment(R.layout.fragment_books),
         }
         booksAdapter.stateRestorationPolicy = StateRestorationPolicy.PREVENT_WHEN_EMPTY
         binding.rvBookshelf.adapter = booksAdapter
+        // 本页活在分组 VP2 内:远端分组页重建时首屏入场会随新视图实例重播——已知取舍非缺陷(见 n2-acceptance.md)
+        if (MotionTokens.enabled) {
+            binding.rvBookshelf.layoutAnimation =
+                AnimationUtils.loadLayoutAnimation(context, R.anim.motion_layout_stagger)
+        }
         booksAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                 val layoutManager = binding.rvBookshelf.layoutManager
@@ -242,10 +250,17 @@ class BooksFragment() : BaseFragment(R.layout.fragment_books),
         startActivityForBook(book)
     }
 
-    override fun openBookInfo(book: Book) {
-        startActivity<BookInfoActivity> {
-            putExtra("name", book.name)
-            putExtra("author", book.author)
+    override fun openBookInfo(book: Book, cover: View?) {
+        val intent = Intent(requireContext(), BookInfoActivity::class.java)
+            .putExtra("name", book.name)
+            .putExtra("author", book.author)
+        if (cover != null && MotionTokens.enabled) {
+            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                requireActivity(), cover, cover.transitionName
+            )
+            startActivity(intent, options.toBundle())
+        } else {
+            startActivity(intent)
         }
     }
 

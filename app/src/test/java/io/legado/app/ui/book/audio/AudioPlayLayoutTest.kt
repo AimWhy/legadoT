@@ -8,11 +8,13 @@ import java.io.File
 class AudioPlayLayoutTest {
 
     @Test
-    fun `audio play pause floating action button tints its white vector icon visibly`() {
+    fun `audio play pause button icon tints from scheme onPrimary`() {
+        // N3b:FAB 改 MaterialButton filled,图标走 colorOnPrimary,写死黑白退役
         val layoutXml = readProjectFile("src/main/res/layout/activity_audio_play.xml")
 
-        assertTrue(layoutXml.contains("app:tint=\"@color/md_black_1000\""))
-        assertFalse(layoutXml.contains("android:tint=\"@color/md_black_1000\""))
+        assertTrue(layoutXml.contains("app:iconTint=\"?attr/colorOnPrimary\""))
+        assertFalse(layoutXml.contains("@color/md_black_1000"))
+        assertFalse(layoutXml.contains("@color/md_white_1000"))
     }
 
     @Test

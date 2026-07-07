@@ -6,12 +6,8 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.databinding.ActivityAutoTaskEditBinding
@@ -29,6 +25,7 @@ import io.legado.app.ui.widget.dialog.WebCodeDialog
 import io.legado.app.utils.CronSchedule
 import io.legado.app.utils.GSON
 import io.legado.app.utils.imeHeight
+import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
@@ -36,6 +33,7 @@ import io.legado.app.utils.showHelp
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import splitties.views.bottomPadding
 
 class AutoTaskEditActivity :
     VMBaseActivity<ActivityAutoTaskEditBinding, AutoTaskEditViewModel>(),
@@ -73,8 +71,6 @@ class AutoTaskEditActivity :
     private val entities: ArrayList<EditEntity> = ArrayList()
     private var task: AutoTaskRule? = null
     private var originTask: AutoTaskRule? = null
-    private var selectedNavIndex = 0
-    private var navClickScrolling = false
     private val softKeyboardTool by lazy {
         KeyboardToolPop(this, lifecycleScope, binding.root, this)
     }
@@ -131,26 +127,14 @@ class AutoTaskEditActivity :
         binding.recyclerView.setEdgeEffectColor(primaryColor)
         binding.recyclerView.layoutManager = NoChildScrollLinearLayoutManager(this)
         binding.recyclerView.adapter = adapter
-        binding.root.setOnApplyWindowInsetsListenerCompat { _, windowInsets ->
-            softKeyboardTool.initialPadding = windowInsets.imeHeight
+        binding.recyclerView.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
+            val navigationBarHeight = windowInsets.navigationBarHeight
+            val imeHeight = windowInsets.imeHeight
+            view.bottomPadding = if (imeHeight == 0) navigationBarHeight else 0
+            softKeyboardTool.initialPadding = imeHeight
             windowInsets
         }
-        binding.recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrollStateChanged(rv: RecyclerView, newState: Int) {
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    navClickScrolling = false
-                }
-            }
-
-            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-                if (navClickScrolling) return
-                val lm = rv.layoutManager as? LinearLayoutManager ?: return
-                val firstVisible = lm.findFirstVisibleItemPosition()
-                if (firstVisible >= 0 && firstVisible != selectedNavIndex) {
-                    highlightNavItem(firstVisible)
-                }
-            }
-        })
+        binding.fieldNav.attachToRecyclerView(binding.recyclerView)
     }
 
     private fun upView(rule: AutoTaskRule) {
@@ -170,7 +154,7 @@ class AutoTaskEditActivity :
         addField("loginUi", rule.loginUi, R.string.login_ui)
         addField("loginCheckJs", rule.loginCheckJs, R.string.login_check_js)
         adapter.editEntities = entities
-        updateFieldNav(entities)
+        binding.fieldNav.setLabels(entities.map { it.hint.replace(Regex("[（(].+?[）)]"), "").trim() })
     }
 
     private fun addField(key: String, value: String?, hintRes: Int) {
@@ -181,70 +165,6 @@ class AutoTaskEditActivity :
 
     private fun getFieldValue(key: String): String {
         return fieldMap[key]?.value?.trim().orEmpty()
-    }
-
-    private fun updateFieldNav(entities: List<EditEntity>) {
-        val container = binding.fieldNavGroup
-        container.removeAllViews()
-        entities.forEachIndexed { index, entity ->
-            val label = entity.hint.replace(Regex("[（(].+?[）)]"), "").trim()
-            val tv = TextView(this).apply {
-                text = label
-                textSize = 12f
-                setPadding(24, 8, 24, 8)
-                setBackgroundResource(R.drawable.bg_field_nav_item)
-                setTextColor(context.getColor(R.color.primaryText))
-                gravity = android.view.Gravity.CENTER
-                val lp = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                lp.marginEnd = 6
-                layoutParams = lp
-                setOnClickListener {
-                    navClickScrolling = true
-                    val lm = binding.recyclerView.layoutManager as? LinearLayoutManager
-                    if (lm != null) {
-                        val scroller = object : androidx.recyclerview.widget.LinearSmoothScroller(context) {
-                            override fun getVerticalSnapPreference() = SNAP_TO_START
-                            override fun calculateDtToFit(
-                                viewStart: Int, viewEnd: Int,
-                                boxStart: Int, boxEnd: Int,
-                                snapPreference: Int
-                            ): Int {
-                                val offset = (resources.displayMetrics.density * 4).toInt()
-                                return boxStart - viewStart + offset
-                            }
-                        }
-                        scroller.targetPosition = index
-                        lm.startSmoothScroll(scroller)
-                    }
-                    highlightNavItem(index)
-                }
-            }
-            container.addView(tv)
-        }
-        highlightNavItem(0)
-    }
-
-    private fun highlightNavItem(index: Int) {
-        val container = binding.fieldNavGroup
-        if (selectedNavIndex in 0 until container.childCount) {
-            val prev = container.getChildAt(selectedNavIndex) as? TextView
-            prev?.isSelected = false
-            prev?.setTextColor(getColor(R.color.primaryText))
-        }
-        if (index in 0 until container.childCount) {
-            val curr = container.getChildAt(index) as? TextView
-            curr?.isSelected = true
-            curr?.setTextColor(android.graphics.Color.WHITE)
-            curr?.let {
-                binding.fieldNavScroll.smoothScrollTo(
-                    (it.left - 16).coerceAtLeast(0), 0
-                )
-            }
-        }
-        selectedNavIndex = index
     }
 
     private fun buildTask(): AutoTaskRule? {

@@ -2,6 +2,7 @@ package io.legado.app.ui.main.bookshelf.style2
 
 import android.content.Context
 import android.view.LayoutInflater
+import android.view.View
 import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.AsyncListDiffer
 import androidx.recyclerview.widget.DiffUtil
@@ -107,7 +108,7 @@ abstract class BaseBooksAdapter<VH : RecyclerView.ViewHolder>(
 
     interface CallBack {
         fun onItemClick(item: Any)
-        fun onItemLongClick(item: Any)
+        fun onItemLongClick(item: Any, cover: View? = null)
         fun isUpdate(bookUrl: String): Boolean
         fun getItems(): List<Any>
     }

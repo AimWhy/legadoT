@@ -45,12 +45,12 @@
     <dimen name="space_l">16dp</dimen>
     <dimen name="space_xl">24dp</dimen>
 
-    <!-- 圆角层级(对齐 M3 五档:XS4/S8/M12/L16/XL28;full=胶囊) -->
+    <!-- 圆角层级(对齐 M3 Expressive 五档:XS4/S8/M12/L20/XL32;full=胶囊;小体量控件不动,大体量容器放大以强化层级) -->
     <dimen name="radius_xs">4dp</dimen>
     <dimen name="radius_s">8dp</dimen>
     <dimen name="radius_m">12dp</dimen>
-    <dimen name="radius_l">16dp</dimen>
-    <dimen name="radius_xl">28dp</dimen>
+    <dimen name="radius_l">20dp</dimen>
+    <dimen name="radius_xl">32dp</dimen>
     <dimen name="radius_full">999dp</dimen>
     <dimen name="cover_radius">12dp</dimen>
 
@@ -60,4 +60,10 @@
     <dimen name="text_subtitle">16sp</dimen>
     <dimen name="text_title">18sp</dimen>
     <dimen name="text_headline">22sp</dimen>
+
+    <!-- 字号补档:大号变体 + display 顶层(M3 Expressive 字阶补齐) -->
+    <dimen name="text_caption_l">13sp</dimen>
+    <dimen name="text_body_l">15sp</dimen>
+    <dimen name="text_subtitle_l">17sp</dimen>
+    <dimen name="text_display">32sp</dimen>
 </resources>

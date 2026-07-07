@@ -16,7 +16,7 @@ import io.legado.app.data.entities.BaseSource
 import io.legado.app.data.entities.rule.RowUi
 import io.legado.app.databinding.DialogLoginBinding
 import io.legado.app.databinding.ItemFilletTextBinding
-import io.legado.app.databinding.ItemSourceEditBinding
+import io.legado.app.databinding.ItemLoginFieldBinding
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.utils.GSON
@@ -118,7 +118,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
         try {
             loginUi?.forEachIndexed { index, rowUi ->
                 when (rowUi.type) {
-                    RowUi.Type.text -> ItemSourceEditBinding.inflate(
+                    RowUi.Type.text -> ItemLoginFieldBinding.inflate(
                         layoutInflater,
                         binding.root,
                         false
@@ -132,7 +132,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
                         it.textInputLayout.isHintAnimationEnabled = true
                     }
 
-                    RowUi.Type.password -> ItemSourceEditBinding.inflate(
+                    RowUi.Type.password -> ItemLoginFieldBinding.inflate(
                         layoutInflater,
                         binding.root,
                         false
@@ -142,7 +142,9 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
                         it.root.id = index + 1000
                         it.textInputLayout.hint = rowUi.name
                         it.editText.inputType =
-                            InputType.TYPE_TEXT_VARIATION_PASSWORD or InputType.TYPE_CLASS_TEXT
+                            InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                        it.textInputLayout.endIconMode =
+                            com.google.android.material.textfield.TextInputLayout.END_ICON_PASSWORD_TOGGLE
                         it.textInputLayout.isHintAnimationEnabled = false
                         it.editText.setText(prefills?.get(rowUi.name))
                         it.textInputLayout.isHintAnimationEnabled = true
@@ -175,7 +177,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
             when (rowUi.type) {
                 "text", "password" -> {
                     val rowView = binding.root.findViewById<View>(index + 1000)
-                    ItemSourceEditBinding.bind(rowView).editText.text?.let {
+                    ItemLoginFieldBinding.bind(rowView).editText.text?.let {
                         loginData[rowUi.name] = it.toString()
                     }
                 }

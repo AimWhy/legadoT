@@ -409,12 +409,12 @@ class CacheActivity : VMBaseActivity<ActivityCacheBookBinding, CacheViewModel>()
                     }
                 }
                 tvAllExport.setOnClickListener {
-                    cbAllExport.callOnClick()
+                    cbAllExport.performClick()
                 }
                 tvSelectExport.setOnClickListener {
-                    cbSelectExport.callOnClick()
+                    cbSelectExport.performClick()
                 }
-                cbSelectExport.onCheckedChangeListener = { _, isChecked ->
+                cbSelectExport.setOnUserCheckedChangeListener { isChecked ->
                     if (isChecked) {
                         etEpubSize.isEnabled = true
                         etInputScope.isEnabled = true
@@ -423,7 +423,7 @@ class CacheActivity : VMBaseActivity<ActivityCacheBookBinding, CacheViewModel>()
                         cbAllExport.isChecked = false
                     }
                 }
-                cbAllExport.onCheckedChangeListener = { _, isChecked ->
+                cbAllExport.setOnUserCheckedChangeListener { isChecked ->
                     if (isChecked) {
                         etEpubSize.isEnabled = false
                         etInputScope.isEnabled = false
@@ -443,7 +443,7 @@ class CacheActivity : VMBaseActivity<ActivityCacheBookBinding, CacheViewModel>()
                     }
 
                 // 默认选择自定义导出
-                cbSelectExport.callOnClick()
+                cbSelectExport.performClick()
             }
         val alertDialog = alert(titleResource = R.string.select_section_export) {
             customView { alertBinding.root }
