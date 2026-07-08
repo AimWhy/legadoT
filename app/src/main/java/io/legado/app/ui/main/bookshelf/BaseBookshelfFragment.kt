@@ -1,12 +1,21 @@
 package io.legado.app.ui.main.bookshelf
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.TextView
+import androidx.core.app.ActivityOptionsCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.indices
+import androidx.core.view.updatePadding
+import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.lifecycleScope
+import com.google.android.material.appbar.AppBarLayout
 import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
 import io.legado.app.constant.EventBus
@@ -15,14 +24,20 @@ import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
 import io.legado.app.databinding.DialogBookshelfConfigBinding
 import io.legado.app.databinding.DialogEditTextBinding
+import io.legado.app.databinding.ViewBookshelfHeaderBinding
 import io.legado.app.help.DirectLinkUpload
+import io.legado.app.help.book.readProgress
 import io.legado.app.help.config.AppConfig
+import io.legado.app.help.motion.MotionTokens
+import io.legado.app.help.motion.PressSpringEffect
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.cache.CacheActivity
 import io.legado.app.ui.book.group.GroupManageDialog
 import io.legado.app.ui.book.import.local.ImportBookActivity
 import io.legado.app.ui.book.import.remote.RemoteBookActivity
+import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.manage.BookshelfManageActivity
 import io.legado.app.ui.book.search.SearchActivity
 import io.legado.app.ui.file.HandleFileContract
@@ -31,13 +46,20 @@ import io.legado.app.ui.main.MainViewModel
 import io.legado.app.ui.widget.dialog.WaitDialog
 import io.legado.app.utils.checkByIndex
 import io.legado.app.utils.getCheckedIndex
+import io.legado.app.utils.gone
 import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.readText
 import io.legado.app.utils.sendToClip
+import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
+import io.legado.app.utils.startActivityForBook
 import io.legado.app.utils.toastOnUi
+import io.legado.app.utils.visible
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfViewModel>(layoutId),
     MainFragmentInterface {
@@ -84,7 +106,106 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
         }
     }
 
+    private var shelfHeaderBinding: ViewBookshelfHeaderBinding? = null
+    private var shelfToolbarTitle: TextView? = null
+    private var heroBook: Book? = null
+
     abstract fun gotoTop()
+
+    /**
+     * 可收起大标题头部挂接（style1/style2 共用,一处实现）:
+     * ① root inset 让位——CollapsingToolbarLayout 无条件消费 insets(N3a 已证实),
+     *   子级 applyStatusBarPadding 收不到值,须在消费点之前用 root 监听直接下发。
+     * ② offset 交叉渐隐——header 随收起淡出、小标题随收起淡入(N3a 公式原样搬)。
+     * ③ hero 卡点击=继续阅读(startActivityForBook 既有链路)、长按=进详情(container-transform 既有链路)。
+     * ④ 继续阅读卡按压弹性反馈。
+     */
+    fun bindShelfHeader(
+        header: ViewBookshelfHeaderBinding,
+        appBar: AppBarLayout,
+        toolBar: Toolbar,
+        tvToolbarTitle: TextView
+    ) {
+        shelfHeaderBinding = header
+        shelfToolbarTitle = tvToolbarTitle
+        view?.setOnApplyWindowInsetsListenerCompat { _, windowInsets ->
+            val statusBarTop = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            toolBar.updatePadding(top = statusBarTop)
+            header.root.updatePadding(top = statusBarTop)
+            windowInsets
+        }
+        appBar.addOnOffsetChangedListener { bar, verticalOffset ->
+            val range = bar.totalScrollRange.takeIf { it > 0 } ?: return@addOnOffsetChangedListener
+            val ratio = -verticalOffset.toFloat() / range
+            header.root.alpha = (1f - ratio * 1.4f).coerceIn(0f, 1f)
+            tvToolbarTitle.alpha = ((ratio - 0.6f) / 0.4f).coerceIn(0f, 1f)
+        }
+        header.cardContinue.setOnClickListener {
+            heroBook?.let { book -> startActivityForBook(book) }
+        }
+        header.cardContinue.setOnLongClickListener {
+            heroBook?.let { book -> openHeroBookInfo(book, header.ivHeroCover) }
+            true
+        }
+        PressSpringEffect.attach(header.cardContinue)
+    }
+
+    /**
+     * 刷新 hero 卡与统计副行:IO 读 lastReadBook+两计数 → 主线程回填。
+     * 供 onResume 与书架数据变更时调用。
+     */
+    fun refreshShelfHeader() {
+        val header = shelfHeaderBinding ?: return
+        viewLifecycleOwner.lifecycleScope.launch {
+            val (book, bookCount, readingCount) = withContext(Dispatchers.IO) {
+                Triple(
+                    appDb.bookDao.lastReadBook,
+                    appDb.bookDao.allBookCount,
+                    appDb.bookDao.readingCount
+                )
+            }
+            heroBook = book
+            header.pbHeroProgress.setIndicatorColor(requireContext().accentColor)
+            header.tvShelfStats.text =
+                getString(R.string.bookshelf_stats, bookCount, readingCount)
+            if (book == null) {
+                header.cardContinue.gone()
+                return@launch
+            }
+            header.cardContinue.visible()
+            header.ivHeroCover.transitionName = "book_cover_" + book.name + book.author
+            header.ivHeroCover.load(
+                book.getDisplayCover(), book.name, book.author, false,
+                book.getCoverSourceOrigin()
+            )
+            header.tvHeroName.text = book.name
+            header.tvHeroChapter.text = book.durChapterTitle
+            val progress = book.readProgress() ?: 0f
+            header.pbHeroProgress.progress = (progress * 100).toInt()
+            header.tvHeroPercent.text = "${(progress * 100).toInt()}%"
+        }
+    }
+
+    /** 同步大标题与收起后小标题(style2 动态标题——进组显"书架(组名)"——用此接口)。 */
+    fun setShelfTitle(title: String) {
+        shelfHeaderBinding?.tvShelfTitle?.text = title
+        shelfToolbarTitle?.text = title
+    }
+
+    /** hero 长按进详情:复刻 BooksFragment.openBookInfo 既有链路(container-transform 场景动画)。 */
+    private fun openHeroBookInfo(book: Book, cover: View?) {
+        val intent = Intent(requireContext(), BookInfoActivity::class.java)
+            .putExtra("name", book.name)
+            .putExtra("author", book.author)
+        if (cover != null && MotionTokens.enabled) {
+            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                requireActivity(), cover, cover.transitionName
+            )
+            startActivity(intent, options.toBundle())
+        } else {
+            startActivity(intent)
+        }
+    }
 
     override fun onCompatCreateOptionsMenu(menu: Menu) {
         menuInflater.inflate(R.menu.main_bookshelf, menu)

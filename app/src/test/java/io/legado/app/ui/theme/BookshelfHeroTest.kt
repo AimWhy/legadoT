@@ -18,4 +18,14 @@ class BookshelfHeroTest {
         val ext = File("src/main/java/io/legado/app/help/book/BookExtensions.kt").readText()
         assertTrue("readProgress 扩展", ext.contains("fun Book.readProgress"))
     }
+
+    @Test
+    fun `bookshelf1 collapsing header with independent tabs`() {
+        val xml = File("src/main/res/layout/fragment_bookshelf1.xml").readText()
+        assertTrue(xml.contains("CollapsingToolbarLayout") && xml.contains("@+id/shelf_header"))
+        assertTrue("TitleBar 退役", !xml.contains("TitleBar"))
+        assertTrue("tabs 独立成行", xml.contains("@+id/tab_layout") && !xml.contains("view_tab_layout_min"))
+        val base = File("src/main/java/io/legado/app/ui/main/bookshelf/BaseBookshelfFragment.kt").readText()
+        assertTrue("头部逻辑一处实现", base.contains("fun bindShelfHeader") && base.contains("fun refreshShelfHeader"))
+    }
 }

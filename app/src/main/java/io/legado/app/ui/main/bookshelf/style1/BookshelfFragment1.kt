@@ -42,9 +42,7 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
 
     private val binding by viewBinding(FragmentBookshelf1Binding::bind)
     private val adapter by lazy { TabFragmentPageAdapter(this) }
-    private val tabLayout: TabLayout by lazy {
-        binding.titleBar.findViewById(R.id.tab_layout)
-    }
+    private val tabLayout: TabLayout by lazy { binding.tabLayout }
     private val bookGroups = mutableListOf<BookGroup>()
     override val groupId: Long get() = selectedGroup?.groupId ?: 0
 
@@ -59,9 +57,15 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        setSupportToolbar(binding.titleBar.toolbar)
+        setSupportToolbar(binding.toolBar)
+        bindShelfHeader(binding.shelfHeader, binding.appBar, binding.toolBar, binding.tvToolbarTitle)
         initView()
         initBookGroupData()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshShelfHeader()
     }
 
     private val selectedGroup: BookGroup?
