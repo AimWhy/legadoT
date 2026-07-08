@@ -28,4 +28,13 @@ class BookshelfHeroTest {
         val base = File("src/main/java/io/legado/app/ui/main/bookshelf/BaseBookshelfFragment.kt").readText()
         assertTrue("头部逻辑一处实现", base.contains("fun bindShelfHeader") && base.contains("fun refreshShelfHeader"))
     }
+
+    @Test
+    fun `bookshelf2 collapsing header follows dynamic title`() {
+        val xml = File("src/main/res/layout/fragment_bookshelf2.xml").readText()
+        assertTrue(xml.contains("CollapsingToolbarLayout") && xml.contains("@+id/shelf_header"))
+        assertTrue("TitleBar 退役", !xml.contains("TitleBar"))
+        val frag = File("src/main/java/io/legado/app/ui/main/bookshelf/style2/BookshelfFragment2.kt").readText()
+        assertTrue("动态标题走 setShelfTitle", frag.contains("setShelfTitle") && !frag.contains("titleBar.title"))
+    }
 }

@@ -16,6 +16,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.lifecycleScope
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.appbar.AppBarLayout
 import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
@@ -133,7 +134,8 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
         header: ViewBookshelfHeaderBinding,
         appBar: AppBarLayout,
         toolBar: Toolbar,
-        tvToolbarTitle: TextView
+        tvToolbarTitle: TextView,
+        refreshLayout: SwipeRefreshLayout? = null
     ) {
         shelfHeaderBinding = header
         shelfToolbarTitle = tvToolbarTitle
@@ -148,6 +150,7 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
             val ratio = -verticalOffset.toFloat() / range
             header.root.alpha = (1f - ratio * 1.4f).coerceIn(0f, 1f)
             tvToolbarTitle.alpha = ((ratio - 0.6f) / 0.4f).coerceIn(0f, 1f)
+            refreshLayout?.isEnabled = verticalOffset == 0
         }
         header.cardContinue.setOnClickListener {
             heroBook?.let { book -> startActivityForBook(book) }
