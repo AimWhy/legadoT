@@ -63,11 +63,6 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
         initBookGroupData()
     }
 
-    override fun onResume() {
-        super.onResume()
-        refreshShelfHeader()
-    }
-
     private val selectedGroup: BookGroup?
         get() = bookGroups.getOrNull(tabLayout.selectedTabPosition)
 
