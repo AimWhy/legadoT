@@ -55,6 +55,7 @@
     <string name="last_read">Last reading</string>
     <string name="update_log">What\'s new</string>
     <string name="bookshelf_empty">The bookshelf is still empty. Search for books or add them from discovery!</string>
+    <string name="bookshelf_stats">%1$d books · %2$d reading</string>
     <string name="action_search">Search</string>
     <string name="action_download">Download</string>
     <string name="layout_list">List</string>
