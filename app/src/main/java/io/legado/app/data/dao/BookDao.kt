@@ -124,9 +124,6 @@ interface BookDao {
     @get:Query("SELECT COUNT(*) FROM books")
     val allBookCount: Int
 
-    @get:Query("SELECT count(*) FROM books")
-    val bookCount: Int
-
     @get:Query("SELECT count(*) FROM books where durChapterTime > 0")
     val readingCount: Int
 
