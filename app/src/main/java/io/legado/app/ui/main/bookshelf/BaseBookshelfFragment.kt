@@ -13,12 +13,15 @@ import androidx.core.view.updatePadding
 import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.appbar.AppBarLayout
 import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
+import io.legado.app.constant.AppLog
 import io.legado.app.constant.EventBus
+import io.legado.app.data.AppDatabase
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookGroup
@@ -45,6 +48,7 @@ import io.legado.app.ui.main.MainFragmentInterface
 import io.legado.app.ui.main.MainViewModel
 import io.legado.app.ui.widget.dialog.WaitDialog
 import io.legado.app.utils.checkByIndex
+import io.legado.app.utils.flowWithLifecycleAndDatabaseChangeFirst
 import io.legado.app.utils.getCheckedIndex
 import io.legado.app.utils.gone
 import io.legado.app.utils.isAbsUrl
@@ -58,6 +62,10 @@ import io.legado.app.utils.startActivityForBook
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.visible
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.conflate
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -109,6 +117,7 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
     private var shelfHeaderBinding: ViewBookshelfHeaderBinding? = null
     private var shelfToolbarTitle: TextView? = null
     private var heroBook: Book? = null
+    private var shelfHeaderFlowJob: Job? = null
 
     abstract fun gotoTop()
 
@@ -148,11 +157,38 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
             true
         }
         PressSpringEffect.attach(header.cardContinue)
+        subscribeShelfHeaderRefresh()
+    }
+
+    /**
+     * hero 卡/统计随书架数据实时刷新:添加/导入书籍走的是 DialogFragment(非 Activity),
+     * fragment 全程停留 RESUMED、onResume 不会重入,仅靠 onResume 单点调用会漏刷。
+     * 订阅 BOOK_TABLE_NAME 的 InvalidationTracker,复刻 BooksFragment.upRecyclerData
+     * 的 Flow 构造(同款 flowWithLifecycleAndDatabaseChangeFirst+catch+conflate+
+     * flowOn(Dispatchers.Default)),RESUMED 门控下任何书籍表变更都会触发。
+     * collect 落在 launch 默认的 Main dispatcher,直调 refreshShelfHeader()——
+     * 该函数内部已自带 IO→Main 跳转,此处不重复 dispatch,避免竞态。
+     * bindShelfHeader 只在 onFragmentCreated 调一次,故此订阅是一次性的。
+     */
+    private fun subscribeShelfHeaderRefresh() {
+        shelfHeaderFlowJob?.cancel()
+        shelfHeaderFlowJob = viewLifecycleOwner.lifecycleScope.launch {
+            appDb.bookDao.flowAll().flowWithLifecycleAndDatabaseChangeFirst(
+                viewLifecycleOwner.lifecycle,
+                Lifecycle.State.RESUMED,
+                AppDatabase.BOOK_TABLE_NAME
+            ).catch {
+                AppLog.put("书架大标题刷新出错", it)
+            }.conflate().flowOn(Dispatchers.Default).collect {
+                refreshShelfHeader()
+            }
+        }
     }
 
     /**
      * 刷新 hero 卡与统计副行:IO 读 lastReadBook+两计数 → 主线程回填。
-     * 供 onResume 与书架数据变更时调用。
+     * 供 subscribeShelfHeaderRefresh 的书架数据变更订阅调用(bindShelfHeader 内已接线,
+     * 覆盖初次绑定与后续任意书籍表变更,无需再靠 onResume 补刷)。
      */
     fun refreshShelfHeader() {
         val header = shelfHeaderBinding ?: return
