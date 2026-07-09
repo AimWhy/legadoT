@@ -123,6 +123,21 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
     private var shelfRefreshLayout: SwipeRefreshLayout? = null
     private var appBarExpanded = true
 
+    /**
+     * shelfHeaderBinding/shelfToolbarTitle/shelfRefreshLayout 等是 Fragment 级字段持有的 view 引用,
+     * view 销毁后若不置空会悬空持有(BooksFragment.onDestroyView 同款既有约定)。
+     * shelfHeaderFlowJob 挂在 viewLifecycleOwner.lifecycleScope,view 销毁时本已自动取消,
+     * 此处显式 cancel+置空是防御性收尾,避免持有已失效 Job 引用。
+     */
+    override fun onDestroyView() {
+        super.onDestroyView()
+        shelfHeaderFlowJob?.cancel()
+        shelfHeaderFlowJob = null
+        shelfHeaderBinding = null
+        shelfToolbarTitle = null
+        shelfRefreshLayout = null
+    }
+
     abstract fun gotoTop()
 
     /**
@@ -251,11 +266,19 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
         shelfToolbarTitle?.text = title
     }
 
-    /** hero 长按进详情:复刻 BooksFragment.openBookInfo 既有链路(container-transform 场景动画)。 */
+    /**
+     * hero 长按进详情:复刻 BooksFragment.openBookInfo 既有链路(container-transform 场景动画)。
+     * hero 封面与同书在列表内的 item 封面共用 "book_cover_"+name+author 会撞名——同一本书
+     * 既是 hero 又是列表首项时,两个同名 view 共存,返回时共享元素映射会二义(可能误映射到
+     * 已收起的 alpha=0 hero)。hero 专属唯一名,并显式告知 BookInfoActivity 采用该名。
+     */
     private fun openHeroBookInfo(book: Book, cover: View?) {
+        val heroTransitionName = "book_cover_hero_" + book.name + book.author
+        cover?.transitionName = heroTransitionName
         val intent = Intent(requireContext(), BookInfoActivity::class.java)
             .putExtra("name", book.name)
             .putExtra("author", book.author)
+            .putExtra("coverTransitionName", heroTransitionName)
         if (cover != null && MotionTokens.enabled) {
             val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
                 requireActivity(), cover, cover.transitionName

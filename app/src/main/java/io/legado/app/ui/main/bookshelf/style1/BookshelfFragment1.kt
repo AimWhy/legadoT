@@ -14,7 +14,6 @@ import io.legado.app.data.entities.BookGroup
 import io.legado.app.databinding.FragmentBookshelf1Binding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.theme.accentColor
-import io.legado.app.lib.theme.appBarBackgroundIsLight
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.tabTextColors
@@ -22,6 +21,7 @@ import io.legado.app.ui.book.group.GroupEditDialog
 import io.legado.app.ui.book.search.SearchActivity
 import io.legado.app.ui.main.bookshelf.BaseBookshelfFragment
 import io.legado.app.ui.main.bookshelf.style1.books.BooksFragment
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
@@ -71,12 +71,9 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
         tabLayout.isTabIndicatorFullWidth = false
         tabLayout.tabMode = TabLayout.MODE_SCROLLABLE
         tabLayout.setSelectedTabIndicatorColor(requireContext().accentColor)
-        // 沉浸式时栏透明，可见背景是页面背景而非主色，需用页面背景判断明暗
-        val tabBarIsLight = appBarBackgroundIsLight(
-            transparentActionBar = AppConfig.isTransparentActionBar,
-            barBackgroundColor = primaryColor,
-            contentBackgroundColor = requireContext().backgroundColor
-        )
+        // AppBarLayout 已改平涂 @color/background(原 TitleBar 主色栏已退役),
+        // 可见栏色恒等于页面背景,明暗判据须锚定背景色而非已失效的主色/沉浸式开关
+        val tabBarIsLight = ColorUtils.isColorLight(requireContext().backgroundColor)
         val tabColors = tabTextColors(tabBarIsLight)
         tabLayout.setTabTextColors(tabColors.unselected, tabColors.selected)
         binding.viewPagerBookshelf.offscreenPageLimit = 1

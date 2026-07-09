@@ -211,9 +211,11 @@ class BookInfoActivity :
 
     @SuppressLint("PrivateResource")
     override fun onActivityCreated(savedInstanceState: Bundle?) {
-        binding.ivCover.transitionName =
-            "book_cover_" + intent.getStringExtra("name").orEmpty() +
-            intent.getStringExtra("author").orEmpty()
+        // hero 卡长按跳转会显式传 coverTransitionName(唯一名,绕开与同书列表 item 的撞名);
+        // 其余全部既有入口(书架列表项/搜索结果等)不传此 extra,走默认拼名,行为不变
+        binding.ivCover.transitionName = intent.getStringExtra("coverTransitionName")
+            ?: ("book_cover_" + intent.getStringExtra("name").orEmpty() +
+                intent.getStringExtra("author").orEmpty())
         binding.refreshLayout.setColorSchemeColors(accentColor)
         binding.flAction.applyNavigationBarPadding()
         // tv_intro 在 land 仍是 binding 自己的字段(portrait 侧已迁入 header,在 bindInfoHeader 内单独设置)
