@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.MainThread
 import androidx.annotation.RequiresApi
 import io.legado.app.constant.PreferKey
 import io.legado.app.help.config.ThemeConfig
@@ -34,13 +35,20 @@ object WallpaperSeed {
     /**
      * App 级监听单实例;非 null 表示当前已注册,是防重注册的唯一判据。
      * 类型故意存为 [Any]:[WallpaperManager.OnColorsChangedListener] 本身是 API 27+ 类型,
-     * 而本 object 在 App.onCreate 于所有 API 等级(minSdk 26)无条件加载——参照本仓
-     * CanvasRecorderFactory/RenderNodePool 的既有先例,不在无条件加载的类里让高版本
-     * 专属类型出现在字段签名中,只在 [registerListener]/[unregisterListener](均
-     * @RequiresApi(S) 且外层已做 SDK_INT 门)内部按需强转。
+     * 而本 object 在 App.onCreate 于所有 API 等级(minSdk 26)无条件加载——采用标准
+     * Any?-holder 惯例,不在无条件加载的类里让高版本专属类型出现在字段签名中,只在
+     * [registerListener]/[unregisterListener](均 @RequiresApi(S) 且外层已做 SDK_INT 门)
+     * 内部按需强转。
      */
     @Volatile
     private var listener: Any? = null
+
+    /**
+     * 防 RECREATE 风暴:记录上次成功应用的种子值。壁纸变化监听可能高频触发(系统无dedup),
+     * 每次 applySeed 引发 8 次持久化写 + 全局 RECREATE;等值守卫防冗余更新。
+     */
+    @Volatile
+    private var lastAppliedSeed: Int? = null
 
     private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
 
@@ -75,6 +83,7 @@ object WallpaperSeed {
             context.putPrefBoolean(PreferKey.wallpaperFollow, false)
             // 四色留末次派生值,不回滚;仅撤销"种子来源=壁纸"标记,后续手动改色/预设可正常接管。
             ThemeConfig.themeSeedMode = ""
+            lastAppliedSeed = null  // 清理状态,为下次启用做准备。
             return true
         }
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
@@ -82,6 +91,7 @@ object WallpaperSeed {
         context.putPrefBoolean(PreferKey.wallpaperFollow, true)
         context.putPrefBoolean(PreferKey.wallpaperAutoUpdate, autoUpdate)
         ThemeSeedApplier.applySeed(context, seed, "wallpaper")
+        lastAppliedSeed = seed  // 记录初始应用的种子值,防止同值重复更新。
         if (autoUpdate) {
             registerListener(context)
         } else {
@@ -91,8 +101,10 @@ object WallpaperSeed {
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
+    @MainThread
     private fun registerListener(context: Context) {
         // 防重注册:已有实例先注销,进程内至多一个监听。
+        // @MainThread 约束 + @Volatile 保证 listener 可见性,不需额外同步。
         if (listener != null) return
         val appContext = context.applicationContext
         val l = WallpaperManager.OnColorsChangedListener { colors, which ->
@@ -101,23 +113,26 @@ object WallpaperSeed {
             if (colors == null) return@OnColorsChangedListener
             if (which and WallpaperManager.FLAG_SYSTEM == 0) return@OnColorsChangedListener
             val seed = colors.primaryColor.toArgb()
+            // 防 RECREATE 风暴:等值守卫,壁纸快速变化回调(系统无dedup)时避免冗余 applySeed。
+            if (seed == lastAppliedSeed) return@OnColorsChangedListener
             // applySeed 内含 postEvent(RECREATE),须在主线程——监听已用 mainHandler 派发,天然满足。
             ThemeSeedApplier.applySeed(appContext, seed, "wallpaper")
+            lastAppliedSeed = seed
         }
         WallpaperManager.getInstance(appContext)
             .addOnColorsChangedListener(l, mainHandler)
         listener = l
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
+    @MainThread
     private fun unregisterListener(context: Context) {
         val l = listener ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            try {
-                @Suppress("UNCHECKED_CAST")
-                WallpaperManager.getInstance(context.applicationContext)
-                    .removeOnColorsChangedListener(l as WallpaperManager.OnColorsChangedListener)
-            } catch (_: Exception) {
-            }
+        try {
+            @Suppress("UNCHECKED_CAST")
+            WallpaperManager.getInstance(context.applicationContext)
+                .removeOnColorsChangedListener(l as WallpaperManager.OnColorsChangedListener)
+        } catch (_: Exception) {
         }
         listener = null
     }
