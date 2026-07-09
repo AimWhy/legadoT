@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="4dp">
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_preset"
+        android:layout_width="84dp"
+        android:layout_height="64dp"
+        android:clickable="true"
+        android:focusable="true"
+        app:cardCornerRadius="@dimen/radius_m"
+        app:cardElevation="0dp"
+        app:strokeWidth="2dp">
+
+        <FrameLayout
+            android:id="@+id/color_block"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <io.legado.app.ui.widget.image.CircleImageView
+                android:id="@+id/dot_primary"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center" />
+
+            <io.legado.app.ui.widget.image.CircleImageView
+                android:id="@+id/dot_accent"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_gravity="bottom|end"
+                android:layout_margin="6dp" />
+
+        </FrameLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tv_preset_name"
+        android:layout_width="84dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        app:skin_textColor="onSurface"
+        android:textColor="@color/primaryText"
+        android:textSize="@dimen/text_caption" />
+
+</LinearLayout>

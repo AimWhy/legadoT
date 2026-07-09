@@ -625,6 +625,15 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="theme">主题</string>
     <string name="theme_mode">主题模式</string>
     <string name="theme_mode_desc">选择主题模式</string>
+    <string name="preset_themes">预设主题</string>
+    <string name="preset_daiqing">黛青</string>
+    <string name="preset_zhuyue">竹月</string>
+    <string name="preset_zhusha">朱砂</string>
+    <string name="preset_ehuang">鹅黄</string>
+    <string name="preset_songyan">松烟</string>
+    <string name="preset_haitang">海棠</string>
+    <string name="preset_qingci">青瓷</string>
+    <string name="preset_moshi">墨石</string>
     <string name="join_qq_group">加入 QQ 群</string>
     <string name="bg_image_per">获取背景图片需存储权限</string>
     <string name="input_book_source_url">输入书源网址</string>
