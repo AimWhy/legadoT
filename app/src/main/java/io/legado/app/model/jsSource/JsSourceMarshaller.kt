@@ -83,11 +83,31 @@ object JsSourceMarshaller {
                 "wordCount" -> book.wordCount = value.asString
                 "latestChapterTitle" -> book.latestChapterTitle = value.asString
                 "tocUrl" -> book.tocUrl = value.asString
-                "variable" -> book.variable = value.asString
-                "type" -> runCatching { value.asInt }.getOrNull()?.let { raw ->
-                    validateBookType(raw)?.let { book.type = it } ?: debugLog(
-                        source.bookSourceUrl, "⇒type 非法(须用 BookType 位值),忽略",
-                    )
+                "variable" -> {
+                    val newMap: Map<String, String>? = runCatching {
+                        GSON.fromJson<Map<String, String>>(
+                            value.asString,
+                            com.google.gson.reflect.TypeToken.getParameterized(
+                                Map::class.java, String::class.java, String::class.java
+                            ).type,
+                        )
+                    }.getOrNull()
+                    if (newMap == null) {
+                        debugLog(source.bookSourceUrl, "⇒variable 不是合法 JSON 对象,忽略")
+                    } else {
+                        // 经 putVariable 双写(BaseBook 同步 map 与 variable 字符串),整体替换:先清旧键
+                        (book.variableMap.keys - newMap.keys).toList().forEach { book.putVariable(it, null) }
+                        newMap.forEach { (k, v) -> book.putVariable(k, v) }
+                    }
+                }
+                "type" -> {
+                    val raw = runCatching { value.asInt }.getOrNull()
+                    val valid = raw?.let { validateBookType(it) }
+                    if (valid != null) {
+                        book.type = valid
+                    } else {
+                        debugLog(source.bookSourceUrl, "⇒type 非法(须用 BookType 位值,如 text=8/audio=32),忽略")
+                    }
                 }
                 // 其余键(含 bookUrl 主键、dur*/custom* 用户态)一律忽略(spec §3 白名单)
             }
@@ -107,7 +127,10 @@ object JsSourceMarshaller {
                 debugLog(source.bookSourceUrl, "⇒丢弃缺少 title/url 的章节")
                 return@forEach
             }
-            chapter.url = NetworkUtils.getAbsoluteURL(book.tocUrl, chapter.url)
+            if (!(chapter.isVolume && chapter.url == chapter.title)) {
+                // 卷占位行(url==title 约定)豁免绝对化,保住下游"卷不抓正文"守卫
+                chapter.url = NetworkUtils.getAbsoluteURL(book.tocUrl, chapter.url)
+            }
             chapter.bookUrl = book.bookUrl
             chapter.baseUrl = book.tocUrl
             chapter.index = chapters.size
