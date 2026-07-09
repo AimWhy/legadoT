@@ -79,7 +79,11 @@ object WallpaperSeed {
      */
     fun setFollow(context: Context, enabled: Boolean, autoUpdate: Boolean): Boolean {
         if (!enabled) {
-            unregisterListener(context)
+            // 关闭路径 pre-S 也可达(如备份恢复带来的残留 pref)——调用点补 SDK 门,
+            // 与 unregisterListener 的 @RequiresApi(S) 注解配对(否则 NewApi lint 违规)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                unregisterListener(context)
+            }
             context.putPrefBoolean(PreferKey.wallpaperFollow, false)
             // 四色留末次派生值,不回滚;仅撤销"种子来源=壁纸"标记,后续手动改色/预设可正常接管。
             ThemeConfig.themeSeedMode = ""
