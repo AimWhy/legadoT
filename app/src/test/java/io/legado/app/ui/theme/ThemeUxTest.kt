@@ -38,4 +38,29 @@ class ThemeUxTest {
         )
         assertTrue(pref.contains("view_preset_themes"))
     }
+
+    @Test
+    fun `wallpaper seed gates on sdk and follows color changes only in wallpaper mode`() {
+        val src =
+            File("src/main/java/io/legado/app/lib/theme/WallpaperSeed.kt").readText()
+        // SDK 门:壁纸取色 API 均需 12+(S=31)
+        assertTrue(
+            "WallpaperSeed 必须含 SDK_INT 门(Build.VERSION_CODES.S)",
+            src.contains("Build.VERSION.SDK_INT") && src.contains("Build.VERSION_CODES.S"),
+        )
+        // autoUpdate 注册壁纸颜色变化监听
+        assertTrue(
+            "WallpaperSeed 必须注册 addOnColorsChangedListener",
+            src.contains("addOnColorsChangedListener"),
+        )
+        // 回调守卫:仅当仍处 wallpaper 模式才重新取色,防止用户切走后被旧监听拉回
+        assertTrue(
+            "监听回调必须以 themeSeedMode==\"wallpaper\" 守卫",
+            src.contains("\"wallpaper\""),
+        )
+        // 契约:取不到种子回 false 由调用方处理(toast+回滚)
+        assertTrue(src.contains("fun setFollow"))
+        assertTrue(src.contains("fun currentSeed"))
+        assertTrue(src.contains("fun isAvailable"))
+    }
 }
