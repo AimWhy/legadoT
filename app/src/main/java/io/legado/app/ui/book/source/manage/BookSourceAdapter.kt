@@ -109,7 +109,7 @@ class BookSourceAdapter(
                 upSelectStroke(binding, item)
                 upCheckSourceMessage(binding, item)
                 upShowExplore(ivExplore, item)
-                tvJsBadge.visible(item.hasJs)
+                tvJsBadge.gone(!item.hasJs)
                 upSourceHost(binding, holder.layoutPosition)
             } else {
                 for (i in payloads.indices) {
@@ -119,7 +119,7 @@ class BookSourceAdapter(
                             "enabled" -> swtEnabled.isChecked = bundle.getBoolean("enabled")
                             "upName" -> cbBookSource.text = item.getDisPlayNameGroup()
                             "upExplore" -> upShowExplore(ivExplore, item)
-                            "upJs" -> tvJsBadge.visible(item.hasJs)
+                            "upJs" -> tvJsBadge.gone(!item.hasJs)
                             "selected" -> {
                                 cbBookSource.isChecked = isSelected(item)
                                 upSelectStroke(binding, item)
