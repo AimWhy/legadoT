@@ -120,7 +120,25 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
     private var heroBook: Book? = null
     private var shelfHeaderFlowJob: Job? = null
 
+    private var shelfRefreshLayout: SwipeRefreshLayout? = null
+    private var appBarExpanded = true
+
     abstract fun gotoTop()
+
+    /**
+     * 下拉刷新是否允许——数据侧闸门(分组开关/空书架等),子类按需覆写。
+     * 与 [appBarExpanded](AppBar 展开侧闸门)通过 [syncRefreshEnable] 收敛为单一合取写入,
+     * 避免多处直写 `refreshLayout.isEnabled` 互相覆盖("三写互吞"缺陷)。
+     */
+    protected open fun refreshEnabledByData(): Boolean = true
+
+    /**
+     * 唯一允许写 `shelfRefreshLayout.isEnabled` 的地方。任何一侧闸门变化后都应调用此函数
+     * 重新计算合取结果,而不是直接赋值——直接赋值会抹掉另一侧闸门已经关闭的状态。
+     */
+    protected fun syncRefreshEnable() {
+        shelfRefreshLayout?.isEnabled = appBarExpanded && refreshEnabledByData()
+    }
 
     /**
      * 可收起大标题头部挂接（style1/style2 共用,一处实现）:
@@ -139,6 +157,7 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
     ) {
         shelfHeaderBinding = header
         shelfToolbarTitle = tvToolbarTitle
+        shelfRefreshLayout = refreshLayout
         view?.setOnApplyWindowInsetsListenerCompat { _, windowInsets ->
             val statusBarTop = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             toolBar.updatePadding(top = statusBarTop)
@@ -150,7 +169,8 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
             val ratio = -verticalOffset.toFloat() / range
             header.root.alpha = (1f - ratio * 1.4f).coerceIn(0f, 1f)
             tvToolbarTitle.alpha = ((ratio - 0.6f) / 0.4f).coerceIn(0f, 1f)
-            refreshLayout?.isEnabled = verticalOffset == 0
+            appBarExpanded = verticalOffset == 0
+            syncRefreshEnable()
         }
         header.cardContinue.setOnClickListener {
             heroBook?.let { book -> startActivityForBook(book) }
