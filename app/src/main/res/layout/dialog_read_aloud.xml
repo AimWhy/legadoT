@@ -44,7 +44,7 @@
             android:singleLine="true"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:text="系统默认" />
 
         <androidx.appcompat.widget.AppCompatImageView
@@ -79,7 +79,7 @@
             android:text="@string/previous_chapter"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:ignore="TouchTargetSizeCheck" />
 
         <View
@@ -177,7 +177,7 @@
             android:text="@string/next_chapter"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:ignore="TouchTargetSizeCheck" />
 
     </LinearLayout>
@@ -244,7 +244,7 @@
                 android:text="@string/read_aloud_speed"
                 app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
-                android:textSize="14sp" />
+                android:textSize="@dimen/text_body" />
 
             <TextView
                 android:id="@+id/tv_tts_speed_value"
@@ -254,7 +254,7 @@
                 android:paddingHorizontal="3dp"
                 app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
-                android:textSize="14sp" />
+                android:textSize="@dimen/text_body" />
 
             <Space
                 android:layout_width="0dp"

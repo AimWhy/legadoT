@@ -11,6 +11,7 @@ import android.widget.FrameLayout
 import androidx.core.view.isVisible
 import io.legado.app.R
 import io.legado.app.databinding.ViewSearchMenuBinding
+import io.legado.app.help.motion.PressSpringEffect
 import io.legado.app.lib.theme.Selector
 import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.getPrimaryTextColor
@@ -84,6 +85,9 @@ class SearchMenu @JvmOverloads constructor(
         ivSearchContentUp.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
         ivSearchContentDown.setColorFilter(textColor, PorterDuff.Mode.SRC_IN)
         tvCurrentSearchInfo.setTextColor(textColor)
+        // 导航钮按压弹性(照 ReadMenuActionButton 先例;MotionTokens 内部对 eink/减少动画自关)
+        PressSpringEffect.attach(fabLeft)
+        PressSpringEffect.attach(fabRight)
         applyNavigationBarPadding()
     }
 

@@ -25,6 +25,7 @@ import io.legado.app.constant.AppLog
 import io.legado.app.databinding.ItemTextBinding
 import io.legado.app.databinding.PopupActionMenuBinding
 import io.legado.app.help.config.AppConfig
+import io.legado.app.help.motion.PressSpringEffect
 import io.legado.app.utils.gone
 import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.printOnDebug
@@ -180,6 +181,8 @@ class TextActionMenu(private val context: Context, private val callBack: CallBac
         }
 
         override fun registerListener(holder: ItemViewHolder, binding: ItemTextBinding) {
+            // 选项行按压弹性(照 ReadMenuActionButton 先例;OnTouch 恒返回 false,点击/长按语义零改动)
+            PressSpringEffect.attach(holder.itemView)
             holder.itemView.setOnClickListener {
                 getItem(holder.layoutPosition)?.let {
                     if (!callBack.onMenuItemSelected(it.itemId)) {
