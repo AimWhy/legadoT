@@ -126,9 +126,12 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
             bookGroups = data
             booksAdapter.updateItems()
             binding.tvEmptyMsg.isGone = getItemCount() > 0
-            binding.refreshLayout.isEnabled = enableRefresh && getItemCount() > 0
+            syncRefreshEnable()
         }
     }
+
+    /** 数据侧闸门:分组允许刷新且当前列表非空,与 AppBar 展开侧闸门在 [syncRefreshEnable] 收敛。 */
+    override fun refreshEnabledByData(): Boolean = enableRefresh && getItemCount() > 0
 
     override fun upSort() {
         initBooksData()
@@ -138,16 +141,16 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
         if (groupId == BookGroup.IdRoot) {
             if (isAdded) {
                 setShelfTitle(getString(R.string.bookshelf))
-                binding.refreshLayout.isEnabled = true
                 enableRefresh = true
+                syncRefreshEnable()
             }
         } else {
             bookGroups.firstOrNull {
                 groupId == it.groupId
             }?.let {
                 setShelfTitle("${getString(R.string.bookshelf)}(${it.groupName})")
-                binding.refreshLayout.isEnabled = it.enableRefresh
                 enableRefresh = it.enableRefresh
+                syncRefreshEnable()
             }
         }
         booksFlowJob?.cancel()
@@ -185,7 +188,7 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
                 books = list
                 booksAdapter.updateItems()
                 binding.tvEmptyMsg.isGone = getItemCount() > 0
-                binding.refreshLayout.isEnabled = enableRefresh && getItemCount() > 0
+                syncRefreshEnable()
                 delay(100)
             }
         }
