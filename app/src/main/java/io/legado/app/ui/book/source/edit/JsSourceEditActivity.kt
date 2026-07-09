@@ -10,6 +10,7 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.databinding.ActivityJsSourceEditBinding
 import io.legado.app.help.source.SourceHelp
+import io.legado.app.lib.dialogs.alert
 import io.legado.app.model.jsSource.JsSourceConfig
 import io.legado.app.ui.book.source.debug.BookSourceDebugActivity
 import io.legado.app.ui.widget.code.addJsPattern
@@ -18,9 +19,12 @@ import io.legado.app.utils.imeHeight
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
+import io.legado.app.utils.share
+import io.legado.app.utils.showHelp
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import java.io.File
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,6 +41,10 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
     // 打开时的 bookSourceUrl,用于保存时识别脚本内改名(反查旧记录用,而非保存后的新 URL)
     private var openedSourceUrl: String? = null
 
+    // 未保存退出确认的干净基线:脚本 extract 出的 BookSource(用户态字段为默认值),
+    // 退出时与当前脚本 extract 结果用 equal() 比对(含 mainJs 全文),不等则弹确认
+    private var openedSource: BookSource? = null
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         binding.codeView.addJsPattern()
         // 本页无 KeyboardToolPop 工具条兜底,与书源编辑器(imeHeight==0 时才用 navigationBarHeight)不同,
@@ -47,15 +55,20 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
             windowInsets
         }
         val sourceUrl = intent.getStringExtra("sourceUrl")
-        if (sourceUrl.isNullOrBlank()) {
-            assets.open("js_source_template.js").use {
-                binding.codeView.setText(String(it.readBytes()))
+        if (!sourceUrl.isNullOrBlank()) openedSourceUrl = sourceUrl
+        lifecycleScope.launch {
+            val text = withContext(IO) {
+                if (sourceUrl.isNullOrBlank()) {
+                    assets.open("js_source_template.js").use { String(it.readBytes()) }
+                } else {
+                    appDb.bookSourceDao.getBookSource(sourceUrl)?.mainJs.orEmpty()
+                }
             }
-        } else {
-            openedSourceUrl = sourceUrl
-            lifecycleScope.launch {
-                val source = withContext(IO) { appDb.bookSourceDao.getBookSource(sourceUrl) }
-                binding.codeView.setText(source?.mainJs.orEmpty())
+            binding.codeView.setText(text)
+            // 基线与保存/退出走同一 extract 变换,用户态字段两侧同为默认值,只有脚本内容(含
+            // mainJs 全文)差异才触发确认;脚本当前非法时基线为空,退出直接放行
+            openedSource = withContext(IO) {
+                runCatching { JsSourceConfig.extract(text) }.getOrNull()
             }
         }
     }
@@ -75,8 +88,46 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
             }
             R.id.menu_copy_source -> sendToClip(binding.codeView.text.toString())
             R.id.menu_paste_source -> getClipText()?.let { binding.codeView.setText(it) }
+            R.id.menu_share_js -> shareJsFile()
+            R.id.menu_help -> showHelp("jsHelp")
         }
         return super.onCompatOptionsItemSelected(item)
+    }
+
+    /** 未保存退出确认:当前脚本 extract 结果与打开时基线用 equal() 比对(含 mainJs 全文),
+     * 不等则弹确认;脚本当前非法(extract 失败)一律视为有改动,交由用户决定是否放弃 */
+    override fun finish() {
+        val opened = openedSource
+        val current = runCatching { JsSourceConfig.extract(binding.codeView.text.toString()) }
+            .getOrNull()
+        if (opened != null && current != null && opened.equal(current)) {
+            super.finish()
+        } else {
+            alert(R.string.exit) {
+                setMessage(R.string.exit_no_save)
+                positiveButton(R.string.yes)
+                negativeButton(R.string.no) {
+                    super@JsSourceEditActivity.finish()
+                }
+            }
+        }
+    }
+
+    /** 分享脚本为 .js 文件:写临时文件到 cacheDir 再经 FileProvider 分享,
+     * 文件名取脚本内 bookSourceName(去非法字符),提取失败则 toast 明确原因 */
+    private fun shareJsFile() {
+        val text = binding.codeView.text.toString()
+        runCatching {
+            // extract() 已保证 bookSourceName 非空白,这里只做文件系统非法字符净化
+            val name = JsSourceConfig.extract(text).bookSourceName
+            val fileName = name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().trim('.')
+                .ifBlank { "jsSource" }
+            val file = File(cacheDir, "$fileName.js")
+            file.writeText(text)
+            share(file, "text/javascript")
+        }.onFailure {
+            toastOnUi(it.localizedMessage)
+        }
     }
 
     private fun saveSource(onSuccess: ((BookSource) -> Unit)? = null) {
@@ -115,6 +166,8 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                 }
             }.onSuccess {
                 toastOnUi(R.string.success)
+                // 保存后刷新退出确认基线,使保存即退出不再误弹(与 finish() 走同一 extract 变换)
+                openedSource = runCatching { JsSourceConfig.extract(text) }.getOrNull()
                 onSuccess?.invoke(it)
             }.onFailure {
                 toastOnUi(it.localizedMessage)

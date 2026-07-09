@@ -13,7 +13,11 @@ val jsonPattern: Pattern = Pattern.compile("\"[A-Za-z0-9]*?\"\\:|\"|\\{|\\}|\\[|
 val wrapPattern: Pattern = Pattern.compile("\\\\n")
 val operationPattern: Pattern =
     Pattern.compile(":|==|>|<|!=|>=|<=|->|=|%|-|-=|%=|\\+|\\-|\\-=|\\+=|\\^|\\&|\\|::|\\?|\\*")
-val jsPattern: Pattern = Pattern.compile("var")
+val jsPattern: Pattern = Pattern.compile(
+    "\\b(var|let|const|function|return|if|else|for|while|do|break|continue|switch|case|default|" +
+        "try|catch|finally|throw|new|delete|typeof|instanceof|in|of|void|this|" +
+        "true|false|null|undefined)\\b"
+)
 
 /**
  * 语义高亮色取自调用方（CodeView）自身的 [Context]，而非 appCtx —— 保证在夜间模式下解析到
