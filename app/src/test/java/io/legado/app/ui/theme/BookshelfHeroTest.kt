@@ -37,4 +37,13 @@ class BookshelfHeroTest {
         val frag = File("src/main/java/io/legado/app/ui/main/bookshelf/style2/BookshelfFragment2.kt").readText()
         assertTrue("动态标题走 setShelfTitle", frag.contains("setShelfTitle") && !frag.contains("titleBar.title"))
     }
+
+    @Test
+    fun `items carry read progress except group variants`() {
+        assertTrue(File("src/main/res/layout/item_bookshelf_grid.xml").readText().contains("@+id/pb_read_progress"))
+        val list = File("src/main/res/layout/item_bookshelf_list.xml").readText()
+        assertTrue(list.contains("@+id/pb_read_progress") && list.contains("@+id/tv_read_percent"))
+        assertTrue(!File("src/main/res/layout/item_bookshelf_grid_group.xml").readText().contains("pb_read_progress"))
+        assertTrue(!File("src/main/res/layout/item_bookshelf_list_group.xml").readText().contains("pb_read_progress"))
+    }
 }
