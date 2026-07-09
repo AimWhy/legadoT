@@ -41,9 +41,9 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
     // 打开时的 bookSourceUrl,用于保存时识别脚本内改名(反查旧记录用,而非保存后的新 URL)
     private var openedSourceUrl: String? = null
 
-    // 未保存退出确认的干净基线:脚本 extract 出的 BookSource(用户态字段为默认值),
-    // 退出时与当前脚本 extract 结果用 equal() 比对(含 mainJs 全文),不等则弹确认
-    private var openedSource: BookSource? = null
+    // 未保存退出确认的干净基线:纯文本快照(与 extract 后 equal() 比较严格等价——extract 把
+    // 全文赋给 mainJs、equal 逐字比 mainJs,纯文本比较更简单且无 Rhino eval 开销/非法脚本误弹)
+    private var baselineText: String = ""
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         binding.codeView.addJsPattern()
@@ -65,11 +65,7 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                 }
             }
             binding.codeView.setText(text)
-            // 基线与保存/退出走同一 extract 变换,用户态字段两侧同为默认值,只有脚本内容(含
-            // mainJs 全文)差异才触发确认;脚本当前非法时基线为空,退出直接放行
-            openedSource = withContext(IO) {
-                runCatching { JsSourceConfig.extract(text) }.getOrNull()
-            }
+            baselineText = text
         }
     }
 
@@ -94,13 +90,12 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
         return super.onCompatOptionsItemSelected(item)
     }
 
-    /** 未保存退出确认:当前脚本 extract 结果与打开时基线用 equal() 比对(含 mainJs 全文),
-     * 不等则弹确认;脚本当前非法(extract 失败)一律视为有改动,交由用户决定是否放弃 */
+    /** 未保存退出确认:当前脚本文本与打开时基线做纯文本比对,不等则弹确认;
+     * 与 extract 后 equal() 比对严格等价(见 baselineText 字段注释),但零 Rhino eval 开销,
+     * 且非法脚本(未通过 extract)在未改动时也不会误弹 */
     override fun finish() {
-        val opened = openedSource
-        val current = runCatching { JsSourceConfig.extract(binding.codeView.text.toString()) }
-            .getOrNull()
-        if (opened != null && current != null && opened.equal(current)) {
+        val current = binding.codeView.text.toString()
+        if (current == baselineText) {
             super.finish()
         } else {
             alert(R.string.exit) {
@@ -166,8 +161,8 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                 }
             }.onSuccess {
                 toastOnUi(R.string.success)
-                // 保存后刷新退出确认基线,使保存即退出不再误弹(与 finish() 走同一 extract 变换)
-                openedSource = runCatching { JsSourceConfig.extract(text) }.getOrNull()
+                // 保存后刷新退出确认基线,使保存即退出不再误弹
+                baselineText = text
                 onSuccess?.invoke(it)
             }.onFailure {
                 toastOnUi(it.localizedMessage)
