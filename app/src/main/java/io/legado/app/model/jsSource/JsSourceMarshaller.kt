@@ -95,9 +95,11 @@ object JsSourceMarshaller {
                     if (newMap == null) {
                         debugLog(source.bookSourceUrl, "⇒variable 不是合法 JSON 对象,忽略")
                     } else {
-                        // 经 putVariable 双写(BaseBook 同步 map 与 variable 字符串),整体替换:先清旧键
-                        (book.variableMap.keys - newMap.keys).toList().forEach { book.putVariable(it, null) }
-                        newMap.forEach { (k, v) -> book.putVariable(k, v) }
+                        // 整体替换:直接同步已物化的 variableMap 与 variable 字符串,
+                        // 不走 putVariable(避开 RuleBigDataHelp 文件 I/O 与其 Android 依赖)
+                        book.variableMap.clear()
+                        book.variableMap.putAll(newMap)
+                        book.variable = GSON.toJson(book.variableMap)
                     }
                 }
                 "type" -> {
