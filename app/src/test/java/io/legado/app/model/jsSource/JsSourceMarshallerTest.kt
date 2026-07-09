@@ -120,4 +120,39 @@ class JsSourceMarshallerTest {
         assertEquals(1, chapters[1].index)                          // 按数组序注入
         assertTrue(chapters[1].isVip)                               // 可选字段透传
     }
+
+    @Test
+    fun parseChaptersVolumeRowKeepsUrlAsTitle() {
+        val book = Book(bookUrl = "https://src.com/b/1")
+        book.tocUrl = "https://src.com/toc/1"
+        val json = """[
+          {"title":"第一卷","url":"第一卷","isVolume":true},
+          {"title":"第1章","url":"/read/1"}
+        ]"""
+        val chapters = JsSourceMarshaller.parseChapters(json, book, textSource)
+        assertEquals(2, chapters.size)
+        // 卷行 url==title 豁免绝对化——JsSourceBook 卷占位守卫(url.startsWith(title))因此可达
+        assertEquals("第一卷", chapters[0].url)
+        assertTrue(chapters[0].isVolume)
+        assertEquals("https://src.com/read/1", chapters[1].url)
+    }
+
+    @Test
+    fun mergeBookInfoVariableSyncsMaterializedMap() {
+        val book = Book(bookUrl = "u")
+        book.variable = """{"old":"1"}"""
+        assertEquals("1", book.variableMap["old"])   // 先物化 lazy map
+        JsSourceMarshaller.mergeBookInfo(book, """{"variable":"{\"k\":\"v\"}"}""", textSource)
+        assertEquals("v", book.variableMap["k"])      // 物化后的 map 也被同步
+        assertNull(book.variableMap["old"])           // 整体替换语义,旧键不残留
+        assertTrue(book.variable!!.contains("\"k\""))
+    }
+
+    @Test
+    fun mergeBookInfoNonNumericTypeIsIgnoredNotCrash() {
+        val book = Book(bookUrl = "u")
+        val before = book.type
+        JsSourceMarshaller.mergeBookInfo(book, """{"type":"audio"}""", textSource)
+        assertEquals(before, book.type)   // 忽略且不崩;log 行为无法在裸JVM断言,靠实现走 debugLog 壳
+    }
 }
