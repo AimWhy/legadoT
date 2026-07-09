@@ -26,4 +26,14 @@
         android:title="@string/paste_source"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_share_js"
+        android:title="@string/share"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_help"
+        android:title="@string/help"
+        app:showAsAction="never" />
+
 </menu>
