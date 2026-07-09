@@ -200,4 +200,7 @@ object PreferKey {
     const val highlightLastStyle = "highlightLastStyle"
     const val highlightRulesInited = "highlightRulesInited"
     const val bottomBarSkin = "bottomBarSkin"
+
+    /** N4 主题 UX 种子来源标记:""=手动配色 / "preset:<id>" / "wallpaper" */
+    const val themeSeedMode = "themeSeedMode"
 }

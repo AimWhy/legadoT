@@ -31,6 +31,7 @@ import io.legado.app.utils.hexString
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.printOnDebug
 import io.legado.app.utils.putPrefInt
+import io.legado.app.utils.putPrefString
 import io.legado.app.utils.stackBlur
 import splitties.init.appCtx
 import java.io.File
@@ -53,6 +54,27 @@ object ThemeConfig {
 
     fun isDarkTheme(): Boolean {
         return getTheme() == Theme.Dark
+    }
+
+    /**
+     * N4 主题 UX:当前四色的种子来源。`""`=手动配色(默认,升级无损——不写此键不影响任何既有逻辑);
+     * `"preset:<id>"`=预设主题写入;`"wallpaper"`=壁纸取色跟随写入。
+     */
+    var themeSeedMode: String
+        get() = appCtx.getPrefString(PreferKey.themeSeedMode, "") ?: ""
+        set(value) {
+            appCtx.putPrefString(PreferKey.themeSeedMode, value)
+        }
+
+    /**
+     * ColorPreference 变更(用户手调四色任一项)时的回落钩子:非空 seedMode 说明当前色来自
+     * 预设/壁纸种子,手调即脱离该来源,置空以免后续刷新(如壁纸变化重新取色)覆盖用户的手动值。
+     * 挂接点:ColorPreference 变更监听(T5 接入)。
+     */
+    fun onManualColorChanged() {
+        if (themeSeedMode.isNotEmpty()) {
+            themeSeedMode = ""
+        }
     }
 
     fun applyDayNight(context: Context) {
