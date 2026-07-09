@@ -50,6 +50,7 @@ import io.legado.app.help.http.okHttpClient
 import io.legado.app.help.rhino.NativeBaseSource
 import io.legado.app.help.source.SourceHelp
 import io.legado.app.help.storage.Backup
+import io.legado.app.lib.theme.WallpaperSeed
 import io.legado.app.model.BookCover
 import io.legado.app.service.AutoTaskService
 import io.legado.app.ui.widget.dialog.CodeEditorWebViewPool
@@ -78,6 +79,8 @@ class App : Application() {
         }
         oldConfig = Configuration(resources.configuration)
         applyDayNightInit(this)
+        // N4 壁纸动态色:上次开启了跟随+自动更新则补挂壁纸颜色变化监听(App 级单例,主线程)
+        WallpaperSeed.restoreListenerIfNeeded(this)
         registerActivityLifecycleCallbacks(LifecycleHelp)
         defaultSharedPreferences.registerOnSharedPreferenceChangeListener(AppConfig)
         initRhino()

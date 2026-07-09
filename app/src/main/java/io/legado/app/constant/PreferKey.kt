@@ -203,4 +203,10 @@ object PreferKey {
 
     /** N4 主题 UX 种子来源标记:""=手动配色 / "preset:<id>" / "wallpaper" */
     const val themeSeedMode = "themeSeedMode"
+
+    /** N4 壁纸动态色:是否跟随系统壁纸取色(12+) */
+    const val wallpaperFollow = "wallpaperFollow"
+
+    /** N4 壁纸动态色:壁纸变化时自动重新取色 */
+    const val wallpaperAutoUpdate = "wallpaperAutoUpdate"
 }
