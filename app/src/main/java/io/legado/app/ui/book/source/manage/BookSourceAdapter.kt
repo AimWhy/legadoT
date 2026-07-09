@@ -61,6 +61,7 @@ class BookSourceAdapter(
                     && oldItem.enabled == newItem.enabled
                     && oldItem.enabledExplore == newItem.enabledExplore
                     && oldItem.hasExploreUrl == newItem.hasExploreUrl
+                    && oldItem.hasJs == newItem.hasJs
         }
 
         override fun getChangePayload(oldItem: BookSourcePart, newItem: BookSourcePart): Any? {
@@ -77,6 +78,9 @@ class BookSourceAdapter(
                 oldItem.hasExploreUrl != newItem.hasExploreUrl
             ) {
                 payload.putBoolean("upExplore", true)
+            }
+            if (oldItem.hasJs != newItem.hasJs) {
+                payload.putBoolean("upJs", true)
             }
             if (payload.isEmpty) {
                 return null
@@ -105,6 +109,7 @@ class BookSourceAdapter(
                 upSelectStroke(binding, item)
                 upCheckSourceMessage(binding, item)
                 upShowExplore(ivExplore, item)
+                tvJsBadge.visible(item.hasJs)
                 upSourceHost(binding, holder.layoutPosition)
             } else {
                 for (i in payloads.indices) {
@@ -114,6 +119,7 @@ class BookSourceAdapter(
                             "enabled" -> swtEnabled.isChecked = bundle.getBoolean("enabled")
                             "upName" -> cbBookSource.text = item.getDisPlayNameGroup()
                             "upExplore" -> upShowExplore(ivExplore, item)
+                            "upJs" -> tvJsBadge.visible(item.hasJs)
                             "selected" -> {
                                 cbBookSource.isChecked = isSelected(item)
                                 upSelectStroke(binding, item)
