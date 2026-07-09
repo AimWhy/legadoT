@@ -124,7 +124,9 @@ interface BookDao {
     @get:Query("SELECT COUNT(*) FROM books")
     val allBookCount: Int
 
-    @get:Query("SELECT count(*) FROM books where durChapterTime > 0")
+    // durChapterTime 默认=创建时间(从未打开也非零),不可用作"在读"判据;
+    // 与 readProgress() 同款未读测试:index/pos 均为 0 视为未读
+    @get:Query("SELECT count(*) FROM books where durChapterIndex > 0 OR durChapterPos > 0")
     val readingCount: Int
 
     @get:Query("select min(`order`) from books")
