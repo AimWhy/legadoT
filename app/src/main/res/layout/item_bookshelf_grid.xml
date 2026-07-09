@@ -53,6 +53,18 @@
             app:loading_width="2dp"
             tools:ignore="RtlHardcoded" />
 
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/pb_read_progress"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_gravity="bottom"
+            android:visibility="gone"
+            app:indicatorColor="@color/accent"
+            app:trackThickness="2dp"
+            tools:ignore="UnusedAttribute"
+            tools:progress="60"
+            tools:visibility="visible" />
+
     </com.google.android.material.card.MaterialCardView>
 
     <TextView

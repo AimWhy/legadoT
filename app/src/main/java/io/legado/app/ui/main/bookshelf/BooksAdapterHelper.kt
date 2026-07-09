@@ -1,18 +1,24 @@
 package io.legado.app.ui.main.bookshelf
 
 import android.os.Bundle
+import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import io.legado.app.data.entities.Book
 import io.legado.app.databinding.ItemBookshelfGridBinding
 import io.legado.app.databinding.ItemBookshelfListBinding
 import io.legado.app.help.book.isLocal
+import io.legado.app.help.book.readProgress
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.ui.widget.anima.RotateLoading
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.gone
 import io.legado.app.utils.invisible
 import io.legado.app.utils.toTimeAgo
+import io.legado.app.utils.visible
 
 /**
  * 书架封面上"未读角标 + 刷新加载动画"随 Book 状态更新的公共实现，
@@ -37,6 +43,32 @@ fun upBookBadge(
             bvUnread.setHighlight(item.lastCheckCount > 0)
         } else {
             bvUnread.invisible()
+        }
+    }
+}
+
+/**
+ * 封面/列表项阅读进度条更新（未读=null 时零视觉噪声,gone）。
+ * indicatorColor 走 accentColor 运行时着色——LinearProgressIndicator 不在 SkinInflaterFactory
+ * 的规则 A 换肤表内,需与 hero 卡([BaseBookshelfFragment.refreshShelfHeader])同款施色单轨。
+ * @param percentView 列表款百分比文本,网格款不传(封面上不放文字)
+ */
+private fun upReadProgress(
+    pbReadProgress: LinearProgressIndicator,
+    item: Book,
+    percentView: TextView? = null,
+) {
+    val progress = item.readProgress()
+    if (progress == null) {
+        pbReadProgress.gone()
+        percentView?.gone()
+    } else {
+        pbReadProgress.setIndicatorColor(pbReadProgress.context.accentColor)
+        pbReadProgress.visible()
+        pbReadProgress.progress = (progress * 100).toInt()
+        percentView?.let {
+            it.visible()
+            it.text = "${(progress * 100).toInt()}%"
         }
     }
 }
@@ -81,6 +113,7 @@ fun ItemBookshelfListBinding.bindBook(
         loadCover()
         upBookBadge(bvUnread, rlLoading, item, isUpdate, loadingGone = true)
         upLastUpdateTime()
+        upReadProgress(pbReadProgress, item, tvReadPercent)
     } else {
         for (i in payloads.indices) {
             val bundle = payloads[i] as Bundle
@@ -91,7 +124,10 @@ fun ItemBookshelfListBinding.bindBook(
                     "dur" -> tvRead.text = item.durChapterTitle
                     "last" -> tvLast.text = item.latestChapterTitle
                     "cover" -> loadCover()
-                    "refresh" -> upBookBadge(bvUnread, rlLoading, item, isUpdate, loadingGone = true)
+                    "refresh" -> {
+                        upBookBadge(bvUnread, rlLoading, item, isUpdate, loadingGone = true)
+                        upReadProgress(pbReadProgress, item, tvReadPercent)
+                    }
                     "lastUpdateTime" -> upLastUpdateTime()
                 }
             }
@@ -116,6 +152,7 @@ fun ItemBookshelfGridBinding.bindBook(
         tvName.text = item.name
         loadCover()
         upBookBadge(bvUnread, rlLoading, item, isUpdate, loadingGone = false)
+        upReadProgress(pbReadProgress, item)
     } else {
         for (i in payloads.indices) {
             val bundle = payloads[i] as Bundle
@@ -123,7 +160,10 @@ fun ItemBookshelfGridBinding.bindBook(
                 when (it) {
                     "name" -> tvName.text = item.name
                     "cover" -> loadCover()
-                    "refresh" -> upBookBadge(bvUnread, rlLoading, item, isUpdate, loadingGone = false)
+                    "refresh" -> {
+                        upBookBadge(bvUnread, rlLoading, item, isUpdate, loadingGone = false)
+                        upReadProgress(pbReadProgress, item)
+                    }
                 }
             }
         }
