@@ -158,7 +158,7 @@ class CheckSourceService : BaseService() {
         //校验搜索书籍
         if (CheckSource.checkSearch) {
             val searchWord = source.getCheckKeyword(CheckSource.keyword)
-            if (!source.searchUrl.isNullOrBlank()) {
+            if (!source.searchUrl.isNullOrBlank() || source.isJsSource()) {
                 source.removeGroup("搜索链接规则为空")
                 val searchBooks = WebBook.searchBookAwait(source, searchWord)
                 if (searchBooks.isEmpty()) {
@@ -172,20 +172,24 @@ class CheckSourceService : BaseService() {
             }
         }
         //校验发现书籍
-        if (CheckSource.checkDiscovery && !source.exploreUrl.isNullOrBlank()) {
-            val url = source.exploreKinds().firstOrNull {
-                !it.url.isNullOrBlank()
-            }?.url
-            if (url.isNullOrBlank()) {
-                source.addGroup("发现规则为空")
-            } else {
-                source.removeGroup("发现规则为空")
-                val exploreBooks = WebBook.exploreBookAwait(source, url)
-                if (exploreBooks.isEmpty()) {
-                    source.addGroup("发现失效")
+        if (CheckSource.checkDiscovery) {
+            if (source.isJsSource()) {
+                // JS源无发现,跳过不挂标
+            } else if (!source.exploreUrl.isNullOrBlank()) {
+                val url = source.exploreKinds().firstOrNull {
+                    !it.url.isNullOrBlank()
+                }?.url
+                if (url.isNullOrBlank()) {
+                    source.addGroup("发现规则为空")
                 } else {
-                    source.removeGroup("发现失效")
-                    checkBook(exploreBooks.first().toBook(), source, false)
+                    source.removeGroup("发现规则为空")
+                    val exploreBooks = WebBook.exploreBookAwait(source, url)
+                    if (exploreBooks.isEmpty()) {
+                        source.addGroup("发现失效")
+                    } else {
+                        source.removeGroup("发现失效")
+                        checkBook(exploreBooks.first().toBook(), source, false)
+                    }
                 }
             }
         }
