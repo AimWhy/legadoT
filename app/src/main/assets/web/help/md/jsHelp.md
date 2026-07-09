@@ -546,7 +546,7 @@ function getContent(chapter, book) {
 |bookSourceComment|备注|
 |lastUpdateTime|版本时间戳；同 `bookSourceUrl` 重复导入按它判断是否"更新"|
 |header|请求头 JSON 字符串，同声明式源|
-|loginUrl / loginUi / loginCheckJs|登录相关；JS 单文件源可以填但没有独立登录UI入口|
+|loginUrl / loginUi / loginCheckJs|登录相关；填了 loginUrl 后管理列表该源菜单会出现"登录"入口，与声明式源一致|
 |concurrentRate|并发限制，同声明式源|
 |enabledCookieJar|是否启用 CookieJar|
 |jsLib|共享给本源所有函数调用的公共 JS 库文本|
@@ -572,7 +572,8 @@ function getContent(chapter, book) {
 - **`getBookInfo` 返回对象**：只有写出的键才会覆盖 `book` 对应字段，白名单为 `name`、
   `author`、`intro`、`coverUrl`、`kind`、`wordCount`、`latestChapterTitle`、`tocUrl`、
   `variable`、`type`；其余键（含 `bookUrl` 等主键、`dur*`/`custom*` 用户态字段）一律忽略。
-  不写 `tocUrl` 时应用会用 `book.bookUrl` 兜底当目录页。
+  不写 `tocUrl` 时应用会用 `book.bookUrl` 兜底当目录页。`variable` 的值必须是 **JSON 字符串**
+  （如 `"{\"k\":\"v\"}"`），直接写对象字面量会被忽略并记调试日志。
 - **`getChapters` 每项**：`title`、`url` 必填，缺一丢弃；可选 `isVolume`、`isVip`、`isPay`、
   `tag`、`wordCount`、`resourceUrl`。相对 `url` 会按 `book.tocUrl` 自动补全成绝对地址。
   卷名行的约定：`isVolume: true` 且 `url` 与 `title` 写成相同字符串——命中这个约定的行点开
