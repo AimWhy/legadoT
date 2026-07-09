@@ -108,7 +108,7 @@
                 android:singleLine="true"
                 app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
-                android:textSize="12sp" />
+                android:textSize="@dimen/text_caption" />
         </LinearLayout>
 
         <LinearLayout
@@ -160,7 +160,7 @@
                     android:text="结果"
                     app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/text_caption" />
             </LinearLayout>
 
 
@@ -203,7 +203,7 @@
                     android:text="@string/main_menu"
                     app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/text_caption" />
             </LinearLayout>
 
             <View
@@ -245,7 +245,7 @@
                     android:text="退出"
                     app:skin_textColor="onSurface"
                     android:textColor="@color/primaryText"
-                    android:textSize="12sp" />
+                    android:textSize="@dimen/text_caption" />
             </LinearLayout>
 
             <!--        <View-->

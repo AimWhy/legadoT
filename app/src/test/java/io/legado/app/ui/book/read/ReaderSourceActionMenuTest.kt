@@ -9,7 +9,13 @@ class ReaderSourceActionMenuTest {
 
     @Test
     fun `reader source action uses pill chip styling`() {
-        listOf("view_read_menu.xml", "view_manga_menu.xml").forEach { layoutName ->
+        // view_read_menu.xml 的 radius 已随 N3d 归位为 token(@dimen/radius_l,近拟合 16dp);
+        // view_manga_menu.xml 不在 N3d 改动范围内,保留字面量断言。
+        val radiusAssertion = mapOf(
+            "view_read_menu.xml" to "app:radius=\"@dimen/radius_l\"",
+            "view_manga_menu.xml" to "app:radius=\"16dp\"",
+        )
+        radiusAssertion.forEach { (layoutName, radiusExpectation) ->
             val xml = readProjectFile("src/main/res/layout/$layoutName")
             assertContains(layoutName, xml, "android:id=\"@+id/tv_source_action\"")
             assertContains(layoutName, xml, "android:minHeight=\"32dp\"")
@@ -17,7 +23,7 @@ class ReaderSourceActionMenuTest {
             assertContains(layoutName, xml, "android:paddingEnd=\"@dimen/space_s\"")
             assertContains(layoutName, xml, "app:drawableEndCompat=\"@drawable/ic_arrow_drop_down\"")
             assertContains(layoutName, xml, "app:drawableTint=\"@color/primaryText\"")
-            assertContains(layoutName, xml, "app:radius=\"16dp\"")
+            assertContains(layoutName, xml, radiusExpectation)
             assertFalse("$layoutName should not keep the old 2dp square radius", xml.contains("app:radius=\"2dp\""))
         }
     }
