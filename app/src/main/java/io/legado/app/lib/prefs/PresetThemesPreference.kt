@@ -1,0 +1,87 @@
+package io.legado.app.lib.prefs
+
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.util.AttributeSet
+import android.view.ViewGroup
+import androidx.preference.PreferenceViewHolder
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import io.legado.app.R
+import io.legado.app.base.adapter.ItemViewHolder
+import io.legado.app.base.adapter.RecyclerAdapter
+import io.legado.app.databinding.ItemPresetThemeBinding
+import io.legado.app.help.config.ThemeConfig
+import io.legado.app.lib.theme.AppColorScheme
+import io.legado.app.lib.theme.PresetTheme
+import io.legado.app.lib.theme.PresetThemes
+import io.legado.app.lib.theme.ThemeSeedApplier
+
+/**
+ * N4 主题 UX:中式意象预设色块横滑排。
+ *
+ * 直接继承 [androidx.preference.Preference](不走 [io.legado.app.lib.prefs.Preference]——
+ * 后者的 bindView 硬绑 4 个固定 id,这里的自绘布局用不上),仅设 [layoutResource] 为
+ * [R.layout.view_preset_themes],在 [onBindViewHolder] 里把横向 RecyclerView 装上
+ * [PresetThemes.all] 的适配器。
+ *
+ * 施色单轨:卡面颜色一律经 [AppColorScheme.ambientScheme] 由种子现场派生(day 底/primary 圆点 +
+ * night primary 点缀小圆),选中态(themeSeedMode=="preset:$id")用 MaterialCardView 描边强调。
+ */
+class PresetThemesPreference @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+) : androidx.preference.Preference(context, attrs) {
+
+    init {
+        layoutResource = R.layout.view_preset_themes
+        isSelectable = false
+    }
+
+    override fun onBindViewHolder(holder: PreferenceViewHolder) {
+        super.onBindViewHolder(holder)
+        val recycler = holder.findViewById(R.id.recycler_preset) as? RecyclerView ?: return
+        recycler.layoutManager =
+            LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        val adapter = PresetAdapter(context) { refresh() }
+        recycler.adapter = adapter
+        adapter.setItems(PresetThemes.all)
+    }
+
+    /** 点选写入后刷新选中态描边(notifyChanged 触发 onBindViewHolder 重装) */
+    private fun refresh() = notifyChanged()
+
+    private class PresetAdapter(
+        context: Context,
+        val onApplied: () -> Unit,
+    ) : RecyclerAdapter<PresetTheme, ItemPresetThemeBinding>(context) {
+
+        override fun getViewBinding(parent: ViewGroup): ItemPresetThemeBinding =
+            ItemPresetThemeBinding.inflate(inflater, parent, false)
+
+        override fun convert(
+            holder: ItemViewHolder,
+            binding: ItemPresetThemeBinding,
+            item: PresetTheme,
+            payloads: MutableList<Any>,
+        ) = binding.run {
+            val day = AppColorScheme.ambientScheme(item.seed, isDark = false)
+            val night = AppColorScheme.ambientScheme(item.seed, isDark = true)
+            colorBlock.setBackgroundColor(day.primaryContainer)
+            dotPrimary.setImageDrawable(ColorDrawable(day.primary))
+            dotAccent.setImageDrawable(ColorDrawable(night.primary))
+            tvPresetName.text = context.getString(item.nameRes)
+            val selected = ThemeConfig.themeSeedMode == "preset:${item.id}"
+            cardPreset.strokeColor = if (selected) day.primary else Color.TRANSPARENT
+        }
+
+        override fun registerListener(holder: ItemViewHolder, binding: ItemPresetThemeBinding) {
+            binding.cardPreset.setOnClickListener {
+                val item = getItem(holder.layoutPosition) ?: return@setOnClickListener
+                ThemeSeedApplier.applySeed(context, item.seed, "preset:${item.id}")
+                onApplied()
+            }
+        }
+    }
+}
