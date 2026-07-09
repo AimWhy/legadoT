@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_m"
+    android:paddingBottom="@dimen/space_m">
+
+    <!-- 迷你主题色彩 mock 卡 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_theme_mock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_l"
+        android:layout_marginEnd="@dimen/space_l"
+        app:cardCornerRadius="@dimen/radius_l"
+        app:cardElevation="@dimen/toolbar_elevation"
+        tools:cardBackgroundColor="#EEEEEE">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 顶栏条：themePrimary 语义 (ThemeStore.primaryColor) -->
+            <View
+                android:id="@+id/top_bar"
+                android:layout_width="match_parent"
+                android:layout_height="24dp"
+                tools:background="#1F88E5" />
+
+            <!-- 占位内容区：两行文字占位 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_l">
+
+                <!-- 第一行占位灰条 (onSurfaceVariant @ 40%) -->
+                <View
+                    android:id="@+id/placeholder_bar_1"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginBottom="@dimen/space_m"
+                    android:layout_marginEnd="@dimen/space_xl"
+                    tools:background="#79747E"
+                    tools:alpha="0.4" />
+
+                <!-- 第二行占位灰条 (onSurfaceVariant @ 40%) -->
+                <View
+                    android:id="@+id/placeholder_bar_2"
+                    android:layout_width="match_parent"
+                    android:layout_height="8dp"
+                    android:layout_marginEnd="@dimen/space_l"
+                    tools:background="#79747E"
+                    tools:alpha="0.4" />
+
+            </LinearLayout>
+
+            <!-- 强调钮圆：accentColor (ThemeStore.accentColor) -->
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="@dimen/space_l">
+
+                <View
+                    android:id="@+id/accent_button"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_gravity="center"
+                    tools:background="#263238" />
+
+            </FrameLayout>
+
+            <!-- 底栏条：bottomBackground (ThemeStore.bottomBackground) -->
+            <View
+                android:id="@+id/bottom_bar"
+                android:layout_width="match_parent"
+                android:layout_height="16dp"
+                tools:background="#1F88E5" />
+
+        </LinearLayout>
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

@@ -63,4 +63,30 @@ class ThemeUxTest {
         assertTrue(src.contains("fun currentSeed"))
         assertTrue(src.contains("fun isAvailable"))
     }
+
+    @Test
+    fun `theme preview preference shows four colors with themePrimary semantics and is non-selectable`() {
+        val src =
+            File("src/main/java/io/legado/app/lib/prefs/ThemePreviewPreference.kt").readText()
+        // 必须直接继承 androidx.preference.Preference
+        assertTrue(
+            "ThemePreviewPreference 必须直接继承 androidx.preference.Preference",
+            src.contains("androidx.preference.Preference"),
+        )
+        // 必须读取 ThemeStore.primaryColor (themePrimary 语义)
+        assertTrue(
+            "ThemePreviewPreference 必须包含 ThemeStore.primaryColor (themePrimary 语义)",
+            src.contains("ThemeStore.primaryColor"),
+        )
+        // 必须设置 isSelectable = false
+        assertTrue(
+            "ThemePreviewPreference 必须设置 isSelectable = false",
+            src.contains("isSelectable = false"),
+        )
+        // 必须使用 view_theme_preview 布局
+        assertTrue(
+            "ThemePreviewPreference 必须使用 view_theme_preview 布局",
+            src.contains("view_theme_preview"),
+        )
+    }
 }
