@@ -53,10 +53,29 @@
             android:textColor="@color/primaryText"
             app:layout_constraintBottom_toTopOf="@id/iv_debug_text"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toLeftOf="@id/swt_enabled"
+            app:layout_constraintRight_toLeftOf="@id/tv_js_badge"
             app:layout_constraintTop_toBottomOf="@id/barrier"
             tools:ignore="TouchTargetSizeCheck"
             tools:text="@string/book_source" />
+
+        <TextView
+            android:id="@+id/tv_js_badge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_s"
+            android:paddingHorizontal="4dp"
+            android:scrollbars="none"
+            android:singleLine="true"
+            android:text="JS"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:skin_textColor="primary"
+            app:layout_constraintBottom_toBottomOf="@id/cb_book_source"
+            app:layout_constraintRight_toLeftOf="@id/swt_enabled"
+            app:layout_constraintTop_toTopOf="@id/cb_book_source"
+            tools:visibility="visible" />
+
 
         <io.legado.app.lib.theme.view.ThemeSwitch
             android:id="@+id/swt_enabled"
