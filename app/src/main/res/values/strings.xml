@@ -664,6 +664,12 @@ Placeholders:
     <string name="preset_haitang">Hai Tang</string>
     <string name="preset_qingci">Qing Ci</string>
     <string name="preset_moshi">Mo Shi</string>
+    <string name="theme_custom_advanced">Advanced: custom colors</string>
+    <string name="wallpaper_follow">Follow wallpaper colors</string>
+    <string name="wallpaper_follow_s">Derive theme colors from your wallpaper (Android 12+)</string>
+    <string name="wallpaper_auto_update">Auto update on wallpaper change</string>
+    <string name="wallpaper_auto_update_s">Re-derive colors automatically when the wallpaper changes</string>
+    <string name="wallpaper_no_color">Could not read wallpaper colors</string>
     <string name="join_qq_group">Join QQ group</string>
     <string name="bg_image_per">Set the background image requires storage permission</string>
     <string name="input_book_source_url">Input book source address</string>

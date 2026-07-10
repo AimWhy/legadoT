@@ -89,4 +89,36 @@ class ThemeUxTest {
             src.contains("view_theme_preview"),
         )
     }
+
+    @Test
+    fun `theme settings page mounts preview wallpaper switch and preset row while keeping 8 color keys intact`() {
+        val xml = File("src/main/res/xml/pref_config_theme.xml").readText()
+        // 三新组件挂载:预览卡/壁纸跟随开关/预设排
+        assertTrue(
+            "pref_config_theme 必须挂载 ThemePreviewPreference",
+            xml.contains("io.legado.app.lib.prefs.ThemePreviewPreference"),
+        )
+        assertTrue(
+            "pref_config_theme 必须挂载 PresetThemesPreference",
+            xml.contains("io.legado.app.lib.prefs.PresetThemesPreference"),
+        )
+        assertTrue(
+            "pref_config_theme 必须含壁纸跟随开关 key=wallpaperFollow",
+            xml.contains("\"wallpaperFollow\""),
+        )
+        assertTrue(
+            "pref_config_theme 必须含壁纸自动更新子开关 key=wallpaperAutoUpdate",
+            xml.contains("\"wallpaperAutoUpdate\""),
+        )
+        // 红线:8 个 colorXxx key 逐字不动,仅位置迁移进新 category
+        listOf(
+            "colorPrimary", "colorAccent", "colorBackground", "colorBottomBackground",
+            "colorPrimaryNight", "colorAccentNight", "colorBackgroundNight", "colorBottomBackgroundNight",
+        ).forEach { key ->
+            assertTrue(
+                "pref_config_theme 必须仍含 colorXxx key: $key",
+                xml.contains("\"$key\""),
+            )
+        }
+    }
 }

@@ -37,6 +37,13 @@ class ThemePreviewPreference @JvmOverloads constructor(
         isSelectable = false
     }
 
+    /**
+     * 刷新预览卡(notifyChanged 触发 onBindViewHolder 重装,现读 ThemeStore 四色新值)。
+     * 公开包装:androidx.preference.Preference.notifyChanged 本身是 protected,T5 在
+     * 手动改色/预设点选后从 Fragment 外部调用需要这层 public 包装才能触达。
+     */
+    fun refresh() = notifyChanged()
+
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
         val card = holder.findViewById(R.id.card_theme_mock) as? MaterialCardView ?: return
