@@ -17,7 +17,6 @@ import androidx.appcompat.widget.TooltipCompat
 import androidx.core.graphics.toColorInt
 import androidx.core.view.isGone
 import com.google.android.material.slider.Slider
-import com.jaredrummler.android.colorpicker.ColorPickerDialog
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.constant.AppLog
@@ -27,6 +26,7 @@ import io.legado.app.databinding.DialogReadBgTextBinding
 import io.legado.app.databinding.ItemBgImageBinding
 import io.legado.app.help.DefaultData
 import io.legado.app.help.book.isImage
+import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.http.newCallResponseBody
 import io.legado.app.help.http.okHttpClient
@@ -40,12 +40,14 @@ import io.legado.app.model.ReadBook
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.ui.file.HandleFileContract
+import io.legado.app.ui.widget.dialog.M3ColorPickerDialog
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.applyAppTint
 import io.legado.app.utils.FileDoc
 import io.legado.app.utils.getCompatColor
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
+import io.legado.app.utils.hexString
 import io.legado.app.utils.MD5Utils
 import io.legado.app.utils.SvgUtils
 import io.legado.app.utils.compress.ZipUtils
@@ -79,9 +81,9 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
     override val dialogForm = DialogForm.SELF_MANAGED
 
     companion object {
-        const val TEXT_COLOR = 121
-        const val BG_COLOR = 122
-        const val REVIEW_ICON_COLOR = 123
+        const val TEXT_COLOR = "bgTextConfigTextColor"
+        const val BG_COLOR = "bgTextConfigBgColor"
+        const val REVIEW_ICON_COLOR = "bgTextConfigReviewIconColor"
     }
 
     private val binding by viewBinding(DialogReadBgTextBinding::bind)
@@ -129,6 +131,31 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
         initView()
         initData()
         initEvent()
+        initColorPickerListeners()
+    }
+
+    private fun initColorPickerListeners() {
+        parentFragmentManager.setFragmentResultListener(REVIEW_ICON_COLOR, viewLifecycleOwner) { _, bundle ->
+            val color = bundle.getInt(M3ColorPickerDialog.RESULT_COLOR)
+            ReadBookConfig.reviewIconColor = color
+            postEvent(EventBus.UP_CONFIG, arrayListOf(8, 9, 11))
+        }
+        parentFragmentManager.setFragmentResultListener(TEXT_COLOR, viewLifecycleOwner) { _, bundle ->
+            val color = bundle.getInt(M3ColorPickerDialog.RESULT_COLOR)
+            ReadBookConfig.durConfig.setCurTextColor(color)
+            postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6, 9, 11))
+            if (AppConfig.readBarStyleFollowPage) {
+                postEvent(EventBus.UPDATE_READ_ACTION_BAR, true)
+            }
+        }
+        parentFragmentManager.setFragmentResultListener(BG_COLOR, viewLifecycleOwner) { _, bundle ->
+            val color = bundle.getInt(M3ColorPickerDialog.RESULT_COLOR)
+            ReadBookConfig.durConfig.setCurBg(0, "#${color.hexString}")
+            postEvent(EventBus.UP_CONFIG, arrayListOf(1))
+            if (AppConfig.readBarStyleFollowPage) {
+                postEvent(EventBus.UPDATE_READ_ACTION_BAR, true)
+            }
+        }
     }
 
     override fun onDismiss(dialog: DialogInterface) {
@@ -292,15 +319,14 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
             }
         }
         binding.tvReviewIconColor.setOnClickListener {
-            ColorPickerDialog.newBuilder()
-                .setColor(
-                    ReadBookConfig.reviewIconColor.takeIf { it != 0 }
-                        ?: ChapterProvider.reviewPaint.color
-                )
-                .setShowAlphaSlider(false)
-                .setDialogType(ColorPickerDialog.TYPE_CUSTOM)
-                .setDialogId(REVIEW_ICON_COLOR)
-                .show(requireActivity())
+            M3ColorPickerDialog.show(
+                parentFragmentManager,
+                REVIEW_ICON_COLOR,
+                ReadBookConfig.reviewIconColor.takeIf { it != 0 }
+                    ?: ChapterProvider.reviewPaint.color,
+                false,
+                null
+            )
         }
         binding.tvReviewIconColor.setOnLongClickListener {
             if (ReadBookConfig.reviewIconColor != 0) {
@@ -311,23 +337,25 @@ class BgTextConfigDialog : BaseDialogFragment(R.layout.dialog_read_bg_text) {
             true
         }
         binding.tvTextColor.setOnClickListener {
-            ColorPickerDialog.newBuilder()
-                .setColor(curTextColor())
-                .setShowAlphaSlider(false)
-                .setDialogType(ColorPickerDialog.TYPE_CUSTOM)
-                .setDialogId(TEXT_COLOR)
-                .show(requireActivity())
+            M3ColorPickerDialog.show(
+                parentFragmentManager,
+                TEXT_COLOR,
+                curTextColor(),
+                false,
+                null
+            )
         }
         binding.tvBgColor.setOnClickListener {
             val bgColor =
                 if (curBgType() == 0) curBgStr().toColorInt()
                 else "#015A86".toColorInt()
-            ColorPickerDialog.newBuilder()
-                .setColor(bgColor)
-                .setShowAlphaSlider(false)
-                .setDialogType(ColorPickerDialog.TYPE_CUSTOM)
-                .setDialogId(BG_COLOR)
-                .show(requireActivity())
+            M3ColorPickerDialog.show(
+                parentFragmentManager,
+                BG_COLOR,
+                bgColor,
+                false,
+                null
+            )
         }
         binding.tvBgColor.apply {
             TooltipCompat.setTooltipText(this, text)

@@ -1,7 +1,5 @@
 package io.legado.app.ui.highlight.edit
 
-import com.jaredrummler.android.colorpicker.ColorPickerDialog
-import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
 import io.legado.app.data.entities.BookHighlight
 import io.legado.app.help.HighlightColors
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_FILL
@@ -13,22 +11,6 @@ import org.junit.Assert.assertSame
 import org.junit.Test
 
 class HighlightRuleEditDialogTest {
-
-    private class Listener : ColorPickerDialogListener {
-        override fun onColorSelected(dialogId: Int, color: Int) = Unit
-        override fun onDialogDismissed(dialogId: Int) = Unit
-    }
-
-    @Test
-    fun `binds color picker callbacks to supplied listener`() {
-        val listener = Listener()
-        val dialog = ColorPickerDialog()
-
-        val bound = HighlightRuleEditDialog.bindColorPickerListener(dialog, listener)
-
-        assertSame(dialog, bound)
-        assertSame(listener, dialog.boundColorPickerListener())
-    }
 
     @Test
     fun `color picker config uses fallback seed and requested presets`() {
@@ -80,10 +62,5 @@ class HighlightRuleEditDialogTest {
 
         assertNull(HighlightRuleEditDialog.highlightToRemove(list, 999L))
     }
-
-    private fun ColorPickerDialog.boundColorPickerListener(): ColorPickerDialogListener? {
-        val field = ColorPickerDialog::class.java.getDeclaredField("colorPickerDialogListener")
-        field.isAccessible = true
-        return field.get(this) as? ColorPickerDialogListener
-    }
 }
+

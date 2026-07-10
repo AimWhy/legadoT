@@ -4,7 +4,6 @@ kotlin = "2.3.0"
 ksp = "2.3.4"
 agp = "9.2.1"
 appcompat = "1.7.1"
-colorpicker = "1.1.0"
 constraintlayout = "2.2.1"
 core = "1.17.0"
 flexbox = "3.0.0"
@@ -163,7 +162,6 @@ androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 androidx-documentfile = { module = "androidx.documentfile:documentfile", version.ref = "documentfile" }
 androidx-exifinterface = { module = "androidx.exifinterface:exifinterface", version.ref = "exifinterface" }
 androidx-dynamicanimation = { module = "androidx.dynamicanimation:dynamicanimation", version = "1.1.0" }
-colorpicker = { module = "com.jaredrummler:colorpicker", version.ref = "colorpicker" }
 commons-text = { module = "org.apache.commons:commons-text", version.ref = "commonsText" }
 desugar = { group = "com.android.tools", name = "desugar_jdk_libs_nio", version.ref = "desugar" }
 

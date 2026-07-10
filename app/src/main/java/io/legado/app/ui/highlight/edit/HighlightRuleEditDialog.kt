@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
-import com.jaredrummler.android.colorpicker.ColorPickerDialog
-import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.data.appDb
@@ -15,8 +13,15 @@ import io.legado.app.databinding.DialogHighlightRuleEditBinding
 import io.legado.app.help.HighlightColors
 import io.legado.app.help.HighlightStyle
 import io.legado.app.model.ReadBook
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_BOX
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_EMPHASIS
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_FILL
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_STRIKE
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_TEXT
+import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_UNDERLINE
 import io.legado.app.ui.book.read.HighlightStyleDialog
 import io.legado.app.ui.font.FontSelectDialog
+import io.legado.app.ui.widget.dialog.M3ColorPickerDialog
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
@@ -31,11 +36,9 @@ import kotlinx.coroutines.withContext
  */
 class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rule_edit, true),
     HighlightStyleDialog.StyleHost,
-    FontSelectDialog.CallBack,
-    ColorPickerDialogListener {
+    FontSelectDialog.CallBack {
 
     companion object {
-        private const val COLOR_PICKER_TAG = "highlight-rule-color-picker"
 
         /**
          * 新建规则(预填 pattern/isRegex/scope/style)。
@@ -84,29 +87,7 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
             )
         }
 
-        fun bindColorPickerListener(
-            dialog: ColorPickerDialog,
-            listener: ColorPickerDialogListener
-        ): ColorPickerDialog = dialog.also { it.setColorPickerDialogListener(listener) }
-
-        fun createColorPickerDialog(
-            dialogId: Int,
-            initial: Int,
-            withAlpha: Boolean,
-            listener: ColorPickerDialogListener
-        ): ColorPickerDialog {
-            val config = colorPickerConfig(dialogId, initial, withAlpha)
-            return bindColorPickerListener(
-                ColorPickerDialog.newBuilder()
-                    .setColor(config.color)
-                    .setShowAlphaSlider(config.withAlpha)
-                    .setDialogType(ColorPickerDialog.TYPE_PRESETS)
-                    .setPresets(config.presets)
-                    .setDialogId(config.dialogId)
-                    .create(),
-                listener
-            )
-        }
+        private fun colorRequestKey(dialogId: Int): String = "highlightRuleColor$dialogId"
     }
 
     private val binding by viewBinding(DialogHighlightRuleEditBinding::bind)
@@ -127,15 +108,26 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
         }
         binding.tvCancel.setOnClickListener { dismiss() }
         binding.tvOk.setOnClickListener { save() }
-        childFragmentManager.findFragmentByTag(COLOR_PICKER_TAG)
-            ?.let { it as? ColorPickerDialog }
-            ?.setColorPickerDialogListener(this)
+        initColorPickerListeners()
 
         val id = arguments?.getLong("id", -1) ?: -1
         if (id > 0) {
             loadById(id)
         } else {
             fromArgs()
+        }
+    }
+
+    private fun initColorPickerListeners() {
+        listOf(HL_FILL, HL_TEXT, HL_UNDERLINE, HL_STRIKE, HL_BOX, HL_EMPHASIS).forEach { dialogId ->
+            childFragmentManager.setFragmentResultListener(
+                colorRequestKey(dialogId), viewLifecycleOwner
+            ) { _, bundle ->
+                val color = bundle.getInt(M3ColorPickerDialog.RESULT_COLOR)
+                editingStyle = HighlightStyleDialog.applyChannelColor(editingStyle, dialogId, color)
+                styleDialog?.refresh()
+                upPreview()
+            }
         }
     }
 
@@ -219,12 +211,14 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
     }
 
     override fun pickHighlightColor(dialogId: Int, initial: Int, withAlpha: Boolean) {
-        createColorPickerDialog(
-            dialogId = dialogId,
-            initial = initial,
-            withAlpha = withAlpha,
-            listener = this@HighlightRuleEditDialog
-        ).show(childFragmentManager, COLOR_PICKER_TAG)
+        val config = colorPickerConfig(dialogId, initial, withAlpha)
+        M3ColorPickerDialog.show(
+            childFragmentManager,
+            colorRequestKey(dialogId),
+            config.color,
+            config.withAlpha,
+            config.presets
+        )
     }
 
     override fun pickHighlightFont(current: String) {
@@ -239,13 +233,4 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
         styleDialog?.refresh()
         upPreview()
     }
-
-    // --- ColorPickerDialogListener ---
-    override fun onColorSelected(dialogId: Int, color: Int) {
-        editingStyle = HighlightStyleDialog.applyChannelColor(editingStyle, dialogId, color)
-        styleDialog?.refresh()
-        upPreview()
-    }
-
-    override fun onDialogDismissed(dialogId: Int) {}
 }

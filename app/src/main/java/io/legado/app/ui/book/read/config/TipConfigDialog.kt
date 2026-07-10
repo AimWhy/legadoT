@@ -4,7 +4,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.indices
-import com.jaredrummler.android.colorpicker.ColorPickerDialog
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.constant.EventBus
@@ -12,6 +11,7 @@ import io.legado.app.databinding.DialogTipConfigBinding
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.config.ReadTipConfig
 import io.legado.app.lib.dialogs.selector
+import io.legado.app.ui.widget.dialog.M3ColorPickerDialog
 import io.legado.app.utils.checkByIndex
 import io.legado.app.utils.getIndexById
 import io.legado.app.utils.hexString
@@ -24,8 +24,8 @@ import io.legado.app.utils.viewbindingdelegate.viewBinding
 class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
 
     companion object {
-        const val TIP_COLOR = 7897
-        const val TIP_DIVIDER_COLOR = 7898
+        const val TIP_COLOR = "tipConfigTipColor"
+        const val TIP_DIVIDER_COLOR = "tipConfigTipDividerColor"
     }
 
     private val binding by viewBinding(DialogTipConfigBinding::bind)
@@ -38,9 +38,25 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         initView()
         initEvent()
+        initColorPickerListeners()
         observeEvent<String>(EventBus.TIP_COLOR) {
             upTvTipColor()
             upTvTipDividerColor()
+        }
+    }
+
+    private fun initColorPickerListeners() {
+        parentFragmentManager.setFragmentResultListener(TIP_COLOR, viewLifecycleOwner) { _, bundle ->
+            val color = bundle.getInt(M3ColorPickerDialog.RESULT_COLOR)
+            ReadTipConfig.tipColor = color
+            postEvent(EventBus.TIP_COLOR, "")
+            postEvent(EventBus.UP_CONFIG, arrayListOf(2))
+        }
+        parentFragmentManager.setFragmentResultListener(TIP_DIVIDER_COLOR, viewLifecycleOwner) { _, bundle ->
+            val color = bundle.getInt(M3ColorPickerDialog.RESULT_COLOR)
+            ReadTipConfig.tipDividerColor = color
+            postEvent(EventBus.TIP_COLOR, "")
+            postEvent(EventBus.UP_CONFIG, arrayListOf(2))
         }
     }
 
@@ -193,11 +209,13 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                         postEvent(EventBus.UP_CONFIG, arrayListOf(2))
                     }
 
-                    1 -> ColorPickerDialog.newBuilder()
-                        .setShowAlphaSlider(false)
-                        .setDialogType(ColorPickerDialog.TYPE_CUSTOM)
-                        .setDialogId(TIP_COLOR)
-                        .show(requireActivity())
+                    1 -> M3ColorPickerDialog.show(
+                        parentFragmentManager,
+                        TIP_COLOR,
+                        ReadTipConfig.tipColor,
+                        false,
+                        null
+                    )
                 }
             }
         }
@@ -210,11 +228,13 @@ class TipConfigDialog : BaseDialogFragment(R.layout.dialog_tip_config) {
                         postEvent(EventBus.UP_CONFIG, arrayListOf(2))
                     }
 
-                    2 -> ColorPickerDialog.newBuilder()
-                        .setShowAlphaSlider(false)
-                        .setDialogType(ColorPickerDialog.TYPE_CUSTOM)
-                        .setDialogId(TIP_DIVIDER_COLOR)
-                        .show(requireActivity())
+                    2 -> M3ColorPickerDialog.show(
+                        parentFragmentManager,
+                        TIP_DIVIDER_COLOR,
+                        ReadTipConfig.tipDividerColor,
+                        false,
+                        null
+                    )
                 }
             }
         }

@@ -29,7 +29,7 @@ import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
 
 /**
- * 自建 M3 取色器(N4 Task 6),替代 jaredrummler ColorPickerDialog(Task 7 六调用点切换)。
+ * 自建 M3 取色器(N4 Task 6),替代第三方取色器库的 ColorPickerDialog(Task 7 六调用点切换)。
  *
  * 纵排三区(见 `dialog_m3_color_picker.xml`):
  * 1. 色板 grid([ARG_PALETTE] 为 null/空时整区 gone)——点选即把该色(自带 alpha)纳入工作态。
