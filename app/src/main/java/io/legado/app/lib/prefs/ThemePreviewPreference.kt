@@ -1,9 +1,7 @@
 package io.legado.app.lib.prefs
 
 import android.content.Context
-import android.graphics.Color
 import android.util.AttributeSet
-import android.view.View
 import androidx.annotation.ColorInt
 import androidx.preference.PreferenceViewHolder
 import com.google.android.material.card.MaterialCardView
@@ -22,7 +20,7 @@ import io.legado.app.utils.ColorUtils
  * 四色语义对位(themePrimary 语义):
  * - 顶栏条 (topBar) = ThemeStore.primaryColor ——强调工具栏/标题栏
  * - 强调钮圆 (accentButton) = ThemeStore.accentColor ——重点交互元素
- * - 背景面 (mockContainer) = ThemeStore.backgroundColor ——主要背景
+ * - 背景面 (card_theme_mock) = ThemeStore.backgroundColor ——主要背景
  * - 底栏条 (bottomBar) = ThemeStore.bottomBackground ——底部导航/固定栏
  * - 占位灰条 (placeholderBar) = onSurfaceVariant @ 40% ——中性内容区 (禁用态/次要文字)
  *
@@ -59,7 +57,9 @@ class ThemePreviewPreference @JvmOverloads constructor(
         @ColorInt val variantGray = ColorUtils.withAlpha(scheme.onSurfaceVariant, 0.4f)
 
         // 设置背景卡面色
-        card.setBackgroundColor(bgColor)
+        // MaterialCardView 必须走 setCardBackgroundColor——setBackgroundColor 会把渲染圆角的
+        // MaterialShapeDrawable 换成方角 ColorDrawable(N3a SkinInflaterFactory 同族坑)
+        card.setCardBackgroundColor(bgColor)
 
         // 顶栏条 = primaryColor (themePrimary 语义)
         topBar.setBackgroundColor(primaryColor)
