@@ -121,4 +121,45 @@ class ThemeUxTest {
             )
         }
     }
+
+    @Test
+    fun `m3 color picker dialog exposes requestKey show api and hsv panel with three zone layout`() {
+        val dialogSrc =
+            File("src/main/java/io/legado/app/ui/widget/dialog/M3ColorPickerDialog.kt").readText()
+        assertTrue(
+            "M3ColorPickerDialog.show 必须含 requestKey 参数(fragmentResult 契约)",
+            dialogSrc.contains("requestKey"),
+        )
+        assertTrue(
+            "M3ColorPickerDialog 必须用 setFragmentResult 交付结果(旋转存活,非 lambda)",
+            dialogSrc.contains("setFragmentResult"),
+        )
+        assertTrue(dialogSrc.contains("fun show("))
+        assertTrue(dialogSrc.contains("palette"))
+        assertTrue(dialogSrc.contains("showAlpha"))
+
+        val hsvSrc = File("src/main/java/io/legado/app/ui/widget/HsvPanelView.kt").readText()
+        assertTrue("HsvPanelView 必须自绘 onDraw", hsvSrc.contains("onDraw"))
+        assertTrue("HsvPanelView 必须处理触摸 onTouchEvent", hsvSrc.contains("onTouchEvent"))
+        assertTrue("HsvPanelView 必须暴露 color 属性", hsvSrc.contains("var color"))
+        assertTrue("HsvPanelView 必须暴露 onColorChanged 回调", hsvSrc.contains("onColorChanged"))
+
+        val layout = File("src/main/res/layout/dialog_m3_color_picker.xml").readText()
+        assertTrue(
+            "dialog_m3_color_picker 必须挂载 HsvPanelView",
+            layout.contains("HsvPanelView"),
+        )
+        assertTrue(
+            "dialog_m3_color_picker 必须含 palette grid 容器 id",
+            layout.contains("recycler_palette"),
+        )
+        assertTrue(
+            "dialog_m3_color_picker 必须含 hex 输入框 id",
+            layout.contains("et_hex"),
+        )
+        assertTrue(
+            "dialog_m3_color_picker 必须含 alpha slider",
+            layout.contains("slider_alpha"),
+        )
+    }
 }

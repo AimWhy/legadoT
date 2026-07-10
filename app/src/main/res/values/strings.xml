@@ -670,6 +670,9 @@ Placeholders:
     <string name="wallpaper_auto_update">Auto update on wallpaper change</string>
     <string name="wallpaper_auto_update_s">Re-derive colors automatically when the wallpaper changes</string>
     <string name="wallpaper_no_color">Could not read wallpaper colors</string>
+    <string name="color_picker_hex_invalid">Invalid hex color</string>
+    <string name="color_picker_current">Current</string>
+    <string name="color_picker_initial">Original</string>
     <string name="join_qq_group">Join QQ group</string>
     <string name="bg_image_per">Set the background image requires storage permission</string>
     <string name="input_book_source_url">Input book source address</string>
