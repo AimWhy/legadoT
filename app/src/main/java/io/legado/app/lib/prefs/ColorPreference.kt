@@ -34,8 +34,10 @@ class ColorPreference(context: Context, attrs: AttributeSet) : Preference(contex
         val a = context.obtainStyledAttributes(attrs, R.styleable.ColorPreference)
         showDialog = a.getBoolean(R.styleable.ColorPreference_cpv_showDialog, true)
         showAlphaSlider = a.getBoolean(R.styleable.ColorPreference_cpv_showAlphaSlider, false)
+        // cpv_dialogType 语义映射到新取色器: preset(1,默认)=Material 色板;custom(0)=无色板纯 HSV
+        val dialogType = a.getInt(R.styleable.ColorPreference_cpv_dialogType, 1)
         a.recycle()
-        presets = MATERIAL_COLORS
+        presets = if (dialogType == 1) MATERIAL_COLORS else null
     }
 
     override fun onClick() {
