@@ -145,7 +145,9 @@ class M3ColorPickerDialog : BaseDialogFragment(R.layout.dialog_m3_color_picker) 
         if (palette == null || palette.isEmpty()) {
             binding.layoutPalette.gone()
         } else {
-            binding.recyclerPalette.layoutManager = GridLayoutManager(requireContext(), 6)
+            // 小色板(如 HighlightColors 5 色)整行铺满;大色板保持 6 列
+            binding.recyclerPalette.layoutManager =
+                GridLayoutManager(requireContext(), minOf(6, palette.size))
             binding.recyclerPalette.adapter = paletteAdapter
             paletteAdapter.setItems(palette.toList())
         }
@@ -215,7 +217,10 @@ class M3ColorPickerDialog : BaseDialogFragment(R.layout.dialog_m3_color_picker) 
             payloads: MutableList<Any>
         ) {
             binding.ivSwatch.setImageDrawable(ColorDrawable(item))
-            binding.ivSwatchCheck.visible(item == workingColor)
+            // 与点选路径同规归一再比:showAlpha=false 时 workingColor 已被去 alpha,
+            // 非全透明预设(如 HighlightColors.bg 的 0x80 alpha)裸比永不相等→勾选永不出现
+            val normalizedItem = if (showAlpha) item else ColorUtils.withAlpha(item, 1f)
+            binding.ivSwatchCheck.visible(normalizedItem == workingColor)
             binding.ivSwatchCheck.setColorFilter(
                 if (ColorUtils.isColorLight(item)) Color.BLACK else Color.WHITE
             )
