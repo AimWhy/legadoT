@@ -49,8 +49,13 @@ class PresetThemesPreference @JvmOverloads constructor(
         adapter.setItems(PresetThemes.all)
     }
 
-    /** 点选写入后刷新选中态描边(notifyChanged 触发 onBindViewHolder 重装) */
-    private fun refresh() = notifyChanged()
+    /**
+     * 刷新选中态描边(notifyChanged 触发 onBindViewHolder 重装)。
+     * 公开:除内部点选自刷新外,T5 在手动改色回落钩子(ThemeConfig.onManualColorChanged)
+     * 触发后从 Fragment 外部调用,取消预设排的选中描边(androidx.preference.Preference.notifyChanged
+     * 本身是 protected,子类需要这层 public 包装才能被外部调用方触达)。
+     */
+    fun refresh() = notifyChanged()
 
     private class PresetAdapter(
         context: Context,

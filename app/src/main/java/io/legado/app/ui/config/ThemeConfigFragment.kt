@@ -25,7 +25,11 @@ import io.legado.app.help.config.ThemeConfig
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.prefs.ColorPreference
+import io.legado.app.lib.prefs.PresetThemesPreference
+import io.legado.app.lib.prefs.SwitchPreference
+import io.legado.app.lib.prefs.ThemePreviewPreference
 import io.legado.app.lib.prefs.fragment.PreferenceFragment
+import io.legado.app.lib.theme.WallpaperSeed
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.widget.number.NumberPickerDialog
@@ -35,6 +39,7 @@ import io.legado.app.utils.FileUtils
 import io.legado.app.utils.MD5Utils
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.externalFiles
+import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.inputStream
@@ -76,6 +81,11 @@ class ThemeConfigFragment : PreferenceFragment(),
         if (Build.VERSION.SDK_INT < 26) {
             preferenceScreen.removePreferenceRecursively(PreferKey.launcherIcon)
         }
+        if (!WallpaperSeed.isAvailable()) {
+            // 壁纸取色 API 需 12+(S=31),低版本隐藏开关入口(主+子开关一并隐藏)
+            findPreference<SwitchPreference>(PreferKey.wallpaperFollow)?.isVisible = false
+            findPreference<SwitchPreference>(PreferKey.wallpaperAutoUpdate)?.isVisible = false
+        }
         upPreferenceSummary(PreferKey.bgImage, getPrefString(PreferKey.bgImage))
         upPreferenceSummary(PreferKey.bgImageN, getPrefString(PreferKey.bgImageN))
         upPreferenceSummary(PreferKey.barElevation, AppConfig.elevation.toString())
@@ -99,6 +109,29 @@ class ThemeConfigFragment : PreferenceFragment(),
                     false
                 }
             }
+        }
+        findPreference<SwitchPreference>(PreferKey.wallpaperFollow)?.setOnPreferenceChangeListener { _, newValue ->
+            val enabled = newValue as Boolean
+            val autoUpdate = getPrefBoolean(PreferKey.wallpaperAutoUpdate)
+            val ok = WallpaperSeed.setFollow(requireContext(), enabled, autoUpdate)
+            if (enabled && !ok) {
+                // 取不到壁纸颜色:toast 提示 + 监听器返回 false。
+                // TwoStatePreference.onClick 契约:callChangeListener 返回 false 时 setChecked()/
+                // notifyChanged() 均不会执行——开关小部件本身 clickable=false(纯数据绑定展示,
+                // 见 view_preference_widget_switch.xml),视觉状态自始至终未离开"关闭"外观,
+                // 不是"回弹动画"而是"根本没变过";效果上等价于回滚,但机制是"未提交"而非"提交后复原"。
+                toastOnUi(R.string.wallpaper_no_color)
+                return@setOnPreferenceChangeListener false
+            }
+            true
+        }
+        findPreference<SwitchPreference>(PreferKey.wallpaperAutoUpdate)?.setOnPreferenceChangeListener { _, newValue ->
+            // 仅在主开关已开启时才重新 setFollow(true, 新值);主开关关闭时此开关本就因
+            // android:dependency 禁用不可交互,这里是双保险,不做失败回弹(取色早已成功过一次)
+            if (getPrefBoolean(PreferKey.wallpaperFollow)) {
+                WallpaperSeed.setFollow(requireContext(), true, newValue as Boolean)
+            }
+            true
         }
     }
 
@@ -147,6 +180,7 @@ class ThemeConfigFragment : PreferenceFragment(),
             PreferKey.cBackground,
             PreferKey.cBBackground -> {
                 upTheme(false)
+                upManualColorChange()
             }
 
             PreferKey.cNPrimary,
@@ -154,6 +188,7 @@ class ThemeConfigFragment : PreferenceFragment(),
             PreferKey.cNBackground,
             PreferKey.cNBBackground -> {
                 upTheme(true)
+                upManualColorChange()
             }
 
             PreferKey.bgImage,
@@ -162,6 +197,18 @@ class ThemeConfigFragment : PreferenceFragment(),
             }
         }
 
+    }
+
+    /**
+     * ColorPreference 手调回落钩子(T5 接线):任一 colorXxx key 变更即视为"用户手动改色",
+     * 清空 seedMode(若非空)+ 同页立即刷新预设排(取消选中描边)与预览卡(新色即时可见)。
+     * 不等待 upTheme 可能触发的 RECREATE——那只在编辑的日/夜与当前显示模式匹配时才发生,
+     * 而预设描边取消与预览刷新在任何情况下都应立即反映"这是手动值"这一状态变化。
+     */
+    private fun upManualColorChange() {
+        ThemeConfig.onManualColorChanged()
+        findPreference<PresetThemesPreference>("presetThemes")?.refresh()
+        findPreference<ThemePreviewPreference>("themePreview")?.refresh()
     }
 
     @SuppressLint("PrivateResource")

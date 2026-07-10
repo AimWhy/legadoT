@@ -2,6 +2,95 @@
 <androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <io.legado.app.lib.prefs.ThemePreviewPreference
+        android:key="themePreview"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false" />
+
+    <io.legado.app.lib.prefs.SwitchPreference
+        android:defaultValue="false"
+        android:key="wallpaperFollow"
+        android:summary="@string/wallpaper_follow_s"
+        android:title="@string/wallpaper_follow" />
+
+    <io.legado.app.lib.prefs.SwitchPreference
+        android:defaultValue="false"
+        android:dependency="wallpaperFollow"
+        android:key="wallpaperAutoUpdate"
+        android:summary="@string/wallpaper_auto_update_s"
+        android:title="@string/wallpaper_auto_update" />
+
+    <io.legado.app.lib.prefs.PresetThemesPreference
+        android:key="presetThemes"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false" />
+
+    <io.legado.app.lib.prefs.PreferenceCategory
+        android:key="customColorAdvancedCategory"
+        android:title="@string/theme_custom_advanced"
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="false">
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_day_primary"
+            android:key="colorPrimary"
+            android:summary="@string/day_color_primary"
+            android:title="@string/primary"
+            app:cpv_dialogType="preset" />
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_day_accent"
+            android:key="colorAccent"
+            android:summary="@string/day_color_accent"
+            android:title="@string/accent"
+            app:cpv_dialogType="preset" />
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_day_background"
+            android:key="colorBackground"
+            android:summary="@string/day_background_color"
+            android:title="@string/background_color"
+            app:cpv_dialogType="preset" />
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_day_bottom_background"
+            android:key="colorBottomBackground"
+            android:summary="@string/day_navbar_color"
+            android:title="@string/navbar_color"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false"
+            app:cpv_dialogType="preset" />
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_night_primary"
+            android:key="colorPrimaryNight"
+            android:summary="@string/night_primary"
+            android:title="@string/primary"
+            app:cpv_dialogType="preset" />
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_night_accent"
+            android:key="colorAccentNight"
+            android:summary="@string/night_accent"
+            android:title="@string/accent"
+            app:cpv_dialogType="preset" />
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_night_background"
+            android:key="colorBackgroundNight"
+            android:summary="@string/night_background_color"
+            android:title="@string/background_color"
+            app:cpv_dialogType="preset" />
+
+        <io.legado.app.lib.prefs.ColorPreference
+            android:defaultValue="@color/md_theme_night_bottom_background"
+            android:key="colorBottomBackgroundNight"
+            android:summary="@string/night_navbar_color"
+            android:title="@string/navbar_color"
+            app:cpv_dialogType="preset" />
+
+    </io.legado.app.lib.prefs.PreferenceCategory>
+
     <io.legado.app.lib.prefs.IconListPreference
         android:defaultValue="ic_launcher"
         android:entries="@array/icon_names"
@@ -71,36 +160,6 @@
         app:allowDividerAbove="true"
         app:allowDividerBelow="false">
 
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_day_primary"
-            android:key="colorPrimary"
-            android:summary="@string/day_color_primary"
-            android:title="@string/primary"
-            app:cpv_dialogType="preset" />
-
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_day_accent"
-            android:key="colorAccent"
-            android:summary="@string/day_color_accent"
-            android:title="@string/accent"
-            app:cpv_dialogType="preset" />
-
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_day_background"
-            android:key="colorBackground"
-            android:summary="@string/day_background_color"
-            android:title="@string/background_color"
-            app:cpv_dialogType="preset" />
-
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_day_bottom_background"
-            android:key="colorBottomBackground"
-            android:summary="@string/day_navbar_color"
-            android:title="@string/navbar_color"
-            app:allowDividerAbove="false"
-            app:allowDividerBelow="false"
-            app:cpv_dialogType="preset" />
-
         <io.legado.app.lib.prefs.Preference
             android:key="backgroundImage"
             android:title="@string/background_image" />
@@ -119,34 +178,6 @@
         android:title="@string/night"
         app:allowDividerAbove="true"
         app:allowDividerBelow="false">
-
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_night_primary"
-            android:key="colorPrimaryNight"
-            android:summary="@string/night_primary"
-            android:title="@string/primary"
-            app:cpv_dialogType="preset" />
-
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_night_accent"
-            android:key="colorAccentNight"
-            android:summary="@string/night_accent"
-            android:title="@string/accent"
-            app:cpv_dialogType="preset" />
-
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_night_background"
-            android:key="colorBackgroundNight"
-            android:summary="@string/night_background_color"
-            android:title="@string/background_color"
-            app:cpv_dialogType="preset" />
-
-        <io.legado.app.lib.prefs.ColorPreference
-            android:defaultValue="@color/md_theme_night_bottom_background"
-            android:key="colorBottomBackgroundNight"
-            android:summary="@string/night_navbar_color"
-            android:title="@string/navbar_color"
-            app:cpv_dialogType="preset" />
 
         <io.legado.app.lib.prefs.Preference
             android:key="backgroundImageNight"
