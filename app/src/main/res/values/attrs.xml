@@ -187,6 +187,15 @@
         <attr name="isBottomBackground" />
     </declare-styleable>
 
+    <declare-styleable name="ColorPreference">
+        <attr name="cpv_showDialog" format="boolean" />
+        <attr name="cpv_dialogType" format="enum">
+            <enum name="custom" value="0" />
+            <enum name="preset" value="1" />
+        </attr>
+        <attr name="cpv_showAlphaSlider" format="boolean" />
+    </declare-styleable>
+
     <!--斜角标签-->
     <declare-styleable name="BevelLabelView">
         <!--背景颜色-->

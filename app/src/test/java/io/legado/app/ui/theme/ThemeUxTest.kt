@@ -162,4 +162,34 @@ class ThemeUxTest {
             layout.contains("slider_alpha"),
         )
     }
+
+    @Test
+    fun `all six color picker call sites use M3ColorPickerDialog and jaredrummler is fully removed`() {
+        // 红线: jaredrummler 取色器库全仓零残留(依赖已删,不得有任何源码引用其包名)
+        val srcRoot = File("src/main/java/io/legado/app")
+        srcRoot.walkTopDown().filter { it.isFile && it.extension == "kt" }.forEach { f ->
+            assertTrue(
+                "${f.path} 不得残留 jaredrummler 引用",
+                !f.readText().contains("jaredrummler"),
+            )
+        }
+        val callSites = listOf(
+            "lib/prefs/ColorPreference.kt",
+            "ui/book/read/config/BgTextConfigDialog.kt",
+            "ui/book/read/config/TipConfigDialog.kt",
+            "ui/book/read/ReadBookActivity.kt",
+            "ui/highlight/edit/HighlightRuleEditDialog.kt",
+        )
+        callSites.forEach { rel ->
+            val text = File("src/main/java/io/legado/app/$rel").readText()
+            assertTrue(
+                "$rel 必须调用 M3ColorPickerDialog",
+                text.contains("M3ColorPickerDialog"),
+            )
+        }
+        // 红线: HighlightColors 预设板数据保留(不因取色器迁移而丢失)
+        val highlightColors = File("src/main/java/io/legado/app/help/HighlightColors.kt").readText()
+        assertTrue(highlightColors.contains("val bg = intArrayOf"))
+        assertTrue(highlightColors.contains("val text = intArrayOf"))
+    }
 }

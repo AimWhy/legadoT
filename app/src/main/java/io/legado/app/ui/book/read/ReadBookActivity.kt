@@ -19,8 +19,6 @@ import androidx.core.net.toUri
 import androidx.core.view.get
 import androidx.core.view.size
 import androidx.lifecycle.lifecycleScope
-import com.jaredrummler.android.colorpicker.ColorPickerDialog
-import com.jaredrummler.android.colorpicker.ColorPickerDialogListener
 import io.legado.app.BuildConfig
 import io.legado.app.R
 import io.legado.app.constant.AppConst
@@ -55,7 +53,6 @@ import io.legado.app.help.book.removeType
 import io.legado.app.help.book.update
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
-import io.legado.app.help.config.ReadTipConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.constant.AppPattern
 import io.legado.app.help.source.getSourceType
@@ -83,16 +80,11 @@ import io.legado.app.ui.book.changesource.ChangeBookSourceDialog
 import io.legado.app.ui.book.changesource.ChangeChapterSourceDialog
 import io.legado.app.ui.book.info.BookInfoActivity
 import io.legado.app.ui.book.read.config.AutoReadDialog
-import io.legado.app.ui.book.read.config.BgTextConfigDialog.Companion.BG_COLOR
-import io.legado.app.ui.book.read.config.BgTextConfigDialog.Companion.REVIEW_ICON_COLOR
-import io.legado.app.ui.book.read.config.BgTextConfigDialog.Companion.TEXT_COLOR
 import io.legado.app.ui.book.read.config.MoreConfigDialog
 import io.legado.app.ui.book.read.config.ReadAloudDialog
 import io.legado.app.ui.book.read.config.ReadStyleDialog
 import io.legado.app.ui.book.read.config.TextSelectMenuConfigDialog
-import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_COLOR
 import io.legado.app.ui.font.FontSelectDialog
-import io.legado.app.ui.book.read.config.TipConfigDialog.Companion.TIP_DIVIDER_COLOR
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_BOX
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_EMPHASIS
 import io.legado.app.ui.book.read.HighlightActionMenu.Companion.HL_FILL
@@ -120,6 +112,7 @@ import io.legado.app.ui.replace.ReplaceRuleActivity
 import io.legado.app.ui.replace.edit.ReplaceEditActivity
 import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.popupActionMenu
+import io.legado.app.ui.widget.dialog.M3ColorPickerDialog
 import io.legado.app.ui.widget.dialog.PhotoDialog
 import io.legado.app.utils.ACache
 import io.legado.app.utils.Debounce
@@ -130,7 +123,6 @@ import io.legado.app.utils.buildMainHandler
 import io.legado.app.utils.dismissDialogFragment
 import io.legado.app.utils.getPrefBoolean
 import io.legado.app.utils.getPrefString
-import io.legado.app.utils.hexString
 import io.legado.app.utils.iconItemOnLongClick
 import io.legado.app.utils.invisible
 import io.legado.app.utils.isAbsUrl
@@ -180,7 +172,6 @@ class ReadBookActivity : BaseReadBookActivity(),
     ReadBook.CallBack,
     AutoReadDialog.CallBack,
     TxtTocRuleDialog.CallBack,
-    ColorPickerDialogListener,
     HighlightActionMenu.CallBack,
     HighlightRulePopup.CallBack,
     HighlightStyleDialog.StyleHost,
@@ -308,6 +299,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         window.setBackgroundDrawable(null)
         upScreenTimeOut()
         ReadBook.register(this)
+        initHighlightColorPickerListeners()
         onBackPressedDispatcher.addCallback(this) {
             if (isShowingSearchResult) {
                 exitSearchMenu()
@@ -976,13 +968,27 @@ class ReadBookActivity : BaseReadBookActivity(),
     /** HighlightStyleDialog.StyleHost: 打开某通道取色器 */
     override fun pickHighlightColor(dialogId: Int, initial: Int, withAlpha: Boolean) {
         val seed = if (initial != 0) initial else HighlightColors.bg.first()
-        ColorPickerDialog.newBuilder()
-            .setColor(seed)
-            .setShowAlphaSlider(withAlpha)
-            .setDialogType(ColorPickerDialog.TYPE_PRESETS)
-            .setPresets(if (withAlpha) HighlightColors.bg else HighlightColors.text)
-            .setDialogId(dialogId)
-            .show(this)
+        M3ColorPickerDialog.show(
+            supportFragmentManager,
+            highlightColorRequestKey(dialogId),
+            seed,
+            withAlpha,
+            if (withAlpha) HighlightColors.bg else HighlightColors.text
+        )
+    }
+
+    /** HL_* 六通道取色结果监听,注册于 onActivityCreated(非 onClick 内),旋转存活 */
+    private fun initHighlightColorPickerListeners() {
+        listOf(HL_FILL, HL_TEXT, HL_UNDERLINE, HL_STRIKE, HL_BOX, HL_EMPHASIS).forEach { dialogId ->
+            supportFragmentManager.setFragmentResultListener(
+                highlightColorRequestKey(dialogId), this
+            ) { _, bundle ->
+                val color = bundle.getInt(M3ColorPickerDialog.RESULT_COLOR)
+                val ns = HighlightStyleDialog.applyChannelColor(currentHighlightStyle(), dialogId, color)
+                onHighlightStyleChanged(ns)
+                highlightStyleDialog?.refresh()
+            }
+        }
     }
 
     /** HighlightStyleDialog.StyleHost: 打开字体选择器(手动高亮) */
@@ -2049,56 +2055,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         }
     }
 
-    /**
-     * colorSelectDialog
-     */
-    override fun onColorSelected(dialogId: Int, color: Int) = ReadBookConfig.durConfig.run {
-        when (dialogId) {
-            TEXT_COLOR -> {
-                setCurTextColor(color)
-                postEvent(EventBus.UP_CONFIG, arrayListOf(2, 6, 9, 11))
-                if (AppConfig.readBarStyleFollowPage) {
-                    postEvent(EventBus.UPDATE_READ_ACTION_BAR, true)
-                }
-            }
-
-            BG_COLOR -> {
-                setCurBg(0, "#${color.hexString}")
-                postEvent(EventBus.UP_CONFIG, arrayListOf(1))
-                if (AppConfig.readBarStyleFollowPage) {
-                    postEvent(EventBus.UPDATE_READ_ACTION_BAR, true)
-                }
-            }
-
-            REVIEW_ICON_COLOR -> {
-                ReadBookConfig.reviewIconColor = color
-                postEvent(EventBus.UP_CONFIG, arrayListOf(8, 9, 11))
-            }
-
-            HL_FILL, HL_TEXT, HL_UNDERLINE, HL_STRIKE, HL_BOX, HL_EMPHASIS -> {
-                val ns = HighlightStyleDialog.applyChannelColor(currentHighlightStyle(), dialogId, color)
-                onHighlightStyleChanged(ns)
-                highlightStyleDialog?.refresh()
-            }
-
-            TIP_COLOR -> {
-                ReadTipConfig.tipColor = color
-                postEvent(EventBus.TIP_COLOR, "")
-                postEvent(EventBus.UP_CONFIG, arrayListOf(2))
-            }
-
-            TIP_DIVIDER_COLOR -> {
-                ReadTipConfig.tipDividerColor = color
-                postEvent(EventBus.TIP_COLOR, "")
-                postEvent(EventBus.UP_CONFIG, arrayListOf(2))
-            }
-        }
-    }
-
-    /**
-     * colorSelectDialog
-     */
-    override fun onDialogDismissed(dialogId: Int) = Unit
+    private fun highlightColorRequestKey(dialogId: Int): String = "readHighlightColor$dialogId"
 
     override fun onTocRegexDialogResult(tocRegex: String) {
         ReadBook.book?.let {
