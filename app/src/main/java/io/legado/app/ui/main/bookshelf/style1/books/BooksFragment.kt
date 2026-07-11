@@ -114,6 +114,7 @@ class BooksFragment() : BaseFragment(R.layout.fragment_books),
             binding.rvBookshelf.setRecycledViewPool(activityViewModel.booksGridRecycledViewPool)
         }
         booksAdapter.stateRestorationPolicy = StateRestorationPolicy.PREVENT_WHEN_EMPTY
+        binding.rvBookshelf.itemAnimator = null
         binding.rvBookshelf.adapter = booksAdapter
         // 本页活在分组 VP2 内:远端分组页重建时首屏入场会随新视图实例重播——已知取舍非缺陷(见 n2-acceptance.md)
         if (MotionTokens.enabled) {

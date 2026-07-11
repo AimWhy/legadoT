@@ -25,4 +25,14 @@ class N5LongtailTest {
         assertFalse("updateItem(item) 死方法应删除", adapter.contains("fun updateItem(item: ITEM)"))
         org.junit.Assert.assertTrue("updateItems(区间) 有活调用者须保留", adapter.contains("fun updateItems("))
     }
+
+    @Test
+    fun `motion tokens annotated and chapter adapter offset fixed`() {
+        val motion = File("src/main/java/io/legado/app/help/motion/MotionTokens.kt").readText()
+        org.junit.Assert.assertTrue("Spring.attr 应加 @AttrRes", motion.contains("@AttrRes"))
+        org.junit.Assert.assertTrue("Spring.defStyle 应加 @StyleRes", motion.contains("@StyleRes"))
+        val toc = File("src/main/java/io/legado/app/ui/book/toc/ChapterListAdapter.kt").readText()
+        assertFalse("upDisplayTitles 不应裸用 notifyItemChanged(i, true)",
+            toc.contains("notifyItemChanged(i, true)"))
+    }
 }

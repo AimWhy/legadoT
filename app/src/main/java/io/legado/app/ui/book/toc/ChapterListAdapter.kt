@@ -103,7 +103,7 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
                         ensureActive()
                         displayTitleMap[chapter.title] = displayTitle
                         handler.post {
-                            notifyItemChanged(i, true)
+                            notifyItemChanged(i + getHeaderCount(), true)
                         }
                     }
                 }
@@ -117,7 +117,7 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
                         ensureActive()
                         displayTitleMap[chapter.title] = displayTitle
                         handler.post {
-                            notifyItemChanged(i, true)
+                            notifyItemChanged(i + getHeaderCount(), true)
                         }
                     }
                 }

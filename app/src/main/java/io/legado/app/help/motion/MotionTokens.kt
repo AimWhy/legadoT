@@ -2,6 +2,8 @@ package io.legado.app.help.motion
 
 import android.animation.ValueAnimator
 import android.content.Context
+import androidx.annotation.AttrRes
+import androidx.annotation.StyleRes
 import androidx.dynamicanimation.animation.SpringForce
 import com.google.android.material.R as MaterialR
 import com.google.android.material.motion.MotionUtils
@@ -18,7 +20,7 @@ object MotionTokens {
     val enabled: Boolean
         get() = !AppConfig.isEInkMode && ValueAnimator.areAnimatorsEnabled()
 
-    enum class Spring(val attr: Int, val defStyle: Int) {
+    enum class Spring(@AttrRes val attr: Int, @StyleRes val defStyle: Int) {
         SPATIAL_DEFAULT(
             MaterialR.attr.motionSpringDefaultSpatial,
             MaterialR.style.Motion_Material3_Spring_Standard_Default_Spatial,
