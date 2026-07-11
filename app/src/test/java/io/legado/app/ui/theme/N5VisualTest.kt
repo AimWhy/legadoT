@@ -39,4 +39,13 @@ class N5VisualTest {
         val adapter = File("src/main/java/io/legado/app/ui/font/FontAdapter.kt").readText()
         assertTrue("选中态应设描边", adapter.contains("strokeWidth") || adapter.contains("setStrokeColor"))
     }
+
+    @Test
+    fun `holo selector purged from debug and page key`() {
+        val pk = File("src/main/res/layout/dialog_page_key.xml").readText()
+        val dbg = File("src/main/res/layout/activity_source_debug.xml").readText()
+        assertTrue("dialog_page_key 不应再用 Holo selector", !pk.contains("selector_fillet_btn_bg"))
+        assertTrue("source_debug 不应再用 Holo selector", !dbg.contains("selector_fillet_btn_bg"))
+        assertTrue("应改用 ripple 药丸", pk.contains("bg_fillet_btn"))
+    }
 }
