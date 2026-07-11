@@ -14,6 +14,7 @@ import io.legado.app.constant.PreferKey
 import io.legado.app.constant.Theme
 import io.legado.app.help.DefaultData
 import io.legado.app.lib.theme.ThemeStore
+import io.legado.app.lib.theme.WallpaperSeed
 import io.legado.app.model.BookCover
 import io.legado.app.utils.BitmapUtils
 import io.legado.app.utils.ColorUtils
@@ -70,11 +71,17 @@ object ThemeConfig {
      * ColorPreference 变更(用户手调四色任一项)时的回落钩子:非空 seedMode 说明当前色来自
      * 预设/壁纸种子,手调即脱离该来源,置空以免后续刷新(如壁纸变化重新取色)覆盖用户的手动值。
      * 挂接点:ColorPreference 变更监听(T5 接入)。
+     *
+     * 同一状态分叉修复(N4 终审):手调与预设点选是同一类"只改 themeSeedMode"操作,同样需要拆除
+     * 可能仍开着的壁纸跟随机关(否则残留 wallpaperFollow=true 会在用户之后翻转
+     * wallpaperAutoUpdate 子开关时把手调的新色拽回壁纸色)。[WallpaperSeed.abandonFollowIfActive]
+     * 幂等且仅在 pref 为 true 时才动作,无 pref 监听消费 wallpaperFollow 键,不会递归。
      */
     fun onManualColorChanged() {
         if (themeSeedMode.isNotEmpty()) {
             themeSeedMode = ""
         }
+        WallpaperSeed.abandonFollowIfActive(appCtx)
     }
 
     fun applyDayNight(context: Context) {

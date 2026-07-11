@@ -36,6 +36,14 @@ object ThemeSeedApplier {
         context.putPrefInt(PreferKey.cNBackground, night.background)
         context.putPrefInt(PreferKey.cNBBackground, night.surfaceContainer)
 
+        // 状态分叉修复:非壁纸来源(预设/手动)落盘前先拆除可能仍开着的壁纸跟随机关,
+        // 否则残留的 wallpaperFollow=true 会让用户之后翻转 wallpaperAutoUpdate 子开关时
+        // 把这里刚写的种子色拽回壁纸色。必须在写 themeSeedMode 之前调用——
+        // abandonFollowIfActive 本身不碰 themeSeedMode,由本函数紧接着的下一行统一写入。
+        if (mode != "wallpaper") {
+            WallpaperSeed.abandonFollowIfActive(context)
+        }
+
         ThemeConfig.themeSeedMode = mode
 
         ThemeConfig.applyDayNight(context)

@@ -112,7 +112,7 @@ class ThemeConfigFragment : PreferenceFragment(),
         }
         findPreference<SwitchPreference>(PreferKey.wallpaperFollow)?.setOnPreferenceChangeListener { _, newValue ->
             val enabled = newValue as Boolean
-            val autoUpdate = getPrefBoolean(PreferKey.wallpaperAutoUpdate)
+            val autoUpdate = getPrefBoolean(PreferKey.wallpaperAutoUpdate, true)
             val ok = WallpaperSeed.setFollow(requireContext(), enabled, autoUpdate)
             if (enabled && !ok) {
                 // 取不到壁纸颜色:toast 提示 + 监听器返回 false。

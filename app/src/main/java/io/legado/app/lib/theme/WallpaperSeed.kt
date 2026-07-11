@@ -104,6 +104,32 @@ object WallpaperSeed {
         return true
     }
 
+    /**
+     * 状态分叉修复:预设点选/手动改色只改 [ThemeConfig.themeSeedMode],若壁纸跟随 pref 仍是
+     * true 会留下 stale-ON 开关——用户此后翻转 wallpaperAutoUpdate 子开关时,
+     * [io.legado.app.ui.config.ThemeConfigFragment] 会经 `getPrefBoolean(wallpaperFollow)==true`
+     * 分支重新 `setFollow(true, …)`,把刚选好的预设/手动色悄悄拽回壁纸色。
+     *
+     * 调用点:[ThemeSeedApplier.applySeed] 在 `mode != "wallpaper"` 时、写入新 seedMode **之前**
+     * 调用,先拆除壁纸跟随机关(注销监听+pref 落 false+清 lastAppliedSeed),
+     * 不触碰 themeSeedMode(调用方随后自己写入,职责分离)。
+     *
+     * 幂等:pref 已是 false 时直接返回,不做任何事——不产生递归写入。
+     * 无环:本函数只 putPrefBoolean(wallpaperFollow,…),仓库内无任何
+     * OnSharedPreferenceChangeListener 对 wallpaperFollow 这个 key 做处理(ThemeConfigFragment/
+     * AppConfig 等已逐一核实),因此不会触发二次回调。
+     * 设置页联动:此调用后若设置页仍在前台,wallpaperFollow 开关会在下次重建/刷新时随 pref
+     * 落回 OFF(pref 是唯一真源)——这是本次修复的预期行为,不是缺陷。
+     */
+    fun abandonFollowIfActive(context: Context) {
+        if (!context.getPrefBoolean(PreferKey.wallpaperFollow, false)) return
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            unregisterListener(context)
+        }
+        context.putPrefBoolean(PreferKey.wallpaperFollow, false)
+        lastAppliedSeed = null
+    }
+
     @RequiresApi(Build.VERSION_CODES.S)
     @MainThread
     private fun registerListener(context: Context) {
@@ -149,7 +175,7 @@ object WallpaperSeed {
     fun restoreListenerIfNeeded(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
         if (!context.getPrefBoolean(PreferKey.wallpaperFollow, false)) return
-        if (!context.getPrefBoolean(PreferKey.wallpaperAutoUpdate, false)) return
+        if (!context.getPrefBoolean(PreferKey.wallpaperAutoUpdate, true)) return
         if (ThemeConfig.themeSeedMode != "wallpaper") return
         registerListener(context)
     }
