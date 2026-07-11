@@ -42,6 +42,8 @@ import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.showHelp
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -190,6 +192,7 @@ class RssSourceEditActivity :
         })
         binding.recyclerView.setEdgeEffectColor(primaryColor)
         binding.recyclerView.adapter = adapter
+        setupTopHeader()
         binding.tabLayout.setBackgroundColor(backgroundColor)
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -215,6 +218,25 @@ class RssSourceEditActivity :
         binding.fieldNav.attachToRecyclerView(binding.recyclerView)
     }
 
+    private fun setupTopHeader() {
+        binding.llTopHeader.setOnClickListener {
+            val expand = binding.llTopExpand.isGone
+            binding.llTopExpand.isVisible = expand
+            binding.ivTopArrow.setImageResource(
+                if (expand) R.drawable.ic_arrow_drop_up else R.drawable.ic_arrow_down
+            )
+            if (!expand) upTopSummary()
+        }
+    }
+
+    private fun upTopSummary() {
+        val parts = mutableListOf<String>()
+        if (binding.cbIsEnable.isChecked) parts.add(getString(R.string.is_enable))
+        if (binding.cbSingleUrl.isChecked) parts.add(getString(R.string.single_url))
+        if (binding.cbIsEnableCookie.isChecked) parts.add(getString(R.string.auto_save_cookie))
+        binding.tvTopSummary.text = parts.joinToString(" · ")
+    }
+
     private fun setEditEntities(tabPosition: Int?) {
         val entities = when (tabPosition) {
             1 -> listEntities
@@ -233,6 +255,7 @@ class RssSourceEditActivity :
             binding.cbSingleUrl.isChecked = rs.singleUrl
             binding.cbIsEnableCookie.isChecked = rs.enabledCookieJar == true
         }
+        upTopSummary()
         sourceEntities.clear()
         sourceEntities.apply {
             add(EditEntity("sourceName", rs.sourceName, R.string.source_name))

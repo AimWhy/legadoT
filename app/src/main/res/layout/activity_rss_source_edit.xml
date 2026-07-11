@@ -14,46 +14,87 @@
         app:displayHomeAsUp="true"
         app:title="@string/rss_source_edit" />
 
-    <HorizontalScrollView
+    <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:scrollbars="none">
+        android:layout_marginHorizontal="@dimen/space_xs"
+        app:cardBackgroundColor="@color/background_card"
+        app:skin_background="surfaceContainerLow"
+        app:cardCornerRadius="@dimen/radius_m"
+        app:cardElevation="0dp"
+        app:strokeWidth="0dp">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:orientation="horizontal"
-            android:paddingHorizontal="8dp"
-            tools:ignore="VisualLintBounds">
+            android:orientation="vertical">
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_enable"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/ll_top_header"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/is_enable"
-                tools:ignore="TouchTargetSizeCheck" />
+                android:background="?android:attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/space_m"
+                android:paddingVertical="@dimen/space_s">
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_single_url"
-                android:layout_width="wrap_content"
+                <TextView
+                    android:id="@+id/tv_top_summary"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textSize="@dimen/text_body"
+                    app:skin_textColor="onSurfaceVariant"
+                    android:textColor="@color/secondaryText"
+                    tools:text="已启用" />
+
+                <androidx.appcompat.widget.AppCompatImageView
+                    android:id="@+id/iv_top_arrow"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_arrow_down"
+                    app:skin_tint="onSurfaceVariant"
+                    app:tint="@color/secondaryText" />
+            </LinearLayout>
+
+            <com.google.android.flexbox.FlexboxLayout
+                android:id="@+id/ll_top_expand"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:checked="false"
-                android:text="@string/single_url"
-                tools:ignore="TouchTargetSizeCheck" />
+                android:paddingHorizontal="@dimen/space_m"
+                android:paddingBottom="@dimen/space_s"
+                android:visibility="gone"
+                app:flexWrap="wrap">
 
-            <io.legado.app.lib.theme.view.ThemeCheckBox
-                android:id="@+id/cb_is_enable_cookie"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="@string/auto_save_cookie"
-                tools:ignore="TouchTargetSizeCheck" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/cb_is_enable"
+                    style="@style/Widget.App.Chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="true"
+                    android:text="@string/is_enable" />
 
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/cb_single_url"
+                    style="@style/Widget.App.Chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="@string/single_url" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/cb_is_enable_cookie"
+                    style="@style/Widget.App.Chip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:checked="true"
+                    android:text="@string/auto_save_cookie" />
+            </com.google.android.flexbox.FlexboxLayout>
         </LinearLayout>
-
-    </HorizontalScrollView>
+    </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tab_layout"

@@ -48,4 +48,14 @@ class N5VisualTest {
         assertTrue("source_debug 不应再用 Holo selector", !dbg.contains("selector_fillet_btn_bg"))
         assertTrue("应改用 ripple 药丸", pk.contains("bg_fillet_btn"))
     }
+
+    @Test
+    fun `rss source edit top matches book source card chip`() {
+        val xml = File("src/main/res/layout/activity_rss_source_edit.xml").readText()
+        assertTrue("RSS 顶部应卡片化", xml.contains("MaterialCardView"))
+        assertTrue("RSS 开关应 Chip 化", xml.contains("Widget.App.Chip"))
+        assertTrue("应有折叠头摘要", xml.contains("@+id/tv_top_summary"))
+        assertTrue("id 保全:cb_is_enable", xml.contains("@+id/cb_is_enable"))
+        assertTrue("id 保全:cb_single_url", xml.contains("@+id/cb_single_url"))
+    }
 }
