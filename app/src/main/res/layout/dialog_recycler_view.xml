@@ -63,15 +63,33 @@
             android:layout_gravity="center"
             app:loading_width="2dp" />
 
-        <TextView
-            android:id="@+id/tv_msg"
-            android:layout_width="match_parent"
+        <LinearLayout
+            android:id="@+id/ll_empty"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:padding="16dp"
             android:layout_gravity="center"
-            android:visibility="gone"
-            app:skin_textColor="onSurfaceVariant"
-            android:textColor="@color/secondaryText" />
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iv_empty"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_description"
+                android:visibility="gone"
+                app:skin_tint="onSurfaceVariant"
+                app:tint="@color/secondaryText" />
+
+            <TextView
+                android:id="@+id/tv_msg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_s"
+                android:visibility="gone"
+                app:skin_textColor="onSurfaceVariant"
+                android:textColor="@color/secondaryText" />
+        </LinearLayout>
 
     </FrameLayout>
 
