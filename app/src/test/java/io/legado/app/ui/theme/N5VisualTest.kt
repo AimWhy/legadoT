@@ -31,4 +31,12 @@ class N5VisualTest {
         assertTrue("id 保全:tv_search_result", xml.contains("@+id/tv_search_result"))
         assertTrue("修正约束笔误", xml.contains("constraintRight_toRightOf"))
     }
+
+    @Test
+    fun `font item selection has stroke highlight`() {
+        val xml = File("src/main/res/layout/item_font.xml").readText()
+        assertTrue("字体 item root 应为 MaterialCardView 承接描边", xml.contains("MaterialCardView"))
+        val adapter = File("src/main/java/io/legado/app/ui/font/FontAdapter.kt").readText()
+        assertTrue("选中态应设描边", adapter.contains("strokeWidth") || adapter.contains("setStrokeColor"))
+    }
 }
