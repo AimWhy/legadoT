@@ -41,6 +41,8 @@ class ImportRssSourceDialog() : BaseDialogFragment(R.layout.dialog_recycler_view
     Toolbar.OnMenuItemClickListener,
     CodeDialog.Callback {
 
+    override val dialogForm = BaseDialogFragment.DialogForm.FULL_SCREEN
+
     constructor(source: String, finishOnDismiss: Boolean = false) : this() {
         arguments = Bundle().apply {
             putString("source", source)

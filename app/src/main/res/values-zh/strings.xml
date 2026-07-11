@@ -83,6 +83,7 @@
     <string name="search">搜索</string>
     <string name="origin_format">来源：%s</string>
     <string name="read_dur_progress">最近：%s</string>
+    <string name="read_not_started">尚未开始阅读</string>
     <string name="book_name">书名</string>
     <string name="lasted_show">最新：%s</string>
     <string name="check_add_bookshelf">是否将《%s》放入书架？</string>
