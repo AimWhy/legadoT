@@ -66,4 +66,24 @@ class N5VisualTest {
         val dlg = File("src/main/res/layout/dialog_recycler_view.xml").readText()
         assertTrue("导入弹窗空态应有图标", dlg.contains("@+id/iv_empty"))
     }
+
+    @Test
+    fun `short dialogs adopt full screen form`() {
+        val families = listOf(
+            "ui/association/ImportBookSourceDialog",
+            "ui/association/ImportRssSourceDialog",
+            "ui/association/ImportReplaceRuleDialog",
+            "ui/association/ImportTxtTocRuleDialog",
+            "ui/association/ImportDictRuleDialog",
+            "ui/association/ImportHttpTtsDialog",
+            "ui/association/ImportThemeDialog",
+            "ui/autoTask/ImportAutoTaskDialog",
+            "ui/association/VerificationCodeDialog",
+            "ui/association/OpenUrlConfirmDialog",
+        )
+        families.forEach {
+            val src = File("src/main/java/io/legado/app/$it.kt").readText()
+            assertTrue("$it 应 FULL_SCREEN", src.contains("DialogForm.FULL_SCREEN"))
+        }
+    }
 }

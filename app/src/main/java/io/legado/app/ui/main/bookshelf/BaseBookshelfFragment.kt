@@ -244,7 +244,7 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
             }
             header.continueReading.visible()
             header.tvContinueName.text = book.name
-            header.tvContinueChapter.text = book.durChapterTitle
+            header.tvContinueChapter.text = book.durChapterTitle.takeIf { it?.isNotBlank() == true } ?: getString(R.string.read_not_started)
             val progress = book.readProgress() ?: 0f
             header.tvContinuePercent.text = "${(progress * 100).toInt()}%"
         }

@@ -84,6 +84,7 @@
     <string name="search">Search</string>
     <string name="origin_format">Origin: %s</string>
     <string name="read_dur_progress">Origin: %s</string>
+    <string name="read_not_started">Not started</string>
     <string name="book_name">Title</string>
     <string name="lasted_show">Latest: %s</string>
     <string name="check_add_bookshelf">Would you like to add %s to your Bookshelf?</string>
