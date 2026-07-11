@@ -60,16 +60,8 @@ class DetailSeekBar @JvmOverloads constructor(
             binding.tvSeekValue.setTextColor(textColor)
             binding.seekBar.applyAppTint(textColor)
         }
-        binding.ivSeekPlus.setOnClickListener {
-            binding.seekBar.value = (binding.seekBar.value + 1)
-                .coerceIn(binding.seekBar.valueFrom, binding.seekBar.valueTo)
-            onChanged?.invoke(binding.seekBar.value.toInt())
-        }
-        binding.ivSeekReduce.setOnClickListener {
-            binding.seekBar.value = (binding.seekBar.value - 1)
-                .coerceIn(binding.seekBar.valueFrom, binding.seekBar.valueTo)
-            onChanged?.invoke(binding.seekBar.value.toInt())
-        }
+        binding.ivSeekPlus.setOnClickListener { step(1) }
+        binding.ivSeekReduce.setOnClickListener { step(-1) }
         binding.seekBar.addOnChangeListener { _, value, _ -> upValue(value.toInt()) }
         binding.seekBar.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
             override fun onStartTrackingTouch(slider: Slider) = Unit
@@ -85,6 +77,12 @@ class DetailSeekBar @JvmOverloads constructor(
         } ?: let {
             binding.tvSeekValue.text = progress.toString()
         }
+    }
+
+    private fun step(delta: Int) {
+        binding.seekBar.value = (binding.seekBar.value + delta)
+            .coerceIn(binding.seekBar.valueFrom, binding.seekBar.valueTo)
+        onChanged?.invoke(binding.seekBar.value.toInt())
     }
 
 }
