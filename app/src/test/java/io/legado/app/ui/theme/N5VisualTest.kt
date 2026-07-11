@@ -14,4 +14,13 @@ class N5VisualTest {
         assertTrue("应去尾端停止点 trackStopIndicatorSize", styles.contains("trackStopIndicatorSize"))
         assertTrue("Base.AppTheme 应挂 sliderStyle", styles.contains("name=\"sliderStyle\""))
     }
+
+    @Test
+    fun `bookmark item is carded`() {
+        val xml = File("src/main/res/layout/item_bookmark.xml").readText()
+        assertTrue("书签 item 应套卡片", xml.contains("Style.ItemManageCard"))
+        assertTrue("卡容器应声明 surfaceContainerLow", xml.contains("surfaceContainerLow"))
+        assertTrue("id 保全:tv_chapter_name", xml.contains("@+id/tv_chapter_name"))
+        assertTrue("id 保全:tv_content", xml.contains("@+id/tv_content"))
+    }
 }
