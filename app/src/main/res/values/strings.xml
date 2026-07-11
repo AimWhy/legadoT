@@ -550,6 +550,7 @@ Placeholders:
     <string name="imm_navigation_bar_s">The navigation bar becomes transparent</string>
     <string name="add_to_bookshelf">Add to Bookshelf</string>
     <string name="continue_read">Continue reading</string>
+    <string name="book_info_read_percent">%s read</string>
     <string name="cover_path">Cover path</string>
     <string name="page_anim_cover">Cover</string>
     <string name="page_anim_slide">Slide</string>

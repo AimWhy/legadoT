@@ -22,10 +22,24 @@
         android:textColor="@color/primaryText"
         android:textSize="@dimen/text_subtitle" />
 
+    <!-- 打开完整目录页(搜索/分卷/定位)。整行也绑同一动作,此图标提供"这里可展开更多"的视觉暗示。
+         接管原信息卡 ll_toc 的 View Chapters 入口。 -->
+    <ImageView
+        android:id="@+id/iv_toc_open"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="@dimen/space_m"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/view_toc"
+        android:src="@drawable/ic_search"
+        app:skin_tint="primary"
+        app:tint="@color/tv_text_summary" />
+
     <ImageView
         android:id="@+id/iv_toc_sort"
         android:layout_width="24dp"
         android:layout_height="24dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/sort"
         android:src="@drawable/ic_arrow_down"
         app:skin_tint="primary"

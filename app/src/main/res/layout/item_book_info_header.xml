@@ -10,10 +10,74 @@
     android:paddingHorizontal="@dimen/space_l"
     android:paddingTop="@dimen/space_l"
     android:paddingBottom="@dimen/space_s">
-    <!-- N3a 抽取:原 activity_book_info.xml 的 ll_info 整棵子树原样搬入独立 header,
-         所有子 id 照搬未改;root 背板改运行时 MaterialShapeDrawable 圆角(见 BookInfoActivity.bindInfoHeader),
-         XML 侧 bg_info_card_top 仅兜底(圆角形状与运行时一致,避免绘制间隙) -->
+    <!-- N: 数据诚实重排——书源常缺"字数/连载状态"等字段(有源站也不返回),故不做固定名片;
+         顶部只放本地可靠数据"阅读进度"(未读整行隐藏),下接简介、管理项、目录入口。id 全部沿用。 -->
 
+    <!-- 阅读进度(主角,本地数据可靠):已读百分比 + 当前章节;readProgress()==null(未读)时整行 gone,
+         由 BookInfoActivity.showBook/bindInfoHeader 填 tv_read_status 文本与 ll_read_status 可见性。 -->
+    <LinearLayout
+        android:id="@+id/ll_read_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingTop="@dimen/space_xs"
+        android:paddingBottom="@dimen/space_m"
+        android:visibility="gone"
+        tools:ignore="UseCompoundDrawables"
+        tools:visibility="visible">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="6dp"
+            android:contentDescription="@string/read_dur_progress"
+            android:src="@drawable/ic_bookmark"
+            app:skin_tint="secondary"
+            app:tint="@color/accent" />
+
+        <TextView
+            android:id="@+id/tv_read_status"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:includeFontPadding="false"
+            android:singleLine="true"
+            android:textSize="@dimen/text_subtitle"
+            android:textStyle="bold"
+            app:skin_textColor="onSurface"
+            android:textColor="@color/primaryText"
+            tools:text="已读 45%  ·  第138章 决战紫禁之巅" />
+
+    </LinearLayout>
+
+    <!-- 简介(前置:读者最想看的,紧跟名片)。书源常不返回简介 → 内容为空时整段 gone(连同下方分隔线),
+         由 BookInfoActivity.showBook/bindInfoHeader 按 getDisplayIntro() 是否为空控制可见性,不留占位空白。 -->
+    <io.legado.app.ui.widget.text.ScrollTextView
+        android:id="@+id/tv_intro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:paddingHorizontal="@dimen/space_xs"
+        android:paddingBottom="@dimen/space_s"
+        android:textIsSelectable="true"
+        android:textSize="14sp"
+        app:skin_textColor="onSurfaceVariant"
+        android:textColor="@color/secondaryText"
+        tools:text="@string/book_intro"
+        tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+    <View
+        android:id="@+id/v_intro_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="@dimen/space_s"
+        android:layout_marginBottom="@dimen/space_xs"
+        android:background="@color/divider" />
+
+    <!-- 管理区:书源/最新/分组(下沉、弱化) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -56,7 +120,7 @@
                 tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
                 tools:text="@string/origin_format" />
 
-            <io.legado.app.ui.widget.text.AccentBgTextView
+            <io.legado.app.ui.widget.text.AccentTonalBgTextView
                 android:id="@+id/tv_change_source"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -141,7 +205,7 @@
                 tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
                 tools:text="@string/group_s" />
 
-            <io.legado.app.ui.widget.text.AccentBgTextView
+            <io.legado.app.ui.widget.text.AccentTonalBgTextView
                 android:id="@+id/tv_change_group"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -158,72 +222,7 @@
 
     </LinearLayout>
 
-    <io.legado.app.ui.widget.text.ScrollTextView
-        android:id="@+id/tv_intro"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:clickable="true"
-        android:focusable="true"
-        android:minHeight="48dp"
-        android:paddingLeft="8dp"
-        android:paddingBottom="8dp"
-        android:text="@string/book_intro"
-        app:skin_textColor="onSurfaceVariant"
-        android:textColor="@color/secondaryText"
-        android:textIsSelectable="true"
-        android:textSize="14sp"
-        android:visibility="visible"
-        tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-    <LinearLayout
-        android:id="@+id/ll_toc"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_m"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingTop="@dimen/space_s"
-        android:paddingBottom="@dimen/space_s">
-
-        <ImageView
-            android:layout_width="18sp"
-            android:layout_height="18sp"
-            android:contentDescription="@string/read_dur_progress"
-            android:paddingRight="2dp"
-            android:src="@drawable/ic_folder_open"
-            app:skin_tint="onSurfaceVariant"
-            app:tint="@color/tv_text_summary"
-            tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-        <TextView
-            android:id="@+id/tv_toc"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:includeFontPadding="false"
-            android:paddingRight="6dp"
-            android:singleLine="true"
-            app:skin_textColor="onSurface"
-            android:textColor="@color/primaryText"
-            android:textSize="@dimen/text_subtitle"
-            tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
-            tools:text="@string/toc_s" />
-
-        <io.legado.app.ui.widget.text.AccentBgTextView
-            android:id="@+id/tv_toc_view"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:text="@string/view_toc"
-            android:textSize="@dimen/text_caption_l"
-            app:radius="@dimen/radius_full" />
-
-    </LinearLayout>
+    <!-- N: 原 ll_toc(Chapters:… / View Chapters)已移除——与下方内嵌目录头(item_book_info_toc_header)
+         的"Chapters: N / 排序"信息重复。打开完整目录页(搜索/分卷)的入口改由目录头承担(点整行)。 -->
 
 </LinearLayout>
