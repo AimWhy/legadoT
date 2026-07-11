@@ -21,9 +21,14 @@ def name = "legado"
 def version = "3." + releaseTime()
 def gitCommits = 0
 try {
-    def out = 'git rev-list HEAD --count'.execute().text.trim()
-    if (out) {
-        gitCommits = Integer.parseInt(out)
+    // providers.exec 是配置缓存安全的外部进程 API;旧 'git...'.execute() 在配置期起进程,
+    // 与 org.gradle.configuration-cache 不兼容(报 "external process started during configuration time")
+    def gitCount = providers.exec {
+        commandLine 'git', 'rev-list', 'HEAD', '--count'
+        ignoreExitValue = true
+    }.standardOutput.asText.get().trim()
+    if (gitCount) {
+        gitCommits = Integer.parseInt(gitCount)
     }
 } catch (ignored) {
     // Fallback to 0 when git is unavailable in the Gradle environment
