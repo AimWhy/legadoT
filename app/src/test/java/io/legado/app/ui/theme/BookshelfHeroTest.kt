@@ -11,10 +11,12 @@ class BookshelfHeroTest {
     fun `shared header carries hero card and stats`() {
         val header = File("src/main/res/layout/view_bookshelf_header.xml").readText()
         assertTrue(listOf(
-            "@+id/tv_shelf_title", "@+id/tv_shelf_stats", "@+id/card_continue",
-            "@+id/iv_hero_cover", "@+id/tv_hero_name", "@+id/tv_hero_chapter",
-            "@+id/pb_hero_progress", "@+id/tv_hero_percent",
+            "@+id/tv_shelf_title", "@+id/tv_shelf_stats", "@+id/continue_reading",
+            "@+id/tv_continue_name", "@+id/tv_continue_chapter", "@+id/tv_continue_percent",
         ).all { header.contains(it) })
+        // 续读入口是扁平一行(非卡片),不应再残留 Hero 大卡的封面/进度条 id
+        assertTrue("Hero 大卡已退役", !header.contains("card_continue") &&
+            !header.contains("iv_hero_cover") && !header.contains("pb_hero_progress"))
         val ext = File("src/main/java/io/legado/app/help/book/BookExtensions.kt").readText()
         assertTrue("readProgress 扩展", ext.contains("fun Book.readProgress"))
     }

@@ -6,7 +6,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
-import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.indices
 import androidx.core.view.updatePadding
@@ -32,10 +31,8 @@ import io.legado.app.databinding.ViewBookshelfHeaderBinding
 import io.legado.app.help.DirectLinkUpload
 import io.legado.app.help.book.readProgress
 import io.legado.app.help.config.AppConfig
-import io.legado.app.help.motion.MotionTokens
 import io.legado.app.help.motion.PressSpringEffect
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.about.AppLogDialog
 import io.legado.app.ui.book.cache.CacheActivity
 import io.legado.app.ui.book.group.GroupManageDialog
@@ -187,14 +184,14 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
             appBarExpanded = verticalOffset == 0
             syncRefreshEnable()
         }
-        header.cardContinue.setOnClickListener {
+        header.continueReading.setOnClickListener {
             heroBook?.let { book -> startActivityForBook(book) }
         }
-        header.cardContinue.setOnLongClickListener {
-            heroBook?.let { book -> openHeroBookInfo(book, header.ivHeroCover) }
+        header.continueReading.setOnLongClickListener {
+            heroBook?.let { book -> openHeroBookInfo(book) }
             true
         }
-        PressSpringEffect.attach(header.cardContinue)
+        PressSpringEffect.attach(header.continueReading)
         subscribeShelfHeaderRefresh()
     }
 
@@ -233,30 +230,23 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
         viewLifecycleOwner.lifecycleScope.launch {
             val (book, bookCount, readingCount) = withContext(Dispatchers.IO) {
                 Triple(
-                    appDb.bookDao.lastReadBook,
+                    appDb.bookDao.lastReadBookOnShelf,
                     appDb.bookDao.allBookCount,
                     appDb.bookDao.readingCount
                 )
             }
             heroBook = book
-            header.pbHeroProgress.setIndicatorColor(requireContext().accentColor)
             header.tvShelfStats.text =
                 getString(R.string.bookshelf_stats, bookCount, readingCount)
             if (book == null) {
-                header.cardContinue.gone()
+                header.continueReading.gone()
                 return@launch
             }
-            header.cardContinue.visible()
-            header.ivHeroCover.transitionName = "book_cover_" + book.name + book.author
-            header.ivHeroCover.load(
-                book.getDisplayCover(), book.name, book.author, false,
-                book.getCoverSourceOrigin()
-            )
-            header.tvHeroName.text = book.name
-            header.tvHeroChapter.text = book.durChapterTitle
+            header.continueReading.visible()
+            header.tvContinueName.text = book.name
+            header.tvContinueChapter.text = book.durChapterTitle
             val progress = book.readProgress() ?: 0f
-            header.pbHeroProgress.progress = (progress * 100).toInt()
-            header.tvHeroPercent.text = "${(progress * 100).toInt()}%"
+            header.tvContinuePercent.text = "${(progress * 100).toInt()}%"
         }
     }
 
@@ -266,27 +256,12 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
         shelfToolbarTitle?.text = title
     }
 
-    /**
-     * hero 长按进详情:复刻 BooksFragment.openBookInfo 既有链路(container-transform 场景动画)。
-     * hero 封面与同书在列表内的 item 封面共用 "book_cover_"+name+author 会撞名——同一本书
-     * 既是 hero 又是列表首项时,两个同名 view 共存,返回时共享元素映射会二义(可能误映射到
-     * 已收起的 alpha=0 hero)。hero 专属唯一名,并显式告知 BookInfoActivity 采用该名。
-     */
-    private fun openHeroBookInfo(book: Book, cover: View?) {
-        val heroTransitionName = "book_cover_hero_" + book.name + book.author
-        cover?.transitionName = heroTransitionName
+    /** 续读入口长按进书籍详情(一行入口无封面视图,不做共享元素转场)。 */
+    private fun openHeroBookInfo(book: Book) {
         val intent = Intent(requireContext(), BookInfoActivity::class.java)
             .putExtra("name", book.name)
             .putExtra("author", book.author)
-            .putExtra("coverTransitionName", heroTransitionName)
-        if (cover != null && MotionTokens.enabled) {
-            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                requireActivity(), cover, cover.transitionName
-            )
-            startActivity(intent, options.toBundle())
-        } else {
-            startActivity(intent)
-        }
+        startActivity(intent)
     }
 
     override fun onCompatCreateOptionsMenu(menu: Menu) {
