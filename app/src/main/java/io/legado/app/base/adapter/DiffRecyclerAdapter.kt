@@ -117,36 +117,6 @@ abstract class DiffRecyclerAdapter<ITEM, VB : ViewBinding>(protected val context
         }
     }
 
-    // position 是 list-space 下标(直接索引 currentList),notify 需补 headerCount 才是
-    // 真实 adapter 位置——与 setItems/getItem 的换算方向一致
-    fun setItem(position: Int, item: ITEM) {
-        kotlin.runCatching {
-            asyncListDiffer.currentList[position] = item
-            notifyItemChanged(position + getHeaderCount())
-        }
-    }
-
-    fun updateItem(item: ITEM) {
-        kotlin.runCatching {
-            val index = asyncListDiffer.currentList.indexOf(item)
-            if (index >= 0) {
-                asyncListDiffer.currentList[index] = item
-                notifyItemChanged(index + getHeaderCount())
-            }
-        }
-    }
-
-    // 边界检查改用 getItems().size(list-space 容量),而非含 header 的 itemCount,
-    // 否则 position 越过列表末尾也能通过校验,+headerCount 后 notify 位置会越出真实
-    // itemCount 范围,反而更容易触发 RecyclerView "Inconsistency detected"
-    fun updateItem(position: Int, payload: Any) {
-        kotlin.runCatching {
-            val size = getItems().size
-            if (position in 0 until size) {
-                notifyItemChanged(position + getHeaderCount(), payload)
-            }
-        }
-    }
 
     fun updateItems(fromPosition: Int, toPosition: Int, payloads: Any) {
         kotlin.runCatching {
