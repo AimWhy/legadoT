@@ -98,6 +98,7 @@ class ImportBookSourceDialog() : BaseDialogFragment(R.layout.dialog_recycler_vie
         }
         viewModel.errorLiveData.observe(this) {
             binding.rotateLoading.gone()
+            binding.ivEmpty.visible()
             binding.tvMsg.apply {
                 text = it
                 visible()
@@ -109,6 +110,7 @@ class ImportBookSourceDialog() : BaseDialogFragment(R.layout.dialog_recycler_vie
                 adapter.setItems(viewModel.allSources)
                 upSelectText()
             } else {
+                binding.ivEmpty.visible()
                 binding.tvMsg.apply {
                     setText(R.string.wrong_format)
                     visible()

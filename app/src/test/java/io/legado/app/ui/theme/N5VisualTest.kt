@@ -58,4 +58,12 @@ class N5VisualTest {
         assertTrue("id 保全:cb_is_enable", xml.contains("@+id/cb_is_enable"))
         assertTrue("id 保全:cb_single_url", xml.contains("@+id/cb_single_url"))
     }
+
+    @Test
+    fun `book source summary card floats and import has empty icon`() {
+        val edit = File("src/main/res/layout/activity_book_source_edit.xml").readText()
+        assertTrue("摘要卡应用 background_card 浮起", edit.contains("cardBackgroundColor=\"@color/background_card\""))
+        val dlg = File("src/main/res/layout/dialog_recycler_view.xml").readText()
+        assertTrue("导入弹窗空态应有图标", dlg.contains("@+id/iv_empty"))
+    }
 }
