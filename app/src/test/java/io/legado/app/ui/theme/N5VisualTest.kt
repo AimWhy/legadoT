@@ -23,4 +23,12 @@ class N5VisualTest {
         assertTrue("id 保全:tv_chapter_name", xml.contains("@+id/tv_chapter_name"))
         assertTrue("id 保全:tv_content", xml.contains("@+id/tv_content"))
     }
+
+    @Test
+    fun `search content item is carded`() {
+        val xml = File("src/main/res/layout/item_search_list.xml").readText()
+        assertTrue("书内搜索 item 应套卡片", xml.contains("Style.ItemManageCard"))
+        assertTrue("id 保全:tv_search_result", xml.contains("@+id/tv_search_result"))
+        assertTrue("修正约束笔误", xml.contains("constraintRight_toRightOf"))
+    }
 }
