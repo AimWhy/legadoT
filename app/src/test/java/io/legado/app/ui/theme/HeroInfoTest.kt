@@ -39,12 +39,18 @@ class HeroInfoTest {
             "@+id/iv_cover", "@+id/tv_name", "@+id/tv_author",
             "@+id/fl_action", "@+id/tv_shelf", "@+id/tv_read", "@+id/refresh_layout",
         ).all { xml.contains(it) })
-        // N3a: tv_change_source/tv_change_group/tv_toc_view/tv_intro 随 ll_info 整体迁入
+        // N3a: tv_change_source/tv_change_group/tv_intro 随 ll_info 整体迁入
         // item_book_info_header.xml(RecyclerView header),不再留在 activity 布局本身
         val header = File("src/main/res/layout/item_book_info_header.xml").readText()
-        assertTrue("业务 id 保全(header 侧:信息卡+简介+目录区头)", listOf(
-            "@+id/tv_change_source", "@+id/tv_change_group", "@+id/tv_toc_view", "@+id/tv_intro",
+        assertTrue("业务 id 保全(header 侧:信息卡+简介)", listOf(
+            "@+id/tv_change_source", "@+id/tv_change_group", "@+id/tv_intro",
         ).all { header.contains(it) })
+        // 7fb90f943 数据诚实批: 目录区头拆为独立 item_book_info_toc_header,
+        // tv_toc_view 的 View Chapters 入口由 iv_toc_open 接管
+        val tocHeader = File("src/main/res/layout/item_book_info_toc_header.xml").readText()
+        assertTrue("目录区头独立布局保全(章节计数+完整目录入口)", listOf(
+            "@+id/tv_toc_count", "@+id/iv_toc_open",
+        ).all { tocHeader.contains(it) })
     }
 
     @Test
