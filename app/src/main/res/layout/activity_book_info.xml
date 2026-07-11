@@ -67,7 +67,7 @@
                         android:ellipsize="end"
                         android:maxLines="2"
                         android:text="@string/book_name"
-                        android:textAppearance="@style/TextAppearance.App.Display"
+                        android:textAppearance="@style/TextAppearance.App.Headline"
                         app:skin_textColor="onSurface"
                         android:textColor="@color/primaryText"
                         app:layout_constraintEnd_toEndOf="parent"

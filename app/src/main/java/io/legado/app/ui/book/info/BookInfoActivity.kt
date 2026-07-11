@@ -10,6 +10,7 @@ import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
+import android.view.View
 import android.view.Window
 import android.widget.CheckBox
 import android.widget.LinearLayout
@@ -18,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -44,6 +46,7 @@ import io.legado.app.help.book.isImage
 import io.legado.app.help.book.isLocal
 import io.legado.app.help.book.isLocalTxt
 import io.legado.app.help.book.isWebFile
+import io.legado.app.help.book.readProgress
 import io.legado.app.help.book.removeType
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
@@ -53,7 +56,6 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.AppColorScheme
-import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.ThemeUtils
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
@@ -255,6 +257,9 @@ class BookInfoActivity :
                     tocHeaderBinding = it
                     it.ivTocSort.rotationX = if (tocReversed) 0f else 180f
                     it.ivTocSort.setOnClickListener { toggleTocOrder() }
+                    // 点整行 / 搜索图标 → 完整目录页(搜索/分卷),接管原信息卡 ll_toc 的入口
+                    it.root.setOnClickListener { openFullToc() }
+                    it.ivTocOpen.setOnClickListener { openFullToc() }
                     upTocHeader()
                 }
             }
@@ -482,17 +487,48 @@ class BookInfoActivity :
         headerBinding?.let { h ->
             h.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            h.tvIntro.text = book.getDisplayIntro()
-            h.llToc.visible(!book.isWebFile)
+            upIntro(h.tvIntro, h.vIntroDivider, book)
+            upReadStatus(h, book)
         }
         tvOrigin?.text = getString(R.string.origin_show, book.originName)
         tvLasted?.text = getString(R.string.lasted_show, book.latestChapterTitle)
-        tvIntro?.text = book.getDisplayIntro()
+        tvIntro?.let { upIntro(it, null, book) }
         llToc?.visible(!book.isWebFile)
         menuCustomBtn?.isVisible = viewModel.bookSource?.customButton == true
         upTvBookshelf()
         upKinds(book)
         upGroup(book.group)
+    }
+
+    /**
+     * 简介可见性:书源常不返回简介 → getDisplayIntro() 为空时 tv_intro(连同其下分隔线)整段 gone,
+     * 不留 minHeight 占位空白。divider 仅 portrait header 有(land 传 null)。
+     */
+    private fun upIntro(tvIntro: TextView, divider: View?, book: Book) {
+        val intro = book.getDisplayIntro()
+        val hasIntro = !intro.isNullOrBlank()
+        tvIntro.text = intro
+        // 用 isVisible(false→GONE) 而非 visible()(false→INVISIBLE),空简介才真正收起不占高
+        tvIntro.isVisible = hasIntro
+        divider?.isVisible = hasIntro
+    }
+
+    /**
+     * 阅读进度行(portrait header 主角):仅本地可靠数据——已读百分比 + 当前章节标题。
+     * 未读(readProgress()==null,从未打开)时整行 gone;书源不返回的字数/连载状态一律不臆造。
+     */
+    private fun upReadStatus(h: ItemBookInfoHeaderBinding, book: Book) {
+        val segs = ArrayList<String>(2)
+        if (book.totalChapterNum > 1) {
+            book.readProgress()?.let {
+                segs.add(getString(R.string.book_info_read_percent, "${(it * 100).toInt()}%"))
+            }
+        }
+        book.durChapterTitle?.takeIf { it.isNotBlank() }?.let { segs.add(it) }
+        val show = (book.durChapterIndex > 0 || book.durChapterPos > 0) && segs.isNotEmpty()
+        if (show) h.tvReadStatus.text = segs.joinToString("  ·  ")
+        // isVisible(false→GONE):未读时整行收起不占高,与 upIntro 口径一致
+        h.llReadStatus.isVisible = show
     }
 
     /**
@@ -509,7 +545,9 @@ class BookInfoActivity :
                     .setTopRightCornerSize(resources.getDimension(R.dimen.radius_xl))
                     .build()
             ).apply {
-                fillColor = ColorStateList.valueOf(backgroundColor)
+                // 信息卡填 surfaceContainerLow(而非页面背景色),让圆角卡从头部背景上"浮起",
+                // 否则同色+无描边+无阴影时圆角完全看不出(N: 详情页信息卡未落地修复)
+                fillColor = ColorStateList.valueOf(AppColorScheme.current.surfaceContainerLow)
             }
         }
         h.tvIntro.revealOnFocusHint = false
@@ -530,24 +568,7 @@ class BookInfoActivity :
                 showDialogFragment(ChangeBookSourceDialog(book.name, book.author))
             }
         }
-        h.tvTocView.setOnClickListener {
-            if (viewModel.chapterListData.value.isNullOrEmpty()) {
-                toastOnUi(R.string.chapter_list_empty)
-                return@setOnClickListener
-            }
-            viewModel.getBook()?.let { book ->
-                if (!viewModel.inBookshelf) {
-                    viewModel.saveBook(book) {
-                        viewModel.saveChapterList {
-                            openChapterList()
-                        }
-                    }
-                } else {
-                    openChapterList()
-                }
-            }
-        }
-        h.llToc.setOnClickListener { h.tvTocView.performClick() }
+        // 打开完整目录页的入口已从此卡的 ll_toc 迁至内嵌目录头(见 addHeaderView + openFullToc)
         h.tvChangeGroup.setOnClickListener {
             viewModel.getBook()?.let {
                 showDialogFragment(
@@ -557,20 +578,12 @@ class BookInfoActivity :
         }
         PressSpringEffect.attach(h.tvChangeSource)
         PressSpringEffect.attach(h.tvChangeGroup)
-        PressSpringEffect.attach(h.tvTocView)
         // header 可能晚于 viewModel 数据就绪才 inflate,主动拉一次当前数据回填
         viewModel.bookData.value?.let { book ->
             h.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            h.tvIntro.text = book.getDisplayIntro()
-            h.llToc.visible(!book.isWebFile)
-        }
-        // tv_toc 同理回填:章节列表可能已到达(或仍在 loading/失败态),按 upLoading 的三态口径补一次
-        val chapterList = viewModel.chapterListData.value
-        h.tvToc.text = when {
-            chapterList == null -> getString(R.string.toc_s, getString(R.string.loading))
-            chapterList.isEmpty() -> getString(R.string.toc_s, getString(R.string.error_load_toc))
-            else -> getString(R.string.toc_s, book?.durChapterTitle ?: getString(R.string.loading))
+            upIntro(h.tvIntro, h.vIntroDivider, book)
+            upReadStatus(h, book)
         }
     }
 
@@ -639,18 +652,20 @@ class BookInfoActivity :
      */
     private fun upLoading(isLoading: Boolean, chapterList: List<BookChapter>? = null) {
         val isPortrait = binding.recyclerView != null
-        val tvToc = if (isPortrait) headerBinding?.tvToc else binding.tvToc
+        // portrait 目录状态由内嵌目录头 tvTocCount 承担(卡内 tv_toc 已移除);land 仍是卡内 tv_toc。
+        val tvToc = if (isPortrait) null else binding.tvToc
         val tvLasted = if (isPortrait) headerBinding?.tvLasted else binding.tvLasted
         when {
             isLoading -> {
                 tvToc?.text = getString(R.string.toc_s, getString(R.string.loading))
+                tocHeaderBinding?.tvTocCount?.text =
+                    getString(R.string.toc_s, getString(R.string.loading))
             }
 
             chapterList.isNullOrEmpty() -> {
-                tvToc?.text = getString(
-                    R.string.toc_s,
-                    getString(R.string.error_load_toc)
-                )
+                val err = getString(R.string.toc_s, getString(R.string.error_load_toc))
+                tvToc?.text = err
+                tocHeaderBinding?.tvTocCount?.text = err
             }
 
             else -> {
@@ -658,6 +673,7 @@ class BookInfoActivity :
                     tvToc?.text = getString(R.string.toc_s, it.durChapterTitle)
                     tvLasted?.text = getString(R.string.lasted_show, it.latestChapterTitle)
                 }
+                // portrait 成功态的 count 由 upChapterList → upTocHeader 用真实章节数回填
             }
         }
         if (isPortrait) {
@@ -812,24 +828,8 @@ class BookInfoActivity :
                 showDialogFragment(ChangeBookSourceDialog(book.name, book.author))
             }
         }
-        tvTocView?.setOnClickListener {
-            if (viewModel.chapterListData.value.isNullOrEmpty()) {
-                toastOnUi(R.string.chapter_list_empty)
-                return@setOnClickListener
-            }
-            viewModel.getBook()?.let { book ->
-                if (!viewModel.inBookshelf) {
-                    viewModel.saveBook(book) {
-                        viewModel.saveChapterList {
-                            openChapterList()
-                        }
-                    }
-                } else {
-                    openChapterList()
-                }
-            }
-        }
-        llToc?.setOnClickListener { tvTocView?.performClick() }
+        tvTocView?.setOnClickListener { openFullToc() }
+        llToc?.setOnClickListener { openFullToc() }
         tvChangeGroup?.setOnClickListener {
             viewModel.getBook()?.let {
                 showDialogFragment(
@@ -995,6 +995,29 @@ class BookInfoActivity :
     private fun openChapterList() {
         viewModel.getBook()?.let {
             tocActivityResult.launch(it.bookUrl)
+        }
+    }
+
+    /**
+     * 打开完整目录页(TocActivity,含搜索/分卷/定位)。未加入书架时先落库书与目录再打开。
+     * portrait 内嵌目录头(点整行 / 搜索图标)与 land 的 View Chapters 按钮共用此入口——
+     * 接管原信息卡 ll_toc 的职责,消除与目录头"Chapters: N"的重复。
+     */
+    private fun openFullToc() {
+        if (viewModel.chapterListData.value.isNullOrEmpty()) {
+            toastOnUi(R.string.chapter_list_empty)
+            return
+        }
+        viewModel.getBook()?.let { book ->
+            if (!viewModel.inBookshelf) {
+                viewModel.saveBook(book) {
+                    viewModel.saveChapterList {
+                        openChapterList()
+                    }
+                }
+            } else {
+                openChapterList()
+            }
         }
     }
 
