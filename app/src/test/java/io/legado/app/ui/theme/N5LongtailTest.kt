@@ -35,4 +35,14 @@ class N5LongtailTest {
         assertFalse("upDisplayTitles 不应裸用 notifyItemChanged(i, true)",
             toc.contains("notifyItemChanged(i, true)"))
     }
+
+    @Test
+    fun `template-repainted zombie card declaration removed, active kept`() {
+        val openUrl = File("src/main/res/layout/dialog_open_url_confirm.xml").readText()
+        assertFalse("open_url_confirm 根节点僵尸 shape_card_view 应删(模板重涂)",
+            openUrl.contains("@drawable/shape_card_view"))
+        val about = File("src/main/res/layout/activity_about.xml").readText()
+        org.junit.Assert.assertTrue("activity_about 的 shape_card_view 保留(非弹窗)",
+            about.contains("@drawable/shape_card_view"))
+    }
 }
