@@ -64,6 +64,7 @@
         <item name="tabStyle">@style/Widget.App.TabLayout</item>
         <!-- textInputStyle 全局挂接 OutlinedBox+radius_m;chipStyle 不挂全局——Filter 变体做全局默认会让普通 action chip 也变成可勾选外观 -->
         <item name="textInputStyle">@style/Widget.App.TextInputLayout</item>
+        <item name="sliderStyle">@style/Widget.App.Slider</item>
         <item name="actionOverflowMenuStyle">@style/Style.PopupMenu</item>
         <item name="android:itemTextAppearance">@style/Style.MenuItemText</item>
         <item name="android:popupMenuStyle">@style/Style.PopupMenu</item>
@@ -223,6 +224,14 @@
 
     <style name="Widget.App.Chip" parent="Widget.Material3.Chip.Filter">
         <item name="shapeAppearance">@style/ShapeAppearance.App.Small</item>
+    </style>
+
+    <!-- Slider 统一形态:圆点拇指去竖杠、去两侧缺口、去尾端停止点;轨道厚度用 M3 默认 -->
+    <style name="Widget.App.Slider" parent="Widget.Material3.Slider">
+        <item name="thumbWidth">20dp</item>
+        <item name="thumbHeight">20dp</item>
+        <item name="thumbTrackGapSize">0dp</item>
+        <item name="trackStopIndicatorSize">0dp</item>
     </style>
 
     <style name="Widget.App.Card" parent="Widget.Material3.CardView.Filled">
