@@ -14,7 +14,7 @@
         android:title="@string/wallpaper_follow" />
 
     <io.legado.app.lib.prefs.SwitchPreference
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:dependency="wallpaperFollow"
         android:key="wallpaperAutoUpdate"
         android:summary="@string/wallpaper_auto_update_s"
