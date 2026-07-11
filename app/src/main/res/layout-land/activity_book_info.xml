@@ -129,7 +129,7 @@
                 android:gravity="center"
                 android:includeFontPadding="false"
                 android:text="@string/remove_from_bookshelf"
-                android:textSize="15sp"
+                android:textSize="@dimen/text_body_l"
                 app:radius="@dimen/radius_full" />
 
             <io.legado.app.ui.widget.text.AccentBgTextView
@@ -141,7 +141,7 @@
                 android:gravity="center"
                 android:includeFontPadding="false"
                 android:text="@string/reading"
-                android:textSize="15sp"
+                android:textSize="@dimen/text_body_l"
                 app:radius="@dimen/radius_full" />
 
         </LinearLayout>
@@ -330,7 +330,7 @@
                     app:skin_textColor="onSurfaceVariant"
                     android:textColor="@color/secondaryText"
                     android:textIsSelectable="true"
-                    android:textSize="14sp"
+                    android:textSize="@dimen/text_body"
                     android:visibility="visible"
                     tools:ignore="RtlHardcoded,RtlSymmetry" />
 

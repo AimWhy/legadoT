@@ -61,7 +61,7 @@
             android:singleLine="true"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="12sp" />
+            android:textSize="@dimen/text_caption" />
 
         <androidx.appcompat.widget.AppCompatImageView
             android:id="@+id/iv_top"

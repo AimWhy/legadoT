@@ -60,7 +60,7 @@
             android:background="?android:attr/selectableItemBackground"
             android:padding="10dp"
             android:text="@string/explore_container_add"
-            android:textSize="15sp" />
+            android:textSize="@dimen/text_body_l" />
 
     </LinearLayout>
 

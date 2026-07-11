@@ -16,7 +16,7 @@
         android:paddingBottom="4dp"
         app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
-        android:textSize="12sp"
+        android:textSize="@dimen/text_caption"
         android:textStyle="bold"
         android:visibility="gone"
         tools:text="浮动条"
@@ -49,7 +49,7 @@
             android:layout_marginStart="16dp"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             tools:text="复制" />
 
         <androidx.appcompat.widget.AppCompatImageView

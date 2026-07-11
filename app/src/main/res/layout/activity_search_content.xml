@@ -54,7 +54,7 @@
             android:singleLine="true"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="12sp" />
+            android:textSize="@dimen/text_caption" />
 
         <Space
             android:layout_width="20dp"

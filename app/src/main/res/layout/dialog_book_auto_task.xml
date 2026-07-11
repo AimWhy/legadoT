@@ -109,7 +109,7 @@
                 app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
                 android:textAppearance="?attr/textAppearanceBodyLarge"
-                android:textSize="14sp" />
+                android:textSize="@dimen/text_body" />
 
         </io.legado.app.ui.widget.text.TextInputLayout>
     </LinearLayout>

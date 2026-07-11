@@ -13,5 +13,5 @@
     android:scrollbars="none"
     app:skin_textColor="onSurface"
     android:textColor="@color/primaryText"
-    android:textSize="14sp"
+    android:textSize="@dimen/text_body"
     tools:ignore="UnusedAttribute" />
