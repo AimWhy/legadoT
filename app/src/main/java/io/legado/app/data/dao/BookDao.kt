@@ -118,15 +118,20 @@ interface BookDao {
     @get:Query("SELECT * FROM books where type & ${BookType.text} > 0 ORDER BY durChapterTime DESC limit 1")
     val lastReadBook: Book?
 
+    // 书架续读入口专用:排除未正式入架的临时预览书(notShelf),与书架列表口径一致
+    @get:Query("SELECT * FROM books where type & ${BookType.text} > 0 and type & ${BookType.notShelf} = 0 ORDER BY durChapterTime DESC limit 1")
+    val lastReadBookOnShelf: Book?
+
     @get:Query("SELECT bookUrl FROM books")
     val allBookUrls: List<String>
 
-    @get:Query("SELECT COUNT(*) FROM books")
+    // 排除未正式入架的临时预览书(notShelf),与书架"全部"分组显示口径一致
+    @get:Query("SELECT COUNT(*) FROM books where type & ${BookType.notShelf} = 0")
     val allBookCount: Int
 
     // durChapterTime 默认=创建时间(从未打开也非零),不可用作"在读"判据;
-    // 与 readProgress() 同款未读测试:index/pos 均为 0 视为未读
-    @get:Query("SELECT count(*) FROM books where durChapterIndex > 0 OR durChapterPos > 0")
+    // 与 readProgress() 同款未读测试:index/pos 均为 0 视为未读;同样排除临时预览书
+    @get:Query("SELECT count(*) FROM books where (durChapterIndex > 0 OR durChapterPos > 0) and type & ${BookType.notShelf} = 0")
     val readingCount: Int
 
     @get:Query("select min(`order`) from books")

@@ -27,105 +27,79 @@
         android:textColor="@color/tv_text_summary"
         tools:text="共 128 本 · 在读 23 本" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/card_continue"
+    <!--
+      继续阅读:与大标题/统计同属扁平文字语言的一行入口(非卡片)。
+      去掉了原 32dp surface Hero 卡(材质孤立/与列表首项重复放大),
+      降为轻量续读行:label + 书名 + 章节(弹性截断) + 百分比 + 箭头。
+      点击=续读(startActivityForBook),长按=进详情;book==null 时整行 gone。
+    -->
+    <LinearLayout
+        android:id="@+id/continue_reading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_m"
+        android:background="?attr/selectableItemBackground"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingVertical="@dimen/space_s"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/background_card"
-        app:skin_background="surfaceContainerLow"
-        app:cardCornerRadius="@dimen/radius_xl"
-        app:cardElevation="1dp"
-        app:strokeWidth="0dp"
         tools:visibility="visible">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tv_continue_label"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="@dimen/space_m">
+            android:text="@string/continue_read"
+            android:textSize="@dimen/text_body"
+            app:skin_textColor="onSurfaceVariant"
+            android:textColor="@color/tv_text_summary" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:layout_width="56dp"
-                android:layout_height="80dp"
-                app:cardCornerRadius="@dimen/radius_m"
-                app:cardElevation="0dp"
-                app:strokeWidth="0dp">
+        <TextView
+            android:id="@+id/tv_continue_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_m"
+            android:ellipsize="end"
+            android:maxWidth="150dp"
+            android:singleLine="true"
+            android:textAppearance="@style/TextAppearance.App.Label"
+            app:skin_textColor="onSurface"
+            android:textColor="@color/primaryText"
+            tools:text="三体" />
 
-                <io.legado.app.ui.widget.image.CoverImageView
-                    android:id="@+id/iv_hero_cover"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:scaleType="centerCrop"
-                    android:src="@drawable/image_cover_default"
-                    app:coverCornerRadius="0dp"
-                    tools:ignore="ImageContrastCheck" />
+        <TextView
+            android:id="@+id/tv_continue_chapter"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_s"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:singleLine="true"
+            android:textSize="@dimen/text_body"
+            app:skin_textColor="onSurfaceVariant"
+            android:textColor="@color/tv_text_summary"
+            tools:text="第 60 章 古筝行动" />
 
-            </com.google.android.material.card.MaterialCardView>
+        <TextView
+            android:id="@+id/tv_continue_percent"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_s"
+            android:textSize="@dimen/text_body"
+            app:skin_textColor="onSurfaceVariant"
+            android:textColor="@color/tv_text_summary"
+            tools:text="59%" />
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="@dimen/space_m"
-                android:layout_weight="1"
-                android:orientation="vertical">
+        <ImageView
+            android:id="@+id/iv_continue_arrow"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginStart="@dimen/space_xs"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_arrow_right"
+            app:skin_tint="onSurfaceVariant"
+            app:tint="@color/tv_text_summary" />
 
-                <TextView
-                    android:id="@+id/tv_hero_name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:ellipsize="end"
-                    android:singleLine="true"
-                    android:textAppearance="@style/TextAppearance.App.Title"
-                    app:skin_textColor="onSurface"
-                    android:textColor="@color/primaryText"
-                    tools:text="书名示例" />
-
-                <TextView
-                    android:id="@+id/tv_hero_chapter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_xs"
-                    android:ellipsize="end"
-                    android:singleLine="true"
-                    android:textSize="@dimen/text_body"
-                    app:skin_textColor="onSurfaceVariant"
-                    android:textColor="@color/tv_text_summary"
-                    tools:text="第 12 章 山雨欲来" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_s"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <com.google.android.material.progressindicator.LinearProgressIndicator
-                        android:id="@+id/pb_hero_progress"
-                        android:layout_width="0dp"
-                        android:layout_height="4dp"
-                        android:layout_weight="1"
-                        app:trackCornerRadius="2dp"
-                        tools:progress="60" />
-
-                    <TextView
-                        android:id="@+id/tv_hero_percent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/space_s"
-                        android:textSize="@dimen/text_caption_l"
-                        app:skin_textColor="onSurfaceVariant"
-                        android:textColor="@color/tv_text_summary"
-                        tools:text="60%" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
 
 </LinearLayout>
