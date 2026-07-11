@@ -44,7 +44,7 @@
         android:layout_marginBottom="8dp"
         android:paddingHorizontal="10dp"
         android:paddingVertical="3dp"
-        android:textSize="12sp"
+        android:textSize="@dimen/text_caption"
         android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@id/fb_start_stop"
         app:layout_constraintEnd_toEndOf="@id/fb_start_stop"

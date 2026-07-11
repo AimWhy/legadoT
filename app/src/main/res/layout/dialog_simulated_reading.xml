@@ -24,7 +24,7 @@
             android:text="@string/switch_on"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             tools:ignore="RtlHardcoded"
             android:minWidth="88dp" />
 
@@ -69,7 +69,7 @@
             android:text="@string/start_from"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:gravity="center_vertical"
             android:minWidth="100dp" />
 
@@ -87,7 +87,7 @@
             android:hint="@string/select_date"
             android:layout_weight="1"
             android:clickable="true"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:layout_marginRight="68dp" />
 
         <View
@@ -118,7 +118,7 @@
                 android:text="@string/start_chapter"
                 app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
-                android:textSize="16sp"
+                android:textSize="@dimen/text_subtitle"
                 tools:ignore="RtlHardcoded" />
 
         </LinearLayout>
@@ -134,7 +134,7 @@
             android:lines="1"
             android:maxLength="5"
             android:minWidth="60dp"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:ignore="TouchTargetSizeCheck,TextContrastCheck" />
 
         <LinearLayout
@@ -152,7 +152,7 @@
                 android:text="@string/daily_chapters"
                 app:skin_textColor="onSurface"
                 android:textColor="@color/primaryText"
-                android:textSize="16sp" />
+                android:textSize="@dimen/text_subtitle" />
 
             <io.legado.app.lib.theme.view.ThemeEditText
                 android:id="@+id/edit_num"
@@ -165,7 +165,7 @@
                 android:lines="1"
                 android:maxLength="5"
                 android:minWidth="60dp"
-                android:textSize="14sp"
+                android:textSize="@dimen/text_body"
                 tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck,TextContrastCheck"
                 android:textAlignment="center" />
         </LinearLayout>

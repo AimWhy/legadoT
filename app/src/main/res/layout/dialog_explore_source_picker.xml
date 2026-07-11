@@ -19,7 +19,7 @@
             android:text="@string/explore_select_source"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="16sp"
+            android:textSize="@dimen/text_subtitle"
             android:textStyle="bold" />
 
         <io.legado.app.lib.theme.view.ThemeEditText
@@ -28,7 +28,7 @@
             android:layout_height="wrap_content"
             android:hint="@string/search"
             android:singleLine="true"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_view"

@@ -14,7 +14,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="5dp"
-        android:textSize="18sp"
+        android:textSize="@dimen/text_title"
         android:textStyle="bold"
         android:text="@string/custom_page_key" />
 

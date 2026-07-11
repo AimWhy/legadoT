@@ -283,7 +283,7 @@
             <!--                android:maxLines="1"-->
             <!--                android:text="@string/setting"-->
             <!--                android:textColor="@color/primaryText"-->
-            <!--                android:textSize="12sp" />-->
+            <!--                android:textSize="@dimen/text_caption" />-->
             <!--        </LinearLayout>-->
 
             <View

@@ -21,7 +21,7 @@
         android:text="@string/sleep_timer_title"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
-        android:textSize="16sp"
+        android:textSize="@dimen/text_subtitle"
         android:textStyle="bold" />
 
     <!-- 定时停止 -->
@@ -32,7 +32,7 @@
         android:text="@string/sleep_timer_by_time"
         app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
-        android:textSize="13sp" />
+        android:textSize="@dimen/text_caption_l" />
 
     <com.google.android.flexbox.FlexboxLayout
         android:id="@+id/fl_time"
@@ -54,7 +54,7 @@
             android:paddingVertical="8dp"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:text="30 分钟" />
 
         <TextView
@@ -71,7 +71,7 @@
             android:paddingVertical="8dp"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:text="60 分钟" />
 
         <TextView
@@ -88,7 +88,7 @@
             android:paddingVertical="8dp"
             android:textColor="@color/accent"
             app:skin_textColor="primary"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             android:visibility="gone"
             tools:text="上次 45 分钟"
             tools:visibility="visible" />
@@ -117,7 +117,7 @@
             android:textColor="@color/primaryText"
             app:skin_hintColor="onSurfaceVariant"
             android:textColorHint="@color/secondaryText"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body" />
 
         <TextView
             android:id="@+id/tv_time_ok"
@@ -132,7 +132,7 @@
             android:text="@string/confirm"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body" />
 
     </LinearLayout>
 
@@ -150,7 +150,7 @@
         android:text="@string/sleep_timer_by_chapter"
         app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
-        android:textSize="13sp" />
+        android:textSize="@dimen/text_caption_l" />
 
     <com.google.android.flexbox.FlexboxLayout
         android:id="@+id/fl_chapter"
@@ -172,7 +172,7 @@
             android:paddingVertical="8dp"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:text="听完 1 章" />
 
         <TextView
@@ -189,7 +189,7 @@
             android:paddingVertical="8dp"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             tools:text="听完 3 章" />
 
         <TextView
@@ -206,7 +206,7 @@
             android:paddingVertical="8dp"
             android:textColor="@color/accent"
             app:skin_textColor="primary"
-            android:textSize="14sp"
+            android:textSize="@dimen/text_body"
             android:visibility="gone"
             tools:text="上次 5 章"
             tools:visibility="visible" />
@@ -235,7 +235,7 @@
             android:textColor="@color/primaryText"
             app:skin_hintColor="onSurfaceVariant"
             android:textColorHint="@color/secondaryText"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body" />
 
         <TextView
             android:id="@+id/tv_chapter_ok"
@@ -250,7 +250,7 @@
             android:text="@string/confirm"
             app:skin_textColor="onSurface"
             android:textColor="@color/primaryText"
-            android:textSize="14sp" />
+            android:textSize="@dimen/text_body" />
 
     </LinearLayout>
 
@@ -272,6 +272,6 @@
         android:text="@string/sleep_timer_off"
         app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
-        android:textSize="14sp" />
+        android:textSize="@dimen/text_body" />
 
 </LinearLayout>

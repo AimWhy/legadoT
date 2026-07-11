@@ -22,7 +22,7 @@
         android:text="@string/chapter"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
-        android:textSize="16sp"
+        android:textSize="@dimen/text_subtitle"
         tools:ignore="RtlHardcoded" />
 
     <io.legado.app.lib.theme.view.ThemeEditText
@@ -36,7 +36,7 @@
         android:lines="1"
         android:maxLength="5"
         android:minWidth="60dp"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body"
         tools:ignore="TouchTargetSizeCheck,TextContrastCheck" />
 
     <TextView
@@ -48,7 +48,7 @@
         android:text="@string/to"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
-        android:textSize="16sp" />
+        android:textSize="@dimen/text_subtitle" />
 
     <io.legado.app.lib.theme.view.ThemeEditText
         android:id="@+id/edit_end"
@@ -61,7 +61,7 @@
         android:lines="1"
         android:maxLength="5"
         android:minWidth="60dp"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body"
         tools:ignore="TouchTargetSizeCheck,SpeakableTextPresentCheck,TextContrastCheck" />
 
     <View

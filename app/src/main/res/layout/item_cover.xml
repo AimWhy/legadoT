@@ -28,7 +28,7 @@
         android:text="@string/book_source"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
-        android:textSize="16sp"
+        android:textSize="@dimen/text_subtitle"
         tools:ignore="RtlHardcoded,RtlSymmetry" />
 
 </LinearLayout>

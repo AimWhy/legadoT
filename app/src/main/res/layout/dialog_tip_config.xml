@@ -15,7 +15,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/body_title"
-            android:textSize="18sp" />
+            android:textSize="@dimen/text_title" />
 
         <RadioGroup
             android:id="@+id/rg_title_mode"
@@ -74,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/header"
-            android:textSize="18sp" />
+            android:textSize="@dimen/text_title" />
 
         <io.legado.app.ui.widget.LabeledValueRow
             android:id="@+id/ll_header_show"
@@ -104,7 +104,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/footer"
-            android:textSize="18sp" />
+            android:textSize="@dimen/text_title" />
 
         <io.legado.app.ui.widget.LabeledValueRow
             android:id="@+id/ll_footer_show"
@@ -134,7 +134,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/header_footer"
-            android:textSize="18sp" />
+            android:textSize="@dimen/text_title" />
 
         <io.legado.app.ui.widget.LabeledValueRow
             android:id="@+id/ll_tip_color"

@@ -14,7 +14,7 @@
         android:layout_gravity="center_horizontal"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
-        android:textSize="17sp" />
+        android:textSize="@dimen/text_subtitle_l" />
 
     <androidx.appcompat.widget.AppCompatSeekBar
         android:id="@+id/seek_bar"

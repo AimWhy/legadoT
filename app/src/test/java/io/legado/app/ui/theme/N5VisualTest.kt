@@ -86,4 +86,18 @@ class N5VisualTest {
             assertTrue("$it 应 FULL_SCREEN", src.contains("DialogForm.FULL_SCREEN"))
         }
     }
+
+    @Test
+    fun `font sizes bound to tokens except reader canvas`() {
+        val samples = listOf("dialog_sleep_timer", "activity_source_debug", "item_manage")
+        samples.forEach {
+            val xml = File("src/main/res/layout/$it.xml").readText()
+            val active = xml.replace(Regex("<!--.*?-->", RegexOption.DOT_MATCHES_ALL), "")
+            assertTrue("$it 应无 1[2-8]sp 字面量",
+                !active.contains(Regex("textSize=\"1[2-8]sp\"")))
+        }
+        // 红线:阅读器画布不动
+        val page = File("src/main/res/layout/view_book_page.xml").readText()
+        assertTrue("view_book_page 保留自绘字号字面量", page.contains(Regex("textSize=\"\\d+sp\"")))
+    }
 }

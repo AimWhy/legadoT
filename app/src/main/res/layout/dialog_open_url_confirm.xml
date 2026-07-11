@@ -23,7 +23,7 @@
         android:padding="16dp"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
-        android:textSize="16sp" />
+        android:textSize="@dimen/text_subtitle" />
 
     <com.google.android.flexbox.FlexboxLayout
         android:layout_width="match_parent"

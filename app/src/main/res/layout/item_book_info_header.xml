@@ -63,7 +63,7 @@
         android:paddingHorizontal="@dimen/space_xs"
         android:paddingBottom="@dimen/space_s"
         android:textIsSelectable="true"
-        android:textSize="14sp"
+        android:textSize="@dimen/text_body"
         app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/secondaryText"
         tools:text="@string/book_intro"
