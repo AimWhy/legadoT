@@ -41,7 +41,7 @@ class VerticalSliderWrapper @JvmOverloads constructor(
         // 上面 super.onMeasure() 会让未旋转的子 Slider 在 AT_MOST 宽度上限下顶满(wrap_content
         // 对 Slider 等价于 fill),把这个虚高宽度烙进了本容器自身的 measuredWidth;子条按本行重新
         // 量测后,slider.measuredHeight 才是它旋转后的真实厚度,用它重新纠正自身宽度上报,
-        // 避免整条撑满菜单宽度(对齐旧 VerticalSeekBarWrapper.onMeasure 的自纠正做法)
+        // 避免整条撑满菜单宽度(旋转 Slider 的宽度自纠正做法)
         setMeasuredDimension(
             View.resolveSizeAndState(slider.measuredHeight + paddingLeft + paddingRight, widthMeasureSpec, 0),
             measuredHeight
