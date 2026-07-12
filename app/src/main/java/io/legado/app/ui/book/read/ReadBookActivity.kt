@@ -123,6 +123,7 @@ import io.legado.app.ui.widget.dialog.PhotoDialog
 import io.legado.app.utils.ACache
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.Debounce
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.LogUtils
 import io.legado.app.utils.NetworkUtils
 import io.legado.app.utils.StartActivityContract
@@ -2135,7 +2136,14 @@ class ReadBookActivity : BaseReadBookActivity(),
         if (show) {
             val bgColor = bottomBackground
             val textColor = getPrimaryTextColor(ColorUtils.isColorLight(bgColor))
-            (barBinding.readAloudFloatBar.background as? GradientDrawable)?.setColor(bgColor)
+            (barBinding.readAloudFloatBar.background as? GradientDrawable)?.apply {
+                setColor(bgColor)
+                // 描边保任意阅读底色可辨(日间近白底/e-ink 弱阴影下不靠投影分界)。
+                // eink 走纯黑实线框,其余用前景色 0.25α 与底色派生同源。
+                val strokeColor = if (AppConfig.isEInkMode) textColor
+                else ColorUtils.withAlpha(textColor, 0.25f)
+                setStroke(1.dpToPx(), strokeColor)
+            }
             barBinding.ivBackToSpeech.setColorFilter(textColor)
             barBinding.tvBackToSpeech.setTextColor(textColor)
             barBinding.ivReadFromHere.setColorFilter(textColor)
