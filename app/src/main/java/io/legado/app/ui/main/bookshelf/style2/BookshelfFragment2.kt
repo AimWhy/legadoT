@@ -71,17 +71,16 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
     private var enableRefresh = true
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        setSupportToolbar(binding.toolBar)
-        bindShelfHeader(
-            binding.shelfHeader,
-            binding.appBar,
-            binding.toolBar,
-            binding.tvToolbarTitle,
-            binding.refreshLayout
-        )
+        setSupportToolbar(binding.titleBar.toolbar)
+        bindShelfHeader(binding.shelfHeader, binding.refreshLayout)
         initRecyclerView()
         initBookGroupData()
         initBooksData()
+    }
+
+    /** 动态标题单写点:进分组显"书架(组名)",返回根还原。 */
+    private fun setShelfTitle(title: String) {
+        binding.titleBar.title = title
     }
 
     private fun initRecyclerView() {
@@ -130,7 +129,7 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
         }
     }
 
-    /** 数据侧闸门:分组允许刷新且当前列表非空,与 AppBar 展开侧闸门在 [syncRefreshEnable] 收敛。 */
+    /** 数据侧闸门:分组允许刷新且当前列表非空,经 [syncRefreshEnable] 单写点落地。 */
     override fun refreshEnabledByData(): Boolean = enableRefresh && getItemCount() > 0
 
     override fun upSort() {

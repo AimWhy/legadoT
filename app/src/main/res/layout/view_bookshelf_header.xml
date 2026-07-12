@@ -6,38 +6,28 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingHorizontal="@dimen/space_l"
+    android:paddingTop="@dimen/space_s"
     android:paddingBottom="@dimen/space_m">
-
-    <TextView
-        android:id="@+id/tv_shelf_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/bookshelf"
-        android:textAppearance="@style/TextAppearance.App.Display"
-        app:skin_textColor="onSurface"
-        android:textColor="@color/primaryText" />
 
     <TextView
         android:id="@+id/tv_shelf_stats"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_xs"
         android:textSize="@dimen/text_body"
         app:skin_textColor="onSurfaceVariant"
         android:textColor="@color/tv_text_summary"
         tools:text="共 128 本 · 在读 23 本" />
 
     <!--
-      继续阅读:与大标题/统计同属扁平文字语言的一行入口(非卡片)。
-      去掉了原 32dp surface Hero 卡(材质孤立/与列表首项重复放大),
-      降为轻量续读行:label + 书名 + 章节(弹性截断) + 百分比 + 箭头。
+      继续阅读:标题栏下的一行轻量续读入口(非卡片)。
+      label + 书名 + 章节(弹性截断) + 百分比 + 箭头。
       点击=续读(startActivityForBook),长按=进详情;book==null 时整行 gone。
     -->
     <LinearLayout
         android:id="@+id/continue_reading"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_m"
+        android:layout_marginTop="@dimen/space_xs"
         android:background="?attr/selectableItemBackground"
         android:gravity="center_vertical"
         android:orientation="horizontal"

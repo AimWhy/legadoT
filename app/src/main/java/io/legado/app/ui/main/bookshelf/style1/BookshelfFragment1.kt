@@ -14,6 +14,7 @@ import io.legado.app.data.entities.BookGroup
 import io.legado.app.databinding.FragmentBookshelf1Binding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.appBarBackgroundIsLight
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.lib.theme.tabTextColors
@@ -21,7 +22,6 @@ import io.legado.app.ui.book.group.GroupEditDialog
 import io.legado.app.ui.book.search.SearchActivity
 import io.legado.app.ui.main.bookshelf.BaseBookshelfFragment
 import io.legado.app.ui.main.bookshelf.style1.books.BooksFragment
-import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
@@ -42,7 +42,9 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
 
     private val binding by viewBinding(FragmentBookshelf1Binding::bind)
     private val adapter by lazy { TabFragmentPageAdapter(this) }
-    private val tabLayout: TabLayout by lazy { binding.tabLayout }
+    private val tabLayout: TabLayout by lazy {
+        binding.titleBar.findViewById(R.id.tab_layout)
+    }
     private val bookGroups = mutableListOf<BookGroup>()
     override val groupId: Long get() = selectedGroup?.groupId ?: 0
 
@@ -57,8 +59,8 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
-        setSupportToolbar(binding.toolBar)
-        bindShelfHeader(binding.shelfHeader, binding.appBar, binding.toolBar, binding.tvToolbarTitle)
+        setSupportToolbar(binding.titleBar.toolbar)
+        bindShelfHeader(binding.shelfHeader)
         initView()
         initBookGroupData()
     }
@@ -71,9 +73,13 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
         tabLayout.isTabIndicatorFullWidth = false
         tabLayout.tabMode = TabLayout.MODE_SCROLLABLE
         tabLayout.setSelectedTabIndicatorColor(requireContext().accentColor)
-        // AppBarLayout 已改平涂 @color/background(原 TitleBar 主色栏已退役),
-        // 可见栏色恒等于页面背景,明暗判据须锚定背景色而非已失效的主色/沉浸式开关
-        val tabBarIsLight = ColorUtils.isColorLight(requireContext().backgroundColor)
+        // tabs 内嵌于 TitleBar(主色栏,沉浸式时透明露页面背景),
+        // 明暗判据在主色与页面背景之间取实际可见的那个
+        val tabBarIsLight = appBarBackgroundIsLight(
+            transparentActionBar = AppConfig.isTransparentActionBar,
+            barBackgroundColor = primaryColor,
+            contentBackgroundColor = requireContext().backgroundColor
+        )
         val tabColors = tabTextColors(tabBarIsLight)
         tabLayout.setTabTextColors(tabColors.unselected, tabColors.selected)
         binding.viewPagerBookshelf.offscreenPageLimit = 1
