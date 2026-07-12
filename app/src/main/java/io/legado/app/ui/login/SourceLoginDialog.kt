@@ -32,10 +32,10 @@ import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.EmptyCoroutineContext
 import splitties.init.appCtx
 import splitties.views.onClick
 
@@ -45,6 +45,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     private val binding by viewBinding(DialogLoginBinding::bind)
     private val viewModel by activityViewModels<SourceLoginViewModel>()
     private var currentLoginUi: List<RowUi>? = null
+    private var renderJob: Job? = null
 
     override fun onStart() {
         super.onStart()
@@ -54,14 +55,17 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         val source = viewModel.source ?: return
         binding.toolBar.title = getString(R.string.login_source, source.getTag())
-        renderLoginUi(source, source.getLoginInfoMap())
+        renderLoginUi(source, null)
         binding.toolBar.inflateMenu(R.menu.source_login)
         binding.toolBar.menu.applyTint(requireContext())
         binding.toolBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_ok -> {
-                    val loginData = getLoginData(currentLoginUi)
-                    login(source, loginData)
+                    // 渲染完成前 currentLoginUi 为 null,「确定」会把空表单当成清除登录信息,误删已存凭据
+                    if (renderJob?.isActive != true) {
+                        val loginData = getLoginData(currentLoginUi)
+                        login(source, loginData)
+                    }
                 }
 
                 R.id.menu_show_login_header -> alert {
@@ -109,11 +113,34 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     }
 
     private fun renderLoginUi(source: BaseSource, prefills: Map<String, String>?) {
-        // loginUi 规则可能是 <js>…</js>(动态生成表单),求值时线程必须已进入 RhinoContext,
-        // 否则脚本被安全策略拦下(allowScriptRun/ensureActive),loginUi() 吞异常返回 null → 弹窗空白。
-        // 与本文件 handleButtonClick/login 同款包裹。
-        val loginUi = runScriptWithContext(EmptyCoroutineContext) { source.loginUi() }
-        currentLoginUi = loginUi
+        // loginUi 规则可能是 <js>…</js>(动态生成表单),脚本里可以随意 java.ajax 等联网,
+        // 必须离开主线程求值,否则窗口显示前主线程就被拖死——用户看到的是"点了没反应"。
+        // runScriptWithContext 挂上当前 Job:进 RhinoContext(安全策略放行)且弹窗关闭时可中断脚本。
+        renderJob?.cancel()
+        renderJob = lifecycleScope.launch {
+            binding.rotateLoading.visible()
+            val result = withContext(IO) {
+                kotlin.runCatching {
+                    runScriptWithContext {
+                        // 首次渲染 prefills 传 null:已存登录信息也在 IO 线程读取解密
+                        (prefills ?: source.getLoginInfoMap()) to source.loginUi()
+                    }
+                }.onFailure { e ->
+                    ensureActive()
+                    AppLog.put("登录UI加载出错", e)
+                }.getOrNull()
+            }
+            binding.rotateLoading.gone()
+            currentLoginUi = result?.second
+            buildLoginViews(source, result?.second, result?.first)
+        }
+    }
+
+    private fun buildLoginViews(
+        source: BaseSource,
+        loginUi: List<RowUi>?,
+        prefills: Map<String, String>?,
+    ) {
         binding.flexbox.removeAllViews()
         try {
             loginUi?.forEachIndexed { index, rowUi ->
