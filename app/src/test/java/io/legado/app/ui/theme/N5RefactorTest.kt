@@ -14,4 +14,18 @@ class N5RefactorTest {
         assertTrue("加钮调 step", src.contains("step(1)"))
         assertTrue("减钮调 step", src.contains("step(-1)"))
     }
+
+    @Test
+    fun `edit adapter tag1 listener reads current safety not frozen`() {
+        listOf(
+            "book/source/edit/BookSourceEditAdapter",
+            "rss/source/edit/RssSourceEditAdapter",
+        ).forEach {
+            val src = File("src/main/java/io/legado/app/ui/$it.kt").readText()
+            // 修复后:attach 回调内重算而非用外层冻结的 isUnsafeText
+            assertTrue("$it 应每次 attach 重读安全态",
+                src.contains("EditSafety.isCombiningHeavy") &&
+                    src.contains("onViewAttachedToWindow"))
+        }
+    }
 }

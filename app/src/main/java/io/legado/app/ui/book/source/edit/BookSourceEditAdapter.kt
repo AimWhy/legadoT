@@ -56,9 +56,13 @@ class BookSourceEditAdapter(
         private val codeFieldBinding: ViewCodeEditFieldBinding =
             binding.root.bindCodeEditField(R.id.codeField)
 
+        // ViewHolder 复用时同一 EditText 承载不同行；tag1 监听器只创建一次，
+        // 用字段而非 bind() 局部 val 承载安全态，避免 attach 回调闭包冻结首绑值
+        private var isUnsafeText = false
+
         fun bind(editEntity: EditEntity) = with(codeFieldBinding) {
             val rawText = editEntity.value.orEmpty()
-            val isUnsafeText = EditSafety.isCombiningHeavy(rawText)
+            isUnsafeText = EditSafety.isCombiningHeavy(rawText)
             editText.setTag(R.id.tag, editEntity.key)
             editText.maxLines = if (isUnsafeText) EditSafety.PREVIEW_LINES else editEntityMaxLine
             if (editText.getTag(R.id.tag1) == null) {
