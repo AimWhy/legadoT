@@ -10,7 +10,6 @@ import android.os.SystemClock
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.SslErrorHandler
 import android.webkit.URLUtil
@@ -22,7 +21,9 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.addCallback
 import androidx.activity.viewModels
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.size
 import androidx.lifecycle.lifecycleScope
 import com.script.rhino.runScriptWithContext
@@ -121,19 +122,21 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
         }
     }
 
-    @Suppress("DEPRECATION")
     @SuppressLint("SwitchIntDef")
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        // N5 C5b: FLAG_FULLSCREEN 只藏状态栏、不动导航栏,迁移用 statusBars()(非 systemBars,
+        // 避免连导航栏一起藏——那是 toggleSystemBar 的语义,行为会变)。
+        val insetsController = WindowCompat.getInsetsController(window, window.decorView)
         when (newConfig.orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN)
-                window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+                insetsController.hide(WindowInsetsCompat.Type.statusBars())
+                insetsController.systemBarsBehavior =
+                    WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
 
             Configuration.ORIENTATION_PORTRAIT -> {
-                window.clearFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
-                window.addFlags(WindowManager.LayoutParams.FLAG_FORCE_NOT_FULLSCREEN)
+                insetsController.show(WindowInsetsCompat.Type.statusBars())
             }
         }
     }

@@ -488,14 +488,16 @@ class BookInfoActivity :
         // portrait 已随 ll_info 迁入 header(RecyclerView addHeaderView 异步 inflate,可能晚于本次数据到达,
         // 故 headerBinding 用 null-safe 更新,header 自己 inflate 时也会在 bindInfoHeader 内主动拉一次);
         // land 未改动,字段仍在 binding 本身(nullable,因 portrait 侧同 id 已不存在于 activity 布局)。
+        // tvOrigin/tvLasted 现由 N5 C5a 抽出的 manageRows(view_book_info_manage_rows include)承载,
+        // 经 include 自带 id 后 h.manageRows/binding.manageRows 展开为可访问 nested binding。
         headerBinding?.let { h ->
-            h.tvOrigin.text = getString(R.string.origin_show, book.originName)
-            h.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
+            h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
+            h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
             upIntro(h.tvIntro, h.vIntroDivider, book)
             upReadStatus(h, book)
         }
-        tvOrigin?.text = getString(R.string.origin_show, book.originName)
-        tvLasted?.text = getString(R.string.lasted_show, book.latestChapterTitle)
+        manageRows?.tvOrigin?.text = getString(R.string.origin_show, book.originName)
+        manageRows?.tvLasted?.text = getString(R.string.lasted_show, book.latestChapterTitle)
         tvIntro?.let { upIntro(it, null, book) }
         llToc?.visible(!book.isWebFile)
         menuCustomBtn?.isVisible = viewModel.bookSource?.customButton == true
@@ -555,7 +557,7 @@ class BookInfoActivity :
             }
         }
         h.tvIntro.revealOnFocusHint = false
-        h.tvOrigin.setOnClickListener {
+        h.manageRows.tvOrigin.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 if (book.isLocal) return@let
                 if (!appDb.bookSourceDao.has(book.origin)) {
@@ -567,25 +569,25 @@ class BookInfoActivity :
                 }
             }
         }
-        h.tvChangeSource.setOnClickListener {
+        h.manageRows.tvChangeSource.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 showDialogFragment(ChangeBookSourceDialog(book.name, book.author))
             }
         }
         // 打开完整目录页的入口已从此卡的 ll_toc 迁至内嵌目录头(见 addHeaderView + openFullToc)
-        h.tvChangeGroup.setOnClickListener {
+        h.manageRows.tvChangeGroup.setOnClickListener {
             viewModel.getBook()?.let {
                 showDialogFragment(
                     GroupSelectDialog(it.group)
                 )
             }
         }
-        PressSpringEffect.attach(h.tvChangeSource)
-        PressSpringEffect.attach(h.tvChangeGroup)
+        PressSpringEffect.attach(h.manageRows.tvChangeSource)
+        PressSpringEffect.attach(h.manageRows.tvChangeGroup)
         // header 可能晚于 viewModel 数据就绪才 inflate,主动拉一次当前数据回填
         viewModel.bookData.value?.let { book ->
-            h.tvOrigin.text = getString(R.string.origin_show, book.originName)
-            h.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
+            h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
+            h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
             upIntro(h.tvIntro, h.vIntroDivider, book)
             upReadStatus(h, book)
         }
@@ -654,12 +656,14 @@ class BookInfoActivity :
      * N3a toc-listify 分治:portrait 有 recyclerView(tv_toc/tv_lasted 已迁入 header),
      * land 无 recyclerView(tv_toc/tv_lasted 仍是 activity 自己的旧字段)——与 appBar 判别器同理。
      * tvToc/tvLasted 均按此discriminator 取目标 view,when 分支结构不变,仅目标 view 来源变化。
+     * tvLasted 现由 N5 C5a manageRows include 承载,两侧都多一层 .manageRows 但 discriminator 逻辑不变。
      */
     private fun upLoading(isLoading: Boolean, chapterList: List<BookChapter>? = null) {
         val isPortrait = binding.recyclerView != null
         // portrait 目录状态由内嵌目录头 tvTocCount 承担(卡内 tv_toc 已移除);land 仍是卡内 tv_toc。
         val tvToc = if (isPortrait) null else binding.tvToc
-        val tvLasted = if (isPortrait) headerBinding?.tvLasted else binding.tvLasted
+        val tvLasted =
+            if (isPortrait) headerBinding?.manageRows?.tvLasted else binding.manageRows?.tvLasted
         when {
             isLoading -> {
                 tvToc?.text = getString(R.string.toc_s, getString(R.string.loading))
@@ -770,9 +774,10 @@ class BookInfoActivity :
             } else {
                 getString(R.string.group_s, it)
             }
-            // tv_group 存在于且仅存在于其中一侧(portrait=headerBinding,land=binding)
-            headerBinding?.tvGroup?.text = text
-            binding.tvGroup?.text = text
+            // tv_group 存在于且仅存在于其中一侧(portrait=headerBinding,land=binding),
+            // N5 C5a 后经 manageRows include 承载
+            headerBinding?.manageRows?.tvGroup?.text = text
+            binding.manageRows?.tvGroup?.text = text
         }
     }
 
@@ -816,7 +821,7 @@ class BookInfoActivity :
                 }
             }
         }
-        tvOrigin?.setOnClickListener {
+        manageRows?.tvOrigin?.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 if (book.isLocal) return@let
                 if (!appDb.bookSourceDao.has(book.origin)) {
@@ -828,14 +833,14 @@ class BookInfoActivity :
                 }
             }
         }
-        tvChangeSource?.setOnClickListener {
+        manageRows?.tvChangeSource?.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 showDialogFragment(ChangeBookSourceDialog(book.name, book.author))
             }
         }
         tvTocView?.setOnClickListener { openFullToc() }
         llToc?.setOnClickListener { openFullToc() }
-        tvChangeGroup?.setOnClickListener {
+        manageRows?.tvChangeGroup?.setOnClickListener {
             viewModel.getBook()?.let {
                 showDialogFragment(
                     GroupSelectDialog(it.group)
@@ -896,8 +901,8 @@ class BookInfoActivity :
         }
         PressSpringEffect.attach(tvShelf)
         PressSpringEffect.attach(tvRead)
-        tvChangeSource?.let { PressSpringEffect.attach(it) }
-        tvChangeGroup?.let { PressSpringEffect.attach(it) }
+        manageRows?.tvChangeSource?.let { PressSpringEffect.attach(it) }
+        manageRows?.tvChangeGroup?.let { PressSpringEffect.attach(it) }
         tvTocView?.let { PressSpringEffect.attach(it) }
     }
 
