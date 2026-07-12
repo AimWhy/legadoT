@@ -667,6 +667,13 @@ Placeholders:
     <string name="preset_haitang">Hai Tang</string>
     <string name="preset_qingci">Qing Ci</string>
     <string name="preset_moshi">Mo Shi</string>
+    <string name="preset_zheju">Zhe Ju</string>
+    <string name="preset_tanfen">Tan Fen</string>
+    <string name="preset_qiuxiang">Qiu Xiang</string>
+    <string name="preset_ouhe">Ou He</string>
+    <string name="preset_tianqing">Tian Qing</string>
+    <string name="preset_dianlan">Dian Lan</string>
+    <string name="preset_bohe">Bo He</string>
     <string name="theme_custom_advanced">Advanced: custom colors</string>
     <string name="wallpaper_follow">Follow wallpaper colors</string>
     <string name="wallpaper_follow_s">Derive theme colors from your wallpaper (Android 12+)</string>
