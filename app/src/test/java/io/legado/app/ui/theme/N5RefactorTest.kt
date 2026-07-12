@@ -52,4 +52,27 @@ class N5RefactorTest {
         val info = File("src/main/java/io/legado/app/ui/book/info/BookInfoActivity.kt").readText()
         assertTrue("BookInfoActivity 应持 job 取消", info.contains("ambientJob"))
     }
+
+    @Test
+    fun `readrss uses modern insets not flag_fullscreen`() {
+        val src = File("src/main/java/io/legado/app/ui/rss/read/ReadRssActivity.kt").readText()
+        assertTrue("onConfigurationChanged 不应再用 FLAG_FULLSCREEN 切换",
+            !src.contains("FLAG_FULLSCREEN") || src.contains("Type.statusBars()"))
+    }
+
+    @Test
+    fun `book info manage rows are shared via include`() {
+        // C5a:land 与头卡的管理三行块(书源/最新/分组)已抽为共享 include,不再各自逐字重复。
+        val landSrc = File("src/main/res/layout-land/activity_book_info.xml").readText()
+        val headerSrc = File("src/main/res/layout/item_book_info_header.xml").readText()
+        assertTrue("land 应 include 共享管理行布局",
+            landSrc.contains("layout=\"@layout/view_book_info_manage_rows\""))
+        assertTrue("头卡应 include 共享管理行布局",
+            headerSrc.contains("layout=\"@layout/view_book_info_manage_rows\""))
+        val shared = File("src/main/res/layout/view_book_info_manage_rows.xml").readText()
+        // id 全部保留,BookInfoActivity 才能继续 binding 访问
+        listOf("tv_origin", "tv_change_source", "tv_lasted", "tv_group", "tv_change_group").forEach {
+            assertTrue("共享布局应保留 id=$it", shared.contains("@+id/$it"))
+        }
+    }
 }
