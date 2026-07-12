@@ -5,18 +5,13 @@ import android.content.Intent
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.TextView
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.indices
-import androidx.core.view.updatePadding
-import androidx.appcompat.widget.Toolbar
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.lifecycleScope
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import com.google.android.material.appbar.AppBarLayout
 import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
 import io.legado.app.constant.AppLog
@@ -53,7 +48,6 @@ import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.readText
 import io.legado.app.utils.sendToClip
-import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.startActivityForBook
@@ -113,15 +107,13 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
     }
 
     private var shelfHeaderBinding: ViewBookshelfHeaderBinding? = null
-    private var shelfToolbarTitle: TextView? = null
     private var heroBook: Book? = null
     private var shelfHeaderFlowJob: Job? = null
 
     private var shelfRefreshLayout: SwipeRefreshLayout? = null
-    private var appBarExpanded = true
 
     /**
-     * shelfHeaderBinding/shelfToolbarTitle/shelfRefreshLayout 等是 Fragment 级字段持有的 view 引用,
+     * shelfHeaderBinding/shelfRefreshLayout 等是 Fragment 级字段持有的 view 引用,
      * view 销毁后若不置空会悬空持有(BooksFragment.onDestroyView 同款既有约定)。
      * shelfHeaderFlowJob 挂在 viewLifecycleOwner.lifecycleScope,view 销毁时本已自动取消,
      * 此处显式 cancel+置空是防御性收尾,避免持有已失效 Job 引用。
@@ -131,7 +123,6 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
         shelfHeaderFlowJob?.cancel()
         shelfHeaderFlowJob = null
         shelfHeaderBinding = null
-        shelfToolbarTitle = null
         shelfRefreshLayout = null
     }
 
@@ -139,51 +130,32 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
 
     /**
      * 下拉刷新是否允许——数据侧闸门(分组开关/空书架等),子类按需覆写。
-     * 与 [appBarExpanded](AppBar 展开侧闸门)通过 [syncRefreshEnable] 收敛为单一合取写入,
-     * 避免多处直写 `refreshLayout.isEnabled` 互相覆盖("三写互吞"缺陷)。
+     * 经 [syncRefreshEnable] 收敛为单一写入点,避免多处直写 `refreshLayout.isEnabled`
+     * 互相覆盖("三写互吞"缺陷)。
      */
     protected open fun refreshEnabledByData(): Boolean = true
 
     /**
-     * 唯一允许写 `shelfRefreshLayout.isEnabled` 的地方。任何一侧闸门变化后都应调用此函数
-     * 重新计算合取结果,而不是直接赋值——直接赋值会抹掉另一侧闸门已经关闭的状态。
+     * 唯一允许写 `shelfRefreshLayout.isEnabled` 的地方。数据侧闸门变化后都应调用此函数
+     * 重新计算,而不是直接赋值。
      */
     protected fun syncRefreshEnable() {
-        shelfRefreshLayout?.isEnabled = appBarExpanded && refreshEnabledByData()
+        shelfRefreshLayout?.isEnabled = refreshEnabledByData()
     }
 
     /**
-     * 可收起大标题头部挂接（style1/style2 共用,一处实现）:
-     * ① root inset 让位——CollapsingToolbarLayout 无条件消费 insets(N3a 已证实),
-     *   子级 applyStatusBarPadding 收不到值,须在消费点之前用 root 监听直接下发。
-     * ② offset 交叉渐隐——header 随收起淡出、小标题随收起淡入(N3a 公式原样搬)。
-     * ③ hero 卡点击=继续阅读(startActivityForBook 既有链路)、长按=进详情(container-transform 既有链路)。
-     * ④ 继续阅读卡按压弹性反馈。
+     * 标题栏下方固定内容行挂接(style1/style2 共用,一处实现):统计行+续读行。
+     * 标题职责已回归各布局的 TitleBar,此处只管数据行。
+     * ① 续读行点击=继续阅读(startActivityForBook 既有链路)、长按=进详情。
+     * ② 续读行按压弹性反馈。
+     * ③ 订阅书籍表失效 Flow,统计/续读实时刷新。
      */
     fun bindShelfHeader(
         header: ViewBookshelfHeaderBinding,
-        appBar: AppBarLayout,
-        toolBar: Toolbar,
-        tvToolbarTitle: TextView,
         refreshLayout: SwipeRefreshLayout? = null
     ) {
         shelfHeaderBinding = header
-        shelfToolbarTitle = tvToolbarTitle
         shelfRefreshLayout = refreshLayout
-        view?.setOnApplyWindowInsetsListenerCompat { _, windowInsets ->
-            val statusBarTop = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
-            toolBar.updatePadding(top = statusBarTop)
-            header.root.updatePadding(top = statusBarTop)
-            windowInsets
-        }
-        appBar.addOnOffsetChangedListener { bar, verticalOffset ->
-            val range = bar.totalScrollRange.takeIf { it > 0 } ?: return@addOnOffsetChangedListener
-            val ratio = -verticalOffset.toFloat() / range
-            header.root.alpha = (1f - ratio * 1.4f).coerceIn(0f, 1f)
-            tvToolbarTitle.alpha = ((ratio - 0.6f) / 0.4f).coerceIn(0f, 1f)
-            appBarExpanded = verticalOffset == 0
-            syncRefreshEnable()
-        }
         header.continueReading.setOnClickListener {
             heroBook?.let { book -> startActivityForBook(book) }
         }
@@ -248,12 +220,6 @@ abstract class BaseBookshelfFragment(layoutId: Int) : VMBaseFragment<BookshelfVi
             val progress = book.readProgress() ?: 0f
             header.tvContinuePercent.text = "${(progress * 100).toInt()}%"
         }
-    }
-
-    /** 同步大标题与收起后小标题(style2 动态标题——进组显"书架(组名)"——用此接口)。 */
-    fun setShelfTitle(title: String) {
-        shelfHeaderBinding?.tvShelfTitle?.text = title
-        shelfToolbarTitle?.text = title
     }
 
     /** 续读入口长按进书籍详情(一行入口无封面视图,不做共享元素转场)。 */

@@ -4,40 +4,53 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
-/** N3c 主书架门面哨兵 */
-class BookshelfHeroTest {
+/** 书架标题形态哨兵:TitleBar 小标题(与发现/我的统一),统计/续读为标题栏下固定内容行 */
+class BookshelfHeaderTest {
 
     @Test
-    fun `shared header carries hero card and stats`() {
+    fun `shared header keeps stats and continue row without display title`() {
         val header = File("src/main/res/layout/view_bookshelf_header.xml").readText()
         assertTrue(listOf(
-            "@+id/tv_shelf_title", "@+id/tv_shelf_stats", "@+id/continue_reading",
+            "@+id/tv_shelf_stats", "@+id/continue_reading",
             "@+id/tv_continue_name", "@+id/tv_continue_chapter", "@+id/tv_continue_percent",
         ).all { header.contains(it) })
-        // 续读入口是扁平一行(非卡片),不应再残留 Hero 大卡的封面/进度条 id
-        assertTrue("Hero 大卡已退役", !header.contains("card_continue") &&
-            !header.contains("iv_hero_cover") && !header.contains("pb_hero_progress"))
+        assertTrue("Display 大标题已退役", !header.contains("tv_shelf_title"))
         val ext = File("src/main/java/io/legado/app/help/book/BookExtensions.kt").readText()
         assertTrue("readProgress 扩展", ext.contains("fun Book.readProgress"))
     }
 
     @Test
-    fun `bookshelf1 collapsing header with independent tabs`() {
+    fun `bookshelf1 uses titlebar with embedded tabs`() {
         val xml = File("src/main/res/layout/fragment_bookshelf1.xml").readText()
-        assertTrue(xml.contains("CollapsingToolbarLayout") && xml.contains("@+id/shelf_header"))
-        assertTrue("TitleBar 退役", !xml.contains("TitleBar"))
-        assertTrue("tabs 独立成行", xml.contains("@+id/tab_layout") && !xml.contains("view_tab_layout_min"))
+        assertTrue("TitleBar 回归", xml.contains("TitleBar"))
+        assertTrue("tabs 回 TitleBar 内嵌", xml.contains("view_tab_layout_min"))
+        assertTrue(
+            "可收起大标题已退役",
+            !xml.contains("CollapsingToolbarLayout") && !xml.contains("AppBarLayout")
+        )
+        assertTrue("保留行挂接", xml.contains("@+id/shelf_header"))
         val base = File("src/main/java/io/legado/app/ui/main/bookshelf/BaseBookshelfFragment.kt").readText()
         assertTrue("头部逻辑一处实现", base.contains("fun bindShelfHeader") && base.contains("fun refreshShelfHeader"))
+        assertTrue("AppBar 展开闸门已退役", !base.contains("appBarExpanded"))
     }
 
     @Test
-    fun `bookshelf2 collapsing header follows dynamic title`() {
+    fun `bookshelf2 uses titlebar with dynamic title`() {
         val xml = File("src/main/res/layout/fragment_bookshelf2.xml").readText()
-        assertTrue(xml.contains("CollapsingToolbarLayout") && xml.contains("@+id/shelf_header"))
-        assertTrue("TitleBar 退役", !xml.contains("TitleBar"))
+        assertTrue("TitleBar 回归", xml.contains("TitleBar"))
+        assertTrue(
+            "可收起大标题已退役",
+            !xml.contains("CollapsingToolbarLayout") && !xml.contains("AppBarLayout")
+        )
+        assertTrue("保留行挂接", xml.contains("@+id/shelf_header"))
         val frag = File("src/main/java/io/legado/app/ui/main/bookshelf/style2/BookshelfFragment2.kt").readText()
-        assertTrue("动态标题走 setShelfTitle", frag.contains("setShelfTitle") && !frag.contains("titleBar.title"))
+        assertTrue("动态标题回 TitleBar", frag.contains("titleBar.title"))
+    }
+
+    @Test
+    fun `tab layout min restored`() {
+        val xml = File("src/main/res/layout/view_tab_layout_min.xml").readText()
+        assertTrue(xml.contains("@+id/tab_layout") && xml.contains("TabLayout"))
     }
 
     @Test
