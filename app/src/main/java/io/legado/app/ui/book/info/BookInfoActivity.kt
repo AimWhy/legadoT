@@ -100,6 +100,7 @@ import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.ceil
@@ -164,6 +165,9 @@ class BookInfoActivity :
     private var editMenuItem: MenuItem? = null
     private var menuCustomBtn: MenuItem? = null
     private val book get() = viewModel.getBook(false)
+
+    // 氛围背景竞写守卫:换封面可能连续触发(load 回调异步),旧协程取消,只有最新一次落地
+    private var ambientJob: Job? = null
 
     // N3a toc-listify: 详情页(portrait)内容区从"NestedScroll + 手搓预览"换成 RecyclerView
     // 承载完整目录,复用目录页既有的 ChapterListAdapter,不新建章节行布局/适配器。
@@ -641,7 +645,8 @@ class BookInfoActivity :
 
     private fun applyAmbientHeader() {
         // N3a 详情头图与 N3b 音频页共用氛围背景实现(utils/AmbientBackground.kt)
-        (binding.appBar ?: binding.llHeaderPanel)
+        ambientJob?.cancel()
+        ambientJob = (binding.appBar ?: binding.llHeaderPanel)
             ?.applyAmbientBackground(binding.ivCover.drawable, lifecycleScope) { isDestroyed }
     }
 

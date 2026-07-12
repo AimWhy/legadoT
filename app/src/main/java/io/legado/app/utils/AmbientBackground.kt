@@ -14,6 +14,7 @@ import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.model.BookCover
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -31,21 +32,27 @@ private const val FIELD_EDGE = 16
  *   顶实护标题区、中透露纹理、底实保控件文字对比度;取代旧死黑蒙层,随日夜/换肤)。
  *   位图取纹理失败时兜底回不透明双色调渐变。
  * eink 早退;无封面/命中默认封面图不派生。N3a 与 N3b 共用,浓度靠 intensity 区分。
+ *
+ * 返回启动的 [Job]，供调用方在快速连续换封面时取消前一次未完成的取色/渲染——
+ * 否则旧协程可能晚于新协程落地，出现"新封面被旧氛围色覆盖"的竞态。早退分支
+ * （eink/无封面/默认封面）没有协程可取消，返回一个立即 complete 的空 Job，
+ * 调用方对其 cancel() 是安全的空操作。
  */
 fun View.applyAmbientBackground(
     coverDrawable: Drawable?,
     scope: CoroutineScope,
     intensity: AmbientIntensity = AmbientIntensity.DECOR,
     isDestroyed: () -> Boolean,
-) {
-    if (AppConfig.isEInkMode) return
-    val bitmap = (coverDrawable as? BitmapDrawable)?.bitmap ?: return
+): Job {
+    if (AppConfig.isEInkMode) return Job().apply { complete() }
+    val bitmap = (coverDrawable as? BitmapDrawable)?.bitmap
+        ?: return Job().apply { complete() }
     val defaultBitmap = (BookCover.defaultDrawable as? BitmapDrawable)?.bitmap
     if (coverDrawable === BookCover.defaultDrawable ||
         (defaultBitmap != null && bitmap === defaultBitmap)
-    ) return
+    ) return Job().apply { complete() }
     val baseBg = context.backgroundColor
-    scope.launch(Dispatchers.Default) {
+    return scope.launch(Dispatchers.Default) {
         val palette = runCatching { ImageSeedExtractor.extractPalette(bitmap, 2) }.getOrNull()
         val primarySeed = palette?.firstOrNull() ?: return@launch
         val a1 = AppColorScheme.ambientScheme(primarySeed, AppConfig.isNightTheme, isEInk = false)

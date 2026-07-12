@@ -43,6 +43,9 @@ class RefreshProgressBar @JvmOverloads constructor(
             field = value
             indicator.trackColor = value
         }
+    // M3 单层坍缩下与 fontColor 共写同一 indicator.setIndicatorColor 槽位，后写胜。
+    // 真实消费点（4 个 fontColor 调用方）均只设 fontColor，不与本 setter 争用；
+    // 若未来出现同实例上先后设置两者的调用点，以 fontColor 为准（更晚调用/更明确语义）。
     var secondColor: Int = -0x3e3e3f
         set(value) {
             field = value
