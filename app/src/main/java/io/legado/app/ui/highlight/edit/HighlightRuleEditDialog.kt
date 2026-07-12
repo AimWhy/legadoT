@@ -161,6 +161,7 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
         etName.setText(r.name)
         etPattern.setText(r.pattern)
         cbUseRegex.isChecked = r.isRegex
+        cbApplyToTitle.isChecked = r.applyToTitle
         etScope.setText(r.scope)
         editingStyle = r.styleObj()
         upPreview()
@@ -171,6 +172,7 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
         r.name = etName.text.toString()
         r.pattern = etPattern.text.toString()
         r.isRegex = cbUseRegex.isChecked
+        r.applyToTitle = cbApplyToTitle.isChecked
         r.scope = etScope.text.toString().ifBlank { null }
         r.applyStyle(editingStyle)
         r

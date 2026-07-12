@@ -14,4 +14,13 @@ class HighlightTitleOptionTest {
         assertTrue("DB 版本应升到 85", db.contains("version = 85"))
         assertTrue("应有 84→85 AutoMigration", db.contains("AutoMigration(from = 84, to = 85)"))
     }
+
+    @Test
+    fun `edit dialog has apply to title checkbox wired`() {
+        val layout = File("src/main/res/layout/dialog_highlight_rule_edit.xml").readText()
+        assertTrue("布局应有 cb_apply_to_title", layout.contains("@+id/cb_apply_to_title"))
+        val dialog = File("src/main/java/io/legado/app/ui/highlight/edit/HighlightRuleEditDialog.kt").readText()
+        assertTrue("upView 应回填 applyToTitle", dialog.contains("cbApplyToTitle.isChecked = r.applyToTitle"))
+        assertTrue("getRule 应读 applyToTitle", dialog.contains("r.applyToTitle = cbApplyToTitle.isChecked"))
+    }
 }
