@@ -3,6 +3,7 @@ package io.legado.app.ui.book.read
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.os.Looper
 import android.view.Gravity
@@ -17,6 +18,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.net.toUri
 import androidx.core.view.get
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import androidx.core.view.size
 import androidx.lifecycle.lifecycleScope
 import io.legado.app.BuildConfig
@@ -54,6 +57,7 @@ import io.legado.app.help.book.update
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.ReadBookConfig
 import io.legado.app.help.coroutine.Coroutine
+import io.legado.app.help.motion.MotionTokens
 import io.legado.app.constant.AppPattern
 import io.legado.app.help.source.getSourceType
 import io.legado.app.help.storage.Backup
@@ -61,6 +65,8 @@ import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.bottomBackground
+import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
 import io.legado.app.model.SourceCallBack
@@ -115,6 +121,7 @@ import io.legado.app.ui.widget.popupActionMenu
 import io.legado.app.ui.widget.dialog.M3ColorPickerDialog
 import io.legado.app.ui.widget.dialog.PhotoDialog
 import io.legado.app.utils.ACache
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.Debounce
 import io.legado.app.utils.LogUtils
 import io.legado.app.utils.NetworkUtils
@@ -296,6 +303,12 @@ class ReadBookActivity : BaseReadBookActivity(),
         binding.cursorRight.setColorFilter(accentColor)
         binding.cursorLeft.setOnTouchListener(this)
         binding.cursorRight.setOnTouchListener(this)
+        binding.readAloudFloatBarContainer.llBackToSpeech.setOnClickListener {
+            backToSpeakingPosition()
+        }
+        binding.readAloudFloatBarContainer.llReadFromHere.setOnClickListener {
+            ReadBook.readAloud()
+        }
         window.setBackgroundDrawable(null)
         upScreenTimeOut()
         ReadBook.register(this)
@@ -386,6 +399,7 @@ class ReadBookActivity : BaseReadBookActivity(),
         upSystemUiVisibility()
         registerReceiver(timeBatteryReceiver, timeBatteryReceiver.filter)
         binding.readView.upTime()
+        upReadAloudFloatBar()
         screenOffTimerStart()
         // 网络监听，当从无网切换到网络环境时同步进度（注意注册的同时就会收到监听，因此界面激活时无需重复执行同步操作）
         networkChangedListener.register()
@@ -2088,10 +2102,47 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     override fun onMenuShow() {
         binding.readView.autoPager.pause()
+        upReadAloudFloatBar()
     }
 
     override fun onMenuHide() {
         binding.readView.autoPager.resume()
+        upReadAloudFloatBar()
+    }
+
+    /**
+     * 朗读悬浮胶囊显隐+施色。朗读运行中且已脱离跟随、且菜单未显示时浮现,
+     * 提供"回到朗读位置/从此处朗读"双段快捷(免开朗读弹窗)。
+     * 施色随阅读底色自适应(bottomBackground+派生前景),不用全局主题色。
+     */
+    private fun upReadAloudFloatBar() {
+        val barBinding = binding.readAloudFloatBarContainer
+        val show = ReadAloudBarVisibility.shouldShow(
+            isRun = BaseReadAloudService.isRun,
+            following = ReadAloud.followReadAloudPosition,
+            menuVisible = menuLayoutIsVisible
+        )
+        if (show) {
+            val bgColor = bottomBackground
+            val textColor = getPrimaryTextColor(ColorUtils.isColorLight(bgColor))
+            (barBinding.readAloudFloatBar.background as? GradientDrawable)?.setColor(bgColor)
+            barBinding.ivBackToSpeech.setColorFilter(textColor)
+            barBinding.tvBackToSpeech.setTextColor(textColor)
+            barBinding.ivReadFromHere.setColorFilter(textColor)
+            barBinding.tvReadFromHere.setTextColor(textColor)
+            barBinding.vBarDivider.setBackgroundColor(ColorUtils.withAlpha(textColor, 0.3f))
+        }
+        val bar = barBinding.readAloudFloatBar
+        if (bar.isVisible == show) return
+        if (AppConfig.isEInkMode || !MotionTokens.enabled) {
+            bar.isVisible = show
+        } else if (show) {
+            bar.alpha = 0f
+            bar.isVisible = true
+            bar.animate().alpha(1f).setDuration(200).start()
+        } else {
+            bar.animate().alpha(0f).setDuration(200).withEndAction { bar.isGone = true }.start()
+        }
     }
 
     override fun onLayoutPageCompleted(index: Int, page: TextPage) {
@@ -2266,6 +2317,10 @@ class ReadBookActivity : BaseReadBookActivity(),
                     }
                 }
             }
+            upReadAloudFloatBar()
+        }
+        observeEvent<Boolean>(EventBus.READ_ALOUD_FOLLOW) {
+            upReadAloudFloatBar()
         }
         observeEventSticky<Int>(EventBus.TTS_PROGRESS) { chapterStart ->
             lastReadAloudChapterStart = chapterStart
