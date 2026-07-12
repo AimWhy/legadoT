@@ -44,4 +44,12 @@ class N5RefactorTest {
                 !src.contains("makeSceneTransitionAnimation"))
         }
     }
+
+    @Test
+    fun `ambient background returns cancellable job`() {
+        val ext = File("src/main/java/io/legado/app/utils/AmbientBackground.kt").readText()
+        assertTrue("applyAmbientBackground 应返回 Job", ext.contains("): Job"))
+        val info = File("src/main/java/io/legado/app/ui/book/info/BookInfoActivity.kt").readText()
+        assertTrue("BookInfoActivity 应持 job 取消", info.contains("ambientJob"))
+    }
 }
