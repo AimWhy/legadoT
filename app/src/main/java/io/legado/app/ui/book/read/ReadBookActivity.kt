@@ -2143,8 +2143,15 @@ class ReadBookActivity : BaseReadBookActivity(),
             barBinding.vBarDivider.setBackgroundColor(ColorUtils.withAlpha(textColor, 0.3f))
         }
         val bar = barBinding.readAloudFloatBar
-        if (bar.isVisible == show) return
+        // 稳定态短路(避免每次 re-eval 重启动画);"稳定"要连 alpha 一起判,
+        // 否则淡出在途(isVisible 仍 true/alpha 渐 0)会被误判为已显示。
+        val settledShown = bar.isVisible && bar.alpha == 1f
+        val settledHidden = !bar.isVisible
+        if (show && settledShown) return
+        if (!show && settledHidden) return
+        bar.animate().cancel() // 取消在途动画,防快速脱离/恢复切换卡在错误终态
         if (AppConfig.isEInkMode || !MotionTokens.enabled) {
+            bar.alpha = 1f
             bar.isVisible = show
         } else if (show) {
             bar.alpha = 0f
