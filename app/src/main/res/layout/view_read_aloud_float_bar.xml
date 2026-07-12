@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/read_aloud_float_bar"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_horizontal|bottom"
+    android:layout_marginBottom="24dp"
+    android:background="@drawable/bg_read_aloud_float_bar"
+    android:elevation="6dp"
+    android:orientation="horizontal"
+    android:visibility="gone">
+
+    <LinearLayout
+        android:id="@+id/ll_back_to_speech"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/space_l"
+        android:paddingVertical="@dimen/space_s">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/iv_back_to_speech"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_read_aloud"
+            android:contentDescription="@string/back_to_speaking_position" />
+
+        <TextView
+            android:id="@+id/tv_back_to_speech"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_xs"
+            android:text="@string/back_to_speaking_position"
+            android:textSize="@dimen/text_body" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/v_bar_divider"
+        android:layout_width="1dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center_vertical"
+        android:background="@color/bg_divider_line" />
+
+    <LinearLayout
+        android:id="@+id/ll_read_from_here"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/space_l"
+        android:paddingVertical="@dimen/space_s">
+
+        <androidx.appcompat.widget.AppCompatImageView
+            android:id="@+id/iv_read_from_here"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_play_24dp"
+            android:contentDescription="@string/read_aloud_from_here" />
+
+        <TextView
+            android:id="@+id/tv_read_from_here"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_xs"
+            android:text="@string/read_aloud_from_here"
+            android:textSize="@dimen/text_body" />
+    </LinearLayout>
+</LinearLayout>
