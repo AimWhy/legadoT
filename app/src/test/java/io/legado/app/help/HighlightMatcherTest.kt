@@ -3,6 +3,8 @@ package io.legado.app.help
 import io.legado.app.help.HighlightMatcher.LineSpec
 import io.legado.app.help.HighlightMatcher.Range
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -88,5 +90,31 @@ class HighlightMatcherTest {
         val lines = listOf(LineSpec(2, listOf(0, 1, 1), false))
         val res = HighlightMatcher.resolve(0, lines, listOf(Range(0, 2, HighlightStyle(fill = 0x33))))
         assertEquals(listOf(0, 0x33, 0x33), res[0].map { it?.fill ?: 0 })
+    }
+
+    @Test
+    fun `title line keeps only applyToTitle ranges, manual and others skipped`() {
+        // 单行 2 列各 3 字符, 标题行; pageBase=0
+        val lines = listOf(
+            HighlightMatcher.LineSpec(charSize = 6, columnCharLengths = listOf(3, 3), isParagraphEnd = true, isTitle = true)
+        )
+        val ruleTitle = HighlightMatcher.Range(0, 3, HighlightStyle(fill = 0x11), applyToTitle = true)
+        val ruleNoTitle = HighlightMatcher.Range(3, 6, HighlightStyle(fill = 0x22), applyToTitle = false)
+        val manual = HighlightMatcher.Range(0, 6, HighlightStyle(fill = 0x33), applyToTitle = false)
+        val colors = HighlightMatcher.resolve(0, lines, listOf(ruleTitle, ruleNoTitle, manual))
+        // 第0列[0,3): 只 ruleTitle 允许标题 → 非 null; 第1列[3,6): ruleNoTitle+manual 均不允许 → null
+        assertNotNull(colors[0][0])
+        assertNull(colors[0][1])
+    }
+
+    @Test
+    fun `non-title line unaffected by applyToTitle`() {
+        val lines = listOf(
+            HighlightMatcher.LineSpec(6, listOf(3, 3), isParagraphEnd = true, isTitle = false)
+        )
+        val ruleNoTitle = HighlightMatcher.Range(0, 6, HighlightStyle(fill = 0x22), applyToTitle = false)
+        val colors = HighlightMatcher.resolve(0, lines, listOf(ruleNoTitle))
+        assertNotNull(colors[0][0]) // 非标题行照常 merge
+        assertNotNull(colors[0][1])
     }
 }
