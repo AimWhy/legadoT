@@ -8,7 +8,8 @@ import java.io.ByteArrayInputStream
 import java.io.FileInputStream
 import java.io.InputStream
 import com.caverock.androidsvg.SVG
-import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 @Suppress("WeakerAccess", "MemberVisibilityCanBePrivate")
 object SvgUtils {
@@ -71,14 +72,15 @@ object SvgUtils {
     /////// private method
     private fun createBitmap(svg: SVG, width: Int? = null, height: Int? = null): Bitmap {
         val size = getSize(svg)
-        val wRatio = width?.let { size.width / it } ?: -1
-        val hRatio = height?.let { size.height / it } ?: -1
-        //如果超出指定大小，则缩小相应的比例
-        val ratio = when {
-            wRatio > 1 && hRatio > 1 -> max(wRatio, hRatio)
-            wRatio > 1 -> wRatio
-            hRatio > 1 -> hRatio
-            else -> 1
+        // 按目标框等比适配的缩放系数(保持 SVG 宽高比);允许放大——矢量图放大也应清晰,
+        // 旧逻辑只缩不放(ratio 恒 >=1),目标大于原始尺寸时仍按原小尺光栅再被 canvas 拉伸致模糊。
+        val wScale = width?.takeIf { size.width > 0 }?.let { it.toFloat() / size.width }
+        val hScale = height?.takeIf { size.height > 0 }?.let { it.toFloat() / size.height }
+        val scale = when {
+            wScale != null && hScale != null -> min(wScale, hScale)
+            wScale != null -> wScale
+            hScale != null -> hScale
+            else -> 1f
         }
 
         val viewBox: RectF? = svg.documentViewBox
@@ -89,8 +91,8 @@ object SvgUtils {
         svg.setDocumentWidth("100%")
         svg.setDocumentHeight("100%")
 
-        val bitmapWidth = size.width / ratio
-        val bitmapHeight = size.height / ratio
+        val bitmapWidth = (size.width * scale).roundToInt().coerceAtLeast(1)
+        val bitmapHeight = (size.height * scale).roundToInt().coerceAtLeast(1)
         val bitmap = Bitmap.createBitmap(bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888)
 
         svg.renderToCanvas(Canvas(bitmap))
