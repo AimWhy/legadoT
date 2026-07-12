@@ -15,19 +15,22 @@ class ThemeUxTest {
     }
 
     @Test
-    fun `preset themes declare 8 chinese entries and preference extends androidx preference`() {
+    fun `preset themes declare 15 chinese entries and preference extends androidx preference`() {
         val presets =
             File("src/main/java/io/legado/app/lib/theme/PresetThemes.kt").readText()
         listOf(
             "daiqing", "zhuyue", "zhusha", "ehuang",
             "songyan", "haitang", "qingci", "moshi",
+            // 明快风格扩充 7 套(4 偏艳柔化 + 3 耐看)
+            "zheju", "tanfen", "qiuxiang", "ouhe",
+            "tianqing", "dianlan", "bohe",
         ).forEach { id ->
             assertTrue("PresetThemes 缺少预设 id: $id", presets.contains("\"$id\""))
         }
-        // PresetThemes.all 恰含 8 个 PresetTheme 条目
+        // PresetThemes.all 恰含 15 个 PresetTheme 条目
         assertTrue(
-            "PresetThemes.all 必须恰含 8 个 PresetTheme 条目",
-            Regex("PresetTheme\\(").findAll(presets).count() >= 8,
+            "PresetThemes.all 必须恰含 15 个 PresetTheme 条目",
+            Regex("PresetTheme\\(").findAll(presets).count() >= 15,
         )
         // 避开 lib.prefs.Preference 的 4-id bindView 硬约束——直接继承 androidx.preference.Preference
         val pref =

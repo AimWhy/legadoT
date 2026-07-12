@@ -637,6 +637,13 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="preset_haitang">海棠</string>
     <string name="preset_qingci">青瓷</string>
     <string name="preset_moshi">墨石</string>
+    <string name="preset_zheju">赭橙</string>
+    <string name="preset_tanfen">檀粉</string>
+    <string name="preset_qiuxiang">秋香</string>
+    <string name="preset_ouhe">藕荷</string>
+    <string name="preset_tianqing">天青</string>
+    <string name="preset_dianlan">靛蓝</string>
+    <string name="preset_bohe">薄荷</string>
     <string name="theme_custom_advanced">自定义配色·高级</string>
     <string name="wallpaper_follow">跟随壁纸取色</string>
     <string name="wallpaper_follow_s">从当前壁纸提取主题配色(需 Android 12+)</string>
