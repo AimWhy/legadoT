@@ -718,6 +718,7 @@ Placeholders:
     <string name="chapter">Chapter</string>
     <string name="to">To</string>
     <string name="use_regex">Using Regex</string>
+    <string name="apply_to_title">Apply to title</string>
     <string name="text_indent">Indent</string>
     <string name="indent_0">None</string>
     <string name="indent_1">Indent with 1 chars</string>
