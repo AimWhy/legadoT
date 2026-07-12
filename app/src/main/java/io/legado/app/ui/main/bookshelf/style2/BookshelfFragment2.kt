@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.animation.AnimationUtils
 import androidx.appcompat.widget.SearchView
-import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.isGone
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -35,6 +34,7 @@ import io.legado.app.utils.observeEvent
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivityForBook
+import io.legado.app.utils.startBookInfoTransition
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -237,14 +237,7 @@ class BookshelfFragment2() : BaseBookshelfFragment(R.layout.fragment_bookshelf2)
                 val intent = Intent(requireContext(), BookInfoActivity::class.java)
                     .putExtra("name", item.name)
                     .putExtra("author", item.author)
-                if (cover != null && MotionTokens.enabled) {
-                    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                        requireActivity(), cover, cover.transitionName
-                    )
-                    startActivity(intent, options.toBundle())
-                } else {
-                    startActivity(intent)
-                }
+                requireActivity().startBookInfoTransition(intent, cover)
             }
 
             is BookGroup -> showDialogFragment(GroupEditDialog(item))
