@@ -44,7 +44,7 @@ class PresetThemesPreference @JvmOverloads constructor(
         val recycler = holder.findViewById(R.id.recycler_preset) as? RecyclerView ?: return
         val lm = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
         recycler.layoutManager = lm
-        val adapter = PresetAdapter(context) { refresh() }
+        val adapter = PresetAdapter(context)
         recycler.adapter = adapter
         adapter.setItems(PresetThemes.all)
         // 点选预设/手动改色会 postEvent(RECREATE) 令 ConfigActivity.recreate() 重建整个设置页,
@@ -79,7 +79,6 @@ class PresetThemesPreference @JvmOverloads constructor(
 
     private class PresetAdapter(
         context: Context,
-        val onApplied: () -> Unit,
     ) : RecyclerAdapter<PresetTheme, ItemPresetThemeBinding>(context) {
 
         override fun getViewBinding(parent: ViewGroup): ItemPresetThemeBinding =
@@ -104,8 +103,10 @@ class PresetThemesPreference @JvmOverloads constructor(
         override fun registerListener(holder: ItemViewHolder, binding: ItemPresetThemeBinding) {
             binding.cardPreset.setOnClickListener {
                 val item = getItem(holder.layoutPosition) ?: return@setOnClickListener
+                // 只 applySeed:它必然 postEvent(RECREATE) 重建整页,recreate 时 convert 重读
+                // themeSeedMode 自动重画选中描边。不再额外 notifyChanged——那会在 recreate 之外
+                // 多触发一次列表重装+滚动恢复,造成"咔咔挪两下"。
                 ThemeSeedApplier.applySeed(context, item.seed, "preset:${item.id}")
-                onApplied()
             }
         }
     }
