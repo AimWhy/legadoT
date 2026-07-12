@@ -182,7 +182,7 @@ object ReadBook : CoroutineScope by MainScope() {
         }
         val text = HighlightTextBuilder.build(lines)
         val rules = highlightRules.map {
-            HighlightRuleMatcher.Rule(it.id, it.pattern, it.isRegex, it.styleObj(), it.timeoutMillisecond)
+            HighlightRuleMatcher.Rule(it.id, it.pattern, it.isRegex, it.styleObj(), it.timeoutMillisecond, it.applyToTitle)
         }
         val matches = HighlightRuleMatcher.match(text, rules)
         // 仅在排版完成后缓存; 未完成时每次重算, 避免把半章命中缓存住(长章节翻页后才补齐的页会漏高亮)
