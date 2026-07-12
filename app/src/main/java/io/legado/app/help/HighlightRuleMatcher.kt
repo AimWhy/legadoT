@@ -12,11 +12,12 @@ object HighlightRuleMatcher {
         val pattern: String,
         val isRegex: Boolean,
         val style: HighlightStyle,
-        val timeoutMs: Long = 3000L
+        val timeoutMs: Long = 3000L,
+        val applyToTitle: Boolean = false
     )
 
     /** 一条命中: 半开区间 [start,end) + 来源规则 id + 样式 */
-    data class RuleMatch(val start: Int, val end: Int, val ruleId: Long, val style: HighlightStyle)
+    data class RuleMatch(val start: Int, val end: Int, val ruleId: Long, val style: HighlightStyle, val applyToTitle: Boolean)
 
     fun match(text: String, rules: List<Rule>): List<RuleMatch> {
         if (text.isEmpty() || rules.isEmpty()) return emptyList()
@@ -34,7 +35,7 @@ object HighlightRuleMatcher {
         while (from <= text.length) {
             val i = text.indexOf(p, from)
             if (i < 0) break
-            out.add(RuleMatch(i, i + p.length, rule.id, rule.style))
+            out.add(RuleMatch(i, i + p.length, rule.id, rule.style, rule.applyToTitle))
             from = i + p.length // 不重叠
         }
     }
@@ -52,7 +53,7 @@ object HighlightRuleMatcher {
             val s = mr.range.first
             val e = mr.range.last + 1
             if (e > s) {
-                out.add(RuleMatch(s, e, rule.id, rule.style))
+                out.add(RuleMatch(s, e, rule.id, rule.style, rule.applyToTitle))
                 idx = e
             } else {
                 idx = s + 1 // 零宽匹配: 步进 1, 不产出

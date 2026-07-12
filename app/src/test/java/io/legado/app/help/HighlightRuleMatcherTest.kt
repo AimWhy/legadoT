@@ -62,4 +62,15 @@ class HighlightRuleMatcherTest {
         assertTrue(HighlightRuleMatcher.match("", listOf(lit(1, "a"))).isEmpty())
         assertTrue(HighlightRuleMatcher.match("abc", emptyList()).isEmpty())
     }
+
+    @Test
+    fun `applyToTitle flows from rule to match`() {
+        val rules = listOf(
+            HighlightRuleMatcher.Rule(1L, "foo", false, HighlightStyle(), applyToTitle = true),
+            HighlightRuleMatcher.Rule(2L, "bar", false, HighlightStyle(), applyToTitle = false),
+        )
+        val matches = HighlightRuleMatcher.match("foo bar", rules)
+        assertEquals(true, matches.first { it.ruleId == 1L }.applyToTitle)
+        assertEquals(false, matches.first { it.ruleId == 2L }.applyToTitle)
+    }
 }
