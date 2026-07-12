@@ -42,11 +42,24 @@ class PresetThemesPreference @JvmOverloads constructor(
     override fun onBindViewHolder(holder: PreferenceViewHolder) {
         super.onBindViewHolder(holder)
         val recycler = holder.findViewById(R.id.recycler_preset) as? RecyclerView ?: return
-        recycler.layoutManager =
-            LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        val lm = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+        recycler.layoutManager = lm
         val adapter = PresetAdapter(context) { refresh() }
         recycler.adapter = adapter
         adapter.setItems(PresetThemes.all)
+        // 点选预设/手动改色会 postEvent(RECREATE) 令 ConfigActivity.recreate() 重建整个设置页,
+        // 横滑列表随之从头重装。用进程级静态位置(扛得住 recreate)恢复上次横滑处,避免"点完跳回开头"。
+        lm.scrollToPositionWithOffset(savedPosition, savedOffset)
+        recycler.clearOnScrollListeners()
+        recycler.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                val pos = lm.findFirstVisibleItemPosition()
+                if (pos != RecyclerView.NO_POSITION) {
+                    savedPosition = pos
+                    savedOffset = lm.findViewByPosition(pos)?.left ?: 0
+                }
+            }
+        })
     }
 
     /**
@@ -56,6 +69,13 @@ class PresetThemesPreference @JvmOverloads constructor(
      * 本身是 protected,子类需要这层 public 包装才能被外部调用方触达)。
      */
     fun refresh() = notifyChanged()
+
+    companion object {
+        // 横滑位置(首个可见项索引 + 其左偏移),进程级静态——跨 ConfigActivity.recreate() 存活,
+        // 令选预设/改色触发重建后横滑列表恢复原处(见 onBindViewHolder)。进程死亡后回 0,可接受。
+        private var savedPosition = 0
+        private var savedOffset = 0
+    }
 
     private class PresetAdapter(
         context: Context,
