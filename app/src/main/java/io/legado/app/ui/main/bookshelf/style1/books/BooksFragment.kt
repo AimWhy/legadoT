@@ -6,7 +6,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.animation.AnimationUtils
-import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.isGone
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
@@ -36,6 +35,7 @@ import io.legado.app.utils.flowWithLifecycleAndDatabaseChangeFirst
 import io.legado.app.utils.observeEvent
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.startActivityForBook
+import io.legado.app.utils.startBookInfoTransition
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -255,14 +255,7 @@ class BooksFragment() : BaseFragment(R.layout.fragment_books),
         val intent = Intent(requireContext(), BookInfoActivity::class.java)
             .putExtra("name", book.name)
             .putExtra("author", book.author)
-        if (cover != null && MotionTokens.enabled) {
-            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                requireActivity(), cover, cover.transitionName
-            )
-            startActivity(intent, options.toBundle())
-        } else {
-            startActivity(intent)
-        }
+        requireActivity().startBookInfoTransition(intent, cover)
     }
 
     override fun isUpdate(bookUrl: String): Boolean {

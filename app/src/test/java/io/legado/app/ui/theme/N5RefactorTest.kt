@@ -28,4 +28,20 @@ class N5RefactorTest {
                     src.contains("onViewAttachedToWindow"))
         }
     }
+
+    @Test
+    fun `cover transition launch is shared`() {
+        val ext = File("src/main/java/io/legado/app/utils/ActivityExtensions.kt").readText()
+        assertTrue("应有共享发射扩展", ext.contains("fun Activity.startBookInfoTransition"))
+        listOf(
+            "ui/main/bookshelf/style1/books/BooksFragment",
+            "ui/main/bookshelf/style2/BookshelfFragment2",
+            "ui/book/search/SearchActivity",
+        ).forEach {
+            val src = File("src/main/java/io/legado/app/$it.kt").readText()
+            assertTrue("$it 应调共享扩展", src.contains("startBookInfoTransition"))
+            assertTrue("$it 不应再内联 makeSceneTransitionAnimation",
+                !src.contains("makeSceneTransitionAnimation"))
+        }
+    }
 }

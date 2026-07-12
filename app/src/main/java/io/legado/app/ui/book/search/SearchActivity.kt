@@ -14,7 +14,6 @@ import android.view.animation.AnimationUtils
 import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.widget.SearchView
-import androidx.core.app.ActivityOptionsCompat
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
@@ -52,6 +51,7 @@ import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
+import io.legado.app.utils.startBookInfoTransition
 import io.legado.app.utils.transaction
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
@@ -484,14 +484,7 @@ class SearchActivity : VMBaseActivity<ActivityBookSearchBinding, SearchViewModel
             .putExtra("name", name)
             .putExtra("author", author)
             .putExtra("bookUrl", bookUrl)
-        if (cover != null && MotionTokens.enabled) {
-            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                this, cover, cover.transitionName
-            )
-            startActivity(intent, options.toBundle())
-        } else {
-            startActivity(intent)
-        }
+        startBookInfoTransition(intent, cover)
     }
 
     /**
