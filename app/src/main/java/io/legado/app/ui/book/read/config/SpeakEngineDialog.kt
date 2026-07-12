@@ -262,8 +262,11 @@ class SpeakEngineDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
                     getItemByLayoutPosition(holder.layoutPosition)?.let { httpTTS ->
                         val id = httpTTS.id.toString()
                         upTts(id)
+                        // 有登录能力就弹登录页,与网页登录源行为一致。
+                        // 不能用 getLoginInfo() 判断"已登录":userInfo_ 只有 loginUi 流程会写入
+                        // (确定时先存后登录,失败也存),一旦写入这里就永远不弹,而登录态失效需要重登。
                         if (!httpTTS.loginUrl.isNullOrBlank()
-                            && httpTTS.getLoginInfo().isNullOrBlank()
+                            || !httpTTS.loginUi.isNullOrEmpty()
                         ) {
                             startActivity<SourceLoginActivity> {
                                 putExtra("type", "httpTts")
