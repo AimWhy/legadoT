@@ -39,12 +39,17 @@ class HeroInfoTest {
             "@+id/iv_cover", "@+id/tv_name", "@+id/tv_author",
             "@+id/fl_action", "@+id/tv_shelf", "@+id/tv_read", "@+id/refresh_layout",
         ).all { xml.contains(it) })
-        // N3a: tv_change_source/tv_change_group/tv_intro 随 ll_info 整体迁入
-        // item_book_info_header.xml(RecyclerView header),不再留在 activity 布局本身
+        // N3a: tv_intro 随 ll_info 迁入 item_book_info_header.xml(RecyclerView header)。
+        // N5-C5: tv_change_source/tv_change_group 等管理三行进一步抽入共享 include
+        // view_book_info_manage_rows.xml(land 与 header 复用),header 侧仅留 <include>。
         val header = File("src/main/res/layout/item_book_info_header.xml").readText()
-        assertTrue("业务 id 保全(header 侧:信息卡+简介)", listOf(
-            "@+id/tv_change_source", "@+id/tv_change_group", "@+id/tv_intro",
+        assertTrue("header 保留简介 id + 管理行 include", listOf(
+            "@+id/tv_intro", "@layout/view_book_info_manage_rows",
         ).all { header.contains(it) })
+        val manageRows = File("src/main/res/layout/view_book_info_manage_rows.xml").readText()
+        assertTrue("管理行共享布局保全换源/换组 id", listOf(
+            "@+id/tv_change_source", "@+id/tv_change_group",
+        ).all { manageRows.contains(it) })
         // 7fb90f943 数据诚实批: 目录区头拆为独立 item_book_info_toc_header,
         // tv_toc_view 的 View Chapters 入口由 iv_toc_open 接管
         val tocHeader = File("src/main/res/layout/item_book_info_toc_header.xml").readText()
@@ -122,7 +127,7 @@ class HeroInfoTest {
         assertTrue("内容区应为 RecyclerView", xml.contains("@+id/recycler_view"))
         assertTrue("内容区 NestedScroll 应退役", !xml.contains("NoChildScrollNestedScrollView"))
         val header = File("src/main/res/layout/item_book_info_header.xml").readText()
-        assertTrue(header.contains("@+id/tv_intro") && header.contains("@+id/tv_change_source"))
+        assertTrue(header.contains("@+id/tv_intro") && header.contains("@layout/view_book_info_manage_rows"))
         assertTrue(
             File("src/main/res/layout/item_book_info_toc_header.xml").readText()
                 .contains("@+id/iv_toc_sort")

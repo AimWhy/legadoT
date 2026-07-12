@@ -49,13 +49,17 @@ class MotionLayerTest {
         val info = File("src/main/java/io/legado/app/ui/book/info/BookInfoActivity.kt").readText()
         assertTrue(info.contains("MaterialContainerTransform"))
         assertTrue(info.contains("book_cover_"))
+        // N5-C3: 三站发射块收敛为 utils/ActivityExtensions.startBookInfoTransition 共享扩展,
+        // makeSceneTransitionAnimation 单份落在扩展内,三站改调该扩展。
         listOf(
             "src/main/java/io/legado/app/ui/main/bookshelf/style1/books/BooksFragment.kt",
             "src/main/java/io/legado/app/ui/main/bookshelf/style2/BookshelfFragment2.kt",
             "src/main/java/io/legado/app/ui/book/search/SearchActivity.kt",
         ).forEach { p ->
-            assertTrue("$p 应带 ActivityOptions 发射", File(p).readText().contains("makeSceneTransitionAnimation"))
+            assertTrue("$p 应调共享容器变换发射扩展", File(p).readText().contains("startBookInfoTransition"))
         }
+        val ext = File("src/main/java/io/legado/app/utils/ActivityExtensions.kt").readText()
+        assertTrue("共享扩展承载场景变换发射", ext.contains("makeSceneTransitionAnimation"))
     }
 
     @Test
