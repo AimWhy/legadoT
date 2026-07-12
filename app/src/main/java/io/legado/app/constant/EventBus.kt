@@ -12,6 +12,7 @@ object EventBus {
     const val AUDIO_CHAPTER = "audioChapter"
     const val READ_ALOUD_DS = "readAloudDs"
     const val READ_ALOUD_CHAPTER = "readAloudChapter"
+    const val READ_ALOUD_FOLLOW = "readAloudFollow"
     const val BATTERY_CHANGED = "batteryChanged"
     const val TIME_CHANGED = "timeChanged"
     const val UP_CONFIG = "upConfig"
