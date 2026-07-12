@@ -32,7 +32,9 @@ data class HighlightRule(
     @ColumnInfo(name = "sortOrder")
     var order: Int = Int.MIN_VALUE,
     var timeoutMillisecond: Long = 3000L,
-    var group: String? = null
+    var group: String? = null,
+    @ColumnInfo(defaultValue = "0")
+    var applyToTitle: Boolean = false
 ) : Parcelable {
 
     override fun equals(other: Any?): Boolean {
