@@ -663,7 +663,7 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
             val ruleRanges = ReadBook.ruleMatchesOfChapter(textChapter)
                 .asSequence()
                 .filter { it.start < pageEnd && it.end > pageBase }
-                .map { HighlightMatcher.Range(it.start, it.end, it.style) }
+                .map { HighlightMatcher.Range(it.start, it.end, it.style, it.applyToTitle) }
                 .toList()
             // 手动高亮排在规则之后 → resolve 按列表序逐通道 merge, 手动压过规则
             val manualRanges = ReadBook.highlightsOfChapter(page.chapterIndex).map {
@@ -674,15 +674,16 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
                 HighlightMatcher.LineSpec(
                     line.charSize,
                     line.columns.map { if (it is TextColumn) it.charData.length else 0 },
-                    line.isParagraphEnd
+                    line.isParagraphEnd,
+                    line.isTitle
                 )
             }
             val colors = HighlightMatcher.resolve(pageBase, lineSpecs, ranges)
             page.lines.forEachIndexed { li, line ->
                 line.columns.forEachIndexed { ci, col ->
                     if (col is TextColumn) {
-                        // 标题行一律不画高亮(规则与手动划线皆跳过)
-                        col.highlightStyle = if (line.isTitle) null else colors[li][ci]
+                        // 标题行过滤已下沉 resolve(仅 applyToTitle 规则可画, 手动划线不画)
+                        col.highlightStyle = colors[li][ci]
                     }
                 }
             }
