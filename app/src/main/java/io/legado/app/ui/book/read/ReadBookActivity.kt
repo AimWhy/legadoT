@@ -2107,20 +2107,30 @@ class ReadBookActivity : BaseReadBookActivity(),
 
     override fun onMenuHide() {
         binding.readView.autoPager.resume()
-        upReadAloudFloatBar()
+        // runMenuOut 在动画开始前即回调 onMenuHide,此刻 readMenu 尚未 invisible
+        // (要等 menuOutListener.onAnimationEnd),故 menuLayoutIsVisible 仍含 readMenu 分量。
+        // 传 menuHiding=true 把正在消失的 readMenu 从判断中剔除,让胶囊在菜单关闭当刻即浮现。
+        upReadAloudFloatBar(menuHiding = true)
     }
 
     /**
      * 朗读悬浮胶囊显隐+施色。朗读运行中且已脱离跟随、且菜单未显示时浮现,
      * 提供"回到朗读位置/从此处朗读"双段快捷(免开朗读弹窗)。
      * 施色随阅读底色自适应(bottomBackground+派生前景),不用全局主题色。
+     * @param menuHiding 由 onMenuHide 传 true:此刻 readMenu 正在播放退出动画尚未置 invisible,
+     *   剔除其分量避免胶囊被"仍可见"的将逝菜单压住;bottomDialog/searchMenu 分量保留。
      */
-    private fun upReadAloudFloatBar() {
+    private fun upReadAloudFloatBar(menuHiding: Boolean = false) {
         val barBinding = binding.readAloudFloatBarContainer
+        val menuVisible = if (menuHiding) {
+            bottomDialog > 0 || binding.searchMenu.bottomMenuVisible
+        } else {
+            menuLayoutIsVisible
+        }
         val show = ReadAloudBarVisibility.shouldShow(
             isRun = BaseReadAloudService.isRun,
             following = ReadAloud.followReadAloudPosition,
-            menuVisible = menuLayoutIsVisible
+            menuVisible = menuVisible
         )
         if (show) {
             val bgColor = bottomBackground
