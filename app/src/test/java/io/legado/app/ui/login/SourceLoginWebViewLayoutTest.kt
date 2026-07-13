@@ -8,6 +8,16 @@ import java.io.File
 class SourceLoginWebViewLayoutTest {
 
     @Test
+    fun `source login text field accepts multiple lines`() {
+        val xml = readProjectFile("src/main/res/layout/item_login_field.xml")
+
+        assertFalse(
+            "Source login text fields must allow newline input",
+            xml.contains("android:maxLines=\"1\"")
+        )
+    }
+
+    @Test
     fun `web view login fragment paints runtime theme background inside transparent login activity`() {
         val xml = readProjectFile("src/main/res/layout/fragment_web_view_login.xml")
         val kt = readProjectFile("src/main/java/io/legado/app/ui/login/WebViewLoginFragment.kt")
