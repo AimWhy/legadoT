@@ -15,6 +15,10 @@ class SourceLoginWebViewLayoutTest {
             "Source login text fields must allow newline input",
             xml.contains("android:maxLines=\"1\"")
         )
+        assertTrue(
+            "Source login text fields must expose a multiline IME enter key",
+            xml.contains("android:inputType=\"textMultiLine\"")
+        )
     }
 
     @Test
