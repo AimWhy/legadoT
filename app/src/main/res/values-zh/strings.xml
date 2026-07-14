@@ -1080,6 +1080,9 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="direct_link_upload_rule">直链上传规则</string>
     <string name="direct_link_upload_rule_summary">用于导出书源书单时生成直链 URL</string>
     <string name="direct_link_upload_config">直链上传配置</string>
+    <string name="shibboleth">口令</string>
+    <string name="shibboleth_expired">导入口令已过期</string>
+    <string name="shibboleth_invalid">导入口令格式错误</string>
     <string name="copy_play_url">拷贝播放 URL</string>
     <string name="set_source_variable">设置源变量</string>
     <string name="set_book_variable">设置书籍变量</string>

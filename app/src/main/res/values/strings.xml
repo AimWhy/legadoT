@@ -1110,6 +1110,9 @@ Placeholders:
     <string name="direct_link_upload_rule">Straight chain upload rule</string>
     <string name="direct_link_upload_rule_summary">Used to generate direct link url when exporting book source, book list</string>
     <string name="direct_link_upload_config">Direct link upload configuration</string>
+    <string name="shibboleth">Token</string>
+    <string name="shibboleth_expired">The import token has expired</string>
+    <string name="shibboleth_invalid">Invalid import token</string>
     <string name="copy_play_url">Copy Play Url</string>
     <string name="set_source_variable">Set source variable</string>
     <string name="set_book_variable">Set book variable</string>
