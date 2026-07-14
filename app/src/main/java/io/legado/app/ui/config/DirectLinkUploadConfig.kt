@@ -26,6 +26,7 @@ class DirectLinkUploadConfig : BaseDialogFragment(R.layout.dialog_direct_link_up
     Toolbar.OnMenuItemClickListener {
 
     private val binding by viewBinding(DialogDirectLinkUploadConfigBinding::bind)
+    private var expiryDate = 0
 
     override fun onStart() {
         super.onStart()
@@ -75,6 +76,7 @@ class DirectLinkUploadConfig : BaseDialogFragment(R.layout.dialog_direct_link_up
         binding.editDownloadUrlRule.setText(rule.downloadUrlRule)
         binding.editSummary.setText(rule.summary)
         binding.cbCompress.isChecked = rule.compress
+        expiryDate = rule.expiryDate
     }
 
     private fun getRule(): DirectLinkUpload.Rule? {
@@ -94,7 +96,7 @@ class DirectLinkUploadConfig : BaseDialogFragment(R.layout.dialog_direct_link_up
             toastOnUi("注释不能为空")
             return null
         }
-        return DirectLinkUpload.Rule(uploadUrl, downloadUrlRule, summary, compress)
+        return DirectLinkUpload.Rule(uploadUrl, downloadUrlRule, summary, compress, expiryDate)
     }
 
     private fun importDefault() {
