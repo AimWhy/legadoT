@@ -39,7 +39,7 @@ object Shibboleth {
     private const val SUFFIX_MARKER = "¥"
     private const val END_MARKER = "^"
     private const val PREFIX = "复制口令到阅读导入"
-    private const val SUFFIX = "Sigma^"
+    private const val OUTPUT_CUSTOM_WORD = "LegadoT"
 
     private val mappings = linkedMapOf(
         "https://" to listOf("#L:"),
@@ -100,7 +100,8 @@ object Shibboleth {
             }
         }
         val expiry = if (expiresAtMillis == 0L) "0" else expiresAtMillis.toString().take(7)
-        return "$PREFIX$encodedUrl$TYPE_MARKER${type.code}$EXPIRY_MARKER$expiry$SUFFIX_MARKER$SUFFIX"
+        return "$PREFIX$encodedUrl$TYPE_MARKER${type.code}$EXPIRY_MARKER$expiry" +
+            "$SUFFIX_MARKER$OUTPUT_CUSTOM_WORD$END_MARKER"
     }
 
     fun parse(
@@ -114,10 +115,11 @@ object Shibboleth {
         val typeStart = text.indexOf(TYPE_MARKER, urlStart)
         val expiryStart = if (typeStart >= 0) text.indexOf(EXPIRY_MARKER, typeStart + 1) else -1
         val suffixStart = if (expiryStart >= 0) text.indexOf(SUFFIX_MARKER, expiryStart + 1) else -1
+        val end = text.indexOf(END_MARKER, suffixStart + 1)
         if (typeStart <= urlStart ||
             expiryStart <= typeStart + TYPE_MARKER.length ||
             suffixStart <= expiryStart + EXPIRY_MARKER.length ||
-            !text.startsWith(SUFFIX, suffixStart + SUFFIX_MARKER.length)
+            end < suffixStart + SUFFIX_MARKER.length
         ) {
             return ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED)
         }

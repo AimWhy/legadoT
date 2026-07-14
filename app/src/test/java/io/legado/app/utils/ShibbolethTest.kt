@@ -25,11 +25,11 @@ class ShibbolethTest {
     }
 
     @Test
-    fun `book source permanent token retains sibling envelope`() {
+    fun `book source permanent token uses LegadoT envelope`() {
         val encoded = Shibboleth.encode(mappingHeavyUrl, ShibbolethType.BOOK_SOURCE, 0, fixedTime)!!
 
         assertTrue(encoded.startsWith("复制口令到阅读导入#L:"))
-        assertTrue(encoded.contains("！sy©0¥Sigma^"))
+        assertTrue(encoded.contains("！sy©0¥LegadoT^"))
     }
 
     @Test
@@ -85,18 +85,20 @@ class ShibbolethTest {
     }
 
     @Test
-    fun `suffix must be exact literal immediately after yen marker`() {
-        listOf(
-            "复制口令到阅读导入#L:example电🛜1！sy©0¥^",
-            "复制口令到阅读导入#L:example电🛜1！sy©0¥Omega^",
-            "复制口令到阅读导入#L:example电🛜1！sy©0¥Sig^",
-            "复制口令到阅读导入#L:example电🛜1！sy©0¥amgiS^",
-        ).forEach { text ->
-            assertEquals(
-                ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED),
-                Shibboleth.parse(text, fixedTime),
-            )
+    fun `parser accepts arbitrary custom tail marker`() {
+        listOf("Sigma", "LegadoT", "Omega", "").forEach { marker ->
+            val text = "复制口令到阅读导入#L:example电🛜1！sy©0¥$marker^"
+            assertTrue(Shibboleth.parse(text, fixedTime) is ShibbolethParseResult.Valid)
         }
+    }
+
+    @Test
+    fun `tail marker still requires closing caret`() {
+        val text = "复制口令到阅读导入#L:example电🛜1！sy©0¥LegadoT"
+        assertEquals(
+            ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED),
+            Shibboleth.parse(text, fixedTime),
+        )
     }
 
     @Test
@@ -158,7 +160,10 @@ class ShibbolethTest {
         )
 
         fixtures.forEach { (type, fixture) ->
-            assertEquals(fixture, Shibboleth.encode(mappingHeavyUrl, type, expiresAt, fixedTime))
+            assertEquals(
+                fixture.replace("¥Sigma^", "¥LegadoT^"),
+                Shibboleth.encode(mappingHeavyUrl, type, expiresAt, fixedTime),
+            )
             assertEquals(
                 ShibbolethParseResult.Valid(ShibbolethToken(mappingHeavyUrl, type, expiresAt)),
                 Shibboleth.parse(fixture, fixedTime),
