@@ -85,6 +85,23 @@ class ShibbolethTest {
     }
 
     @Test
+    fun `truncated token fields are invalid without throwing`() {
+        val truncated = listOf(
+            "复制口令到阅读导入#L:",
+            "复制口令到阅读导入#L:example。com！",
+            "复制口令到阅读导入#L:example。com！sy©",
+            "复制口令到阅读导入#L:example。com！sy©1234567¥",
+        )
+
+        truncated.forEach {
+            assertEquals(
+                ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED),
+                Shibboleth.parse(it),
+            )
+        }
+    }
+
+    @Test
     fun `unknown type is invalid`() {
         val text = "复制口令到阅读导入#L:example电🛜1！xx©0¥Sigma^"
 

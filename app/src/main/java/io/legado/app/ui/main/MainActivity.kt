@@ -36,6 +36,13 @@ import io.legado.app.lib.theme.elevation
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.about.CrashLogsDialog
+import io.legado.app.ui.association.ImportBookSourceDialog
+import io.legado.app.ui.association.ImportDictRuleDialog
+import io.legado.app.ui.association.ImportHttpTtsDialog
+import io.legado.app.ui.association.ImportReplaceRuleDialog
+import io.legado.app.ui.association.ImportRssSourceDialog
+import io.legado.app.ui.association.ImportTxtTocRuleDialog
+import io.legado.app.ui.autoTask.ImportAutoTaskDialog
 import io.legado.app.ui.main.bookshelf.BaseBookshelfFragment
 import io.legado.app.ui.main.bookshelf.style1.BookshelfFragment1
 import io.legado.app.ui.main.bookshelf.style2.BookshelfFragment2
@@ -44,7 +51,12 @@ import io.legado.app.ui.main.my.MyFragment
 import io.legado.app.ui.main.rss.RssFragment
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.Shibboleth
+import io.legado.app.utils.ShibbolethParseResult
+import io.legado.app.utils.ShibbolethType
+import io.legado.app.utils.clearClip
 import io.legado.app.utils.dpToPx
+import io.legado.app.utils.getClipText
 import io.legado.app.utils.observeEvent
 import io.legado.app.utils.reduceDragSensitivity
 import io.legado.app.utils.setEdgeEffectColor
@@ -124,6 +136,11 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         lifecycleScope.launch {
             //隐私协议
             if (!privacyPolicy()) return@launch
+            if (savedInstanceState == null) {
+                binding.viewPagerMain.postDelayed(1500) {
+                    importShibbolethFromClipboard()
+                }
+            }
             //版本更新
             upVersion()
             //设置本地密码
@@ -140,6 +157,28 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             }
             binding.viewPagerMain.postDelayed(3000) {
                 viewModel.postLoad()
+            }
+        }
+    }
+
+    private fun importShibbolethFromClipboard() {
+        val text = getClipText() ?: return
+        when (val parsed = Shibboleth.parse(text)) {
+            ShibbolethParseResult.NotShibboleth -> Unit
+            is ShibbolethParseResult.Invalid -> toastOnUi(R.string.shibboleth_invalid)
+            is ShibbolethParseResult.Expired -> toastOnUi(R.string.shibboleth_expired)
+            is ShibbolethParseResult.Valid -> {
+                clearClip()
+                val url = parsed.token.url
+                when (parsed.token.type) {
+                    ShibbolethType.BOOK_SOURCE -> showDialogFragment(ImportBookSourceDialog(url))
+                    ShibbolethType.RSS_SOURCE -> showDialogFragment(ImportRssSourceDialog(url))
+                    ShibbolethType.DICT_RULE -> showDialogFragment(ImportDictRuleDialog(url))
+                    ShibbolethType.REPLACE_RULE -> showDialogFragment(ImportReplaceRuleDialog(url))
+                    ShibbolethType.TOC_RULE -> showDialogFragment(ImportTxtTocRuleDialog(url))
+                    ShibbolethType.TTS_RULE -> showDialogFragment(ImportHttpTtsDialog(url))
+                    ShibbolethType.AUTO_TASK -> showDialogFragment(ImportAutoTaskDialog(url))
+                }
             }
         }
     }
