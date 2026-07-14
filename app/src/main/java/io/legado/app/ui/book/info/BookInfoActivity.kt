@@ -19,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
@@ -105,6 +106,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.ceil
 
+private const val INTRO_COLLAPSED_LINES = 4
+
 class BookInfoActivity :
     VMBaseActivity<ActivityBookInfoBinding, BookInfoViewModel>(),
     GroupSelectDialog.CallBack,
@@ -174,6 +177,7 @@ class BookInfoActivity :
     // headerBinding/tocHeaderBinding 可能晚于 viewModel 数据就绪才 inflate(addHeaderView 异步),
     // 故 bindInfoHeader/upTocHeader 内都做"回填当前已有数据"处理,showBook/upChapterList 侧也留 null-safe 更新。
     private var headerBinding: ItemBookInfoHeaderBinding? = null
+    private var introExpanded = false
     private var tocHeaderBinding: ItemBookInfoTocHeaderBinding? = null
     private var tocReversed = true   // 默认倒序(最新章在前)
     private var fullChapters: List<BookChapter> = emptyList()
@@ -493,12 +497,16 @@ class BookInfoActivity :
         headerBinding?.let { h ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, h.vIntroDivider, book)
+            upIntro(h.tvIntro, h.vIntroDivider, h.tvIntroExpand, book)
             upReadStatus(h, book)
         }
         manageRows?.tvOrigin?.text = getString(R.string.origin_show, book.originName)
         manageRows?.tvLasted?.text = getString(R.string.lasted_show, book.latestChapterTitle)
-        tvIntro?.let { upIntro(it, null, book) }
+        tvIntro?.let { introView ->
+            tvIntroExpand?.let { expandView ->
+                upIntro(introView, vIntroDivider, expandView, book)
+            }
+        }
         llToc?.visible(!book.isWebFile)
         menuCustomBtn?.isVisible = viewModel.bookSource?.customButton == true
         upTvBookshelf()
@@ -508,15 +516,72 @@ class BookInfoActivity :
 
     /**
      * 简介可见性:书源常不返回简介 → getDisplayIntro() 为空时 tv_intro(连同其下分隔线)整段 gone,
-     * 不留 minHeight 占位空白。divider 仅 portrait header 有(land 传 null)。
+     * 不留 minHeight 占位空白。divider 由 portrait/landscape 各自布局按需提供。
      */
-    private fun upIntro(tvIntro: TextView, divider: View?, book: Book) {
+    private fun upIntro(
+        tvIntro: TextView,
+        divider: View?,
+        tvIntroExpand: TextView,
+        book: Book,
+    ) {
         val intro = book.getDisplayIntro()
         val hasIntro = !intro.isNullOrBlank()
         tvIntro.text = intro
-        // 用 isVisible(false→GONE) 而非 visible()(false→INVISIBLE),空简介才真正收起不占高
         tvIntro.isVisible = hasIntro
         divider?.isVisible = hasIntro
+        if (!hasIntro) {
+            tvIntroExpand.isVisible = false
+            return
+        }
+
+        tvIntro.maxLines = if (introExpanded) Int.MAX_VALUE else INTRO_COLLAPSED_LINES
+        tvIntro.ellipsize = if (introExpanded) null else TextUtils.TruncateAt.END
+        val expectedText = intro
+        val expectedExpanded = introExpanded
+        tvIntro.doOnLayout {
+            if (tvIntro.text.toString() != expectedText ||
+                introExpanded != expectedExpanded
+            ) {
+                return@doOnLayout
+            }
+            val canToggle = if (expectedExpanded) {
+                tvIntro.lineCount > INTRO_COLLAPSED_LINES
+            } else {
+                val textLayout = tvIntro.layout
+                if (textLayout == null || textLayout.lineCount == 0) {
+                    false
+                } else if (textLayout.lineCount > INTRO_COLLAPSED_LINES) {
+                    true
+                } else {
+                    val lastLine = textLayout.lineCount - 1
+                    textLayout.getEllipsisCount(lastLine) > 0 ||
+                        textLayout.getLineEnd(lastLine) < tvIntro.text.length
+                }
+            }
+            tvIntroExpand.isVisible = canToggle
+            if (canToggle) {
+                tvIntroExpand.setText(
+                    if (expectedExpanded) {
+                        R.string.book_intro_collapse
+                    } else {
+                        R.string.book_intro_expand
+                    }
+                )
+            }
+        }
+    }
+
+    private fun bindIntroToggle(
+        tvIntro: TextView,
+        divider: View?,
+        tvIntroExpand: TextView,
+    ) {
+        tvIntroExpand.setOnClickListener {
+            introExpanded = !introExpanded
+            viewModel.getBook(false)?.let { book ->
+                upIntro(tvIntro, divider, tvIntroExpand, book)
+            }
+        }
     }
 
     /**
@@ -557,6 +622,7 @@ class BookInfoActivity :
             }
         }
         h.tvIntro.revealOnFocusHint = false
+        bindIntroToggle(h.tvIntro, h.vIntroDivider, h.tvIntroExpand)
         h.manageRows.tvOrigin.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 if (book.isLocal) return@let
@@ -588,7 +654,7 @@ class BookInfoActivity :
         viewModel.bookData.value?.let { book ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, h.vIntroDivider, book)
+            upIntro(h.tvIntro, h.vIntroDivider, h.tvIntroExpand, book)
             upReadStatus(h, book)
         }
     }
@@ -819,6 +885,11 @@ class BookInfoActivity :
                         }
                     }
                 }
+            }
+        }
+        tvIntro?.let { introView ->
+            tvIntroExpand?.let { expandView ->
+                bindIntroToggle(introView, vIntroDivider, expandView)
             }
         }
         manageRows?.tvOrigin?.setOnClickListener {

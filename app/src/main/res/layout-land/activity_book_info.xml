@@ -181,23 +181,44 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content" />
 
+                <View
+                    android:id="@+id/v_intro_divider"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginBottom="@dimen/space_s"
+                    android:background="@color/divider" />
+
                 <io.legado.app.ui.widget.text.ScrollTextView
                     android:id="@+id/tv_intro"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
                     android:clickable="true"
+                    android:ellipsize="end"
                     android:focusable="true"
+                    android:maxLines="4"
                     android:minHeight="48dp"
-                    android:paddingLeft="8dp"
-                    android:paddingBottom="8dp"
+                    android:paddingHorizontal="@dimen/space_s"
                     android:text="@string/book_intro"
-                    app:skin_textColor="onSurfaceVariant"
-                    android:textColor="@color/secondaryText"
                     android:textIsSelectable="true"
                     android:textSize="@dimen/text_body"
                     android:visibility="visible"
+                    app:skin_textColor="onSurfaceVariant"
+                    android:textColor="@color/secondaryText"
                     tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+                <io.legado.app.ui.widget.text.AccentTextView
+                    android:id="@+id/tv_intro_expand"
+                    android:layout_width="wrap_content"
+                    android:layout_height="40dp"
+                    android:layout_gravity="end"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:paddingHorizontal="@dimen/space_s"
+                    android:text="@string/book_intro_expand"
+                    android:textSize="@dimen/text_caption_l"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
 
                 <LinearLayout
                     android:id="@+id/ll_toc"

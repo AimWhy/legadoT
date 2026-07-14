@@ -11,7 +11,7 @@
     android:paddingTop="@dimen/space_l"
     android:paddingBottom="@dimen/space_s">
     <!-- N: 数据诚实重排——书源常缺"字数/连载状态"等字段(有源站也不返回),故不做固定名片;
-         顶部只放本地可靠数据"阅读进度"(未读整行隐藏),下接简介、管理项、目录入口。id 全部沿用。 -->
+         顶部依次放本地可靠数据"阅读进度"(未读整行隐藏)、管理项、分隔线和简介。id 全部沿用。 -->
 
     <!-- 阅读进度(主角,本地数据可靠):已读百分比 + 当前章节;readProgress()==null(未读)时整行 gone,
          由 BookInfoActivity.showBook/bindInfoHeader 填 tv_read_status 文本与 ll_read_status 可见性。 -->
@@ -52,31 +52,6 @@
 
     </LinearLayout>
 
-    <!-- 简介(前置:读者最想看的,紧跟名片)。书源常不返回简介 → 内容为空时整段 gone(连同下方分隔线),
-         由 BookInfoActivity.showBook/bindInfoHeader 按 getDisplayIntro() 是否为空控制可见性,不留占位空白。 -->
-    <io.legado.app.ui.widget.text.ScrollTextView
-        android:id="@+id/tv_intro"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:focusable="true"
-        android:paddingHorizontal="@dimen/space_xs"
-        android:paddingBottom="@dimen/space_s"
-        android:textIsSelectable="true"
-        android:textSize="@dimen/text_body"
-        app:skin_textColor="onSurfaceVariant"
-        android:textColor="@color/secondaryText"
-        tools:text="@string/book_intro"
-        tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-    <View
-        android:id="@+id/v_intro_divider"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginTop="@dimen/space_s"
-        android:layout_marginBottom="@dimen/space_xs"
-        android:background="@color/divider" />
-
     <!-- N5 C5a: 管理三行块(书源/最新/分组)抽为共享 include,与 land activity_book_info.xml
          同源(见 view_book_info_manage_rows.xml 头注)。需要自带 id 才能让 include 的子 view id
          在 ItemBookInfoHeaderBinding 里展开为可访问字段(空 id 的 include 不展开)。 -->
@@ -85,6 +60,44 @@
         layout="@layout/view_book_info_manage_rows"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
+
+    <View
+        android:id="@+id/v_intro_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginBottom="@dimen/space_s"
+        android:background="@color/divider" />
+
+    <!-- 简介。书源常不返回简介，由 Task 2 统一控制简介区域可见性和展开行为。 -->
+    <io.legado.app.ui.widget.text.ScrollTextView
+        android:id="@+id/tv_intro"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clickable="true"
+        android:ellipsize="end"
+        android:focusable="true"
+        android:maxLines="4"
+        android:paddingHorizontal="@dimen/space_xs"
+        android:textIsSelectable="true"
+        android:textSize="@dimen/text_body"
+        app:skin_textColor="onSurfaceVariant"
+        android:textColor="@color/secondaryText"
+        tools:text="@string/book_intro"
+        tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+    <io.legado.app.ui.widget.text.AccentTextView
+        android:id="@+id/tv_intro_expand"
+        android:layout_width="wrap_content"
+        android:layout_height="40dp"
+        android:layout_gravity="end"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/space_s"
+        android:text="@string/book_intro_expand"
+        android:textSize="@dimen/text_caption_l"
+        android:visibility="gone"
+        tools:visibility="visible" />
 
     <!-- N: 原 ll_toc(Chapters:… / View Chapters)已移除——与下方内嵌目录头(item_book_info_toc_header)
          的"Chapters: N / 排序"信息重复。打开完整目录页(搜索/分卷)的入口改由目录头承担(点整行)。 -->
