@@ -16,7 +16,9 @@ import io.legado.app.data.entities.DictRule
 import io.legado.app.databinding.ActivityDictRuleBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.DirectLinkUpload
+import io.legado.app.help.ShibbolethShare
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.dialogs.shibbolethButton
 import io.legado.app.ui.association.ImportDictRuleDialog
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.qrcode.QrCodeResult
@@ -25,6 +27,8 @@ import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.ui.widget.recycler.setupManagePage
 import io.legado.app.utils.ACache
 import io.legado.app.utils.GSON
+import io.legado.app.utils.Shibboleth
+import io.legado.app.utils.ShibbolethType
 import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.launch
 import io.legado.app.utils.sendToClip
@@ -57,17 +61,28 @@ class DictRuleActivity : VMBaseActivity<ActivityDictRuleBinding, DictRuleViewMod
     }
     private val exportResult = registerForActivityResult(HandleFileContract()) {
         it.uri?.let { uri ->
+            val url = uri.toString()
             alert(R.string.export_success) {
-                if (uri.toString().isAbsUrl()) {
+                if (url.isAbsUrl()) {
                     setMessage(DirectLinkUpload.getSummary())
+                }
+                if (Shibboleth.canEncode(url)) {
+                    shibbolethButton {
+                        ShibbolethShare.show(
+                            this@DictRuleActivity,
+                            layoutInflater,
+                            url,
+                            ShibbolethType.DICT_RULE,
+                        )
+                    }
                 }
                 val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
                     editView.hint = getString(R.string.path)
-                    editView.setText(uri.toString())
+                    editView.setText(url)
                 }
                 customView { alertBinding.root }
                 okButton {
-                    sendToClip(uri.toString())
+                    sendToClip(url)
                 }
             }
         }

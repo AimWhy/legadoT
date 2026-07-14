@@ -21,9 +21,11 @@ import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemHttpTtsBinding
 import io.legado.app.help.DirectLinkUpload
+import io.legado.app.help.ShibbolethShare
 import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.dialogs.shibbolethButton
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
@@ -32,6 +34,8 @@ import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.utils.ACache
 import io.legado.app.utils.GSON
+import io.legado.app.utils.Shibboleth
+import io.legado.app.utils.ShibbolethType
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.gone
@@ -74,17 +78,28 @@ class SpeakEngineDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
     }
     private val exportDirResult = registerForActivityResult(HandleFileContract()) {
         it.uri?.let { uri ->
+            val url = uri.toString()
             alert(R.string.export_success) {
-                if (uri.toString().isAbsUrl()) {
+                if (url.isAbsUrl()) {
                     setMessage(DirectLinkUpload.getSummary())
+                }
+                if (Shibboleth.canEncode(url)) {
+                    shibbolethButton {
+                        ShibbolethShare.show(
+                            requireContext(),
+                            layoutInflater,
+                            url,
+                            ShibbolethType.TTS_RULE,
+                        )
+                    }
                 }
                 val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
                     editView.hint = getString(R.string.path)
-                    editView.setText(uri.toString())
+                    editView.setText(url)
                 }
                 customView { alertBinding.root }
                 okButton {
-                    requireContext().sendToClip(uri.toString())
+                    requireContext().sendToClip(url)
                 }
             }
         }

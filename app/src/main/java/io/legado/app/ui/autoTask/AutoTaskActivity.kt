@@ -11,7 +11,9 @@ import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.databinding.ActivityAutoTaskBinding
 import io.legado.app.databinding.DialogEditTextBinding
+import io.legado.app.help.ShibbolethShare
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.dialogs.shibbolethButton
 import io.legado.app.lib.theme.toolbarTextColor
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
@@ -19,6 +21,8 @@ import io.legado.app.help.DirectLinkUpload
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.isAbsUrl
 import io.legado.app.utils.CronSchedule
+import io.legado.app.utils.Shibboleth
+import io.legado.app.utils.ShibbolethType
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.ACache
@@ -55,17 +59,28 @@ class AutoTaskActivity : VMBaseActivity<ActivityAutoTaskBinding, AutoTaskViewMod
     }
     private val exportResult = registerForActivityResult(HandleFileContract()) {
         it.uri?.let { uri ->
+            val url = uri.toString()
             alert(R.string.export_success) {
-                if (uri.toString().isAbsUrl()) {
+                if (url.isAbsUrl()) {
                     setMessage(DirectLinkUpload.getSummary())
+                }
+                if (Shibboleth.canEncode(url)) {
+                    shibbolethButton {
+                        ShibbolethShare.show(
+                            this@AutoTaskActivity,
+                            layoutInflater,
+                            url,
+                            ShibbolethType.AUTO_TASK,
+                        )
+                    }
                 }
                 val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
                     editView.hint = getString(R.string.path)
-                    editView.setText(uri.toString())
+                    editView.setText(url)
                 }
                 customView { alertBinding.root }
                 okButton {
-                    sendToClip(uri.toString())
+                    sendToClip(url)
                 }
             }
         }
