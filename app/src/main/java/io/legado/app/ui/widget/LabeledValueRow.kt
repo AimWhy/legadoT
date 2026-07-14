@@ -1,6 +1,7 @@
 package io.legado.app.ui.widget
 
 import android.content.Context
+import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.Gravity
@@ -18,12 +19,36 @@ class LabeledValueRow @JvmOverloads constructor(
 ) : LinearLayout(context, attrs) {
 
     private val binding = ViewLabeledValueRowBinding.inflate(LayoutInflater.from(context), this)
+    private var valueWidthFraction: Float? = null
 
     var value: CharSequence?
         get() = binding.tvValue.text
         set(v) {
             binding.tvValue.text = v
         }
+
+    fun constrainValueWidth(maxRowFraction: Float = 0.5f) {
+        require(maxRowFraction > 0f)
+        valueWidthFraction = maxRowFraction.coerceAtMost(0.5f)
+        binding.tvValue.isSingleLine = true
+        binding.tvValue.ellipsize = TextUtils.TruncateAt.END
+        updateValueMaxWidth(width)
+    }
+
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        updateValueMaxWidth(right - left)
+    }
+
+    private fun updateValueMaxWidth(rowWidth: Int) {
+        val fraction = valueWidthFraction ?: return
+        if (rowWidth > 0) {
+            val targetWidth = (rowWidth * fraction).toInt()
+            if (binding.tvValue.maxWidth != targetWidth) {
+                binding.tvValue.maxWidth = targetWidth
+            }
+        }
+    }
 
     init {
         orientation = HORIZONTAL
