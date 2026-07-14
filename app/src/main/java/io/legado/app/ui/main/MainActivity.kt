@@ -11,6 +11,7 @@ import androidx.activity.viewModels
 import androidx.core.view.get
 import androidx.core.view.postDelayed
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
@@ -162,23 +163,29 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     }
 
     private fun importShibbolethFromClipboard() {
+        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) ||
+            supportFragmentManager.isStateSaved
+        ) {
+            return
+        }
         val text = getClipText() ?: return
         when (val parsed = Shibboleth.parse(text)) {
             ShibbolethParseResult.NotShibboleth -> Unit
             is ShibbolethParseResult.Invalid -> toastOnUi(R.string.shibboleth_invalid)
             is ShibbolethParseResult.Expired -> toastOnUi(R.string.shibboleth_expired)
             is ShibbolethParseResult.Valid -> {
-                clearClip()
                 val url = parsed.token.url
-                when (parsed.token.type) {
-                    ShibbolethType.BOOK_SOURCE -> showDialogFragment(ImportBookSourceDialog(url))
-                    ShibbolethType.RSS_SOURCE -> showDialogFragment(ImportRssSourceDialog(url))
-                    ShibbolethType.DICT_RULE -> showDialogFragment(ImportDictRuleDialog(url))
-                    ShibbolethType.REPLACE_RULE -> showDialogFragment(ImportReplaceRuleDialog(url))
-                    ShibbolethType.TOC_RULE -> showDialogFragment(ImportTxtTocRuleDialog(url))
-                    ShibbolethType.TTS_RULE -> showDialogFragment(ImportHttpTtsDialog(url))
-                    ShibbolethType.AUTO_TASK -> showDialogFragment(ImportAutoTaskDialog(url))
+                val dialog = when (parsed.token.type) {
+                    ShibbolethType.BOOK_SOURCE -> ImportBookSourceDialog(url)
+                    ShibbolethType.RSS_SOURCE -> ImportRssSourceDialog(url)
+                    ShibbolethType.DICT_RULE -> ImportDictRuleDialog(url)
+                    ShibbolethType.REPLACE_RULE -> ImportReplaceRuleDialog(url)
+                    ShibbolethType.TOC_RULE -> ImportTxtTocRuleDialog(url)
+                    ShibbolethType.TTS_RULE -> ImportHttpTtsDialog(url)
+                    ShibbolethType.AUTO_TASK -> ImportAutoTaskDialog(url)
                 }
+                showDialogFragment(dialog)
+                clearClip()
             }
         }
     }

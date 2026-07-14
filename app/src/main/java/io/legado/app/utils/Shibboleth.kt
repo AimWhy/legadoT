@@ -67,7 +67,9 @@ object Shibboleth {
         listOf(TYPE_MARKER, EXPIRY_MARKER, SUFFIX_MARKER, END_MARKER)
 
     fun canEncode(url: String): Boolean =
-        isValidUrl(url, httpsOnly = true) && unsafeUrlTokens.none(url::contains)
+        url.startsWith("https://") &&
+            isValidUrl(url, httpsOnly = true) &&
+            unsafeUrlTokens.none(url::contains)
 
     fun encode(
         url: String,
@@ -112,11 +114,10 @@ object Shibboleth {
         val typeStart = text.indexOf(TYPE_MARKER, urlStart)
         val expiryStart = if (typeStart >= 0) text.indexOf(EXPIRY_MARKER, typeStart + 1) else -1
         val suffixStart = if (expiryStart >= 0) text.indexOf(SUFFIX_MARKER, expiryStart + 1) else -1
-        val end = if (suffixStart >= 0) text.indexOf(END_MARKER, suffixStart + 1) else -1
         if (typeStart <= urlStart ||
             expiryStart <= typeStart + TYPE_MARKER.length ||
             suffixStart <= expiryStart + EXPIRY_MARKER.length ||
-            end < suffixStart + SUFFIX_MARKER.length
+            !text.startsWith(SUFFIX, suffixStart + SUFFIX_MARKER.length)
         ) {
             return ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED)
         }

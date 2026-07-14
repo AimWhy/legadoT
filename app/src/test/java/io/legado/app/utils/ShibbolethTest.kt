@@ -85,6 +85,21 @@ class ShibbolethTest {
     }
 
     @Test
+    fun `suffix must be exact literal immediately after yen marker`() {
+        listOf(
+            "复制口令到阅读导入#L:example电🛜1！sy©0¥^",
+            "复制口令到阅读导入#L:example电🛜1！sy©0¥Omega^",
+            "复制口令到阅读导入#L:example电🛜1！sy©0¥Sig^",
+            "复制口令到阅读导入#L:example电🛜1！sy©0¥amgiS^",
+        ).forEach { text ->
+            assertEquals(
+                ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED),
+                Shibboleth.parse(text, fixedTime),
+            )
+        }
+    }
+
+    @Test
     fun `truncated token fields are invalid without throwing`() {
         val truncated = listOf(
             "复制口令到阅读导入#L:",
@@ -115,9 +130,40 @@ class ShibbolethTest {
     fun `encoder accepts only valid https URLs`() {
         assertTrue(Shibboleth.canEncode("https://example.com/path"))
         assertFalse(Shibboleth.canEncode("http://example.com/path"))
+        assertFalse(Shibboleth.canEncode("HTTPS://example.com/path"))
+        assertFalse(Shibboleth.canEncode("Https://example.com/path"))
         assertFalse(Shibboleth.canEncode("https:///missing-host"))
         assertNull(Shibboleth.encode("http://example.com", ShibbolethType.BOOK_SOURCE, 0, fixedTime))
+        assertNull(Shibboleth.encode("HTTPS://example.com", ShibbolethType.BOOK_SOURCE, 0, fixedTime))
+        assertNull(Shibboleth.encode("Https://example.com", ShibbolethType.BOOK_SOURCE, 0, fixedTime))
         assertNull(Shibboleth.encode("not a url", ShibbolethType.BOOK_SOURCE, 0, fixedTime))
+    }
+
+    @Test
+    fun `fixed donor fixture encodes and decodes all sibling compatible types`() {
+        val expiresAt = 1_800_000_000_000L
+        val fixtures = mapOf(
+            ShibbolethType.BOOK_SOURCE to
+                "复制口令到阅读导入#L:example店🛜1刚path钢file店串?key=🕓拜2F五！sy©1800000¥Sigma^",
+            ShibbolethType.RSS_SOURCE to
+                "复制口令到阅读导入#L:example店🛜1刚path钢file店串?key=🕓拜2F五！dy©1800000¥Sigma^",
+            ShibbolethType.DICT_RULE to
+                "复制口令到阅读导入#L:example店🛜1刚path钢file店串?key=🕓拜2F五！zd©1800000¥Sigma^",
+            ShibbolethType.REPLACE_RULE to
+                "复制口令到阅读导入#L:example店🛜1刚path钢file店串?key=🕓拜2F五！jh©1800000¥Sigma^",
+            ShibbolethType.TOC_RULE to
+                "复制口令到阅读导入#L:example店🛜1刚path钢file店串?key=🕓拜2F五！ml©1800000¥Sigma^",
+            ShibbolethType.TTS_RULE to
+                "复制口令到阅读导入#L:example店🛜1刚path钢file店串?key=🕓拜2F五！ld©1800000¥Sigma^",
+        )
+
+        fixtures.forEach { (type, fixture) ->
+            assertEquals(fixture, Shibboleth.encode(mappingHeavyUrl, type, expiresAt, fixedTime))
+            assertEquals(
+                ShibbolethParseResult.Valid(ShibbolethToken(mappingHeavyUrl, type, expiresAt)),
+                Shibboleth.parse(fixture, fixedTime),
+            )
+        }
     }
 
     @Test
