@@ -54,6 +54,19 @@ class ShibbolethTest {
     }
 
     @Test
+    fun `raw HTTP sibling envelope parses as valid`() {
+        val url = "http://example.com/path/file.json?key=4%2F5"
+        val text = "复制口令到阅读导入$url！sy©0¥Sigma^"
+
+        assertEquals(
+            ShibbolethParseResult.Valid(
+                ShibbolethToken(url, ShibbolethType.BOOK_SOURCE, 0),
+            ),
+            Shibboleth.parse(text, fixedTime),
+        )
+    }
+
+    @Test
     fun `missing or disordered delimiters are invalid without throwing`() {
         val malformed = listOf(
             "复制口令到阅读导入#L:example.com",
@@ -88,6 +101,34 @@ class ShibbolethTest {
         assertFalse(Shibboleth.canEncode("https:///missing-host"))
         assertNull(Shibboleth.encode("http://example.com", ShibbolethType.BOOK_SOURCE, 0, fixedTime))
         assertNull(Shibboleth.encode("not a url", ShibbolethType.BOOK_SOURCE, 0, fixedTime))
+    }
+
+    @Test
+    fun `encoder rejects mapping literals and structural delimiters`() {
+        val unsafeUrls = listOf(
+            "https://example.com/path/电",
+            "https://example.com/path！value",
+            "https://example.com/path©value",
+            "https://example.com/path¥value",
+            "https://example.com/path^value",
+        )
+
+        unsafeUrls.forEach { url ->
+            assertFalse(Shibboleth.canEncode(url))
+            assertNull(Shibboleth.encode(url, ShibbolethType.BOOK_SOURCE, 0, fixedTime))
+        }
+    }
+
+    @Test
+    fun `encoder rejects positive expiry shorter than seven digits`() {
+        assertNull(
+            Shibboleth.encode(
+                mappingHeavyUrl,
+                ShibbolethType.BOOK_SOURCE,
+                999_999L,
+                fixedTime,
+            ),
+        )
     }
 
     @Test

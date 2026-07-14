@@ -63,8 +63,11 @@ object Shibboleth {
     private val reverseMappings = mappings.flatMap { (original, replacements) ->
         replacements.map { replacement -> replacement to original }
     }
+    private val unsafeUrlTokens = mappings.values.flatten() +
+        listOf(TYPE_MARKER, EXPIRY_MARKER, SUFFIX_MARKER, END_MARKER)
 
-    fun canEncode(url: String): Boolean = isValidUrl(url, httpsOnly = true)
+    fun canEncode(url: String): Boolean =
+        isValidUrl(url, httpsOnly = true) && unsafeUrlTokens.none(url::contains)
 
     fun encode(
         url: String,
@@ -72,7 +75,12 @@ object Shibboleth {
         expiresAtMillis: Long,
         randomSeed: Long = System.currentTimeMillis(),
     ): String? {
-        if (!canEncode(url) || expiresAtMillis < 0) return null
+        if (!canEncode(url) ||
+            expiresAtMillis < 0 ||
+            (expiresAtMillis > 0 && expiresAtMillis.toString().length < 7)
+        ) {
+            return null
+        }
 
         val random = Random(randomSeed)
         val encodedUrl = buildString {
@@ -97,14 +105,15 @@ object Shibboleth {
         text: String,
         nowMillis: Long = System.currentTimeMillis(),
     ): ShibbolethParseResult {
-        val urlStart = text.indexOf(URL_MARKER)
-        if (urlStart < 0) return ShibbolethParseResult.NotShibboleth
+        val prefixStart = text.indexOf(PREFIX)
+        if (prefixStart < 0) return ShibbolethParseResult.NotShibboleth
+        val urlStart = prefixStart + PREFIX.length
 
-        val typeStart = text.indexOf(TYPE_MARKER, urlStart + URL_MARKER.length)
+        val typeStart = text.indexOf(TYPE_MARKER, urlStart)
         val expiryStart = if (typeStart >= 0) text.indexOf(EXPIRY_MARKER, typeStart + 1) else -1
         val suffixStart = if (expiryStart >= 0) text.indexOf(SUFFIX_MARKER, expiryStart + 1) else -1
         val end = if (suffixStart >= 0) text.indexOf(END_MARKER, suffixStart + 1) else -1
-        if (typeStart <= urlStart + URL_MARKER.length ||
+        if (typeStart <= urlStart ||
             expiryStart <= typeStart + TYPE_MARKER.length ||
             suffixStart <= expiryStart + EXPIRY_MARKER.length ||
             end < suffixStart + SUFFIX_MARKER.length
@@ -122,8 +131,10 @@ object Shibboleth {
         val expiresAtMillis = if (expiryText == "0") 0 else expiryText.toLong() * 1_000_000L
 
         var url = text.substring(urlStart, typeStart)
-        reverseMappings.forEach { (replacement, original) ->
-            url = url.replace(replacement, original)
+        if (url.startsWith(URL_MARKER)) {
+            reverseMappings.forEach { (replacement, original) ->
+                url = url.replace(replacement, original)
+            }
         }
         if (!isValidUrl(url, httpsOnly = false)) {
             return ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.INVALID_URL)
