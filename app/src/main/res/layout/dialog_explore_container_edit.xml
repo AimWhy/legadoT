@@ -72,6 +72,33 @@
             android:singleLine="true"
             android:textSize="@dimen/text_body" />
 
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <io.legado.app.lib.theme.view.ThemeEditText
+                android:id="@+id/et_group"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/explore_group_hint"
+                android:singleLine="true"
+                android:textSize="@dimen/text_body" />
+
+            <io.legado.app.ui.widget.text.AccentTextView
+                android:id="@+id/tv_pick_group"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="4dp"
+                android:text="@string/explore_pick_group"
+                android:textSize="@dimen/text_caption" />
+
+        </LinearLayout>
+
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

@@ -15,6 +15,7 @@ import io.legado.app.help.source.ExploreContainerHelp
 import io.legado.app.help.source.exploreKinds
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
+import io.legado.app.utils.GSON
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.toastOnUi
@@ -57,10 +58,24 @@ class ExploreContainerEditDialog : BaseDialogFragment(R.layout.dialog_explore_co
             showDialogFragment(ExploreSourcePickerDialog.pick(PICK_SOURCE_KEY))
         }
         binding.tvChangeKind.setOnClickListener { pickKind() }
+        binding.tvPickGroup.setOnClickListener { pickGroup() }
         childFragmentManager.setFragmentResultListener(
             PICK_SOURCE_KEY, viewLifecycleOwner
         ) { _, bundle ->
             bundle.getString("sourceUrl")?.let { onSourcePicked(it) }
+        }
+        val restored = savedInstanceState?.getString("container")?.let { json ->
+            runCatching { GSON.fromJson(json, ExploreContainer::class.java) }.getOrNull()
+        }
+        if (restored != null) {
+            container = restored
+            originTarget = savedInstanceState.getStringArray("originTarget")
+                ?.takeIf { it.size == 3 }
+                ?.let { Triple(it[0], it[1], it[2]) }
+                ?: Triple(restored.sourceUrl, restored.kindUrl, restored.kindTitle)
+            // 输入控件走系统自动恢复,只刷指向信息,不重查 DB、不 upView 覆盖
+            upSourceInfo(restored)
+            return
         }
         val id = arguments?.getLong("id", -1) ?: -1
         viewLifecycleOwner.lifecycleScope.launch {
@@ -76,9 +91,19 @@ class ExploreContainerEditDialog : BaseDialogFragment(R.layout.dialog_explore_co
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // 旋转保持未落库的编辑态(换书源/换分类结果);输入控件由系统 view state 自动恢复
+        container?.let { outState.putString("container", GSON.toJson(it)) }
+        originTarget?.let {
+            outState.putStringArray("originTarget", arrayOf(it.first, it.second, it.third))
+        }
+    }
+
     private fun upView(c: ExploreContainer) = binding.run {
         upSourceInfo(c)
         etTitle.setText(c.customTitle)
+        etGroup.setText(c.groupName)
         if (c.style == ExploreContainer.STYLE_LIST) {
             rbList.isChecked = true
         } else {
@@ -108,6 +133,23 @@ class ExploreContainerEditDialog : BaseDialogFragment(R.layout.dialog_explore_co
             c.kindTitle = kind.title
             c.kindUrl = kind.url!!
             upSourceInfo(c)
+        }
+    }
+
+    /** 已有分组选择器(自由输入即新建分组,此处只做快捷填入) */
+    private fun pickGroup() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val groups = withContext(IO) {
+                appDb.exploreContainerDao.all
+                    .map { it.groupName }.filter { it.isNotEmpty() }.distinct()
+            }
+            if (groups.isEmpty()) {
+                toastOnUi(R.string.explore_no_groups)
+                return@launch
+            }
+            requireContext().selector(getString(R.string.explore_pick_group), groups) { _, i ->
+                binding.etGroup.setText(groups[i])
+            }
         }
     }
 
@@ -146,6 +188,7 @@ class ExploreContainerEditDialog : BaseDialogFragment(R.layout.dialog_explore_co
     private fun save() {
         val c = container ?: return
         c.customTitle = binding.etTitle.text?.toString()?.takeUnless { it.isBlank() }
+        c.groupName = binding.etGroup.text?.toString()?.trim().orEmpty()
         c.style = if (binding.rbList.isChecked) {
             ExploreContainer.STYLE_LIST
         } else {

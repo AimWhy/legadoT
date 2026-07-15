@@ -50,7 +50,11 @@ class ExploreManageAdapter(context: Context, val callBack: CallBack) :
         binding.run {
             // 卡底色由换肤引擎按布局 skin_background 施加
             tvName.text = item.getDisplayTitle()
-            tvSource.text = "${item.sourceName} · ${styleText(item)}"
+            tvSource.text = listOfNotNull(
+                item.sourceName,
+                styleText(item),
+                item.groupName.takeUnless { it.isEmpty() },
+            ).joinToString(" · ")
             swtEnabled.isChecked = item.enabled
         }
     }
