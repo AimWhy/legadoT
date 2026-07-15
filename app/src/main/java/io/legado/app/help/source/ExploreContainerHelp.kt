@@ -1,12 +1,15 @@
 package io.legado.app.help.source
 
 import com.google.gson.JsonObject
+import io.legado.app.constant.AppPattern
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.rule.ExploreKind
 import io.legado.app.utils.ACache
 import io.legado.app.utils.GSON
+import io.legado.app.utils.cnCompare
 import io.legado.app.utils.fromJsonArray
+import io.legado.app.utils.splitNotBlank
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -94,6 +97,17 @@ object ExploreContainerHelp {
     }
 
     fun isExpired(time: Long, now: Long): Boolean = now - time > CACHE_EXPIRE_MS
+
+    /** 原始分组串列表 → 切分/去重/中文排序;DAO flowGroups 与发现页 chips 共用 */
+    fun dealGroups(list: List<String>): List<String> {
+        val groups = linkedSetOf<String>()
+        list.forEach {
+            it.splitNotBlank(AppPattern.splitGroupRegex).forEach { group ->
+                groups.add(group)
+            }
+        }
+        return groups.sortedWith { o1, o2 -> o1.cnCompare(o2) }
+    }
 
     /** 相对时间;time<=0 返回 null(界面隐藏标签) */
     fun formatUpdateTime(time: Long, now: Long): String? {

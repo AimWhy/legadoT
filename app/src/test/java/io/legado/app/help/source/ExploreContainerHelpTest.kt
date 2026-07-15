@@ -1,5 +1,6 @@
 package io.legado.app.help.source
 
+import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.rule.ExploreKind
 import org.junit.Assert.assertEquals
@@ -144,5 +145,44 @@ class ExploreContainerHelpTest {
         assertEquals("2天前", ExploreContainerHelp.formatUpdateTime(now - 2 * 86400_000L, now))
         // 时钟回拨(time 在未来)按刚刚
         assertEquals("刚刚", ExploreContainerHelp.formatUpdateTime(now + 60_000L, now))
+    }
+
+    // ===== 多分组 =====
+
+    @Test
+    fun group_add_dedup_and_normalize_delimiters() {
+        val c = ExploreContainer(groupName = "玄幻")
+        c.addGroup("精品;玄幻,新组")
+        assertEquals("玄幻,精品,新组", c.groupName)
+    }
+
+    @Test
+    fun group_add_to_empty() {
+        val c = ExploreContainer()
+        c.addGroup("单组")
+        assertEquals("单组", c.groupName)
+    }
+
+    @Test
+    fun group_remove_and_removing_last_leaves_empty() {
+        val c = ExploreContainer(groupName = "玄幻,精品")
+        c.removeGroup("玄幻")
+        assertEquals("精品", c.groupName)
+        c.removeGroup("精品")
+        assertEquals("", c.groupName)
+    }
+
+    @Test
+    fun group_has_exact_match_not_substring() {
+        val c = ExploreContainer(groupName = "东方玄幻,精品")
+        assertTrue(c.hasGroup("东方玄幻"))
+        assertFalse(c.hasGroup("玄幻"))
+        assertFalse(ExploreContainer().hasGroup("玄幻"))
+    }
+
+    @Test
+    fun deal_groups_split_dedup_sort() {
+        val out = ExploreContainerHelp.dealGroups(listOf("b组,a组", "a组;c组", ""))
+        assertEquals(listOf("a组", "b组", "c组"), out)
     }
 }

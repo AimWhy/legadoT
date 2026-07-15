@@ -3,6 +3,8 @@ package io.legado.app.data.entities
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import io.legado.app.constant.AppPattern
+import io.legado.app.utils.splitNotBlank
 
 /**
  * 发现页容器:绑定某书源的某个发现分类,自选展示样式
@@ -34,6 +36,27 @@ data class ExploreContainer(
 
     fun getDisplayTitle(): String {
         return customTitle?.takeUnless { it.isBlank() } ?: kindTitle
+    }
+
+    /** 追加分组(逗号分隔多组,自动去重,分隔符归一为逗号) */
+    fun addGroup(groups: String) {
+        val set = linkedSetOf<String>()
+        set.addAll(groupName.splitNotBlank(AppPattern.splitGroupRegex))
+        set.addAll(groups.splitNotBlank(AppPattern.splitGroupRegex))
+        groupName = set.joinToString(",")
+    }
+
+    /** 移除分组(可一次移除多个,分隔符同上) */
+    fun removeGroup(groups: String) {
+        val set = linkedSetOf<String>()
+        set.addAll(groupName.splitNotBlank(AppPattern.splitGroupRegex))
+        set.removeAll(groups.splitNotBlank(AppPattern.splitGroupRegex).toSet())
+        groupName = set.joinToString(",")
+    }
+
+    /** 是否含指定分组(精确匹配,非子串) */
+    fun hasGroup(group: String): Boolean {
+        return groupName.splitNotBlank(AppPattern.splitGroupRegex).contains(group)
     }
 
     companion object {

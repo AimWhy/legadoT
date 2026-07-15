@@ -7,7 +7,11 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import io.legado.app.data.entities.ExploreContainer
+import io.legado.app.help.source.ExploreContainerHelp
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 
 @Dao
 interface ExploreContainerDao {
@@ -29,6 +33,21 @@ interface ExploreContainerDao {
 
     @get:Query("SELECT ifnull(max(sortOrder), 0) FROM exploreContainers")
     val maxOrder: Int
+
+    @Query("select distinct groupName from exploreContainers where trim(groupName) <> ''")
+    fun flowGroupsUnProcessed(): Flow<List<String>>
+
+    @get:Query("select * from exploreContainers where trim(groupName) = ''")
+    val noGroup: List<ExploreContainer>
+
+    @Query("select * from exploreContainers where groupName like '%' || :group || '%'")
+    fun getByGroup(group: String): List<ExploreContainer>
+
+    fun flowGroups(): Flow<List<String>> {
+        return flowGroupsUnProcessed().map {
+            ExploreContainerHelp.dealGroups(it)
+        }.flowOn(IO)
+    }
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(vararg container: ExploreContainer): List<Long>
