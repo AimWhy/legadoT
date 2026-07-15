@@ -101,6 +101,7 @@ class ExploreManageViewModel(application: Application) : BaseViewModel(applicati
     override fun upGroup(oldGroup: String, newGroup: String?) {
         execute {
             val containers = appDb.exploreContainerDao.getByGroup(oldGroup)
+                .filter { it.hasGroup(oldGroup) }
             containers.forEach {
                 it.removeGroup(oldGroup)
                 if (!newGroup.isNullOrEmpty()) it.addGroup(newGroup)
