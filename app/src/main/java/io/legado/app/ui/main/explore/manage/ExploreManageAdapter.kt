@@ -1,21 +1,36 @@
 package io.legado.app.ui.main.explore.manage
 
 import android.content.Context
+import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.bundleOf
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
+import io.legado.app.base.adapter.SelectableAdapter
 import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.databinding.ItemExploreManageBinding
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.widget.popupActionMenu
+import io.legado.app.ui.widget.recycler.DragSelectTouchHelper
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
+import io.legado.app.utils.dpToPx
 
 class ExploreManageAdapter(context: Context, val callBack: CallBack) :
     RecyclerAdapter<ExploreContainer, ItemExploreManageBinding>(context),
-    ItemTouchCallback.Callback {
+    ItemTouchCallback.Callback,
+    SelectableAdapter<ExploreContainer, Long> {
+
+    override val selectedKeys = linkedSetOf<Long>()
+
+    override fun keyOf(item: ExploreContainer): Long = item.id
+
+    override fun onSelectionChanged() {
+        callBack.upCountView()
+    }
 
     val diffItemCallBack = object : DiffUtil.ItemCallback<ExploreContainer>() {
         override fun areItemsTheSame(oldItem: ExploreContainer, newItem: ExploreContainer) =
@@ -48,14 +63,26 @@ class ExploreManageAdapter(context: Context, val callBack: CallBack) :
         payloads: MutableList<Any>
     ) {
         binding.run {
-            // 卡底色由换肤引擎按布局 skin_background 施加
-            tvName.text = item.getDisplayTitle()
-            tvSource.text = listOfNotNull(
-                item.sourceName,
-                styleText(item),
-                item.groupName.takeUnless { it.isEmpty() },
-            ).joinToString(" · ")
-            swtEnabled.isChecked = item.enabled
+            // 卡底色由换肤引擎按布局 skin_background 施加;选中态=2dp 描边
+            rootCard.strokeColor = context.accentColor
+            rootCard.strokeWidth = if (isSelected(item)) 2.dpToPx() else 0
+            if (payloads.isEmpty()) {
+                cbName.text = item.getDisplayTitle()
+                tvSource.text = listOfNotNull(
+                    item.sourceName,
+                    styleText(item),
+                    item.groupName.takeUnless { it.isEmpty() },
+                ).joinToString(" · ")
+                swtEnabled.isChecked = item.enabled
+                cbName.isChecked = isSelected(item)
+            } else {
+                for (i in payloads.indices) {
+                    val bundle = payloads[i] as? Bundle ?: continue
+                    if (bundle.containsKey("selected")) {
+                        cbName.isChecked = isSelected(item)
+                    }
+                }
+            }
         }
     }
 
@@ -65,6 +92,13 @@ class ExploreManageAdapter(context: Context, val callBack: CallBack) :
                 getItem(holder.layoutPosition)?.let {
                     it.enabled = isChecked
                     callBack.update(it)
+                }
+            }
+            cbName.setOnUserCheckedChangeListener { checked ->
+                getItem(holder.layoutPosition)?.let {
+                    setSelected(it, checked)
+                    rootCard.strokeWidth = if (checked) 2.dpToPx() else 0
+                    callBack.upCountView()
                 }
             }
             contentLayout.setOnClickListener {
@@ -119,6 +153,27 @@ class ExploreManageAdapter(context: Context, val callBack: CallBack) :
         }
     }
 
+    val dragSelectCallback: DragSelectTouchHelper.Callback =
+        object : DragSelectTouchHelper.AdvanceCallback<Long>(Mode.ToggleAndReverse) {
+            override fun currentSelectedId(): MutableSet<Long> {
+                return selectedKeys
+            }
+
+            override fun getItemId(position: Int): Long {
+                return getItem(position)!!.id
+            }
+
+            override fun updateSelectState(position: Int, isSelected: Boolean): Boolean {
+                getItem(position)?.let {
+                    setSelected(it, isSelected)
+                    notifyItemChanged(position, bundleOf(Pair("selected", null)))
+                    callBack.upCountView()
+                    return true
+                }
+                return false
+            }
+        }
+
     interface CallBack {
         fun update(vararg container: ExploreContainer)
         fun delete(container: ExploreContainer)
@@ -126,5 +181,6 @@ class ExploreManageAdapter(context: Context, val callBack: CallBack) :
         fun toTop(container: ExploreContainer)
         fun toBottom(container: ExploreContainer)
         fun upOrder()
+        fun upCountView()
     }
 }

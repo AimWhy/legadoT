@@ -19,6 +19,14 @@ class ExploreManageViewModel(application: Application) : BaseViewModel(applicati
         }
     }
 
+    /** 批量删除:先删行后逐 id 清缓存(与写后校验的顺序契约一致) */
+    fun deleteSelection(containers: List<ExploreContainer>) {
+        execute {
+            appDb.exploreContainerDao.delete(*containers.toTypedArray())
+            containers.forEach { ExploreContainerHelp.removeCache(it.id) }
+        }
+    }
+
     fun toTop(container: ExploreContainer) {
         execute {
             container.sortOrder = appDb.exploreContainerDao.minOrder - 1

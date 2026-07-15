@@ -5,7 +5,6 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
 import androidx.lifecycle.lifecycleScope
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
@@ -14,10 +13,9 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.databinding.ActivityExploreManageBinding
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.theme.primaryColor
+import io.legado.app.ui.widget.SelectActionBar
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
-import io.legado.app.utils.applyNavigationBarPadding
-import io.legado.app.utils.setEdgeEffectColor
+import io.legado.app.ui.widget.recycler.setupManagePage
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
@@ -31,6 +29,7 @@ import kotlinx.coroutines.launch
  */
 class ExploreManageActivity :
     VMBaseActivity<ActivityExploreManageBinding, ExploreManageViewModel>(),
+    SelectActionBar.CallBack,
     ExploreManageAdapter.CallBack {
 
     override val binding by viewBinding(ActivityExploreManageBinding::inflate)
@@ -40,6 +39,7 @@ class ExploreManageActivity :
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         initRecyclerView()
         observeData()
+        initSelectActionBar()
     }
 
     override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {
@@ -57,14 +57,12 @@ class ExploreManageActivity :
     }
 
     private fun initRecyclerView() {
-        binding.recyclerView.setEdgeEffectColor(primaryColor)
         binding.recyclerView.layoutManager = LinearLayoutManager(this)
-        binding.recyclerView.adapter = adapter
-        // A15+ 强制 e2e:末项抬离手势条(xml 已配 clipToPadding=false)
-        binding.recyclerView.applyNavigationBarPadding()
-        val itemTouchCallback = ItemTouchCallback(adapter)
-        itemTouchCallback.isCanDrag = true
-        ItemTouchHelper(itemTouchCallback).attachToRecyclerView(binding.recyclerView)
+        binding.recyclerView.setupManagePage(
+            adapter,
+            ItemTouchCallback(adapter).apply { isCanDrag = true },
+            adapter.dragSelectCallback,
+        )
     }
 
     private fun observeData() {
@@ -75,6 +73,33 @@ class ExploreManageActivity :
                     adapter.setItems(it, adapter.diffItemCallBack)
                 }
         }
+    }
+
+    private fun initSelectActionBar() {
+        binding.selectActionBar.setMainActionText(R.string.delete)
+        binding.selectActionBar.setCallBack(this)
+    }
+
+    override fun selectAll(selectAll: Boolean) {
+        if (selectAll) adapter.selectAll() else adapter.revertSelection()
+    }
+
+    override fun revertSelection() {
+        adapter.revertSelection()
+    }
+
+    override fun onClickSelectBarMainAction() {
+        val selection = adapter.selection
+        if (selection.isEmpty()) return
+        alert(R.string.draw) {
+            setMessage(getString(R.string.explore_del_selection, selection.size))
+            noButton()
+            yesButton { viewModel.deleteSelection(selection) }
+        }
+    }
+
+    override fun upCountView() {
+        binding.selectActionBar.upCountView(adapter.selection.size, adapter.itemCount)
     }
 
     override fun update(vararg container: ExploreContainer) = viewModel.update(*container)
