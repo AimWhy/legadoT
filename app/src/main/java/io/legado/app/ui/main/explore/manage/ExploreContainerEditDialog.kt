@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.lifecycle.lifecycleScope
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
+import io.legado.app.constant.AppPattern
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.ExploreContainer
@@ -18,6 +19,7 @@ import io.legado.app.lib.dialogs.selector
 import io.legado.app.utils.GSON
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.showDialogFragment
+import io.legado.app.utils.splitNotBlank
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
@@ -136,19 +138,26 @@ class ExploreContainerEditDialog : BaseDialogFragment(R.layout.dialog_explore_co
         }
     }
 
-    /** 已有分组选择器(自由输入即新建分组,此处只做快捷填入) */
+    /** 已有分组选择器:点选追加(不重复);自由输入(逗号分隔)仍可新建 */
     private fun pickGroup() {
         viewLifecycleOwner.lifecycleScope.launch {
             val groups = withContext(IO) {
-                appDb.exploreContainerDao.all
-                    .map { it.groupName }.filter { it.isNotEmpty() }.distinct()
+                ExploreContainerHelp.dealGroups(
+                    appDb.exploreContainerDao.all.map { it.groupName }
+                )
             }
             if (groups.isEmpty()) {
                 toastOnUi(R.string.explore_no_groups)
                 return@launch
             }
             requireContext().selector(getString(R.string.explore_pick_group), groups) { _, i ->
-                binding.etGroup.setText(groups[i])
+                val set = linkedSetOf<String>()
+                set.addAll(
+                    binding.etGroup.text?.toString().orEmpty()
+                        .splitNotBlank(AppPattern.splitGroupRegex)
+                )
+                set.add(groups[i])
+                binding.etGroup.setText(set.joinToString(","))
             }
         }
     }

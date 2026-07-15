@@ -125,7 +125,7 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
         viewModelScope.launch(IO) {
             val containers = stateMutex.withLock {
                 states.values.map { it.container }
-                    .filter { groupName.isEmpty() || it.groupName == groupName }
+                    .filter { groupName.isEmpty() || it.hasGroup(groupName) }
             }
             containers.forEach { loadContainer(it) }
         }

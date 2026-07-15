@@ -130,13 +130,14 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
     private fun upDisplayStates() {
         val group = effectiveGroup()
         val display = if (group.isEmpty()) allStates
-        else allStates.filter { it.container.groupName == group }
+        else allStates.filter { it.container.hasGroup(group) }
         adapter.setItems(display, adapter.diffItemCallBack)
     }
 
     private fun upGroupChips() {
-        val groups = allStates.map { it.container.groupName }
-            .filter { it.isNotEmpty() }.distinct()
+        val groups = ExploreContainerHelp.dealGroups(
+            allStates.map { it.container.groupName }
+        )
         if (groups == currentGroups && binding.cgGroups.childCount > 0) {
             return // 分组集未变不重建,保住横向滚动位置
         }
