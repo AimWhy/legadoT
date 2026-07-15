@@ -51,18 +51,30 @@ class FieldNavBar @JvmOverloads constructor(
     }
 
     fun attachToRecyclerView(rv: RecyclerView) {
-        // 点击→滚列表
+        // 点击→滚列表:近处(两屏内)平滑保手感;远处直接落位——平滑滚动逐像素刷过
+        // 中间字段,途经超长 JS 字段(数万像素)一跳要数秒,锚点导航应当瞬时
         onItemClick = { index ->
-            clickScrolling = true
             (rv.layoutManager as? LinearLayoutManager)?.let { lm ->
-                val scroller = object : LinearSmoothScroller(context) {
-                    override fun getVerticalSnapPreference() = SNAP_TO_START
-                    override fun calculateDtToFit(
-                        viewStart: Int, viewEnd: Int, boxStart: Int, boxEnd: Int, snapPreference: Int,
-                    ): Int = boxStart - viewStart + 4.dpToPx()
+                val targetTop = lm.findViewByPosition(index)?.top
+                val near = targetTop != null && rv.height > 0 &&
+                        kotlin.math.abs(targetTop) <= rv.height * 2
+                if (near) {
+                    clickScrolling = true
+                    val scroller = object : LinearSmoothScroller(context) {
+                        override fun getVerticalSnapPreference() = SNAP_TO_START
+                        override fun calculateDtToFit(
+                            viewStart: Int, viewEnd: Int, boxStart: Int, boxEnd: Int, snapPreference: Int,
+                        ): Int = boxStart - viewStart + 4.dpToPx()
+                    }
+                    scroller.targetPosition = index
+                    lm.startSmoothScroll(scroller)
+                } else {
+                    // 瞬时落位不产生滚动状态流转,IDLE 回调不会来:布局期的 onScrolled(0,0)
+                    // 由 clickScrolling 挡住(保住点击高亮),post 在其后复位
+                    clickScrolling = true
+                    lm.scrollToPositionWithOffset(index, 4.dpToPx())
+                    rv.post { clickScrolling = false }
                 }
-                scroller.targetPosition = index
-                lm.startSmoothScroll(scroller)
             }
         }
         // 滚列表→反向高亮
