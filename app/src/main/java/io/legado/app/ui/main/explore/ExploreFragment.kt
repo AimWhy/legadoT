@@ -156,6 +156,17 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
         viewModel.refreshContainer(state.container.id)
     }
 
+    override fun nextBatch(state: ExploreContainerState) {
+        viewModel.nextBatch(state.container.id)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.refreshStale()
+        // 相对时间标签防陈旧:回前台整列 payload 刷新
+        adapter.notifyItemRangeChanged(0, adapter.itemCount, "time")
+    }
+
     /** 长按菜单:登录仅在书源配置了登录地址时显示,搜索/登录直接作用于容器所属书源 */
     override fun showContainerMenu(anchor: View, state: ExploreContainerState) {
         val container = state.container

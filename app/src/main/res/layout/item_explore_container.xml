@@ -54,6 +54,18 @@
                 android:textSize="10sp"
                 tools:text="笔趣阁" />
 
+            <TextView
+                android:id="@+id/tv_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:singleLine="true"
+                app:skin_textColor="onSurfaceVariant"
+                android:textColor="@color/secondaryText"
+                android:textSize="10sp"
+                android:visibility="gone"
+                tools:text="3小时前" />
+
             <io.legado.app.ui.widget.anima.RotateLoading
                 android:id="@+id/rl_loading"
                 android:layout_width="18dp"
@@ -61,6 +73,15 @@
                 android:layout_marginEnd="6dp"
                 android:visibility="invisible"
                 app:loading_width="2dp" />
+
+            <io.legado.app.ui.widget.text.AccentTextView
+                android:id="@+id/tv_next_batch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="?android:attr/selectableItemBackground"
+                android:padding="4dp"
+                android:text="@string/explore_next_batch"
+                android:textSize="@dimen/text_caption" />
 
             <io.legado.app.ui.widget.text.AccentTextView
                 android:id="@+id/tv_more"

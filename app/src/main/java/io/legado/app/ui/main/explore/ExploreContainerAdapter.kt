@@ -3,6 +3,7 @@ package io.legado.app.ui.main.explore
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -13,6 +14,7 @@ import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.databinding.ItemExploreContainerBinding
 import io.legado.app.databinding.ItemSearchBinding
+import io.legado.app.help.source.ExploreContainerHelp
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.ui.book.explore.bindSearchBook
 import io.legado.app.utils.gone
@@ -63,12 +65,14 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
         binding.run {
             // 卡底色(surfaceContainerLow)+1dp 阴影由布局声明,换肤引擎接管;不再走沉浸式透明
             if (payloads.isNotEmpty()) {
-                upBookshelfBadge(binding, item)
+                if (payloads.contains("isInBookshelf")) upBookshelfBadge(binding, item)
+                if (payloads.contains("time")) upTime(binding, item)
                 return
             }
             val container = item.container
             tvTitle.text = container.getDisplayTitle()
             tvSource.text = container.sourceName
+            upTime(binding, item)
             if (item.loading) rlLoading.visible() else rlLoading.inVisible()
             when {
                 item.books.isEmpty() && item.error != null -> {
@@ -76,6 +80,7 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
                     llBooks.gone()
                     tvError.text = item.error
                     tvError.visible()
+                    tvNextBatch.gone()
                     rvBooks.tag = null
                 }
 
@@ -83,6 +88,7 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
                     upLightError(binding, item)
                     hostBooks.gone()
                     llBooks.visible()
+                    tvNextBatch.visible()
                     rvBooks.tag = null
                     upListBooks(binding, item, holder)
                 }
@@ -91,14 +97,15 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
                     upLightError(binding, item)
                     llBooks.gone()
                     hostBooks.visible()
+                    tvNextBatch.visible()
                     val coverAdapter = rvBooks.adapter as ExploreCoverAdapter
                     coverAdapter.onItemLongClick = {
                         showMenu(root, holder.layoutPosition)
                     }
-                    val idChanged = rvBooks.tag != container.id
-                    rvBooks.tag = container.id
+                    val booksChanged = rvBooks.tag !== item.books
+                    rvBooks.tag = item.books
                     coverAdapter.setBooks(item.books)
-                    if (idChanged) {
+                    if (booksChanged) {
                         rvBooks.scrollToPosition(0)
                     }
                 }
@@ -167,10 +174,22 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
         }
     }
 
+    /** 时间标签:相对时间;time=0 隐藏 */
+    private fun upTime(binding: ItemExploreContainerBinding, item: ExploreContainerState) {
+        val text = ExploreContainerHelp.formatUpdateTime(
+            item.updateTime, System.currentTimeMillis()
+        )
+        binding.tvTime.text = text
+        binding.tvTime.isGone = text == null
+    }
+
     override fun registerListener(holder: ItemViewHolder, binding: ItemExploreContainerBinding) {
         binding.apply {
             tvMore.setOnClickListener {
                 getItem(holder.layoutPosition)?.let { callBack.openExplore(it) }
+            }
+            tvNextBatch.setOnClickListener {
+                getItem(holder.layoutPosition)?.let { callBack.nextBatch(it) }
             }
             tvError.setOnClickListener {
                 getItem(holder.layoutPosition)?.let { callBack.refreshContainer(it) }
@@ -188,6 +207,7 @@ class ExploreContainerAdapter(context: Context, val callBack: CallBack) :
 
     interface CallBack : ExploreCoverAdapter.CallBack {
         fun openExplore(state: ExploreContainerState)
+        fun nextBatch(state: ExploreContainerState)
         fun refreshContainer(state: ExploreContainerState)
         fun showContainerMenu(anchor: View, state: ExploreContainerState)
     }

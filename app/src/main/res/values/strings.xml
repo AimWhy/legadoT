@@ -1511,6 +1511,7 @@ Placeholders:
     <string name="explore_default_style">默认样式</string>
     <string name="explore_source_not_found">书源不存在</string>
     <string name="explore_more">更多 ›</string>
+    <string name="explore_next_batch">换一批</string>
     <string name="explore_enable_all">全部启用</string>
     <string name="explore_disable_all">全部禁用</string>
     <string name="explore_no_kinds">该书源没有可用分类</string>
