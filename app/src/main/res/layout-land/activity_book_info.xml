@@ -104,6 +104,7 @@
                     android:layout_marginTop="@dimen/space_s"
                     android:gravity="center"
                     android:visibility="gone"
+                    app:labelsMaxRows="0"
                     tools:visibility="visible" />
 
             </LinearLayout>

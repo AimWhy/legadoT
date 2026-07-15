@@ -80,6 +80,11 @@
         <attr name="isBottomBackground" />
     </declare-styleable>
 
+    <declare-styleable name="LabelsBar">
+        <!-- 最多显示行数,0=不限(高度仍受布局约束按整行取齐) -->
+        <attr name="labelsMaxRows" format="integer" />
+    </declare-styleable>
+
     <declare-styleable name="NumberPickerPreference">
         <attr name="MinValue" format="integer" />
         <attr name="MaxValue" format="integer" />

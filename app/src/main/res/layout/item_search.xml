@@ -90,7 +90,6 @@
         android:layout_marginStart="6dp"
         android:layout_marginTop="4dp"
         android:layout_marginEnd="12dp"
-        android:orientation="horizontal"
         android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/iv_cover"

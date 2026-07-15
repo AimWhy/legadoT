@@ -97,6 +97,8 @@
                         android:layout_marginStart="@dimen/space_l"
                         android:layout_marginTop="@dimen/space_s"
                         android:visibility="gone"
+                        app:labelsMaxRows="0"
+                        app:layout_constrainedHeight="true"
                         app:layout_constraintBottom_toBottomOf="@id/card_cover"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toEndOf="@id/card_cover"
