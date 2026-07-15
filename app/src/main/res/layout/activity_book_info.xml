@@ -59,51 +59,52 @@
                             app:coverCornerRadius="0dp" />
                     </com.google.android.material.card.MaterialCardView>
 
-                    <TextView
-                        android:id="@+id/tv_name"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/space_l"
-                        android:ellipsize="end"
-                        android:maxLines="2"
-                        android:text="@string/book_name"
-                        android:textAppearance="@style/TextAppearance.App.Headline"
-                        app:skin_textColor="onSurface"
-                        android:textColor="@color/primaryText"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/card_cover"
-                        app:layout_constraintTop_toTopOf="@id/card_cover" />
-
-                    <TextView
-                        android:id="@+id/tv_author"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="@dimen/space_l"
-                        android:layout_marginTop="@dimen/space_s"
-                        android:ellipsize="end"
-                        android:singleLine="true"
-                        android:text="@string/author"
-                        android:textSize="@dimen/text_body"
-                        app:skin_textColor="onSurfaceVariant"
-                        android:textColor="@color/tv_text_summary"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintStart_toEndOf="@id/card_cover"
-                        app:layout_constraintTop_toBottomOf="@id/tv_name" />
-
-                    <io.legado.app.ui.widget.LabelsBar
-                        android:id="@+id/lb_kind"
+                    <!-- 书名/作者/tags 组合成块,相对封面纵向居中(起点风格,免去作者与tags间大片留白);
+                         LabelsBar 经 LinearLayout 拿 AT_MOST 高度预算(封面高减书名作者),整行取齐 -->
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="0dp"
                         android:layout_marginStart="@dimen/space_l"
-                        android:layout_marginTop="@dimen/space_s"
-                        android:gravity="bottom"
-                        android:visibility="gone"
-                        app:labelsMaxRows="0"
+                        android:gravity="center_vertical"
+                        android:orientation="vertical"
                         app:layout_constraintBottom_toBottomOf="@id/card_cover"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toEndOf="@id/card_cover"
-                        app:layout_constraintTop_toBottomOf="@id/tv_author"
-                        tools:visibility="visible" />
+                        app:layout_constraintTop_toTopOf="@id/card_cover">
+
+                        <TextView
+                            android:id="@+id/tv_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:text="@string/book_name"
+                            android:textAppearance="@style/TextAppearance.App.Headline"
+                            app:skin_textColor="onSurface"
+                            android:textColor="@color/primaryText" />
+
+                        <TextView
+                            android:id="@+id/tv_author"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_s"
+                            android:ellipsize="end"
+                            android:singleLine="true"
+                            android:text="@string/author"
+                            android:textSize="@dimen/text_body"
+                            app:skin_textColor="onSurfaceVariant"
+                            android:textColor="@color/tv_text_summary" />
+
+                        <io.legado.app.ui.widget.LabelsBar
+                            android:id="@+id/lb_kind"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_s"
+                            android:visibility="gone"
+                            app:labelsMaxRows="0"
+                            tools:visibility="visible" />
+
+                    </LinearLayout>
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
 
