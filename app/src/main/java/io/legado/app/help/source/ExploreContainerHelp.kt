@@ -1,6 +1,7 @@
 package io.legado.app.help.source
 
 import com.google.gson.JsonObject
+import io.legado.app.data.appDb
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.rule.ExploreKind
 import io.legado.app.utils.ACache
@@ -41,14 +42,24 @@ object ExploreContainerHelp {
     fun booksFromJson(json: String?): List<SearchBook>? =
         GSON.fromJsonArray<SearchBook>(json).getOrNull()
 
-    suspend fun getCachedBooks(containerId: Long): List<SearchBook>? =
+    suspend fun getCached(containerId: Long): CachedExploreBooks? =
         withContext(Dispatchers.IO) {
-            booksFromJson(aCache.getAsString(containerId.toString()))
+            cachedFromJson(aCache.getAsString(containerId.toString()))
         }
 
-    suspend fun putCachedBooks(containerId: Long, books: List<SearchBook>) {
+    /**
+     * 写缓存壳;写后校验容器仍存在,已删则立即清除。
+     * 删除路径均为"先删行、后删缓存",写后校验覆盖删除与写入的全部交错序
+     */
+    suspend fun putCached(containerId: Long, books: List<SearchBook>, page: Int, time: Long) {
         withContext(Dispatchers.IO) {
-            aCache.put(containerId.toString(), booksToJson(books))
+            aCache.put(
+                containerId.toString(),
+                cachedToJson(CachedExploreBooks(time = time, page = page, books = books))
+            )
+            if (appDb.exploreContainerDao.getById(containerId) == null) {
+                aCache.remove(containerId.toString())
+            }
         }
     }
 

@@ -14,6 +14,7 @@ import io.legado.app.help.book.isNotShelf
 import io.legado.app.help.source.ExploreContainerHelp
 import io.legado.app.help.source.exploreKinds
 import io.legado.app.model.webBook.WebBook
+import io.legado.app.utils.toastOnUi
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.catch
@@ -34,6 +35,10 @@ data class ExploreContainerState(
     val books: List<SearchBook> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
+    /** 当前展示批次的页码,仅换一批推进,刷新一律回 1 */
+    val page: Int = 1,
+    /** 本批数据的写入时刻,0 = 未知(隐藏时间标签,视为过期) */
+    val updateTime: Long = 0,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -86,13 +91,18 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
                 val oldState = old[c.id]
                 when {
                     oldState == null -> {
-                        // 新出现的容器:缓存优先,无缓存才走网络
-                        val cached = ExploreContainerHelp.getCachedBooks(c.id)
-                        if (cached == null) toLoad.add(c)
+                        // 新出现的容器:缓存优先;无缓存或缓存过期则后台拉网络(旧数据保持显示)
+                        val cached = ExploreContainerHelp.getCached(c.id)
+                        val stale = cached == null || ExploreContainerHelp.isExpired(
+                            cached.time, System.currentTimeMillis()
+                        )
+                        if (stale) toLoad.add(c)
                         states[c.id] = ExploreContainerState(
                             container = c,
-                            books = cached ?: emptyList(),
-                            loading = cached == null
+                            books = cached?.books ?: emptyList(),
+                            loading = stale,
+                            page = cached?.page ?: 1,
+                            updateTime = cached?.time ?: 0,
                         )
                     }
 
@@ -124,12 +134,33 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
         }
     }
 
+    /** 换一批:请求下一页整批替换;仅此路径推进页码 */
+    fun nextBatch(id: Long) {
+        viewModelScope.launch(IO) {
+            val state = stateMutex.withLock { states[id] } ?: return@launch
+            loadContainer(state.container, state.page + 1)
+        }
+    }
+
+    /** 缓存超过有效期的容器静默重拉(回到前台时调用);in-flight 的跳过 */
+    fun refreshStale() {
+        viewModelScope.launch(IO) {
+            val now = System.currentTimeMillis()
+            val stale = stateMutex.withLock {
+                states.values.filter {
+                    !it.loading && ExploreContainerHelp.isExpired(it.updateTime, now)
+                }.map { it.container }
+            }
+            stale.forEach { loadContainer(it) }
+        }
+    }
+
     /** 书源/分类指向是否一致(样式等展示属性变化不影响已加载书籍) */
     private fun sameTarget(a: ExploreContainer, b: ExploreContainer): Boolean {
         return a.sourceUrl == b.sourceUrl && a.kindUrl == b.kindUrl && a.kindTitle == b.kindTitle
     }
 
-    private fun loadContainer(container: ExploreContainer) {
+    private fun loadContainer(container: ExploreContainer, page: Int = 1) {
         if (!loadingIds.add(container.id)) return
         viewModelScope.launch(IO) {
             upStateIfSameTarget(container) { it.copy(loading = true, error = null) }
@@ -142,17 +173,38 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
                 val url = ExploreContainerHelp.resolveKindUrl(
                     kinds, container.kindTitle, container.kindUrl
                 )
-                loadLimiter.withPermit {
+                var loadedPage = page
+                var books = loadLimiter.withPermit {
                     withTimeout(30_000L) {
-                        WebBook.exploreBookAwait(source, url, 1)
+                        WebBook.exploreBookAwait(source, url, loadedPage)
                     }
                 }
-            }.onSuccess { books ->
-                val accepted = upStateIfSameTarget(container) {
-                    it.copy(books = books, loading = false, error = null)
+                if (books.isEmpty() && loadedPage > 1) {
+                    // 换一批翻到尽头:回绕一次回第 1 页
+                    loadedPage = 1
+                    books = loadLimiter.withPermit {
+                        withTimeout(30_000L) {
+                            WebBook.exploreBookAwait(source, url, loadedPage)
+                        }
+                    }
                 }
-                if (accepted) {
-                    ExploreContainerHelp.putCachedBooks(container.id, books)
+                loadedPage to books
+            }.onSuccess { (loadedPage, books) ->
+                if (books.isEmpty() && page > 1) {
+                    // 回绕后仍无内容:保留原数据,轻提示
+                    upStateIfSameTarget(container) { it.copy(loading = false) }
+                    context.toastOnUi(R.string.explore_no_more)
+                } else {
+                    val time = System.currentTimeMillis()
+                    val accepted = upStateIfSameTarget(container) {
+                        it.copy(
+                            books = books, loading = false, error = null,
+                            page = loadedPage, updateTime = time
+                        )
+                    }
+                    if (accepted) {
+                        ExploreContainerHelp.putCached(container.id, books, loadedPage, time)
+                    }
                 }
             }.onFailure { e ->
                 AppLog.put("发现容器[${container.getDisplayTitle()}]加载失败", e)
