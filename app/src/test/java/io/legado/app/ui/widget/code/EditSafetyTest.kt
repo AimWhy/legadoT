@@ -24,4 +24,9 @@ class EditSafetyTest {
         assertFalse(EditSafety.isCombiningHeavy("@css:.book-item@href##\\d+##<js>result</js>"))
         assertFalse(EditSafety.isCombiningHeavy("var a = 1; // 中文注释"))
     }
+
+    @Test
+    fun `emoji variation selectors are not treated as combining bomb`() {
+        assertFalse(EditSafety.isCombiningHeavy("-☯️☯️☯️☯️☯️☯️☯️-"))
+    }
 }

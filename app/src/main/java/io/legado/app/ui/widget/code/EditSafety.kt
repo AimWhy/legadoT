@@ -14,10 +14,13 @@ object EditSafety {
         val limit = minOf(text.length, 4000)
         for (i in 0 until limit) {
             val ch = text[i]
+            val isVariationSelector = ch in '\uFE00'..'\uFE0F'
             val type = Character.getType(ch)
-            val isCombining = type == Character.NON_SPACING_MARK.toInt() ||
-                type == Character.COMBINING_SPACING_MARK.toInt() ||
-                type == Character.ENCLOSING_MARK.toInt()
+            val isCombining = !isVariationSelector && (
+                type == Character.NON_SPACING_MARK.toInt() ||
+                    type == Character.COMBINING_SPACING_MARK.toInt() ||
+                    type == Character.ENCLOSING_MARK.toInt()
+                )
             if (isCombining) {
                 combiningCount++
                 run++
