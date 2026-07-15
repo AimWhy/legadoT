@@ -27,6 +27,7 @@ import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.BottomBarSkinManager
+import io.legado.app.help.LifecycleHelp
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
@@ -158,6 +159,15 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             }
             binding.viewPagerMain.postDelayed(3000) {
                 viewModel.postLoad()
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (LocalConfig.privacyPolicyOk && LifecycleHelp.activitySize() == 1) {
+            binding.viewPagerMain.postDelayed(500) {
+                importShibbolethFromClipboard()
             }
         }
     }
