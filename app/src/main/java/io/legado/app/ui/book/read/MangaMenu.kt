@@ -16,8 +16,8 @@ import io.legado.app.databinding.ViewMangaMenuBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.source.getSourceType
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.bottomBackground
-import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.model.ReadBook
 import io.legado.app.model.ReadManga
 import io.legado.app.ui.browser.WebViewActivity
@@ -114,8 +114,8 @@ class MangaMenu @JvmOverloads constructor(
             titleBarAddition.gone()
         }
         upBrightnessVwPos()
-        val textColor = context.getPrimaryTextColor(ColorUtils.isColorLight(bgColor))
-        seekReadPage.applyAppTint(textColor)
+        // 进度滑杆走主题强调色通道(与 ReadMenu、换肤引擎 Slider 默认同源)
+        seekReadPage.applyAppTint(context.accentColor)
         /**
          * 确保视图不被导航栏遮挡
          */

@@ -233,7 +233,8 @@ class ReadMenu @JvmOverloads constructor(
             seekBrightness.slider.value = AppConfig.readBrightness.toFloat()
                 .coerceIn(seekBrightness.slider.valueFrom, seekBrightness.slider.valueTo)
         }
-        seekReadPage.applyAppTint(textColor)
+        // 进度滑杆走主题强调色通道(与亮度滑杆、换肤引擎 Slider 默认同源),不随底栏前景 textColor
+        seekReadPage.applyAppTint(context.accentColor)
         if (AppConfig.showReadTitleBarAddition) {
             titleBarAddition.visible()
         } else {
