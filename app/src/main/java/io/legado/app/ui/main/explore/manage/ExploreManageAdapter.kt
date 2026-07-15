@@ -110,6 +110,17 @@ class ExploreManageAdapter(context: Context, val callBack: CallBack) :
         }
     }
 
+    override fun onCurrentListChanged() {
+        val currentIds = getItems().map { it.id }.toHashSet()
+        val iterator = selectedKeys.iterator()
+        while (iterator.hasNext()) {
+            if (!currentIds.contains(iterator.next())) {
+                iterator.remove()
+            }
+        }
+        callBack.upCountView()
+    }
+
     private fun showMenu(view: View, position: Int) {
         val item = getItem(position) ?: return
         popupActionMenu(context) {
