@@ -15,8 +15,9 @@ import kotlin.math.min
 
 /**
  * 标签流式栏:一行放不下时自动换行,行数由 labelsMaxRows 封顶(默认 1,0=不限)。
- * 高度受限时(如 layout_constrainedHeight)按整行取齐:放不下的行整行隐藏,
- * 不出现半截行,首行永远保底;android:gravity 含水平居中时逐行居中排布。
+ * 高度受限时按整行取齐:放不下的行整行隐藏,不出现半截行,首行永远保底。
+ * 定高用法(如 0dp 锚在两控件之间)配 android:gravity="bottom" 内容贴底,
+ * 少量标签时视觉等同旧版底对齐;gravity 含水平居中时逐行居中排布。
  */
 @Suppress("unused", "MemberVisibilityCanBePrivate")
 class LabelsBar @JvmOverloads constructor(
@@ -29,6 +30,7 @@ class LabelsBar @JvmOverloads constructor(
     var textSize = 12f
     var maxRows: Int
     private val centerRows: Boolean
+    private val bottomRows: Boolean
     private val rowSpacing = 4.dpToPx()
 
     init {
@@ -36,9 +38,10 @@ class LabelsBar @JvmOverloads constructor(
         maxRows = ta.getInt(R.styleable.LabelsBar_labelsMaxRows, 1)
         ta.recycle()
         val ga = context.obtainStyledAttributes(attrs, intArrayOf(android.R.attr.gravity))
-        centerRows = ga.getInt(0, Gravity.NO_GRAVITY) and
-                Gravity.CENTER_HORIZONTAL == Gravity.CENTER_HORIZONTAL
+        val gravity = ga.getInt(0, Gravity.NO_GRAVITY)
         ga.recycle()
+        centerRows = gravity and Gravity.CENTER_HORIZONTAL == Gravity.CENTER_HORIZONTAL
+        bottomRows = gravity and Gravity.VERTICAL_GRAVITY_MASK == Gravity.BOTTOM
     }
 
     fun setLabels(labels: Array<String>) {
@@ -169,9 +172,14 @@ class LabelsBar @JvmOverloads constructor(
 
     override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
         val availWidth = r - l - paddingLeft - paddingRight
+        val availHeight = b - t - paddingTop - paddingBottom
         val rows = buildRows(availWidth)
-        val count = visibleRowCount(rows, b - t - paddingTop - paddingBottom)
-        var y = paddingTop
+        val count = visibleRowCount(rows, availHeight)
+        var contentHeight = 0
+        for (i in 0 until count) {
+            contentHeight += rows[i].height + if (i > 0) rowSpacing else 0
+        }
+        var y = paddingTop + if (bottomRows) max(0, availHeight - contentHeight) else 0
         rows.forEachIndexed { index, row ->
             if (index >= count) {
                 // 放不下的行整行藏掉(零尺寸,不可见不可点)

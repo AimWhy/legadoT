@@ -93,17 +93,16 @@
                     <io.legado.app.ui.widget.LabelsBar
                         android:id="@+id/lb_kind"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="0dp"
                         android:layout_marginStart="@dimen/space_l"
                         android:layout_marginTop="@dimen/space_s"
+                        android:gravity="bottom"
                         android:visibility="gone"
                         app:labelsMaxRows="0"
-                        app:layout_constrainedHeight="true"
                         app:layout_constraintBottom_toBottomOf="@id/card_cover"
                         app:layout_constraintEnd_toEndOf="parent"
                         app:layout_constraintStart_toEndOf="@id/card_cover"
                         app:layout_constraintTop_toBottomOf="@id/tv_author"
-                        app:layout_constraintVertical_bias="1.0"
                         tools:visibility="visible" />
 
                 </androidx.constraintlayout.widget.ConstraintLayout>
