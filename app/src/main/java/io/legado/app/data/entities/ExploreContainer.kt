@@ -1,5 +1,6 @@
 package io.legado.app.data.entities
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -26,6 +27,9 @@ data class ExploreContainer(
     var listCount: Int = 3,
     var sortOrder: Int = 0,
     var enabled: Boolean = true,
+    /** 分组名,空串 = 未分组(Room 新增 NOT NULL 列必须声明 defaultValue) */
+    @ColumnInfo(defaultValue = "")
+    var groupName: String = "",
 ) {
 
     fun getDisplayTitle(): String {
