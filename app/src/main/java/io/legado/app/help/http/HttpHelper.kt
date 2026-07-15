@@ -434,8 +434,8 @@ val okHttpClient: OkHttpClient by lazy {
             }
         }
     }
-    builder.addInterceptor(DecompressInterceptor)
     builder.addInterceptor(HttpLogInterceptor)
+    builder.addInterceptor(DecompressInterceptor)
     builder.build().apply {
         val okHttpName =
             OkHttpClient::class.java.name.removePrefix("okhttp3.").removeSuffix("Client")
