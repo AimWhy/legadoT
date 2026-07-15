@@ -58,4 +58,18 @@ class ExploreManageViewModel(application: Application) : BaseViewModel(applicati
             appDb.exploreContainerDao.update(*containers.toTypedArray())
         }
     }
+
+    fun enableSelection(containers: List<ExploreContainer>, enable: Boolean) {
+        execute {
+            containers.forEach { it.enabled = enable }
+            appDb.exploreContainerDao.update(*containers.toTypedArray())
+        }
+    }
+
+    fun setGroupSelection(containers: List<ExploreContainer>, groupName: String) {
+        execute {
+            containers.forEach { it.groupName = groupName }
+            appDb.exploreContainerDao.update(*containers.toTypedArray())
+        }
+    }
 }

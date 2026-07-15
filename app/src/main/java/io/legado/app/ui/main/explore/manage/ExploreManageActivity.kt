@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.activity.viewModels
+import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import io.legado.app.R
@@ -12,7 +13,9 @@ import io.legado.app.constant.AppLog
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.databinding.ActivityExploreManageBinding
+import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.dialogs.selector
 import io.legado.app.ui.widget.SelectActionBar
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.ui.widget.recycler.setupManagePage
@@ -23,12 +26,14 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * 发现容器管理
  */
 class ExploreManageActivity :
     VMBaseActivity<ActivityExploreManageBinding, ExploreManageViewModel>(),
+    PopupMenu.OnMenuItemClickListener,
     SelectActionBar.CallBack,
     ExploreManageAdapter.CallBack {
 
@@ -77,6 +82,8 @@ class ExploreManageActivity :
 
     private fun initSelectActionBar() {
         binding.selectActionBar.setMainActionText(R.string.delete)
+        binding.selectActionBar.inflateMenu(R.menu.explore_manage_sel)
+        binding.selectActionBar.setOnMenuItemClickListener(this)
         binding.selectActionBar.setCallBack(this)
     }
 
@@ -100,6 +107,56 @@ class ExploreManageActivity :
 
     override fun upCountView() {
         binding.selectActionBar.upCountView(adapter.selection.size, adapter.itemCount)
+    }
+
+    override fun onMenuItemClick(item: MenuItem?): Boolean {
+        when (item?.itemId) {
+            R.id.menu_enable_selection -> viewModel.enableSelection(adapter.selection, true)
+            R.id.menu_disable_selection -> viewModel.enableSelection(adapter.selection, false)
+            R.id.menu_set_group_sel -> selectionSetGroup()
+        }
+        return true
+    }
+
+    /** 设分组:取消分组(置空)| 已有分组 | 新建分组…;选中集在弹框前快照 */
+    private fun selectionSetGroup() {
+        val selection = adapter.selection
+        if (selection.isEmpty()) return
+        lifecycleScope.launch {
+            val groups = withContext(IO) {
+                appDb.exploreContainerDao.all
+                    .map { it.groupName }.filter { it.isNotEmpty() }.distinct()
+            }
+            val options = buildList {
+                add(getString(R.string.explore_clear_group))
+                addAll(groups)
+                add(getString(R.string.explore_new_group))
+            }
+            selector(getString(R.string.explore_set_group), options) { _, i ->
+                when (i) {
+                    0 -> viewModel.setGroupSelection(selection, "")
+                    options.lastIndex -> inputNewGroup(selection)
+                    else -> viewModel.setGroupSelection(selection, groups[i - 1])
+                }
+            }
+        }
+    }
+
+    /** 新建分组输入;trim 后为空 = 放弃本次操作(不写库) */
+    private fun inputNewGroup(selection: List<ExploreContainer>) {
+        val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
+            editView.hint = getString(R.string.explore_group_name)
+        }
+        alert(R.string.explore_new_group) {
+            customView { alertBinding.root }
+            yesButton {
+                val name = alertBinding.editView.text?.toString()?.trim().orEmpty()
+                if (name.isNotEmpty()) {
+                    viewModel.setGroupSelection(selection, name)
+                }
+            }
+            noButton()
+        }
     }
 
     override fun update(vararg container: ExploreContainer) = viewModel.update(*container)
