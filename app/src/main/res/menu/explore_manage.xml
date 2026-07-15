@@ -18,4 +18,9 @@
         android:title="@string/explore_disable_all"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_group_manage"
+        android:title="@string/group_manage"
+        app:showAsAction="never" />
+
 </menu>

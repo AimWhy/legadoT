@@ -13,8 +13,13 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/menu_set_group_sel"
-        android:title="@string/explore_set_group"
+        android:id="@+id/menu_add_group"
+        android:title="@string/add_group"
+        app:showAsAction="never" />
+
+    <item
+        android:id="@+id/menu_remove_group"
+        android:title="@string/remove_group"
         app:showAsAction="never" />
 
 </menu>

@@ -14,11 +14,13 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.databinding.ActivityExploreManageBinding
 import io.legado.app.databinding.DialogEditTextBinding
+import io.legado.app.help.source.ExploreContainerHelp
 import io.legado.app.lib.dialogs.alert
-import io.legado.app.lib.dialogs.selector
 import io.legado.app.ui.widget.SelectActionBar
+import io.legado.app.ui.widget.dialog.GroupManageDialog
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.ui.widget.recycler.setupManagePage
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import kotlinx.coroutines.Dispatchers.IO
@@ -57,6 +59,9 @@ class ExploreManageActivity :
             R.id.menu_add_container -> showDialogFragment(ExploreSourcePickerDialog())
             R.id.menu_enable_all -> viewModel.enableAll(true)
             R.id.menu_disable_all -> viewModel.enableAll(false)
+            R.id.menu_group_manage -> showDialogFragment(
+                GroupManageDialog(GroupManageDialog.Type.ExploreContainer)
+            )
         }
         return super.onCompatOptionsItemSelected(item)
     }
@@ -113,49 +118,67 @@ class ExploreManageActivity :
         when (item?.itemId) {
             R.id.menu_enable_selection -> viewModel.enableSelection(adapter.selection, true)
             R.id.menu_disable_selection -> viewModel.enableSelection(adapter.selection, false)
-            R.id.menu_set_group_sel -> selectionSetGroup()
+            R.id.menu_add_group -> selectionAddToGroups()
+            R.id.menu_remove_group -> selectionRemoveFromGroups()
         }
         return true
     }
 
-    /** 设分组:取消分组(置空)| 已有分组 | 新建分组…;选中集在弹框前快照 */
-    private fun selectionSetGroup() {
+    /** 批量加入分组;选中集在弹框前快照 */
+    private fun selectionAddToGroups() {
         val selection = adapter.selection
         if (selection.isEmpty()) return
         lifecycleScope.launch {
             val groups = withContext(IO) {
-                appDb.exploreContainerDao.all
-                    .map { it.groupName }.filter { it.isNotEmpty() }.distinct()
+                ExploreContainerHelp.dealGroups(
+                    appDb.exploreContainerDao.all.map { it.groupName }
+                )
             }
-            val options = buildList {
-                add(getString(R.string.explore_clear_group))
-                addAll(groups)
-                add(getString(R.string.explore_new_group))
-            }
-            selector(getString(R.string.explore_set_group), options) { _, i ->
-                when (i) {
-                    0 -> viewModel.setGroupSelection(selection, "")
-                    options.lastIndex -> inputNewGroup(selection)
-                    else -> viewModel.setGroupSelection(selection, groups[i - 1])
+            alert(titleResource = R.string.add_group) {
+                val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
+                    editView.setHint(R.string.group_name)
+                    editView.setFilterValues(groups)
+                    editView.dropDownHeight = 180.dpToPx()
                 }
+                customView { alertBinding.root }
+                okButton {
+                    alertBinding.editView.text?.toString()?.let {
+                        if (it.isNotEmpty()) {
+                            viewModel.selectionAddToGroups(selection, it)
+                        }
+                    }
+                }
+                cancelButton()
             }
         }
     }
 
-    /** 新建分组输入;trim 后为空 = 放弃本次操作(不写库) */
-    private fun inputNewGroup(selection: List<ExploreContainer>) {
-        val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
-            editView.hint = getString(R.string.explore_group_name)
-        }
-        alert(R.string.explore_new_group) {
-            customView { alertBinding.root }
-            yesButton {
-                val name = alertBinding.editView.text?.toString()?.trim().orEmpty()
-                if (name.isNotEmpty()) {
-                    viewModel.setGroupSelection(selection, name)
-                }
+    /** 批量移出分组;选中集在弹框前快照 */
+    private fun selectionRemoveFromGroups() {
+        val selection = adapter.selection
+        if (selection.isEmpty()) return
+        lifecycleScope.launch {
+            val groups = withContext(IO) {
+                ExploreContainerHelp.dealGroups(
+                    appDb.exploreContainerDao.all.map { it.groupName }
+                )
             }
-            noButton()
+            alert(titleResource = R.string.remove_group) {
+                val alertBinding = DialogEditTextBinding.inflate(layoutInflater).apply {
+                    editView.setHint(R.string.group_name)
+                    editView.setFilterValues(groups)
+                    editView.dropDownHeight = 180.dpToPx()
+                }
+                customView { alertBinding.root }
+                okButton {
+                    alertBinding.editView.text?.toString()?.let {
+                        if (it.isNotEmpty()) {
+                            viewModel.selectionRemoveFromGroups(selection, it)
+                        }
+                    }
+                }
+                cancelButton()
+            }
         }
     }
 

@@ -5,8 +5,10 @@ import io.legado.app.base.BaseViewModel
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.help.source.ExploreContainerHelp
+import io.legado.app.ui.widget.dialog.GroupManageDialog
 
-class ExploreManageViewModel(application: Application) : BaseViewModel(application) {
+class ExploreManageViewModel(application: Application) : BaseViewModel(application),
+    GroupManageDialog.GroupOps {
 
     fun update(vararg container: ExploreContainer) {
         execute { appDb.exploreContainerDao.update(*container) }
@@ -66,9 +68,52 @@ class ExploreManageViewModel(application: Application) : BaseViewModel(applicati
         }
     }
 
-    fun setGroupSelection(containers: List<ExploreContainer>, groupName: String) {
+    /** 批量加入分组(copy 语义,不改 adapter 引用) */
+    fun selectionAddToGroups(containers: List<ExploreContainer>, groups: String) {
         execute {
-            containers.forEach { it.groupName = groupName }
+            val array = Array(containers.size) {
+                containers[it].copy().apply { addGroup(groups) }
+            }
+            appDb.exploreContainerDao.update(*array)
+        }
+    }
+
+    /** 批量移出分组(copy 语义) */
+    fun selectionRemoveFromGroups(containers: List<ExploreContainer>, groups: String) {
+        execute {
+            val array = Array(containers.size) {
+                containers[it].copy().apply { removeGroup(groups) }
+            }
+            appDb.exploreContainerDao.update(*array)
+        }
+    }
+
+    /** 分组管理·添加:无分组容器全部归入该组(书源家族语义) */
+    override fun addGroup(group: String) {
+        execute {
+            val containers = appDb.exploreContainerDao.noGroup
+            containers.forEach { it.addGroup(group) }
+            appDb.exploreContainerDao.update(*containers.toTypedArray())
+        }
+    }
+
+    /** 分组管理·改名:new 为空即仅移除;其余分组保留 */
+    override fun upGroup(oldGroup: String, newGroup: String?) {
+        execute {
+            val containers = appDb.exploreContainerDao.getByGroup(oldGroup)
+            containers.forEach {
+                it.removeGroup(oldGroup)
+                if (!newGroup.isNullOrEmpty()) it.addGroup(newGroup)
+            }
+            appDb.exploreContainerDao.update(*containers.toTypedArray())
+        }
+    }
+
+    /** 分组管理·删除:全表移除该组,容器其余分组保留 */
+    override fun delGroup(group: String) {
+        execute {
+            val containers = appDb.exploreContainerDao.getByGroup(group)
+            containers.forEach { it.removeGroup(group) }
             appDb.exploreContainerDao.update(*containers.toTypedArray())
         }
     }

@@ -1526,10 +1526,6 @@ Placeholders:
     <string name="explore_pick_group">选择分组</string>
     <string name="explore_no_groups">暂无已有分组</string>
     <string name="explore_del_selection">确定删除 %1$d 个容器?</string>
-    <string name="explore_set_group">设分组</string>
-    <string name="explore_clear_group">取消分组(置空)</string>
-    <string name="explore_new_group">新建分组…</string>
-    <string name="explore_group_name">分组名</string>
     <string name="text_select_menu_config">Customize selection menu</string>
     <string name="text_menu_zone_bar">Floating bar</string>
     <string name="text_menu_zone_more">More</string>

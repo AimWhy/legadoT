@@ -20,6 +20,7 @@ import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemGroupManageBinding
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.ui.book.source.manage.BookSourceViewModel
+import io.legado.app.ui.main.explore.manage.ExploreManageViewModel
 import io.legado.app.ui.replace.ReplaceRuleViewModel
 import io.legado.app.ui.rss.source.manage.RssSourceViewModel
 import io.legado.app.ui.widget.recycler.VerticalDivider
@@ -45,7 +46,7 @@ class GroupManageDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
         }
     }
 
-    enum class Type { BookSource, ReplaceRule, RssSource }
+    enum class Type { BookSource, ReplaceRule, RssSource, ExploreContainer }
 
     /** 三个宿主 ViewModel 的分组操作公共面（签名本就一致,声明实现即可） */
     interface GroupOps {
@@ -63,6 +64,7 @@ class GroupManageDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
             Type.BookSource -> provider[BookSourceViewModel::class.java]
             Type.ReplaceRule -> provider[ReplaceRuleViewModel::class.java]
             Type.RssSource -> provider[RssSourceViewModel::class.java]
+            Type.ExploreContainer -> provider[ExploreManageViewModel::class.java]
         }
     }
 
@@ -71,6 +73,7 @@ class GroupManageDialog() : BaseDialogFragment(R.layout.dialog_recycler_view),
             Type.BookSource -> appDb.bookSourceDao.flowGroups()
             Type.ReplaceRule -> appDb.replaceRuleDao.flowGroups()
             Type.RssSource -> appDb.rssSourceDao.flowGroups()
+            Type.ExploreContainer -> appDb.exploreContainerDao.flowGroups()
         }
 
     private val binding by viewBinding(DialogRecyclerViewBinding::bind)
