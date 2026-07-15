@@ -767,16 +767,23 @@ class BookInfoActivity :
         submitTocItems()
     }
 
-    private fun submitTocItems() {
+    private fun submitTocItems(reordered: Boolean = false) {
         val ordered = if (tocReversed) fullChapters.asReversed() else fullChapters
-        chapterAdapter.setItems(ordered.map { TocListItem.Chapter(chapter = it, depth = 0) })
+        val items = ordered.map { TocListItem.Chapter(chapter = it, depth = 0) }
+        // 倒序切换=整表重排,走无 diff 快路径(千章级 Myers diff 要数秒);
+        // 目录刷新(upChapterList)仍走 diff,保滚动位置与最小重绑
+        if (reordered) {
+            chapterAdapter.setItemsNoDiff(items)
+        } else {
+            chapterAdapter.setItems(items)
+        }
         upTocHeader()
     }
 
     private fun toggleTocOrder() {
         tocReversed = !tocReversed
         tocHeaderBinding?.ivTocSort?.rotationX = if (tocReversed) 0f else 180f
-        submitTocItems()
+        submitTocItems(reordered = true)
     }
 
     private fun upTocHeader() {

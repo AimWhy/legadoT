@@ -117,6 +117,19 @@ abstract class DiffRecyclerAdapter<ITEM, VB : ViewBinding>(protected val context
         }
     }
 
+    /**
+     * 全量重排(如目录倒序切换)专用:旧新列表完全倒转是 Myers diff 的最坏输入
+     * (编辑距离≈2N,千章级要白算数秒),且 diff 结果对整表重排毫无复用价值。
+     * submitList(null) 与紧随的 submitList(list) 都命中 AsyncListDiffer 的同步
+     * 快路径——零 diff 计算,只发两条整段范围通知。
+     */
+    fun setItemsNoDiff(items: List<ITEM>?) {
+        kotlin.runCatching {
+            asyncListDiffer.submitList(null)
+            asyncListDiffer.submitList(items?.toMutableList())
+        }
+    }
+
 
     fun updateItems(fromPosition: Int, toPosition: Int, payloads: Any) {
         kotlin.runCatching {
