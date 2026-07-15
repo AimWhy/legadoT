@@ -5,13 +5,17 @@ import android.content.Intent
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import io.legado.app.BuildConfig
+import io.legado.app.R
 import io.legado.app.base.BaseViewModel
 import io.legado.app.constant.AppLog
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
+import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.help.book.SearchBookShelfHelp
 import io.legado.app.help.book.isNotShelf
+import io.legado.app.help.source.ExploreContainerHelp
+import io.legado.app.help.source.exploreKinds
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.utils.printOnDebug
 import io.legado.app.utils.stackTraceStr
@@ -122,6 +126,34 @@ class ExploreShowViewModel(application: Application) : BaseViewModel(application
         val bookUrl = book.bookUrl
         val key = if (author.isNotBlank()) "$name-$author" else name
         return bookshelf.contains(key) || bookshelf.contains(bookUrl)
+    }
+
+    /** 一键钉入发现页:默认横滑/未分组;分类反解优先当前URL、次标题、兜底传入快照 */
+    fun pinToExplore(exploreName: String) {
+        val source = bookSource
+        val url = exploreUrl
+        if (source == null || url == null) {
+            context.toastOnUi(R.string.explore_source_not_found)
+            return
+        }
+        execute {
+            val kinds = runCatching { source.exploreKinds() }.getOrDefault(emptyList())
+            val (kindTitle, kindUrl) = ExploreContainerHelp.resolvePinKind(kinds, exploreName, url)
+            appDb.exploreContainerDao.insert(
+                ExploreContainer(
+                    sourceUrl = source.bookSourceUrl,
+                    sourceName = source.bookSourceName,
+                    kindTitle = kindTitle,
+                    kindUrl = kindUrl,
+                    sortOrder = appDb.exploreContainerDao.maxOrder + 1,
+                )
+            )
+        }.onSuccess {
+            context.toastOnUi(R.string.explore_pinned)
+        }.onError {
+            AppLog.put("钉到发现页失败\n${it.localizedMessage}", it)
+            context.toastOnUi(it.localizedMessage ?: "钉入失败")
+        }
     }
 
 }

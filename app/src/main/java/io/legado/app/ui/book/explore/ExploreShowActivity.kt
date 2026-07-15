@@ -65,6 +65,9 @@ class ExploreShowActivity : VMBaseActivity<ActivityExploreShowBinding, ExploreSh
         when (item.itemId) {
             R.id.menu_jump -> alertJumpPage()
             R.id.menu_add_all_to_bookshelf -> alertAddLoadedBooksToShelf()
+            R.id.menu_pin_to_explore -> viewModel.pinToExplore(
+                intent.getStringExtra("exploreName") ?: ""
+            )
         }
         return super.onCompatOptionsItemSelected(item)
     }

@@ -13,4 +13,9 @@
         android:title="@string/add_all_to_bookshelf"
         app:showAsAction="never" />
 
+    <item
+        android:id="@+id/menu_pin_to_explore"
+        android:title="@string/explore_pin"
+        app:showAsAction="never" />
+
 </menu>

@@ -1522,6 +1522,8 @@ Placeholders:
     <string name="explore_change_source">换书源</string>
     <string name="explore_change_kind">换分类</string>
     <string name="explore_select_kind">选择分类</string>
+    <string name="explore_pin">钉到发现页</string>
+    <string name="explore_pinned">已钉到发现页,长按容器可改样式/分组</string>
     <string name="explore_group_hint">分组(留空为未分组)</string>
     <string name="explore_pick_group">选择分组</string>
     <string name="explore_no_groups">暂无已有分组</string>
