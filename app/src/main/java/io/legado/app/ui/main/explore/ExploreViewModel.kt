@@ -120,9 +120,13 @@ class ExploreViewModel(application: Application) : BaseViewModel(application) {
         toLoad.forEach { loadContainer(it) }
     }
 
-    fun refreshAll() {
+    /** groupName 空 = 全部;否则只刷该分组(下拉刷新只刷当前可见分组) */
+    fun refreshAll(groupName: String = "") {
         viewModelScope.launch(IO) {
-            val containers = stateMutex.withLock { states.values.map { it.container } }
+            val containers = stateMutex.withLock {
+                states.values.map { it.container }
+                    .filter { groupName.isEmpty() || it.groupName == groupName }
+            }
             containers.forEach { loadContainer(it) }
         }
     }

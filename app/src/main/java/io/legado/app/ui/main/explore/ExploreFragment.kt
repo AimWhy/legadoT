@@ -8,11 +8,14 @@ import androidx.core.view.isGone
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.android.material.chip.Chip
 import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
+import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.databinding.FragmentExploreBinding
+import io.legado.app.databinding.ItemExploreGroupChipBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.source.ExploreContainerHelp
 import io.legado.app.help.source.exploreKinds
@@ -28,6 +31,8 @@ import io.legado.app.ui.main.MainFragmentInterface
 import io.legado.app.ui.main.explore.manage.ExploreContainerEditDialog
 import io.legado.app.ui.main.explore.manage.ExploreManageActivity
 import io.legado.app.ui.widget.popupActionMenu
+import io.legado.app.utils.getPrefString
+import io.legado.app.utils.putPrefString
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
@@ -56,6 +61,9 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
     private val binding by viewBinding(FragmentExploreBinding::bind)
     private val adapter by lazy { ExploreContainerAdapter(requireContext(), this) }
     private var openingExplore = false
+    private var allStates: List<ExploreContainerState> = emptyList()
+    private var currentGroups: List<String> = emptyList()
+    private var rebuildingChips = false
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         setSupportToolbar(binding.titleBar.toolbar)
@@ -83,7 +91,15 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
         binding.refreshLayout.setColorSchemeColors(accentColor)
         binding.refreshLayout.setOnRefreshListener {
             binding.refreshLayout.isRefreshing = false
-            viewModel.refreshAll()
+            viewModel.refreshAll(effectiveGroup())
+        }
+        binding.cgGroups.setOnCheckedStateChangeListener { group, checkedIds ->
+            if (rebuildingChips) return@setOnCheckedStateChangeListener
+            val id = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
+            val g = group.findViewById<Chip>(id)?.tag as? String
+                ?: return@setOnCheckedStateChangeListener
+            requireContext().putPrefString(PreferKey.exploreGroup, g)
+            upDisplayStates()
         }
         binding.btnAddContainer.setOnClickListener {
             startActivity<ExploreManageActivity>()
@@ -92,12 +108,53 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
 
     private fun observeData() {
         viewModel.statesData.observe(viewLifecycleOwner) { states ->
+            allStates = states
             binding.llEmpty.isGone = states.isNotEmpty()
-            adapter.setItems(states, adapter.diffItemCallBack)
+            upGroupChips()
+            upDisplayStates()
         }
         viewModel.upBookshelfLiveData.observe(viewLifecycleOwner) {
             adapter.notifyItemRangeChanged(0, adapter.itemCount, "isInBookshelf")
         }
+    }
+
+    private fun selectedGroupPref(): String =
+        requireContext().getPrefString(PreferKey.exploreGroup) ?: ""
+
+    /** 已存分组不在当前分组集时显示回退"全部";pref 保留,重建同名分组自动恢复选中 */
+    private fun effectiveGroup(): String {
+        val saved = selectedGroupPref()
+        return if (saved.isNotEmpty() && saved in currentGroups) saved else ""
+    }
+
+    private fun upDisplayStates() {
+        val group = effectiveGroup()
+        val display = if (group.isEmpty()) allStates
+        else allStates.filter { it.container.groupName == group }
+        adapter.setItems(display, adapter.diffItemCallBack)
+    }
+
+    private fun upGroupChips() {
+        val groups = allStates.map { it.container.groupName }
+            .filter { it.isNotEmpty() }.distinct()
+        if (groups == currentGroups && binding.cgGroups.childCount > 0) {
+            return // 分组集未变不重建,保住横向滚动位置
+        }
+        currentGroups = groups
+        binding.hostGroups.isGone = groups.isEmpty()
+        rebuildingChips = true
+        binding.cgGroups.removeAllViews()
+        val effective = effectiveGroup()
+        (listOf("") + groups).forEach { g ->
+            val chip = ItemExploreGroupChipBinding
+                .inflate(layoutInflater, binding.cgGroups, false).root
+            chip.id = View.generateViewId()
+            chip.tag = g
+            chip.text = g.ifEmpty { getString(R.string.all) }
+            chip.isChecked = g == effective
+            binding.cgGroups.addView(chip)
+        }
+        rebuildingChips = false
     }
 
     fun gotoTop() {

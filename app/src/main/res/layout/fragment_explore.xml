@@ -13,12 +13,39 @@
         app:layout_constraintTop_toTopOf="parent"
         app:title="@string/discovery" />
 
+    <io.legado.app.ui.widget.recycler.NestedScrollableHost
+        android:id="@+id/host_groups"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@+id/title_bar">
+
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/cg_groups"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                app:chipSpacingHorizontal="8dp"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true" />
+
+        </HorizontalScrollView>
+
+    </io.legado.app.ui.widget.recycler.NestedScrollableHost>
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/refresh_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/title_bar">
+        app:layout_constraintTop_toBottomOf="@+id/host_groups">
 
         <io.legado.app.ui.widget.recycler.RecyclerViewAtPager2
             android:id="@+id/rv_containers"
