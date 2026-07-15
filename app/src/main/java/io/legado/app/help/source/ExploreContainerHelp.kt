@@ -106,15 +106,4 @@ object ExploreContainerHelp {
             else -> "${diff / 86400_000L}天前"
         }
     }
-
-    /** 钉入反解:优先按当前 URL 精确匹配,再按标题,都不中用传入值当快照 */
-    fun resolvePinKind(
-        kinds: List<ExploreKind>,
-        exploreName: String,
-        exploreUrl: String,
-    ): Pair<String, String> {
-        val matched = kinds.firstOrNull { it.url == exploreUrl }
-            ?: kinds.firstOrNull { it.title == exploreName && !it.url.isNullOrBlank() }
-        return (matched?.title ?: exploreName) to (matched?.url ?: exploreUrl)
-    }
 }

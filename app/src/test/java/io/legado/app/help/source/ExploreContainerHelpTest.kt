@@ -145,33 +145,4 @@ class ExploreContainerHelpTest {
         // 时钟回拨(time 在未来)按刚刚
         assertEquals("刚刚", ExploreContainerHelp.formatUpdateTime(now + 60_000L, now))
     }
-
-    // ===== 钉入反解 =====
-
-    @Test
-    fun pin_resolve_prefers_url_match() {
-        val (title, url) = ExploreContainerHelp.resolvePinKind(
-            kinds, "改名后的玄幻", "https://a.com/xuanhuan/{{page}}"
-        )
-        assertEquals("玄幻", title)
-        assertEquals("https://a.com/xuanhuan/{{page}}", url)
-    }
-
-    @Test
-    fun pin_resolve_falls_back_to_title_match() {
-        val (title, url) = ExploreContainerHelp.resolvePinKind(
-            kinds, "都市", "https://a.com/resolved/dushi"
-        )
-        assertEquals("都市", title)
-        assertEquals("https://a.com/dushi/{{page}}", url)
-    }
-
-    @Test
-    fun pin_resolve_falls_back_to_snapshot() {
-        val (title, url) = ExploreContainerHelp.resolvePinKind(
-            kinds, "未知分类", "https://a.com/unknown"
-        )
-        assertEquals("未知分类", title)
-        assertEquals("https://a.com/unknown", url)
-    }
 }
