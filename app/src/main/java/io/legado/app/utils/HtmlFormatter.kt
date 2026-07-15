@@ -34,6 +34,24 @@ object HtmlFormatter {
             .replace(lastRegex, "")
     }
 
+    /**
+     * 简介专用:与 format 同一套清洗,但不加段首全角缩进——规则输出什么就显示什么,
+     * 结构化简介(别名/主角/标签逐行罗列)不再出现"首行顶格、后行缩进"的错位。
+     * 换行折叠语义与 format 一致(连续换行并一,&lrm; 隔开的空行照旧存活)。
+     */
+    fun formatIntro(html: String?): String {
+        html ?: return ""
+        return html.replace(nbspRegex, " ")
+            .replace(espRegex, " ")
+            .replace(noPrintRegex, "")
+            .replace(wrapHtmlRegex, "\n")
+            .replace(commentRegex, "")
+            .replace(otherHtmlRegex, "")
+            .replace(indent1Regex, "\n")
+            .replace(indent2Regex, "")
+            .replace(lastRegex, "")
+    }
+
     fun formatKeepImg(html: String?, redirectUrl: URL? = null): String {
         html ?: return ""
         val keepImgHtml = format(html, notImgHtmlRegex)

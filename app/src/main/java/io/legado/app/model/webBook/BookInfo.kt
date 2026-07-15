@@ -120,7 +120,7 @@ object BookInfo {
         coroutineContext.ensureActive()
         Debug.log(bookSource.bookSourceUrl, "┌获取简介")
         try {
-            HtmlFormatter.format(analyzeRule.getString(infoRule.intro)).let {
+            HtmlFormatter.formatIntro(analyzeRule.getString(infoRule.intro)).let {
                 if (it.isNotEmpty()) book.intro = it
                 Debug.log(bookSource.bookSourceUrl, "└${it}")
             }
