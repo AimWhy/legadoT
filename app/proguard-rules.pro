@@ -65,6 +65,8 @@
 # (虚线/点线/双线 变实线、规则存了读回也变实线),必须单独保留类名/字段/枚举常量名
 -keep class io.legado.app.help.HighlightStyle { *; }
 -keep class io.legado.app.help.HighlightStyle$** { *; }
+# 发现页缓存壳:help.source 下的 GSON 模型,同 HighlightStyle 需单独 keep 防 R8 改名
+-keep class io.legado.app.help.source.CachedExploreBooks { *; }
 # showBrowser WebView JS 接口
 -keepclassmembers class **.ui.widget.dialog.BottomWebViewDialog$JSInterface {
     public *;
