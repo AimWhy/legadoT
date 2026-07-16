@@ -66,6 +66,9 @@ object AppColorScheme {
      * 键值变化(换肤/切日夜/切 eink)自动重建,无需手动失效。
      * 跟随系统切日夜的瞬间可能出现"新 isDark+旧种子"的过渡组合,
      * 随 applyDayNight 写入+RECREATE 自愈,勿加手动失效机制。
+     *
+     * primary 保真直出:强调色即 primary 原值,不经 tone 归一,可读性由选色本身决定;
+     * 和谐派生仍承载于容器/辅助色。ambientScheme(封面/壁纸种子)不走保真。
      */
     val current: AppSchemeColors
         get() {
@@ -76,7 +79,7 @@ object AppColorScheme {
                 isEInk = AppConfig.isEInkMode,
             )
             cache?.let { if (it.first == key) return it.second }
-            return buildScheme(key.seed, key.isDark, key.anchor, key.isEInk)
+            return buildScheme(key.seed, key.isDark, key.anchor, key.isEInk, fidelityPrimary = true)
                 .also { cache = key to it }
         }
 
@@ -85,13 +88,14 @@ object AppColorScheme {
         isDark: Boolean,
         @ColorInt surfaceAnchor: Int,
         isEInk: Boolean,
+        fidelityPrimary: Boolean = false,
     ): AppSchemeColors {
         if (isEInk) return einkScheme()
         val m3 = M3ColorScheme.generate(seed, isDark)
         // 中性面锚定派生:tone 差取自 M3 规范(浅色 surface=98 各容器 100/96/94/92/90;深色 6→4/10/12/17/22)
         return AppSchemeColors(
-            primary = m3.primary,
-            onPrimary = m3.onPrimary,
+            primary = if (fidelityPrimary) seed else m3.primary,
+            onPrimary = if (fidelityPrimary) fidelityOnColor(seed) else m3.onPrimary,
             primaryContainer = m3.primaryContainer,
             onPrimaryContainer = m3.onPrimaryContainer,
             secondary = m3.secondary,
@@ -161,6 +165,13 @@ object AppColorScheme {
         surfaceContainerHigh = EINK_CONTAINER,
         surfaceContainerHighest = EINK_CONTAINER,
     )
+
+    /**
+     * 保真直出时的 onPrimary:按种子 tone 取黑或白。
+     * 对比度交叉点在 tone≈50,阈值 60 与 M3 惯例一致,中明度色偏向白字。
+     */
+    private fun fidelityOnColor(@ColorInt color: Int): Int =
+        if (Hct.fromInt(color).tone >= 60) BLACK else WHITE
 
     private fun Int.shiftTone(delta: Double): Int {
         val hct = Hct.fromInt(this)

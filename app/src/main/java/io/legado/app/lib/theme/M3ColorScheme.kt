@@ -7,9 +7,9 @@ import com.google.android.material.color.utilities.SchemeContent
 /**
  * 用单个种子色生成 Material 3 调和配色（Content 方案）。
  *
- * Content 方案保持种子的色相；primary 是种子经对比度修正后的 tone(亮色≈40/暗色≈80)，
- * 与原始种子色可有可感知差异，种子的"保真色"由 primaryContainer 承载。
- * 同时派生出和谐的 secondary / tertiary / surface 等辅助色。
+ * Content 方案保持种子的色相；primary 基准 tone 亮色≈40/暗色≈80，但受 ToneDeltaPair
+ * 约束向保真容器靠拢——极端明暗种子时会接近源 tone(实测近黑种子 primary tone<20)，
+ * 种子的"保真色"由 primaryContainer 承载。同时派生出和谐的 secondary / tertiary / surface 等辅助色。
  *
  * 注意：MaterialDynamicColors 的取色 API 在 material 1.13.0 中为 public。
  */

@@ -119,7 +119,7 @@ val Context.primaryColor: Int
 val Context.m3Colors: AppSchemeColors
     get() = AppColorScheme.current
 
-/** 已重定向:返回种子派生的 scheme.primary(对比度修正 tone,与原始选色可有可感知差异;保真色在 primaryContainer) */
+/** 已重定向:返回 scheme.primary,即强调色原值直出(保真);和谐派生承载于容器/辅助色 */
 val Context.accentColor: Int
     get() = AppColorScheme.current.primary
 

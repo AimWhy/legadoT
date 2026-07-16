@@ -85,6 +85,40 @@ class AppColorSchemeTest {
     }
 
     @Test
+    fun `fidelity primary passes user accent through untouched`() {
+        // 中明度种子(tone≈51):派生路会拉到 40,保真路必须原值直出;其余角色仍走派生
+        val seed = 0xFFE91E63.toInt()
+        val fidelity = AppColorScheme.buildScheme(seed, false, dayBg, false, fidelityPrimary = true)
+        val derived = AppColorScheme.buildScheme(seed, false, dayBg, false)
+        assertEquals("primary 应为用户原值", seed, fidelity.primary)
+        assertTrue("派生路 primary 应仍被 tone 修正", derived.primary != seed)
+        assertEquals("容器保真色不受直出影响", derived.primaryContainer, fidelity.primaryContainer)
+        assertEquals("辅助色仍走派生", derived.secondary, fidelity.secondary)
+    }
+
+    @Test
+    fun `fidelity onPrimary flips black or white by seed tone`() {
+        val lightSeed = 0xFFFFEB3B.toInt() // 亮黄 tone≈90 → 黑字
+        val darkSeed = 0xFF1A237E.toInt()  // 深靛 tone≈16 → 白字
+        val onLight = AppColorScheme
+            .buildScheme(lightSeed, false, dayBg, false, fidelityPrimary = true).onPrimary
+        val onDark = AppColorScheme
+            .buildScheme(darkSeed, false, dayBg, false, fidelityPrimary = true).onPrimary
+        assertEquals(0xFF000000.toInt(), onLight)
+        assertEquals(0xFFFFFFFF.toInt(), onDark)
+    }
+
+    @Test
+    fun `fidelity does not leak into eink or ambient`() {
+        val eink = AppColorScheme.buildScheme(daySeed, false, dayBg, true, fidelityPrimary = true)
+        assertEquals("eink 黑白覆盖优先于保真", 0xFF000000.toInt(), eink.primary)
+        // ambient 保持派生(氛围场景视觉按派生色终审):同种子 primary 仍是派生值而非原值直出
+        val seed = 0xFFE91E63.toInt()
+        val ambient = AppColorScheme.ambientScheme(seed, isDark = false, isEInk = false)
+        assertTrue("ambient primary 应仍走派生而非直出", ambient.primary != seed)
+    }
+
+    @Test
     fun `eink scheme is pure black and white`() {
         val s = AppColorScheme.buildScheme(daySeed, false, dayBg, true)
         assertEquals(0xFF000000.toInt(), s.primary)
