@@ -134,6 +134,8 @@ class PaddingConfigDialog : BaseDialogFragment(R.layout.dialog_read_padding) {
     }
 
     private fun bindRegion(region: Region) = binding.run {
+        // 切分段先清挂起节流写,防旧分段的拖动值越区落入新分段字段
+        bodyThrottle?.cancel()
         bindingRegion = true
         curRegion = region
         // 先 max 后 progress:max setter 会把现值收缩进新上限
