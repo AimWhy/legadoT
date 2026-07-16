@@ -26,6 +26,9 @@ class DetailSeekBar @JvmOverloads constructor(
 
     var valueFormat: ((progress: Int) -> String)? = null
     var onChanged: ((progress: Int) -> Unit)? = null
+    var onTrackingStart: (() -> Unit)? = null
+    var onTrackingStop: (() -> Unit)? = null
+    var onDragging: ((progress: Int) -> Unit)? = null
     var progress: Int
         get() = binding.seekBar.value.toInt()
         set(value) {
@@ -62,11 +65,18 @@ class DetailSeekBar @JvmOverloads constructor(
         }
         binding.ivSeekPlus.setOnClickListener { step(1) }
         binding.ivSeekReduce.setOnClickListener { step(-1) }
-        binding.seekBar.addOnChangeListener { _, value, _ -> upValue(value.toInt()) }
+        binding.seekBar.addOnChangeListener { _, value, fromUser ->
+            upValue(value.toInt())
+            if (fromUser) onDragging?.invoke(value.toInt())
+        }
         binding.seekBar.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
-            override fun onStartTrackingTouch(slider: Slider) = Unit
+            override fun onStartTrackingTouch(slider: Slider) {
+                onTrackingStart?.invoke()
+            }
+
             override fun onStopTrackingTouch(slider: Slider) {
                 onChanged?.invoke(slider.value.toInt())
+                onTrackingStop?.invoke()
             }
         })
     }
