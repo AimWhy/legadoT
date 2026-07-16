@@ -9,8 +9,9 @@
  *   java.post/get/webView、加解密(含 CryptoJS)等完整清单见编辑器菜单-帮助。
  * - 全部同步写法,并发由应用调度;每次调用在新 scope 执行,顶层变量不跨调用保留,
  *   跨请求状态存 cache.put/get 或 source.setVariable/getVariable。
- * - 引擎 Rhino,以 ES5(function/var)为准;class、async/await、Promise 回调、
- *   调用处展开语法不支持。
+ * - 引擎 Rhino:let/const、箭头函数、模板字符串、for-of、解构、默认参数、
+ *   字面量展开 [...arr]/{...obj}、?.、?? 可用;class、async/await、Promise 回调、
+ *   调用处展开 f(...arr)、剩余解构不可用。
  * - java.log(msg) 输出到书源调试日志。
  */
 
@@ -23,7 +24,7 @@
  * - jsLib:本源所有函数共用的公共 JS 库文本
  * enabled/customOrder 等用户态字段由应用维护,脚本值不生效。
  */
-var source = {
+const source = {
   bookSourceUrl: "https://example.com", // 必填,源唯一身份;修改即成为新源
   bookSourceName: "示例JS源",           // 必填
   bookSourceType: 0,                    // 0文本 1音频 2图片 3下载站
@@ -87,8 +88,8 @@ var source = {
  * @returns {SearchBook[]} 返回数组或 JSON 字符串均可,下同
  */
 function search(key, page) {
-  var html = java.ajax(source.bookSourceUrl + "/search?q=" + encodeURI(key) + "&p=" + page)
-  var list = []
+  const html = java.ajax(`${source.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`)
+  const list = []
   // list.push({ name: "书名", bookUrl: "https://.../book/1", author: "作者" })
   return list
 }
@@ -100,7 +101,7 @@ function search(key, page) {
  * @returns {BookInfoPatch}
  */
 function getBookInfo(book) {
-  var html = java.ajax(book.bookUrl)
+  const html = java.ajax(book.bookUrl)
   return { intro: "", coverUrl: "", latestChapterTitle: "", tocUrl: book.bookUrl }
 }
 
@@ -111,8 +112,8 @@ function getBookInfo(book) {
  * @returns {Chapter[]} 数组顺序即目录顺序
  */
 function getChapters(book) {
-  var html = java.ajax(book.tocUrl)
-  var chapters = []
+  const html = java.ajax(book.tocUrl)
+  const chapters = []
   // chapters.push({ title: "第一卷", url: "第一卷", isVolume: true })
   // chapters.push({ title: "第1章", url: "https://.../read/1" })
   return chapters
@@ -126,6 +127,6 @@ function getChapters(book) {
  * @returns {string} 正文;空视为失败
  */
 function getContent(chapter, book) {
-  var html = java.ajax(chapter.url)
+  const html = java.ajax(chapter.url)
   return html
 }

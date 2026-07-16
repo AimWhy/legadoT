@@ -500,7 +500,7 @@ java.openUrl(url:String,mimeType:String)
 `export`；也不需要在别处注册，函数名固定、由应用按名调用。
 
 ```js
-var source = {
+const source = {
   bookSourceUrl: "https://example.com",
   bookSourceName: "示例JS源",
   bookSourceType: 0,
@@ -510,21 +510,21 @@ var source = {
 }
 
 function search(key, page) {
-  var html = java.ajax(source.bookSourceUrl + "/search?q=" + encodeURI(key) + "&p=" + page)
-  var list = []
+  const html = java.ajax(`${source.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`)
+  const list = []
   // list.push({ name: "书名", author: "作者", bookUrl: "https://.../book/1", ... })
   return list
 }
 
 function getChapters(book) {
-  var html = java.ajax(book.tocUrl)
-  var chapters = []
+  const html = java.ajax(book.tocUrl)
+  const chapters = []
   // chapters.push({ title: "第1章", url: "https://.../read/1" })
   return chapters
 }
 
 function getContent(chapter, book) {
-  var html = java.ajax(chapter.url)
+  const html = java.ajax(chapter.url)
   return html
 }
 ```
@@ -599,11 +599,12 @@ function getContent(chapter, book) {
 
 ### 语法边界
 
-引擎是 Rhino（ES 部分兼容），可以放心用：`function` 声明、`var`/`let`/`const`、`for`/`for-in`、
-`if`/`else`/`while`、正则、模板字符串、基础对象/数组字面量。**避免使用**：`class`、
-`async`/`await`、`Promise` 链式调用、调用处的展开语法 `f(...arr)`、数组剩余解构
-`var [a, ...b] = arr`、`export`/`import`。写法上遇到不确定的新语法，优先按上面模板里的
-`function` + `var` 写。
+引擎是 Rhino，ES2015+ 大部分特性可用：`let`/`const`、箭头函数、模板字符串、`for-of`、
+解构赋值、函数默认参数、数组/对象字面量展开 `[...arr]`/`{...obj}`、可选链 `?.`、
+空值合并 `??`（逐条锚定在 `JsTest.es6SupportedFeatures`）。不可用：`class`、
+`async`/`await`、`Promise` 回调（可注册但无事件循环，从不执行）、调用处的展开语法
+`f(...arr)`、数组剩余解构 `var [a, ...b] = arr`、`export`/`import`
+（锚定在 `JsTest.es6CompatBoundary`）。
 
 ### 导入与分享
 

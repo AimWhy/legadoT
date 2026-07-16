@@ -144,6 +144,50 @@ class JsTest {
         Assert.assertEquals("0", RhinoScriptEngine.eval(promiseJs, ScriptBindings()))
     }
 
+    /**
+     * ES6+ 支持面正面清单(es6CompatBoundary 的反面):模板/文档允许使用的新语法
+     * 逐条锚定在此,升级 rhino 版本后跑此测试重新定界。
+     * 每条求值结果同时断言,防"解析通过但语义错"。
+     */
+    @Test
+    fun es6SupportedFeatures() {
+        listOf(
+            // 语法 to 期望值
+            "let x = 1; const y = 2; '' + (x + y)" to "3",
+            "var f = (a, b) => a + b; '' + f(1, 2)" to "3",
+            "var n = 6; `p\${n}q`" to "p6q",
+            "var s = 0; for (var v of [1, 2, 3]) s += v; '' + s" to "6",
+            "var {a, b} = {a: 1, b: 2}; '' + (a + b)" to "3",
+            "var [p, q] = [7, 8]; '' + (p + q)" to "15",
+            "function g(a, b) { b = b || 10; return a + b }; '' + g(5)" to "15",
+            "var k = 'dyn'; var o = {[k]: 9, m() { return this[k] } }; '' + o.m()" to "9",
+            "var arr = [1, 2]; var arr2 = [0].concat(arr); '' + arr2.length" to "3",
+            "'' + [3, 1, 2].includes(2)" to "true",
+            "'' + Object.assign({}, {a: 1}, {b: 2}).b" to "2",
+            "'' + Array.from('ab').length" to "2",
+            "'' + 'x'.repeat(3)" to "xxx",
+            "'' + '5'.padStart(3, '0')" to "005",
+            "function d(a, b = 10) { return a + b }; '' + d(5)" to "15",
+            "var a1 = [1, 2]; var a2 = [0, ...a1]; '' + a2.length" to "3",
+            "var o1 = {a: 1}; var o2 = {...o1, b: 2}; '' + (o2.a + o2.b)" to "3",
+            "var u = {v: {w: 5}}; '' + (u.v?.w)" to "5",
+            "var z = null; '' + (z ?? 'dft')" to "dft",
+        ).forEach { (js, expect) ->
+            val outcome = runCatching { RhinoScriptEngine.eval(js, ScriptBindings()) }
+            Assert.assertEquals("求值失败或结果不符: $js -> ${outcome.exceptionOrNull()?.message}",
+                expect, outcome.getOrNull())
+        }
+        // 顶层声明可见性:JsSourceConfig.extract 经 ScriptableObject.getProperty 取
+        // source/函数,var/let/const 三种顶层声明均须可见
+        listOf("var", "let", "const").forEach { kw ->
+            val scope = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
+            RhinoScriptEngine.eval("$kw source = { a: 1 }", scope)
+            val found = org.htmlunit.corejs.javascript.ScriptableObject.getProperty(scope, "source")
+            Assert.assertNotEquals("顶层 $kw 声明经 getProperty 不可见",
+                org.htmlunit.corejs.javascript.Scriptable.NOT_FOUND, found)
+        }
+    }
+
     @Test
     fun typeofString() {
         val bindings = ScriptBindings()
