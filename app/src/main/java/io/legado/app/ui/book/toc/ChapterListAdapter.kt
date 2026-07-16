@@ -150,7 +150,12 @@ class ChapterListAdapter(context: Context, val callback: Callback) :
                     } else {
                         cacheFileNames.contains(chapter.getFileName())
                     }
-            tvChapterItem.updatePaddingRelative(start = 12.dpToPx() + (item.depth * 10).dpToPx())
+            // 基准 start=space_l:与 item_chapter_list 的 XML padding 及详情页面板 16dp 内容缩进一致
+            // (此处每次绑定重写 start,XML 值会被覆盖,基准必须与之同源);depth 为分卷缩进
+            tvChapterItem.updatePaddingRelative(
+                start = context.resources.getDimensionPixelSize(R.dimen.space_l) +
+                    (item.depth * 10).dpToPx()
+            )
             if (payloads.isEmpty()) {
                 if (isDur) {
                     tvChapterName.setTextColor(context.accentColor)
