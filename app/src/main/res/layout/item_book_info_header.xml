@@ -68,36 +68,47 @@
         android:layout_marginBottom="@dimen/space_s"
         android:background="@color/divider" />
 
-    <!-- 简介。书源常不返回简介，由 Task 2 统一控制简介区域可见性和展开行为。 -->
-    <io.legado.app.ui.widget.text.ScrollTextView
-        android:id="@+id/tv_intro"
+    <!-- 简介。书源常不返回简介，由 Task 2 统一控制简介区域可见性和展开行为。
+         内联展开:按钮悬浮于折叠文本第 4 行行尾(bottom|end,折叠高度恰为 4 行),
+         渐隐底(透明→卡片底色)在代码侧铺设让行尾文字淡出;展开态 tv_intro 垫
+         底部内边距,按钮落于文末右下不遮字。 -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:clickable="true"
-        android:ellipsize="end"
-        android:focusable="true"
-        android:maxLines="4"
-        android:paddingHorizontal="@dimen/space_xs"
-        android:textIsSelectable="true"
-        android:textSize="@dimen/text_body"
-        app:skin_textColor="onSurfaceVariant"
-        android:textColor="@color/secondaryText"
-        tools:text="@string/book_intro"
-        tools:ignore="RtlHardcoded,RtlSymmetry" />
+        android:layout_height="wrap_content">
 
-    <io.legado.app.ui.widget.text.AccentTextView
-        android:id="@+id/tv_intro_expand"
-        android:layout_width="wrap_content"
-        android:layout_height="40dp"
-        android:layout_gravity="end"
-        android:clickable="true"
-        android:focusable="true"
-        android:gravity="center"
-        android:paddingHorizontal="@dimen/space_s"
-        android:text="@string/book_intro_expand"
-        android:textSize="@dimen/text_caption_l"
-        android:visibility="gone"
-        tools:visibility="visible" />
+        <io.legado.app.ui.widget.text.ScrollTextView
+            android:id="@+id/tv_intro"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:ellipsize="end"
+            android:focusable="true"
+            android:maxLines="4"
+            android:paddingHorizontal="@dimen/space_xs"
+            android:textIsSelectable="true"
+            android:textSize="@dimen/text_body"
+            app:skin_textColor="onSurfaceVariant"
+            android:textColor="@color/secondaryText"
+            tools:text="@string/book_intro"
+            tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+        <io.legado.app.ui.widget.text.AccentTextView
+            android:id="@+id/tv_intro_expand"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/book_intro_expand_height"
+            android:layout_gravity="bottom|end"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical|end"
+            android:paddingStart="40dp"
+            android:paddingEnd="@dimen/space_xs"
+            android:text="@string/book_intro_expand"
+            android:textSize="@dimen/text_caption_l"
+            android:visibility="gone"
+            tools:ignore="RtlSymmetry"
+            tools:visibility="visible" />
+
+    </FrameLayout>
 
     <!-- N: 原 ll_toc(Chapters:… / View Chapters)已移除——与下方内嵌目录头(item_book_info_toc_header)
          的"Chapters: N / 排序"信息重复。打开完整目录页(搜索/分卷)的入口改由目录头承担(点整行)。 -->

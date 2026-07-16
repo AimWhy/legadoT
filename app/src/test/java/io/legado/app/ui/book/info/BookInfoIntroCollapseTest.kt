@@ -25,6 +25,11 @@ class BookInfoIntroCollapseTest {
             assertTrue(xml.contains("android:maxLines=\"4\""))
             assertTrue(xml.contains("android:ellipsize=\"end\""))
             assertTrue(actionElement.contains("android:visibility=\"gone\""))
+            // 内联展开:按钮悬浮在折叠文本第 4 行行尾(FrameLayout overlay),渐隐底在代码侧铺设
+            assertTrue(
+                "action overlays the last collapsed line",
+                actionElement.contains("android:layout_gravity=\"bottom|end\"")
+            )
         }
 
         val defaultStrings = readProjectFile("src/main/res/values/strings.xml")
@@ -58,6 +63,9 @@ class BookInfoIntroCollapseTest {
         // 布局回调内必须 post 出去再改可见性:同步翻转兄弟视图的重排请求会被
         // 父容器 layout() 收尾清旗吞掉,按钮成 0 尺寸幽灵(模拟器实测)
         assertTrue(source.contains("tvIntro.post { upIntroExpandVisibility"))
+        // 内联展开的两个状态件:折叠态渐隐底、展开态给 tv_intro 垫底距让"收起"落在文末不遮字
+        assertTrue(source.contains("GradientDrawable"))
+        assertTrue(source.contains("updatePadding(bottom"))
     }
 
     private fun readProjectFile(pathInApp: String): String {

@@ -54,6 +54,10 @@
     <dimen name="radius_full">999dp</dimen>
     <dimen name="cover_radius">12dp</dimen>
 
+    <!-- 详情简介内联展开钮:高度贴合单行正文行高(悬浮在折叠文本末行行尾),
+         展开态 tv_intro 的底部内边距同用此值,使"收起"落在文末之下不遮字 -->
+    <dimen name="book_intro_expand_height">24dp</dimen>
+
     <!-- 字号层级 -->
     <dimen name="text_caption">12sp</dimen>
     <dimen name="text_body">14sp</dimen>

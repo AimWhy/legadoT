@@ -189,37 +189,47 @@
                     android:layout_marginBottom="@dimen/space_s"
                     android:background="@color/divider" />
 
-                <io.legado.app.ui.widget.text.ScrollTextView
-                    android:id="@+id/tv_intro"
+                <!-- 内联展开:与 item_book_info_header.xml 同构(见彼处头注),
+                     land 渐隐底色为页面背景而非卡片底色(代码侧按 appBar 有无区分) -->
+                <FrameLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clickable="true"
-                    android:ellipsize="end"
-                    android:focusable="true"
-                    android:maxLines="4"
-                    android:minHeight="48dp"
-                    android:paddingHorizontal="@dimen/space_s"
-                    android:text="@string/book_intro"
-                    android:textIsSelectable="true"
-                    android:textSize="@dimen/text_body"
-                    android:visibility="visible"
-                    app:skin_textColor="onSurfaceVariant"
-                    android:textColor="@color/secondaryText"
-                    tools:ignore="RtlHardcoded,RtlSymmetry" />
+                    android:layout_height="wrap_content">
 
-                <io.legado.app.ui.widget.text.AccentTextView
-                    android:id="@+id/tv_intro_expand"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_gravity="end"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:paddingHorizontal="@dimen/space_s"
-                    android:text="@string/book_intro_expand"
-                    android:textSize="@dimen/text_caption_l"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
+                    <io.legado.app.ui.widget.text.ScrollTextView
+                        android:id="@+id/tv_intro"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:clickable="true"
+                        android:ellipsize="end"
+                        android:focusable="true"
+                        android:maxLines="4"
+                        android:minHeight="48dp"
+                        android:paddingHorizontal="@dimen/space_s"
+                        android:text="@string/book_intro"
+                        android:textIsSelectable="true"
+                        android:textSize="@dimen/text_body"
+                        android:visibility="visible"
+                        app:skin_textColor="onSurfaceVariant"
+                        android:textColor="@color/secondaryText"
+                        tools:ignore="RtlHardcoded,RtlSymmetry" />
+
+                    <io.legado.app.ui.widget.text.AccentTextView
+                        android:id="@+id/tv_intro_expand"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/book_intro_expand_height"
+                        android:layout_gravity="bottom|end"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center_vertical|end"
+                        android:paddingStart="40dp"
+                        android:paddingEnd="@dimen/space_s"
+                        android:text="@string/book_intro_expand"
+                        android:textSize="@dimen/text_caption_l"
+                        android:visibility="gone"
+                        tools:ignore="RtlSymmetry"
+                        tools:visibility="visible" />
+
+                </FrameLayout>
 
                 <LinearLayout
                     android:id="@+id/ll_toc"

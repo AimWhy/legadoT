@@ -3,6 +3,8 @@ package io.legado.app.ui.book.info
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
@@ -574,6 +576,22 @@ class BookInfoActivity :
                 tvIntroExpand.text = label
             }
         }
+        // 折叠溢出态铺渐隐底(bindIntroToggle 存于 tag);展开态清底,并给 tv_intro 垫
+        // 一行行高的底部内边距使"收起"落于文末之下不遮字。写入均先比对,布局后重入不成环。
+        val fade = if (canToggle && !introExpanded) tvIntroExpand.tag as? Drawable else null
+        if (tvIntroExpand.background !== fade) {
+            tvIntroExpand.background = fade
+        }
+        // 按钮高度运行时贴合单行行高(XML 的 book_intro_expand_height 仅初值):
+        // 定高会随字体缩放偏离行高,偏高时渐隐上缘洗到倒数第二行尾部
+        val lineH = tvIntro.lineHeight
+        if (canToggle && tvIntroExpand.layoutParams.height != lineH) {
+            tvIntroExpand.layoutParams = tvIntroExpand.layoutParams.also { it.height = lineH }
+        }
+        val padBottom = if (canToggle && introExpanded) lineH else 0
+        if (tvIntro.paddingBottom != padBottom) {
+            tvIntro.updatePadding(bottom = padBottom)
+        }
     }
 
     private fun bindIntroToggle(
@@ -587,6 +605,18 @@ class BookInfoActivity :
                 upIntro(tvIntro, divider, tvIntroExpand, book)
             }
         }
+        // 折叠态渐隐底:透明→按钮承载面底色(portrait=信息卡 surfaceContainerLow,land=页面背景),
+        // 铺在第 4 行行尾之下让文字淡入按钮;色值经 scheme 取,主题/eink 自适应,换肤 recreate
+        // 随视图重建。存 tag 供 upIntroExpandVisibility 按状态取用(仅折叠溢出态铺设)。
+        val fadeBase = if (binding.appBar != null) {
+            AppColorScheme.current.surfaceContainerLow
+        } else {
+            AppColorScheme.current.background
+        }
+        tvIntroExpand.tag = GradientDrawable(
+            GradientDrawable.Orientation.LEFT_RIGHT,
+            intArrayOf(fadeBase and 0x00FFFFFF, fadeBase, fadeBase)
+        )
         // 持久监听而非 upIntro 内挂一次性 doOnLayout:一次性回调与 header 异步装配/
         // 多次数据发射存在时序竞争,一旦错过(被守卫消耗或过早求值)展开钮即无再评估机会,
         // 首次进入不显示、待滚出视口再回来触发新布局才出现
