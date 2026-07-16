@@ -19,7 +19,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
@@ -536,37 +535,43 @@ class BookInfoActivity :
 
         tvIntro.maxLines = if (introExpanded) Int.MAX_VALUE else INTRO_COLLAPSED_LINES
         tvIntro.ellipsize = if (introExpanded) null else TextUtils.TruncateAt.END
-        val expectedText = intro
-        val expectedExpanded = introExpanded
-        tvIntro.doOnLayout {
-            if (tvIntro.text.toString() != expectedText ||
-                introExpanded != expectedExpanded
-            ) {
-                return@doOnLayout
-            }
-            val canToggle = if (expectedExpanded) {
-                tvIntro.lineCount > INTRO_COLLAPSED_LINES
+        // 布局已就绪且无待定重排时立即评估一次;其余时机交给持久布局监听(bindIntroToggle 安装),
+        // 布局未定时不评估,避免在陈旧 layout 上误判
+        if (tvIntro.isLaidOut && !tvIntro.isLayoutRequested) {
+            upIntroExpandVisibility(tvIntro, tvIntroExpand)
+        }
+    }
+
+    /**
+     * 展开钮可见性 = 当前文本与布局的纯函数,每次 tv_intro 布局后由持久监听重算。
+     * 全程幂等(可见性与文案都先比对再写),布局回调内重入不会引发再布局循环。
+     */
+    private fun upIntroExpandVisibility(tvIntro: TextView, tvIntroExpand: TextView) {
+        val canToggle = if (!tvIntro.isVisible) {
+            false
+        } else if (introExpanded) {
+            tvIntro.lineCount > INTRO_COLLAPSED_LINES
+        } else {
+            val textLayout = tvIntro.layout
+            if (textLayout == null || textLayout.lineCount == 0) {
+                false
+            } else if (textLayout.lineCount > INTRO_COLLAPSED_LINES) {
+                true
             } else {
-                val textLayout = tvIntro.layout
-                if (textLayout == null || textLayout.lineCount == 0) {
-                    false
-                } else if (textLayout.lineCount > INTRO_COLLAPSED_LINES) {
-                    true
-                } else {
-                    val lastLine = textLayout.lineCount - 1
-                    textLayout.getEllipsisCount(lastLine) > 0 ||
-                        textLayout.getLineEnd(lastLine) < tvIntro.text.length
-                }
+                val lastLine = textLayout.lineCount - 1
+                textLayout.getEllipsisCount(lastLine) > 0 ||
+                    textLayout.getLineEnd(lastLine) < tvIntro.text.length
             }
+        }
+        if (tvIntroExpand.isVisible != canToggle) {
             tvIntroExpand.isVisible = canToggle
-            if (canToggle) {
-                tvIntroExpand.setText(
-                    if (expectedExpanded) {
-                        R.string.book_intro_collapse
-                    } else {
-                        R.string.book_intro_expand
-                    }
-                )
+        }
+        if (canToggle) {
+            val label = getString(
+                if (introExpanded) R.string.book_intro_collapse else R.string.book_intro_expand
+            )
+            if (tvIntroExpand.text.toString() != label) {
+                tvIntroExpand.text = label
             }
         }
     }
@@ -581,6 +586,12 @@ class BookInfoActivity :
             viewModel.getBook(false)?.let { book ->
                 upIntro(tvIntro, divider, tvIntroExpand, book)
             }
+        }
+        // 持久监听而非 upIntro 内挂一次性 doOnLayout:一次性回调与 header 异步装配/
+        // 多次数据发射存在时序竞争,一旦错过(被守卫消耗或过早求值)展开钮即无再评估机会,
+        // 首次进入不显示、待滚出视口再回来触发新布局才出现
+        tvIntro.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
+            upIntroExpandVisibility(tvIntro, tvIntroExpand)
         }
     }
 

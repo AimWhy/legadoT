@@ -50,8 +50,11 @@ class BookInfoIntroCollapseTest {
         assertTrue(source.contains("R.string.book_intro_expand"))
         assertTrue(source.contains("R.string.book_intro_collapse"))
         assertTrue(source.contains("bindIntroToggle"))
-        assertTrue(source.contains("tvIntro.doOnLayout"))
-        assertTrue(source.contains("val expectedExpanded = introExpanded"))
+        // 可见性由 tv_intro 的持久布局监听驱动,每次布局后重算;
+        // 一次性 doOnLayout 会与 header 异步装配/多次数据发射赛跑,首载可能永久漏判
+        assertTrue(source.contains("tvIntro.addOnLayoutChangeListener"))
+        assertTrue(source.contains("upIntroExpandVisibility"))
+        assertTrue(!source.contains("tvIntro.doOnLayout"))
         assertTrue(!source.contains("tvIntro.post {"))
     }
 
