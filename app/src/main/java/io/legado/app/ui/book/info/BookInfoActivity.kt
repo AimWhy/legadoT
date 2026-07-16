@@ -8,11 +8,9 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.text.TextUtils
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
-import android.view.View
 import android.view.Window
 import android.widget.CheckBox
 import android.widget.LinearLayout
@@ -58,7 +56,6 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.AppColorScheme
-import io.legado.app.lib.theme.ThemeUtils
 import io.legado.app.model.AutoTask
 import io.legado.app.model.AutoTaskRule
 import io.legado.app.model.SourceCallBack
@@ -173,8 +170,8 @@ class BookInfoActivity :
     // 氛围背景竞写守卫:换封面可能连续触发(load 回调异步),旧协程取消,只有最新一次落地
     private var ambientJob: Job? = null
 
-    // N3a toc-listify: 详情页(portrait)内容区从"NestedScroll + 手搓预览"换成 RecyclerView
-    // 承载完整目录,复用目录页既有的 ChapterListAdapter,不新建章节行布局/适配器。
+    // N3a toc-listify(后扩展至 land):内容区 RecyclerView 承载完整目录,复用目录页既有的
+    // ChapterListAdapter,不新建章节行布局/适配器。
     // headerBinding/tocHeaderBinding 可能晚于 viewModel 数据就绪才 inflate(addHeaderView 异步),
     // 故 bindInfoHeader/upTocHeader 内都做"回填当前已有数据"处理,showBook/upChapterList 侧也留 null-safe 更新。
     private var headerBinding: ItemBookInfoHeaderBinding? = null
@@ -229,8 +226,6 @@ class BookInfoActivity :
                 intent.getStringExtra("author").orEmpty())
         binding.refreshLayout.setColorSchemeColors(accentColor)
         binding.flAction.applyNavigationBarPadding()
-        // tv_intro 在 land 仍是 binding 自己的字段(portrait 侧已迁入 header,在 bindInfoHeader 内单独设置)
-        binding.tvIntro?.revealOnFocusHint = false
         setSupportActionBar(binding.toolBar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowTitleEnabled(false)
@@ -241,6 +236,11 @@ class BookInfoActivity :
             val statusBarTop = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             binding.toolBar.updatePadding(top = statusBarTop)
             binding.llHeader?.updatePadding(top = statusBarTop)
+            // land 右栏(recyclerView)顶到屏幕上缘,内容让位状态栏;portrait 列表在 appBar 之下不需要。
+            // clipToPadding=false,滚动中内容可进入垫区(edge-to-edge 常规行为)
+            if (binding.appBar == null) {
+                binding.recyclerView.updatePadding(top = statusBarTop)
+            }
             windowInsets
         }
         binding.appBar?.addOnOffsetChangedListener { appBar, verticalOffset ->
@@ -250,22 +250,25 @@ class BookInfoActivity :
             binding.tvToolbarTitle.alpha = ((ratio - 0.6f) / 0.4f).coerceIn(0f, 1f)
             binding.refreshLayout.isEnabled = verticalOffset == 0
         }
-        // N3a toc-listify: portrait 内容区列表化,仅在 recyclerView 非空(即 portrait)时装配;
-        // land 仍是纯 ScrollView + 手搓预览(upTocPreview),recyclerView 为 null,不受影响。
-        binding.recyclerView?.let { rv ->
-            // 连续内容面板:信息头/目录头/章节行共坐一张 surfaceContainerLow 圆角面板
-            // (顶部两角圆,随 appBar 折叠上移)。形状背景不能走 skin_background
-            // (SkinInflaterFactory 平涂 setBackgroundColor 会抹掉圆角);色值经 scheme 取,
-            // 换肤 recreate 随视图重建。
-            rv.background = MaterialShapeDrawable(
-                ShapeAppearanceModel.builder()
-                    .setTopLeftCornerSize(resources.getDimension(R.dimen.radius_xl))
-                    .setTopRightCornerSize(resources.getDimension(R.dimen.radius_xl))
-                    .build()
-            ).apply {
-                fillColor = ColorStateList.valueOf(AppColorScheme.current.surfaceContainerLow)
+        // 内容区双向同形态:RecyclerView(信息头+目录头 addHeaderView+完整章节列表)。
+        binding.recyclerView.let { rv ->
+            // 连续内容面板:信息头/目录头/章节行共坐一张 surfaceContainerLow 面板,色值经
+            // scheme 取,换肤 recreate 随视图重建。portrait 顶部两角圆(面板从氛围头图上
+            // 升起,随 appBar 折叠上移);形状背景不能走 skin_background(SkinInflaterFactory
+            // 平涂 setBackgroundColor 会抹掉圆角)。land 双栏纵切无"升起"方向,平顶纯色。
+            if (binding.appBar != null) {
+                rv.background = MaterialShapeDrawable(
+                    ShapeAppearanceModel.builder()
+                        .setTopLeftCornerSize(resources.getDimension(R.dimen.radius_xl))
+                        .setTopRightCornerSize(resources.getDimension(R.dimen.radius_xl))
+                        .build()
+                ).apply {
+                    fillColor = ColorStateList.valueOf(AppColorScheme.current.surfaceContainerLow)
+                }
+                rv.clipToOutline = true
+            } else {
+                rv.setBackgroundColor(AppColorScheme.current.surfaceContainerLow)
             }
-            rv.clipToOutline = true
             rv.layoutManager = LinearLayoutManager(this)
             rv.adapter = chapterAdapter
             chapterAdapter.addHeaderView { parent ->
@@ -457,10 +460,9 @@ class BookInfoActivity :
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         if (ev.action == MotionEvent.ACTION_DOWN) {
-            // tv_intro 存在于且仅存在于其中一侧(portrait=headerBinding,land=binding),elvis 取现存的那个
-            val tvIntro = headerBinding?.tvIntro ?: binding.tvIntro
+            val tvIntro = headerBinding?.tvIntro
             currentFocus?.let {
-                if (it === tvIntro && tvIntro.hasSelection()) {
+                if (tvIntro != null && it === tvIntro && tvIntro.hasSelection()) {
                     it.clearFocus()
                 }
             }
@@ -502,26 +504,15 @@ class BookInfoActivity :
         tvName.text = book.name
         tvToolbarTitle.text = book.name
         tvAuthor.text = getString(R.string.author_show, book.getRealAuthor())
-        // tvOrigin/tvLasted/tvIntro/llToc 存在于且仅存在于其中一侧:
-        // portrait 已随 ll_info 迁入 header(RecyclerView addHeaderView 异步 inflate,可能晚于本次数据到达,
-        // 故 headerBinding 用 null-safe 更新,header 自己 inflate 时也会在 bindInfoHeader 内主动拉一次);
-        // land 未改动,字段仍在 binding 本身(nullable,因 portrait 侧同 id 已不存在于 activity 布局)。
-        // tvOrigin/tvLasted 现由 N5 C5a 抽出的 manageRows(view_book_info_manage_rows include)承载,
-        // 经 include 自带 id 后 h.manageRows/binding.manageRows 展开为可访问 nested binding。
+        // 信息区字段都在 header 内(RecyclerView addHeaderView 异步 inflate,可能晚于本次数据到达,
+        // 故 headerBinding 用 null-safe 更新,header 自己 inflate 时也会在 bindInfoHeader 内主动拉一次)。
+        // tvOrigin/tvLasted 由 N5 C5a 抽出的 manageRows(view_book_info_manage_rows include)承载。
         headerBinding?.let { h ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, null, h.tvIntroExpand, book)
+            upIntro(h.tvIntro, h.tvIntroExpand, book)
             upReadStatus(h, book)
         }
-        manageRows?.tvOrigin?.text = getString(R.string.origin_show, book.originName)
-        manageRows?.tvLasted?.text = getString(R.string.lasted_show, book.latestChapterTitle)
-        tvIntro?.let { introView ->
-            tvIntroExpand?.let { expandView ->
-                upIntro(introView, vIntroDivider, expandView, book)
-            }
-        }
-        llToc?.visible(!book.isWebFile)
         menuCustomBtn?.isVisible = viewModel.bookSource?.customButton == true
         upTvBookshelf()
         upKinds(book)
@@ -529,12 +520,11 @@ class BookInfoActivity :
     }
 
     /**
-     * 简介可见性:书源常不返回简介 → getDisplayIntro() 为空时 tv_intro(连同其下分隔线)整段 gone,
-     * 不留 minHeight 占位空白。divider 由 portrait/landscape 各自布局按需提供。
+     * 简介可见性:书源常不返回简介 → getDisplayIntro() 为空时 tv_intro 整段 gone,
+     * 不留 minHeight 占位空白。
      */
     private fun upIntro(
         tvIntro: TextView,
-        divider: View?,
         tvIntroExpand: TextView,
         book: Book,
     ) {
@@ -542,7 +532,6 @@ class BookInfoActivity :
         val hasIntro = !intro.isNullOrBlank()
         tvIntro.text = intro
         tvIntro.isVisible = hasIntro
-        divider?.isVisible = hasIntro
         if (!hasIntro) {
             tvIntroExpand.isVisible = false
             return
@@ -609,23 +598,18 @@ class BookInfoActivity :
 
     private fun bindIntroToggle(
         tvIntro: TextView,
-        divider: View?,
         tvIntroExpand: TextView,
     ) {
         tvIntroExpand.setOnClickListener {
             introExpanded = !introExpanded
             viewModel.getBook(false)?.let { book ->
-                upIntro(tvIntro, divider, tvIntroExpand, book)
+                upIntro(tvIntro, tvIntroExpand, book)
             }
         }
-        // 折叠态渐隐底:透明→按钮承载面底色(portrait=内容面板 surfaceContainerLow,land=页面背景),
+        // 折叠态渐隐底:透明→按钮承载面底色(两个方向都是内容面板 surfaceContainerLow),
         // 铺在第 4 行行尾之下让文字淡入按钮;色值经 scheme 取,主题/eink 自适应,换肤 recreate
         // 随视图重建。存 tag 供 upIntroExpandVisibility 按状态取用(仅折叠溢出态铺设)。
-        val fadeBase = if (binding.appBar != null) {
-            AppColorScheme.current.surfaceContainerLow
-        } else {
-            AppColorScheme.current.background
-        }
+        val fadeBase = AppColorScheme.current.surfaceContainerLow
         tvIntroExpand.tag = GradientDrawable(
             GradientDrawable.Orientation.LEFT_RIGHT,
             intArrayOf(fadeBase and 0x00FFFFFF, fadeBase, fadeBase)
@@ -667,7 +651,7 @@ class BookInfoActivity :
      */
     private fun bindInfoHeader(h: ItemBookInfoHeaderBinding) {
         h.tvIntro.revealOnFocusHint = false
-        bindIntroToggle(h.tvIntro, null, h.tvIntroExpand)
+        bindIntroToggle(h.tvIntro, h.tvIntroExpand)
         h.manageRows.tvOrigin.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 if (book.isLocal) return@let
@@ -699,7 +683,7 @@ class BookInfoActivity :
         viewModel.bookData.value?.let { book ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, null, h.tvIntroExpand, book)
+            upIntro(h.tvIntro, h.tvIntroExpand, book)
             upReadStatus(h, book)
         }
     }
@@ -763,48 +747,25 @@ class BookInfoActivity :
             ?.applyAmbientBackground(binding.ivCover.drawable, lifecycleScope) { isDestroyed }
     }
 
-    /**
-     * N3a toc-listify 分治:portrait 有 recyclerView(tv_toc/tv_lasted 已迁入 header),
-     * land 无 recyclerView(tv_toc/tv_lasted 仍是 activity 自己的旧字段)——与 appBar 判别器同理。
-     * tvToc/tvLasted 均按此discriminator 取目标 view,when 分支结构不变,仅目标 view 来源变化。
-     * tvLasted 现由 N5 C5a manageRows include 承载,两侧都多一层 .manageRows 但 discriminator 逻辑不变。
-     */
+    /** 目录加载状态写入内嵌目录头 tvTocCount;成功态的 count 由 upChapterList → upTocHeader 回填 */
     private fun upLoading(isLoading: Boolean, chapterList: List<BookChapter>? = null) {
-        val isPortrait = binding.recyclerView != null
-        // portrait 目录状态由内嵌目录头 tvTocCount 承担(卡内 tv_toc 已移除);land 仍是卡内 tv_toc。
-        val tvToc = if (isPortrait) null else binding.tvToc
-        val tvLasted =
-            if (isPortrait) headerBinding?.manageRows?.tvLasted else binding.manageRows?.tvLasted
         when {
-            isLoading -> {
-                tvToc?.text = getString(R.string.toc_s, getString(R.string.loading))
-                tocHeaderBinding?.tvTocCount?.text =
-                    getString(R.string.toc_s, getString(R.string.loading))
-            }
+            isLoading -> tocHeaderBinding?.tvTocCount?.text =
+                getString(R.string.toc_s, getString(R.string.loading))
 
-            chapterList.isNullOrEmpty() -> {
-                val err = getString(R.string.toc_s, getString(R.string.error_load_toc))
-                tvToc?.text = err
-                tocHeaderBinding?.tvTocCount?.text = err
-            }
+            chapterList.isNullOrEmpty() -> tocHeaderBinding?.tvTocCount?.text =
+                getString(R.string.toc_s, getString(R.string.error_load_toc))
 
-            else -> {
-                book?.let {
-                    tvToc?.text = getString(R.string.toc_s, it.durChapterTitle)
-                    tvLasted?.text = getString(R.string.lasted_show, it.latestChapterTitle)
-                }
-                // portrait 成功态的 count 由 upChapterList → upTocHeader 用真实章节数回填
+            else -> book?.let {
+                headerBinding?.manageRows?.tvLasted?.text =
+                    getString(R.string.lasted_show, it.latestChapterTitle)
             }
         }
-        if (isPortrait) {
-            chapterList?.let { upChapterList(it) }
-        } else {
-            upTocPreview(chapterList)
-        }
+        chapterList?.let { upChapterList(it) }
     }
 
     /**
-     * portrait 专属:详情页内嵌完整目录(RecyclerView + ChapterListAdapter),FLAT 喂入
+     * 详情页内嵌完整目录(RecyclerView + ChapterListAdapter),FLAT 喂入
      * (无 TocListState 分卷分组,保持"倒序即最新在前"的干净反转——N3a 计划最大偏差点)。
      */
     private fun upChapterList(chapters: List<BookChapter>) {
@@ -835,43 +796,6 @@ class BookInfoActivity :
         tocHeaderBinding?.tvTocCount?.text = getString(R.string.toc_s, fullChapters.size.toString())
     }
 
-    /**
-     * 详情页内嵌目录预览(land 专属)：取最新 5 章倒序（列表尾=最新）填充可点行，
-     * 点击直接定位到该章开始阅读，无需先进入目录页。
-     */
-    private fun upTocPreview(chapterList: List<BookChapter>?) {
-        if (chapterList.isNullOrEmpty()) {
-            binding.llTocPreview?.gone()
-            return
-        }
-        binding.llTocPreview?.removeAllViews()
-        val total = chapterList.size
-        chapterList.takeLast(5).reversed().forEachIndexed { i, chapter ->
-            binding.llTocPreview?.addView(buildTocPreviewRow(chapter, total - 1 - i))
-        }
-        binding.llTocPreview?.visible()
-    }
-
-    private fun buildTocPreviewRow(chapter: BookChapter, index: Int) = TextView(this).apply {
-        layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        // M3 单行列表标准 56dp(同全 app 偏好/管理行),44dp 曾致行密+误触(真机验收实锤)
-        minHeight = 56.dpToPx()
-        setSingleLine()
-        ellipsize = TextUtils.TruncateAt.END
-        textSize = 14f
-        gravity = Gravity.CENTER_VERTICAL
-        setTextColor(AppColorScheme.current.onSurfaceVariant)
-        val hPad = resources.getDimensionPixelSize(R.dimen.space_l)
-        setPadding(hPad, 0, hPad, 0)
-        background = ThemeUtils.resolveDrawable(context, android.R.attr.selectableItemBackground)
-        isClickable = true
-        isFocusable = true
-        text = chapter.title
-        setOnClickListener { readFromChapter(index) }
-    }
-
     private fun upTvBookshelf() {
         if (viewModel.inBookshelf) {
             binding.tvShelf.text = getString(R.string.remove_from_bookshelf)
@@ -892,10 +816,7 @@ class BookInfoActivity :
             } else {
                 getString(R.string.group_s, it)
             }
-            // tv_group 存在于且仅存在于其中一侧(portrait=headerBinding,land=binding),
-            // N5 C5a 后经 manageRows include 承载
             headerBinding?.manageRows?.tvGroup?.text = text
-            binding.manageRows?.tvGroup?.text = text
         }
     }
 
@@ -937,37 +858,6 @@ class BookInfoActivity :
                         }
                     }
                 }
-            }
-        }
-        tvIntro?.let { introView ->
-            tvIntroExpand?.let { expandView ->
-                bindIntroToggle(introView, vIntroDivider, expandView)
-            }
-        }
-        manageRows?.tvOrigin?.setOnClickListener {
-            viewModel.getBook()?.let { book ->
-                if (book.isLocal) return@let
-                if (!appDb.bookSourceDao.has(book.origin)) {
-                    toastOnUi(R.string.error_no_source)
-                    return@let
-                }
-                editSourceResult.launch {
-                    putExtra("sourceUrl", book.origin)
-                }
-            }
-        }
-        manageRows?.tvChangeSource?.setOnClickListener {
-            viewModel.getBook()?.let { book ->
-                showDialogFragment(ChangeBookSourceDialog(book.name, book.author))
-            }
-        }
-        tvTocView?.setOnClickListener { openFullToc() }
-        llToc?.setOnClickListener { openFullToc() }
-        manageRows?.tvChangeGroup?.setOnClickListener {
-            viewModel.getBook()?.let {
-                showDialogFragment(
-                    GroupSelectDialog(it.group)
-                )
             }
         }
         tvAuthor.setOnClickListener {
@@ -1024,9 +914,6 @@ class BookInfoActivity :
         }
         PressSpringEffect.attach(tvShelf)
         PressSpringEffect.attach(tvRead)
-        manageRows?.tvChangeSource?.let { PressSpringEffect.attach(it) }
-        manageRows?.tvChangeGroup?.let { PressSpringEffect.attach(it) }
-        tvTocView?.let { PressSpringEffect.attach(it) }
     }
 
     private fun setSourceVariable() {
@@ -1133,8 +1020,7 @@ class BookInfoActivity :
 
     /**
      * 打开完整目录页(TocActivity,含搜索/分卷/定位)。未加入书架时先落库书与目录再打开。
-     * portrait 内嵌目录头(点整行 / 搜索图标)与 land 的 View Chapters 按钮共用此入口——
-     * 接管原信息卡 ll_toc 的职责,消除与目录头"Chapters: N"的重复。
+     * 入口为内嵌目录头(点整行 / 搜索图标)。
      */
     private fun openFullToc() {
         if (viewModel.chapterListData.value.isNullOrEmpty()) {

@@ -149,148 +149,20 @@
 
     </LinearLayout>
 
+    <!-- 右栏与 portrait 同形态:RecyclerView(信息头+目录头 addHeaderView+完整章节列表),
+         面板背景由代码侧统一施加(land 平顶纯色,portrait 圆角,见 BookInfoActivity)。 -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/refresh_layout"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="0.58">
 
-        <io.legado.app.ui.widget.NoChildScrollNestedScrollView
-            android:id="@+id/scroll_view"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:fillViewport="true"
-            android:scrollbars="vertical">
-
-            <LinearLayout
-                android:id="@+id/ll_info"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@color/background"
-                app:skin_background="background"
-                android:orientation="vertical"
-                android:paddingHorizontal="@dimen/space_l"
-                android:paddingTop="@dimen/space_l"
-                android:paddingBottom="@dimen/space_s">
-
-                <!-- N5 C5a: 管理三行块(书源/最新/分组)抽为共享 include,与 item_book_info_header.xml
-                     同源(见 view_book_info_manage_rows.xml 头注)。需要自带 id 才能让 include 的子
-                     view id 在 ActivityBookInfoBinding 里展开为可访问字段(空 id 的 include 不展开)。 -->
-                <include
-                    android:id="@+id/manage_rows"
-                    layout="@layout/view_book_info_manage_rows"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content" />
-
-                <View
-                    android:id="@+id/v_intro_divider"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginBottom="@dimen/space_s"
-                    android:background="@color/divider" />
-
-                <!-- 内联展开:与 item_book_info_header.xml 同构(见彼处头注),
-                     land 渐隐底色为页面背景而非卡片底色(代码侧按 appBar 有无区分) -->
-                <FrameLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <io.legado.app.ui.widget.text.ScrollTextView
-                        android:id="@+id/tv_intro"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clickable="true"
-                        android:ellipsize="end"
-                        android:focusable="true"
-                        android:maxLines="4"
-                        android:minHeight="48dp"
-                        android:paddingHorizontal="@dimen/space_s"
-                        android:text="@string/book_intro"
-                        android:textIsSelectable="true"
-                        android:textSize="@dimen/text_body"
-                        android:visibility="visible"
-                        app:skin_textColor="onSurfaceVariant"
-                        android:textColor="@color/secondaryText"
-                        tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                    <io.legado.app.ui.widget.text.AccentTextView
-                        android:id="@+id/tv_intro_expand"
-                        android:layout_width="wrap_content"
-                        android:layout_height="@dimen/book_intro_expand_height"
-                        android:layout_gravity="bottom|end"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:gravity="center_vertical|end"
-                        android:paddingStart="40dp"
-                        android:paddingEnd="@dimen/space_s"
-                        android:text="@string/book_intro_expand"
-                        android:textSize="@dimen/text_caption_l"
-                        android:visibility="gone"
-                        tools:ignore="RtlSymmetry"
-                        tools:visibility="visible" />
-
-                </FrameLayout>
-
-                <LinearLayout
-                    android:id="@+id/ll_toc"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_m"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingTop="@dimen/space_s"
-                    android:paddingBottom="@dimen/space_s">
-
-                    <ImageView
-                        android:layout_width="18sp"
-                        android:layout_height="18sp"
-                        android:contentDescription="@string/read_dur_progress"
-                        android:paddingRight="2dp"
-                        android:src="@drawable/ic_folder_open"
-                        app:skin_tint="onSurfaceVariant"
-                        app:tint="@color/tv_text_summary"
-                        tools:ignore="RtlHardcoded,RtlSymmetry" />
-
-                    <TextView
-                        android:id="@+id/tv_toc"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:includeFontPadding="false"
-                        android:paddingRight="6dp"
-                        android:singleLine="true"
-                        app:skin_textColor="onSurface"
-                        android:textColor="@color/primaryText"
-                        android:textSize="@dimen/text_subtitle"
-                        tools:ignore="NestedWeights,RtlHardcoded,RtlSymmetry"
-                        tools:text="@string/toc_s" />
-
-                    <io.legado.app.ui.widget.text.AccentBgTextView
-                        android:id="@+id/tv_toc_view"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:paddingLeft="10dp"
-                        android:paddingRight="10dp"
-                        android:paddingTop="4dp"
-                        android:paddingBottom="4dp"
-                        android:text="@string/view_toc"
-                        android:textSize="@dimen/text_caption_l"
-                        app:radius="@dimen/radius_full" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/ll_toc_preview"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
-
-            </LinearLayout>
-        </io.legado.app.ui.widget.NoChildScrollNestedScrollView>
+            android:clipToPadding="false"
+            android:paddingBottom="@dimen/space_l" />
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>
