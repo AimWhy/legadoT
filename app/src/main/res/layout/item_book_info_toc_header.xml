@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 水平 padding 须与 item_chapter_list.xml 的 padding=12dp 咬合,"目录"二字才与章节名左对齐 -->
+<!-- 区块头样式与信息头的阅读进度行对齐(18dp 前置图标+subtitle 加粗),
+     水平 padding=space_l 与面板内容缩进及 item_chapter_list 咬合,"目录"才与章节名左对齐 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -8,9 +9,19 @@
     android:clickable="true"
     android:focusable="true"
     android:gravity="center_vertical"
+    android:minHeight="48dp"
     android:orientation="horizontal"
-    android:paddingHorizontal="12dp"
+    android:paddingHorizontal="@dimen/space_l"
     android:paddingVertical="@dimen/space_s">
+
+    <ImageView
+        android:layout_width="18dp"
+        android:layout_height="18dp"
+        android:layout_marginEnd="6dp"
+        android:contentDescription="@string/chapter_list"
+        android:src="@drawable/ic_folder_open"
+        app:skin_tint="secondary"
+        app:tint="@color/accent" />
 
     <TextView
         android:id="@+id/tv_toc_count"
@@ -18,7 +29,9 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:ellipsize="end"
+        android:includeFontPadding="false"
         android:singleLine="true"
+        android:textStyle="bold"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
         android:textSize="@dimen/text_subtitle" />

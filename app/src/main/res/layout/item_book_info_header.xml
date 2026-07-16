@@ -4,8 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_info_card_top"
-    app:skin_background="background"
     android:orientation="vertical"
     android:paddingHorizontal="@dimen/space_l"
     android:paddingTop="@dimen/space_l"
@@ -61,20 +59,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <View
-        android:id="@+id/v_intro_divider"
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:layout_marginBottom="@dimen/space_s"
-        android:background="@color/divider" />
-
-    <!-- 简介。书源常不返回简介，由 Task 2 统一控制简介区域可见性和展开行为。
+    <!-- 简介。书源常不返回简介，简介为空时整段 gone(upIntro)。与管理块之间用间距分隔——
+         本布局与目录头/章节行同处一张连续内容面板(RecyclerView 背景),面板内部不画满宽实线。
          内联展开:按钮悬浮于折叠文本第 4 行行尾(bottom|end,折叠高度恰为 4 行),
-         渐隐底(透明→卡片底色)在代码侧铺设让行尾文字淡出;展开态 tv_intro 垫
+         渐隐底(透明→面板底色)在代码侧铺设让行尾文字淡出;展开态 tv_intro 垫
          底部内边距,按钮落于文末右下不遮字。 -->
     <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_s">
 
         <io.legado.app.ui.widget.text.ScrollTextView
             android:id="@+id/tv_intro"

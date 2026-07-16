@@ -253,6 +253,19 @@ class BookInfoActivity :
         // N3a toc-listify: portrait 内容区列表化,仅在 recyclerView 非空(即 portrait)时装配;
         // land 仍是纯 ScrollView + 手搓预览(upTocPreview),recyclerView 为 null,不受影响。
         binding.recyclerView?.let { rv ->
+            // 连续内容面板:信息头/目录头/章节行共坐一张 surfaceContainerLow 圆角面板
+            // (顶部两角圆,随 appBar 折叠上移)。形状背景不能走 skin_background
+            // (SkinInflaterFactory 平涂 setBackgroundColor 会抹掉圆角);色值经 scheme 取,
+            // 换肤 recreate 随视图重建。
+            rv.background = MaterialShapeDrawable(
+                ShapeAppearanceModel.builder()
+                    .setTopLeftCornerSize(resources.getDimension(R.dimen.radius_xl))
+                    .setTopRightCornerSize(resources.getDimension(R.dimen.radius_xl))
+                    .build()
+            ).apply {
+                fillColor = ColorStateList.valueOf(AppColorScheme.current.surfaceContainerLow)
+            }
+            rv.clipToOutline = true
             rv.layoutManager = LinearLayoutManager(this)
             rv.adapter = chapterAdapter
             chapterAdapter.addHeaderView { parent ->
@@ -498,7 +511,7 @@ class BookInfoActivity :
         headerBinding?.let { h ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, h.vIntroDivider, h.tvIntroExpand, book)
+            upIntro(h.tvIntro, null, h.tvIntroExpand, book)
             upReadStatus(h, book)
         }
         manageRows?.tvOrigin?.text = getString(R.string.origin_show, book.originName)
@@ -605,7 +618,7 @@ class BookInfoActivity :
                 upIntro(tvIntro, divider, tvIntroExpand, book)
             }
         }
-        // 折叠态渐隐底:透明→按钮承载面底色(portrait=信息卡 surfaceContainerLow,land=页面背景),
+        // 折叠态渐隐底:透明→按钮承载面底色(portrait=内容面板 surfaceContainerLow,land=页面背景),
         // 铺在第 4 行行尾之下让文字淡入按钮;色值经 scheme 取,主题/eink 自适应,换肤 recreate
         // 随视图重建。存 tag 供 upIntroExpandVisibility 按状态取用(仅折叠溢出态铺设)。
         val fadeBase = if (binding.appBar != null) {
@@ -647,26 +660,14 @@ class BookInfoActivity :
     }
 
     /**
-     * header(信息卡+简介+目录区头)绑定:施色卡角(运行时 MaterialShapeDrawable,复刻原 ll_info 逻辑,
-     * 仅 portrait 需要——appBar!=null 即 portrait,land 无 recyclerView/header 不会走到这里)+
-     * 监听迁移(原 initViewEvent 里对这些 view 的 setOnClickListener/setOnLongClickListener 整体搬入,
-     * SourceCallBack 钩子体一字不改)+数据回填(header 可能晚于 showBook 到达,主动拉一次当前数据)。
+     * header(信息头+简介)绑定:监听迁移(原 initViewEvent 里对这些 view 的
+     * setOnClickListener/setOnLongClickListener 整体搬入,SourceCallBack 钩子体一字不改)+
+     * 数据回填(header 可能晚于 showBook 到达,主动拉一次当前数据)。
+     * 面板背景由 recyclerView 整体承载(见 onActivityCreated),header 自身透明。
      */
     private fun bindInfoHeader(h: ItemBookInfoHeaderBinding) {
-        if (binding.appBar != null) {
-            h.root.background = MaterialShapeDrawable(
-                ShapeAppearanceModel.builder()
-                    .setTopLeftCornerSize(resources.getDimension(R.dimen.radius_xl))
-                    .setTopRightCornerSize(resources.getDimension(R.dimen.radius_xl))
-                    .build()
-            ).apply {
-                // 信息卡填 surfaceContainerLow(而非页面背景色),让圆角卡从头部背景上"浮起",
-                // 否则同色+无描边+无阴影时圆角完全看不出(N: 详情页信息卡未落地修复)
-                fillColor = ColorStateList.valueOf(AppColorScheme.current.surfaceContainerLow)
-            }
-        }
         h.tvIntro.revealOnFocusHint = false
-        bindIntroToggle(h.tvIntro, h.vIntroDivider, h.tvIntroExpand)
+        bindIntroToggle(h.tvIntro, null, h.tvIntroExpand)
         h.manageRows.tvOrigin.setOnClickListener {
             viewModel.getBook()?.let { book ->
                 if (book.isLocal) return@let
@@ -698,7 +699,7 @@ class BookInfoActivity :
         viewModel.bookData.value?.let { book ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, h.vIntroDivider, h.tvIntroExpand, book)
+            upIntro(h.tvIntro, null, h.tvIntroExpand, book)
             upReadStatus(h, book)
         }
     }
