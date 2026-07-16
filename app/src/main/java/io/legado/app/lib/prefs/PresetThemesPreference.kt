@@ -56,7 +56,12 @@ class PresetThemesPreference @JvmOverloads constructor(
                 val pos = lm.findFirstVisibleItemPosition()
                 if (pos != RecyclerView.NO_POSITION) {
                     savedPosition = pos
-                    savedOffset = lm.findViewByPosition(pos)?.left ?: 0
+                    // view.left 以控件左缘为原点(含 paddingStart),而 scrollToPositionWithOffset
+                    // 的 offset 以 padding 后为原点。不减 paddingStart 的话每次重绑恢复都整体
+                    // 右移一个 paddingStart(布局后 onScrolled(0,0) 又把漂移值存回,逐次累积),
+                    // 点选预设时"旧页 refresh 重绑+recreate 重装"连挪两次即"跳两下"。
+                    savedOffset = (lm.findViewByPosition(pos)?.left ?: rv.paddingStart) -
+                        rv.paddingStart
                 }
             }
         })
