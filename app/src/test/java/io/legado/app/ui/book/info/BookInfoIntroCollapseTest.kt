@@ -55,7 +55,9 @@ class BookInfoIntroCollapseTest {
         assertTrue(source.contains("tvIntro.addOnLayoutChangeListener"))
         assertTrue(source.contains("upIntroExpandVisibility"))
         assertTrue(!source.contains("tvIntro.doOnLayout"))
-        assertTrue(!source.contains("tvIntro.post {"))
+        // 布局回调内必须 post 出去再改可见性:同步翻转兄弟视图的重排请求会被
+        // 父容器 layout() 收尾清旗吞掉,按钮成 0 尺寸幽灵(模拟器实测)
+        assertTrue(source.contains("tvIntro.post { upIntroExpandVisibility"))
     }
 
     private fun readProjectFile(pathInApp: String): String {

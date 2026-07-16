@@ -591,7 +591,10 @@ class BookInfoActivity :
         // 多次数据发射存在时序竞争,一旦错过(被守卫消耗或过早求值)展开钮即无再评估机会,
         // 首次进入不显示、待滚出视口再回来触发新布局才出现
         tvIntro.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-            upIntroExpandVisibility(tvIntro, tvIntroExpand)
+            // 布局回调内不得同步翻转兄弟可见性:GONE→VISIBLE 的 requestLayout 沿父链标记的
+            // FORCE_LAYOUT 会在父容器本次 layout() 收尾被清除,重排请求被吞,按钮保持
+            // 0 尺寸幽灵态(实测)。post 到布局收束后再评估+写可见性,重排得以正常传播。
+            tvIntro.post { upIntroExpandVisibility(tvIntro, tvIntroExpand) }
         }
     }
 
