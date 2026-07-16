@@ -3,14 +3,14 @@
      item_book_info_header.xml 的逐字重复子树抽出。两处原来一份用 AccentBgTextView、一份用
      AccentTonalBgTextView,统一为 AccentTonalBgTextView(land fl_action 已有 Tonal 表次级操作的
      先例,tv_change_source/tv_change_group 语义上正是次级操作)。所有 id 原样保留。 -->
+<!-- 无自带水平 padding:行内容左右缘=面板内容缩进 space_l。
+     图标行统一规格(18dp 图标+6dp 间距,同阅读进度行/目录头),行文字一律落在 40dp 轨 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingLeft="8dp"
-    android:paddingRight="8dp"
     android:paddingBottom="8dp">
 
     <LinearLayout
@@ -23,14 +23,13 @@
 
         <ImageView
             android:id="@+id/iv_web"
-            android:layout_width="18sp"
-            android:layout_height="18sp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="6dp"
             android:contentDescription="@string/origin_format"
-            android:paddingRight="2dp"
             android:src="@drawable/ic_web_outline"
             app:skin_tint="onSurfaceVariant"
-            app:tint="@color/tv_text_summary"
-            tools:ignore="RtlHardcoded,RtlSymmetry" />
+            app:tint="@color/tv_text_summary" />
 
         <TextView
             android:id="@+id/tv_origin"
@@ -73,14 +72,13 @@
 
         <ImageView
             android:id="@+id/ic_book_last"
-            android:layout_width="18sp"
-            android:layout_height="18sp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="6dp"
             android:contentDescription="@string/read_dur_progress"
-            android:paddingRight="2dp"
             android:src="@drawable/ic_book_last"
             app:skin_tint="onSurfaceVariant"
-            app:tint="@color/tv_text_summary"
-            tools:ignore="RtlHardcoded,RtlSymmetry" />
+            app:tint="@color/tv_text_summary" />
 
         <TextView
             android:id="@+id/tv_lasted"
@@ -108,14 +106,13 @@
         android:paddingBottom="@dimen/space_xs">
 
         <ImageView
-            android:layout_width="18sp"
-            android:layout_height="18sp"
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginEnd="6dp"
             android:contentDescription="@string/read_dur_progress"
-            android:paddingRight="2dp"
             android:src="@drawable/ic_groups"
             app:skin_tint="onSurfaceVariant"
-            app:tint="@color/tv_text_summary"
-            tools:ignore="RtlHardcoded,RtlSymmetry" />
+            app:tint="@color/tv_text_summary" />
 
         <TextView
             android:id="@+id/tv_group"

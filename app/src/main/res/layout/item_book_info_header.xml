@@ -69,6 +69,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_s">
 
+        <!-- 无自带水平 padding:正文左缘=面板内容缩进 space_l,与章节名左对齐 -->
         <io.legado.app.ui.widget.text.ScrollTextView
             android:id="@+id/tv_intro"
             android:layout_width="match_parent"
@@ -77,13 +78,12 @@
             android:ellipsize="end"
             android:focusable="true"
             android:maxLines="4"
-            android:paddingHorizontal="@dimen/space_xs"
             android:textIsSelectable="true"
             android:textSize="@dimen/text_body"
             app:skin_textColor="onSurfaceVariant"
             android:textColor="@color/secondaryText"
             tools:text="@string/book_intro"
-            tools:ignore="RtlHardcoded,RtlSymmetry" />
+            tools:ignore="RtlHardcoded" />
 
         <io.legado.app.ui.widget.text.AccentTextView
             android:id="@+id/tv_intro_expand"
@@ -94,7 +94,6 @@
             android:focusable="true"
             android:gravity="center_vertical|end"
             android:paddingStart="40dp"
-            android:paddingEnd="@dimen/space_xs"
             android:text="@string/book_intro_expand"
             android:textSize="@dimen/text_caption_l"
             android:visibility="gone"
