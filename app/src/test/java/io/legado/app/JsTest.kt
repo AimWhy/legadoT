@@ -172,6 +172,7 @@ class JsTest {
             "var o1 = {a: 1}; var o2 = {...o1, b: 2}; '' + (o2.a + o2.b)" to "3",
             "var u = {v: {w: 5}}; '' + (u.v?.w)" to "5",
             "var z = null; '' + (z ?? 'dft')" to "dft",
+            "function r(a, ...rest) { return '' + rest.length }; r(1, 2, 3)" to "2",
         ).forEach { (js, expect) ->
             val outcome = runCatching { RhinoScriptEngine.eval(js, ScriptBindings()) }
             Assert.assertEquals("求值失败或结果不符: $js -> ${outcome.exceptionOrNull()?.message}",
