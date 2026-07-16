@@ -234,6 +234,13 @@ interface BookSourceDao {
     @Query("SELECT EXISTS(select 1 from book_sources where bookSourceUrl = :key)")
     fun has(key: String): Boolean
 
+    /** 空白判定与 BookSource.isJsSource(isNullOrBlank)同口径;不取整行,mainJs 可能是整个 JS 文件 */
+    @Query(
+        "SELECT EXISTS(select 1 from book_sources " +
+                "where bookSourceUrl = :key and trim(ifnull(mainJs, '')) <> '')"
+    )
+    fun hasJsSource(key: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(vararg bookSource: BookSource)
 

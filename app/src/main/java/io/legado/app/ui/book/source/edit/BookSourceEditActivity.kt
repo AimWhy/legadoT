@@ -115,18 +115,35 @@ class BookSourceEditActivity :
         KeyboardToolPop(this, lifecycleScope, binding.root, this)
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // JS 单文件源重定向须在窗口上屏前完成:onCreate 内 finish 的 Activity 不渲染,
+        // 转场直达 JS 编辑器;若留到 initData 异步回调再判定,本页 JSON 规则编辑 UI 会先
+        // 闪现一帧再二次转场。存在性判定走 hasJsSource 主键查询(不拉 mainJs 全文),
+        // 主线程同步(allowMainThreadQueries)。super.finish 绕过覆写版 finish 的
+        // 未保存比对(UI 未初始化,比对无意义且可能误弹确认)。
+        intent.getStringExtra("sourceUrl")?.let { url ->
+            if (appDb.bookSourceDao.hasJsSource(url)) {
+                startActivity<JsSourceEditActivity> {
+                    putExtra("sourceUrl", url)
+                }
+                super.finish()
+            }
+        }
+        super.onCreate(savedInstanceState)
+    }
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
+        // 重定向路径:已 finish,跳过全部装配(initData 若跑,其 JS 回退分支会二次 startActivity)
+        if (isFinishing) return
         softKeyboardTool.attachToWindow(window)
         initView()
         viewModel.initData(intent) {
             val source = viewModel.bookSource
             if (source != null && source.isJsSource()) {
+                // 回退网:正常流程由 onCreate 重定向拦截,此分支兜底判定口径差异的极端源
                 startActivity<JsSourceEditActivity> {
                     putExtra("sourceUrl", source.bookSourceUrl)
                 }
-                // 此处 UI 尚未初始化(sourceEntities 空、控件是布局默认值),
-                // 覆写版 finish() 的 getSource()/equal() 未保存比对在此无意义甚至会误判,
-                // 必须绕过它直接结束,否则可能弹出虚假的"未保存退出"确认且 Activity 未真正结束
                 super.finish()
                 return@initData
             }
