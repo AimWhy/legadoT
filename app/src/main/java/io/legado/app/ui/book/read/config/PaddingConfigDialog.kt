@@ -139,9 +139,8 @@ class PaddingConfigDialog : BaseDialogFragment(R.layout.dialog_read_padding) {
         bindingRegion = true
         curRegion = region
         // 先 max 后 progress:max setter 会把现值收缩进新上限
-        val topBottomMax = if (region == Region.BODY) 400 else 100
-        dsbTop.max = topBottomMax
-        dsbBottom.max = topBottomMax
+        dsbTop.max = 400
+        dsbBottom.max = 400
         dsbLeft.max = 100
         dsbRight.max = 100
         dsbTop.progress = getPadding(region, Side.TOP)
