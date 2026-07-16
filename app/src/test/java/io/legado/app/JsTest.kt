@@ -188,6 +188,22 @@ class JsTest {
         }
     }
 
+    /**
+     * Jsoup 经顶层包对象可达(RhinoClassShutter 未拦 org.jsoup)——
+     * 纯JS单文件源(java=JsExtensions,无 AnalyzeRule 选择器函数)的 HTML 解析通道。
+     */
+    @Test
+    fun jsoupFromJsScope() {
+        @Language("js")
+        val js = """
+            var doc = org.jsoup.Jsoup.parse('<div><a class="t">x</a><a class="t">y</a></div>')
+            var out = []
+            for (var e of doc.select('a.t')) out.push(e.text())
+            out.join(',')
+        """.trimIndent()
+        Assert.assertEquals("x,y", RhinoScriptEngine.eval(js, ScriptBindings()))
+    }
+
     @Test
     fun typeofString() {
         val bindings = ScriptBindings()
