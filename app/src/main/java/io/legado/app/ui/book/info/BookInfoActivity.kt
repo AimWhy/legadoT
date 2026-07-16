@@ -11,6 +11,7 @@ import android.text.TextUtils
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
+import android.view.View
 import android.view.Window
 import android.widget.CheckBox
 import android.widget.LinearLayout
@@ -510,7 +511,7 @@ class BookInfoActivity :
         headerBinding?.let { h ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, h.tvIntroExpand, book)
+            upIntro(h.tvIntro, h.tvIntroExpand, book, h.vIntroDivider)
             upReadStatus(h, book)
         }
         menuCustomBtn?.isVisible = viewModel.bookSource?.customButton == true
@@ -520,18 +521,20 @@ class BookInfoActivity :
     }
 
     /**
-     * 简介可见性:书源常不返回简介 → getDisplayIntro() 为空时 tv_intro 整段 gone,
-     * 不留 minHeight 占位空白。
+     * 简介可见性:书源常不返回简介 → getDisplayIntro() 为空时 tv_intro(连同其上段间线)整段 gone,
+     * 不留 minHeight 占位空白。divider 只随数据变化(空/非空),展开收起路径不传。
      */
     private fun upIntro(
         tvIntro: TextView,
         tvIntroExpand: TextView,
         book: Book,
+        divider: View? = null,
     ) {
         val intro = book.getDisplayIntro()
         val hasIntro = !intro.isNullOrBlank()
         tvIntro.text = intro
         tvIntro.isVisible = hasIntro
+        divider?.isVisible = hasIntro
         if (!hasIntro) {
             tvIntroExpand.isVisible = false
             return
@@ -683,7 +686,7 @@ class BookInfoActivity :
         viewModel.bookData.value?.let { book ->
             h.manageRows.tvOrigin.text = getString(R.string.origin_show, book.originName)
             h.manageRows.tvLasted.text = getString(R.string.lasted_show, book.latestChapterTitle)
-            upIntro(h.tvIntro, h.tvIntroExpand, book)
+            upIntro(h.tvIntro, h.tvIntroExpand, book, h.vIntroDivider)
             upReadStatus(h, book)
         }
     }

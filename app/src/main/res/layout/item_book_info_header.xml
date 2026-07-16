@@ -59,8 +59,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
-    <!-- 简介。书源常不返回简介，简介为空时整段 gone(upIntro)。与管理块之间用间距分隔——
-         本布局与目录头/章节行同处一张连续内容面板(RecyclerView 背景),面板内部不画满宽实线。
+    <!-- 段间分隔:内嵌线(容器 16dp padding 内,两端不顶满屏)。此条随简介为空隐藏
+         (showBook/bindInfoHeader 经 upIntro 联动),空简介时由下方常驻线独担,不出双线 -->
+    <View
+        android:id="@+id/v_intro_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider" />
+
+    <!-- 简介。书源常不返回简介，简介为空时整段 gone(upIntro)。
          内联展开:按钮悬浮于折叠文本第 4 行行尾(bottom|end,折叠高度恰为 4 行),
          渐隐底(透明→面板底色)在代码侧铺设让行尾文字淡出;展开态 tv_intro 垫
          底部内边距,按钮落于文末右下不遮字。 -->
@@ -101,6 +108,14 @@
             tools:visibility="visible" />
 
     </FrameLayout>
+
+    <!-- 段间分隔:简介↔目录头,常驻(简介为空时即管理块↔目录的分隔)。
+         目录头自带 minHeight/padding,线下方不再垫间距 -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="@dimen/space_m"
+        android:background="@color/divider" />
 
     <!-- N: 原 ll_toc(Chapters:… / View Chapters)已移除——与下方内嵌目录头(item_book_info_toc_header)
          的"Chapters: N / 排序"信息重复。打开完整目录页(搜索/分卷)的入口改由目录头承担(点整行)。 -->
