@@ -10,6 +10,10 @@ import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
+import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.AppColorScheme
+import org.json.JSONArray
+import org.json.JSONObject
 
 /**
  * 保活本地代码编辑器 WebView，避免每次打开弹窗都重新加载整页资源。
@@ -32,6 +36,10 @@ object CodeEditorWebViewPool {
     private var editorReady = false
     private var bootFailed = false
     private var lastBootError: String? = null
+
+    // 编辑器文档当前承载的会话（客户端注入初始内容后登记）；
+    // 同会话重挂载（旋转/重建）可据此跳过初始内容重发，保住未保存编辑
+    private var contentSessionKey: String? = null
 
     private val jsBridge = object {
         @JavascriptInterface
@@ -126,6 +134,50 @@ object CodeEditorWebViewPool {
         }
     }
 
+    /** 编辑器文档是否已承载 [sessionKey] 会话的内容（同会话重挂载可跳过初始注入） */
+    fun isContentSession(sessionKey: String?): Boolean {
+        return sessionKey != null && editorReady && !bootFailed &&
+            contentSessionKey == sessionKey
+    }
+
+    /** 客户端注入初始内容成功后登记会话；detach 不清除，以便同会话重建时续用 */
+    fun markContentSession(sessionKey: String?) {
+        contentSessionKey = sessionKey
+    }
+
+    /**
+     * 把应用主题注入编辑器（editor.html setAppTheme）：日夜 + AppColorScheme 调色。
+     * 幂等，ready 后调用即可；auto（跟随应用）模式立即生效。
+     */
+    fun applyAppTheme() {
+        val scheme = AppColorScheme.current
+        fun hex(color: Int) = String.format("#%06X", 0xFFFFFF and color)
+        val colors = JSONObject()
+            .put("bg", hex(scheme.background))
+            .put("toolbarBg", hex(scheme.surfaceContainer))
+            .put("gutterBg", hex(scheme.surfaceContainer))
+            .put("gutterText", hex(scheme.onSurfaceVariant))
+            .put("text", hex(scheme.onSurface))
+            .put("border", hex(scheme.outlineVariant))
+            .put("activeLine", hex(scheme.surfaceContainerLow))
+            .put("accent", hex(scheme.primary))
+            .put("selection", hex(scheme.primaryContainer))
+        val payload = JSONObject()
+            .put("dark", AppConfig.isNightTheme)
+            .put("colors", colors)
+        evaluateJavascript("window.setAppTheme && window.setAppTheme($payload);")
+    }
+
+    /** 解包 evaluateJavascript 的 JSON 编码返回值为原始字符串 */
+    fun decodeJsResult(value: String?): String? {
+        if (value.isNullOrBlank() || value == "null") return null
+        return try {
+            JSONArray("[$value]").getString(0)
+        } catch (e: Exception) {
+            value
+        }
+    }
+
     private fun runOnMain(block: () -> Unit) {
         if (Looper.myLooper() == Looper.getMainLooper()) {
             block()
@@ -148,6 +200,7 @@ object CodeEditorWebViewPool {
         editorReady = false
         bootFailed = false
         lastBootError = null
+        contentSessionKey = null
         return WebView(MutableContextWrapper(applicationContext)).apply {
             settings.apply {
                 javaScriptEnabled = true
@@ -155,6 +208,8 @@ object CodeEditorWebViewPool {
                 allowContentAccess = true
                 mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
                 textZoom = 100
+                // 编辑器是本地 asset,缓存只会让 APK 更新后的资源不生效
+                cacheMode = WebSettings.LOAD_NO_CACHE
             }
             setBackgroundColor(Color.TRANSPARENT)
             addJavascriptInterface(jsBridge, "Android")

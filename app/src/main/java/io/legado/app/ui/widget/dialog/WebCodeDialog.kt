@@ -15,6 +15,7 @@ import io.legado.app.databinding.DialogWebCodeViewBinding
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.setLayout
+import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 
 class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
@@ -56,6 +57,10 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
     private var initialCodeApplied = false
     private var pendingClose = false
     private var confirmShown = false
+
+    /** 内容会话键：随 requestId 稳定跨重建，旋转后据此跳过初始代码重发 */
+    private val sessionKey: String?
+        get() = arguments?.getString("requestId")?.let { "dlg:$it" }
 
     override fun onStart() {
         super.onStart()
@@ -105,6 +110,7 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
         }
         updateEditorUiState()
         if (!CodeEditorWebViewPool.attach(binding.webViewContainer, this)) {
+            toastOnUi(R.string.code_editor_busy)
             dismissAllowingStateLoss()
         }
     }
@@ -122,11 +128,18 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
 
     private fun sendInitialCodeToEditor() {
         if (!editorReady || bootFailed || initialCodeApplied) return
+        // 同会话重挂载（旋转/重建）：编辑器文档就是本会话内容，重发会用初始值覆盖未保存编辑
+        if (CodeEditorWebViewPool.isContentSession(sessionKey)) {
+            initialCodeApplied = true
+            updateEditorUiState()
+            return
+        }
         CodeEditorWebViewPool.evaluateJavascript(
             "window.setCodeFromAndroid && window.setCodeFromAndroid('" + encodedCode + "');",
         ) {
             if (view == null) return@evaluateJavascript
             initialCodeApplied = true
+            CodeEditorWebViewPool.markContentSession(sessionKey)
             updateEditorUiState()
         }
     }
@@ -141,7 +154,7 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
         CodeEditorWebViewPool.evaluateJavascript("window.__getCode && window.__getCode();") { value ->
             pendingClose = false
             if (view == null) return@evaluateJavascript
-            val current = decodeJsString(value)
+            val current = CodeEditorWebViewPool.decodeJsResult(value)
             if (current == null || current == pendingCode) {
                 dismissAllowingStateLoss()
                 return@evaluateJavascript
@@ -162,15 +175,6 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
         }
     }
 
-    private fun decodeJsString(value: String?): String? {
-        if (value.isNullOrBlank() || value == "null") return null
-        return try {
-            org.json.JSONArray("[$value]").getString(0)
-        } catch (e: Exception) {
-            value
-        }
-    }
-
     override fun onDestroyView() {
         CodeEditorWebViewPool.detach(this)
         super.onDestroyView()
@@ -180,6 +184,7 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
         if (view == null) return
         bootFailed = false
         editorReady = true
+        CodeEditorWebViewPool.applyAppTheme()
         updateEditorUiState()
         sendInitialCodeToEditor()
     }

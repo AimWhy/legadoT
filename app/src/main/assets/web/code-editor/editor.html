@@ -15,8 +15,10 @@
       --border: #e1e4e8;
       --active-line: #f6f8fa;
       --accent: #0366d6;
+      --accent-soft: rgba(3, 102, 214, 0.12);
       --toolbar-bg: #f8f9fa;
       --selection: #b3d7ff;
+      --panel-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);
       color-scheme: light;
     }
 
@@ -29,6 +31,7 @@
         --border: #3e3e42;
         --active-line: #2d2d30;
         --accent: #40a9ff;
+        --accent-soft: rgba(64, 169, 255, 0.18);
         --toolbar-bg: #252526;
         --selection: #264f78;
         color-scheme: dark;
@@ -47,6 +50,7 @@
       --border: #3e3e42;
       --active-line: #2d2d30;
       --accent: #40a9ff;
+      --accent-soft: rgba(64, 169, 255, 0.18);
       --toolbar-bg: #252526;
       --selection: #264f78;
       color-scheme: dark;
@@ -60,6 +64,7 @@
       --border: #e0d6c5;
       --active-line: #f0e7d6;
       --accent: #9a6b32;
+      --accent-soft: rgba(154, 107, 50, 0.14);
       --toolbar-bg: #efe6d6;
       --selection: #d8c7ad;
       color-scheme: light;
@@ -73,6 +78,7 @@
       --border: #434c5e;
       --active-line: #3b4252;
       --accent: #88c0d0;
+      --accent-soft: rgba(136, 192, 208, 0.18);
       --toolbar-bg: #3b4252;
       --selection: #4c566a;
       color-scheme: dark;
@@ -101,9 +107,9 @@
 
     #toolbar {
       display: flex;
-      gap: 8px;
+      gap: 2px;
       align-items: center;
-      padding: 8px;
+      padding: 6px 8px;
       background: var(--toolbar-bg);
       border-bottom: 1px solid var(--border);
       overflow-x: auto;
@@ -135,34 +141,43 @@
     }
 
     .btn {
-      border: 1px solid var(--border);
-      background: var(--bg);
+      border: none;
+      background: transparent;
       color: var(--text);
       padding: 6px 12px;
-      border-radius: 4px;
+      border-radius: 8px;
       font-size: 13px;
       cursor: pointer;
       user-select: none;
       flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .btn:active {
-      opacity: 0.7;
+      background: var(--accent-soft);
     }
 
     .btn.active {
-      border-color: var(--accent);
       color: var(--accent);
-      background: var(--active-line);
+      background: var(--accent-soft);
+    }
+
+    .btn[disabled] {
+      opacity: 0.35;
+      pointer-events: none;
     }
 
     .btn.btn-icon {
-      padding: 6px 8px;
-      min-width: 28px;
+      padding: 0;
+      width: 34px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .btn-gap {
-      margin-left: 6px;
+      margin-left: 8px;
     }
 
     #editor-container {
@@ -184,118 +199,119 @@
     .cm-editor {
       height: 100%;
     }
+    /* 原生滚动条 WebView 内层容器不渲染,用覆盖指示条替代;
+       禁用原生占位避免双滚动条 */
     .cm-scroller::-webkit-scrollbar {
       display: none;
     }
-    .custom-scrollbar {
+    #scroll-indicator {
       position: absolute;
+      top: 4px;
       right: 2px;
-      top: 0;
-      bottom: 0;
-      width: 28px;
-      z-index: 40;
+      width: 5px;
+      height: 40px;
+      border-radius: 3px;
+      background: var(--gutter-text);
+      opacity: 0;
+      transition: opacity 0.25s;
+      z-index: 30;
+      will-change: transform;
       pointer-events: none;
     }
-    .custom-scrollbar-track {
-      position: absolute;
-      right: 2px;
-      top: 4px;
-      bottom: 4px;
-      width: 14px;
-      border-radius: 7px;
-      background: transparent;
-      pointer-events: auto;
-      touch-action: none;
+    #scroll-indicator.visible {
+      opacity: 0.55;
     }
-    .custom-scrollbar-thumb {
-      position: absolute;
-      right: 0;
-      width: 14px;
-      height: 50px;
-      border-radius: 5px;
-      background: var(--border);
-      opacity: 0;
-      transition: opacity 0.2s;
-      pointer-events: auto;
-      touch-action: none;
-    }
-    .custom-scrollbar-thumb.visible {
-      opacity: 1;
-    }
-    .custom-scrollbar-thumb.dragging {
-      opacity: 1;
+    #scroll-indicator.dragging {
+      opacity: 0.9;
       background: var(--accent);
     }
-
-    .cm-panels { display: none !important; }
-
-    #search-panel {
+    /* 拖拽热区:视觉细条不好按,热区放宽到 24px */
+    #scroll-indicator-hit {
       position: absolute;
-      top: 4px;
-      right: 8px;
-      left: 8px;
-      background: var(--toolbar-bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.12);
-      padding: 8px;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 24px;
+      z-index: 29;
+      touch-action: none;
       display: none;
-      flex-direction: column;
-      gap: 6px;
-      z-index: 55;
-      font-size: 12px;
     }
-    #search-panel.show { display: flex; }
-    .search-row {
+    #scroll-indicator-hit.enabled {
+      display: block;
+    }
+    .cm-panels {
+      background: var(--toolbar-bg) !important;
+      border-color: var(--border) !important;
+      z-index: 25 !important;
+    }
+    .cm-panel.cm-search {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       gap: 4px;
+      padding: 6px 28px 6px 8px;
+      font-size: 12px;
+      position: relative;
     }
-    .search-row input[type="text"] {
-      flex: 1;
-      min-width: 0;
-      background: var(--bg);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-      height: 28px;
+    .cm-panel.cm-search br { display: none; }
+    .cm-panel.cm-search input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      margin: 0 2px 0 6px;
+      accent-color: var(--accent);
     }
-    .search-row input[type="text"]:focus {
-      border-color: var(--accent);
-    }
-    .search-toggle {
+    .cm-panel.cm-search label {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
+      color: var(--gutter-text);
+      font-size: 11px;
+      user-select: none;
+    }
+    .cm-panel.cm-search [name="close"] {
+      position: absolute;
+      top: 4px;
+      right: 4px;
       width: 26px;
       height: 26px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--gutter-text);
-      border-radius: 4px;
+      font-size: 18px;
+      line-height: 1;
+      color: var(--gutter-text) !important;
+      background: transparent !important;
+      border: none !important;
+    }
+    .cm-panels .cm-button {
+      background: transparent !important;
+      color: var(--text) !important;
+      border: none !important;
+      border-radius: 6px !important;
+      padding: 4px 8px !important;
+      margin: 0 !important;
+      background-image: none !important;
       cursor: pointer;
-      font-size: 11px;
-      font-weight: bold;
-      user-select: none;
-      flex-shrink: 0;
-      padding: 0;
     }
-    .search-toggle.on {
-      border-color: var(--accent);
-      color: var(--accent);
-      background: var(--active-line);
+    .cm-panels .cm-button:active {
+      background: var(--accent-soft) !important;
     }
-    .search-info {
-      font-size: 11px;
-      color: var(--gutter-text);
-      white-space: nowrap;
-      min-width: 44px;
-      text-align: center;
-      flex-shrink: 0;
+    .cm-panels .cm-textfield {
+      background: var(--bg) !important;
+      color: var(--text) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: 6px !important;
+      padding: 4px 8px !important;
+      font-size: 13px !important;
+    }
+    .cm-panels .cm-textfield:focus {
+      border-color: var(--accent) !important;
+      outline: none !important;
+    }
+    .cm-searchMatch {
+      background: var(--accent-soft) !important;
+    }
+    .cm-searchMatch-selected {
+      background: var(--accent) !important;
+    }
+    .cm-searchMatch-selected * {
+      color: var(--bg) !important;
     }
 
     #format-options {
@@ -304,13 +320,13 @@
       right: 8px;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-      padding: 8px 10px;
+      border-radius: 12px;
+      box-shadow: var(--panel-shadow);
+      padding: 10px 12px;
       display: none;
       z-index: 30;
       font-size: 13px;
-      min-width: 140px;
+      min-width: 150px;
     }
 
     #format-options.show {
@@ -351,8 +367,8 @@
       background: var(--bg);
       color: var(--text);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 2px 6px;
+      border-radius: 8px;
+      padding: 2px 8px;
       font-size: 12px;
     }
 
@@ -409,8 +425,8 @@
       flex-direction: column;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      border-radius: 14px;
+      box-shadow: var(--panel-shadow);
       z-index: 40;
       overflow: hidden;
     }
@@ -454,8 +470,8 @@
       flex-direction: column;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+      border-radius: 14px;
+      box-shadow: var(--panel-shadow);
       z-index: 45;
       overflow: hidden;
     }
@@ -478,8 +494,8 @@
       background: var(--bg);
       color: var(--text);
       border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 2px 6px;
+      border-radius: 8px;
+      padding: 2px 8px;
       font-size: 12px;
     }
     #curl-body {
@@ -495,7 +511,7 @@
       flex: 1;
       width: 100%;
       border: 1px solid var(--border);
-      border-radius: 6px;
+      border-radius: 8px;
       padding: 8px;
       font-size: 12px;
       line-height: 1.4;
@@ -513,8 +529,8 @@
       flex-direction: column;
       background: var(--bg);
       border: 1px solid var(--border);
-      border-radius: 8px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+      border-radius: 14px;
+      box-shadow: var(--panel-shadow);
       z-index: 50;
       overflow: hidden;
     }
@@ -526,13 +542,14 @@
     }
     #regex-header .spacer { flex: 1; }
     .regex-flag {
-      border: 1px solid var(--border); background: var(--bg);
-      color: var(--text); padding: 2px 6px; border-radius: 3px;
+      border: none; background: transparent;
+      color: var(--gutter-text); padding: 3px 7px; border-radius: 6px;
       font-size: 12px; cursor: pointer; user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
     .regex-flag.on {
-      border-color: var(--accent); color: var(--accent);
-      background: var(--active-line);
+      color: var(--accent);
+      background: var(--accent-soft);
     }
     #regex-body {
       display: flex; flex-direction: column; gap: 4px;
@@ -548,8 +565,8 @@
       padding-top: 4px; flex-shrink: 0;
     }
     .regex-input {
-      width: 100%; border: 1px solid var(--border); border-radius: 4px;
-      padding: 6px 8px; font-size: 13px; line-height: 1.4;
+      width: 100%; border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 10px; font-size: 13px; line-height: 1.4;
       background: var(--bg); color: var(--text);
       font-family: inherit; resize: vertical;
     }
@@ -559,8 +576,8 @@
       flex: 1; min-height: 48px; max-height: 120px; overflow: auto;
       font-size: 12px; line-height: 1.5; white-space: pre-wrap;
       word-break: break-all; color: var(--text);
-      border: 1px solid var(--border); border-radius: 4px;
-      padding: 6px 8px; background: var(--active-line);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 10px; background: var(--active-line);
     }
     .regex-match { color: var(--accent); }
     .regex-error { color: #e06c75; }
@@ -573,17 +590,18 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 26px;
-      height: 26px;
-      border: 1px solid var(--border);
-      background: var(--bg);
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: transparent;
       color: var(--text);
-      border-radius: 4px;
+      border-radius: 7px;
       cursor: pointer;
       flex-shrink: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
-    .panel-btn:active { opacity: 0.6; }
+    .panel-btn:active { background: var(--accent-soft); }
     .panel-btn svg {
       width: 14px; height: 14px;
       pointer-events: none;
@@ -751,41 +769,9 @@
   </div>
 
   <div id="editor-container">
-    <div id="search-panel">
-      <div class="search-row">
-        <input type="text" id="searchInput" placeholder="搜索" spellcheck="false" />
-        <button id="searchCaseBtn" class="search-toggle" title="区分大小写">Aa</button>
-        <button id="searchRegexBtn" class="search-toggle" title="正则表达式">.*</button>
-        <button id="searchWordBtn" class="search-toggle" title="全字匹配">
-          <svg viewBox="0 0 16 16" width="14" height="14"><path d="M2 11h3M11 11h3M5 11c0-3 1.5-6 3-6s3 3 3 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        </button>
-        <span id="searchInfo" class="search-info"></span>
-        <button id="searchPrevBtn" class="panel-btn" title="上一个">
-          <svg viewBox="0 0 16 16"><path d="M4 10l4-4 4 4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <button id="searchNextBtn" class="panel-btn" title="下一个">
-          <svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <button id="searchCloseBtn" class="panel-btn" title="关闭">
-          <svg viewBox="0 0 16 16"><line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <div class="search-row">
-        <input type="text" id="replaceInput" placeholder="替换" spellcheck="false" />
-        <button id="replaceBtn" class="panel-btn" title="替换">
-          <svg viewBox="0 0 16 16"><path d="M3 8h8M9 5l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-        <button id="replaceAllBtn" class="panel-btn" title="全部替换">
-          <svg viewBox="0 0 16 16"><path d="M3 5h8M9 2l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11h8M9 8l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </button>
-      </div>
-    </div>
     <div id="editor"></div>
-    <div class="custom-scrollbar">
-      <div class="custom-scrollbar-track">
-        <div class="custom-scrollbar-thumb"></div>
-      </div>
-    </div>
+    <div id="scroll-indicator-hit"></div>
+    <div id="scroll-indicator"></div>
   </div>
 
   <div id="syntax-status"></div>
@@ -988,18 +974,6 @@
           regexFlagI: $("regexFlagI"),
           regexFlagM: $("regexFlagM"),
           regexFlagS: $("regexFlagS"),
-          searchPanel: $("search-panel"),
-          searchInput: $("searchInput"),
-          replaceInput: $("replaceInput"),
-          searchCaseBtn: $("searchCaseBtn"),
-          searchRegexBtn: $("searchRegexBtn"),
-          searchWordBtn: $("searchWordBtn"),
-          searchInfo: $("searchInfo"),
-          searchPrevBtn: $("searchPrevBtn"),
-          searchNextBtn: $("searchNextBtn"),
-          searchCloseBtn: $("searchCloseBtn"),
-          replaceBtn: $("replaceBtn"),
-          replaceAllBtn: $("replaceAllBtn"),
         };
 
         const CM = window.CodeMirrorBundle;
@@ -1020,13 +994,19 @@
           history,
           undo,
           redo,
+          undoDepth,
+          redoDepth,
           indentOnInput,
           bracketMatching,
           syntaxHighlighting,
           defaultHighlightStyle,
+          HighlightStyle,
+          tags,
           indentUnit,
           foldGutter,
           highlightSelectionMatches,
+          search,
+          openSearchPanel,
           autocompletion,
           closeCompletion,
           closeBrackets,
@@ -1118,14 +1098,150 @@
         const indentComp = new Compartment();
         const autoIndentComp = new Compartment();
         const deferredComp = new Compartment();
+        const highlightComp = new Compartment();
         const mediaDark = window.matchMedia
           ? window.matchMedia("(prefers-color-scheme: dark)")
           : null;
         let isWrappedScriptMode = false;
 
+        // Android 注入的应用主题（{dark, colors}）；auto 模式下优先于系统日夜
+        let appTheme = null;
+        const APP_THEME_VARS = {
+          bg: "--bg",
+          gutterBg: "--gutter-bg",
+          gutterText: "--gutter-text",
+          text: "--text",
+          border: "--border",
+          activeLine: "--active-line",
+          accent: "--accent",
+          accentSoft: "--accent-soft",
+          toolbarBg: "--toolbar-bg",
+          selection: "--selection",
+        };
+
+        function hexToRgb(hex) {
+          const m = String(hex || "").trim().match(/^#([0-9a-f]{6})$/i);
+          if (!m) return null;
+          const v = parseInt(m[1], 16);
+          return { r: (v >> 16) & 255, g: (v >> 8) & 255, b: v & 255 };
+        }
+
+        function rgbToHex(c) {
+          const to2 = (n) =>
+            Math.max(0, Math.min(255, Math.round(n)))
+              .toString(16)
+              .padStart(2, "0");
+          return "#" + to2(c.r) + to2(c.g) + to2(c.b);
+        }
+
+        function relLuminance(c) {
+          const ch = (v) => {
+            const s = v / 255;
+            return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+          };
+          return 0.2126 * ch(c.r) + 0.7152 * ch(c.g) + 0.0722 * ch(c.b);
+        }
+
+        /** 深色底上过暗的强调色向白混合提亮，保持色相、保证可辨 */
+        function ensureAccentVisible(hex, dark) {
+          const rgb = hexToRgb(hex);
+          if (!rgb || !dark) return hex;
+          let c = rgb;
+          let guard = 0;
+          while (relLuminance(c) < 0.18 && guard++ < 6) {
+            c = {
+              r: c.r + (255 - c.r) * 0.25,
+              g: c.g + (255 - c.g) * 0.25,
+              b: c.b + (255 - c.b) * 0.25,
+            };
+          }
+          return guard > 0 ? rgbToHex(c) : hex;
+        }
+
+        function hexWithAlpha(hex, alpha) {
+          const rgb = hexToRgb(hex);
+          if (!rgb) return hex;
+          return (
+            "rgba(" + rgb.r + ", " + rgb.g + ", " + rgb.b + ", " + alpha + ")"
+          );
+        }
+
+        function applyAppThemeVars() {
+          const style = document.body.style;
+          Object.keys(APP_THEME_VARS).forEach((key) => {
+            style.removeProperty(APP_THEME_VARS[key]);
+          });
+          if (themeMode !== "auto" || !appTheme) {
+            style.removeProperty("color-scheme");
+            return;
+          }
+          const colors = appTheme.colors || {};
+          Object.keys(APP_THEME_VARS).forEach((key) => {
+            if (colors[key]) style.setProperty(APP_THEME_VARS[key], colors[key]);
+          });
+          style.setProperty("color-scheme", appTheme.dark ? "dark" : "light");
+        }
+
         function isDarkTheme() {
-          if (themeMode === "auto") return !!(mediaDark && mediaDark.matches);
+          if (themeMode === "auto") {
+            if (appTheme) return !!appTheme.dark;
+            return !!(mediaDark && mediaDark.matches);
+          }
           return themeMode === "dark" || themeMode === "nord";
+        }
+
+        // 深色语法配色（One Dark 系）；bundle 未含 HighlightStyle/tags 时返回 null 走默认样式
+        let darkHighlightStyleCache = null;
+        function getDarkHighlightStyle() {
+          if (darkHighlightStyleCache) return darkHighlightStyleCache;
+          if (!HighlightStyle || !tags || typeof HighlightStyle.define !== "function") {
+            return null;
+          }
+          try {
+            darkHighlightStyleCache = HighlightStyle.define([
+              { tag: tags.keyword, color: "#c678dd" },
+              {
+                tag: [tags.name, tags.deleted, tags.character, tags.propertyName, tags.macroName],
+                color: "#e06c75",
+              },
+              { tag: [tags.function(tags.variableName), tags.labelName], color: "#61afef" },
+              { tag: [tags.color, tags.constant(tags.name), tags.standard(tags.name)], color: "#d19a66" },
+              { tag: [tags.definition(tags.name), tags.separator], color: "#abb2bf" },
+              {
+                tag: [tags.typeName, tags.className, tags.number, tags.changed, tags.annotation, tags.modifier, tags.self, tags.namespace],
+                color: "#e5c07b",
+              },
+              {
+                tag: [tags.operator, tags.operatorKeyword, tags.url, tags.escape, tags.regexp, tags.link, tags.special(tags.string)],
+                color: "#56b6c2",
+              },
+              { tag: [tags.meta, tags.comment], color: "#7d8799" },
+              { tag: [tags.atom, tags.bool, tags.special(tags.variableName)], color: "#d19a66" },
+              { tag: [tags.string, tags.inserted], color: "#98c379" },
+              { tag: tags.invalid, color: "#ffffff" },
+            ]);
+          } catch (e) {
+            appendLog("error", "深色高亮构建失败: " + errMsg(e));
+          }
+          return darkHighlightStyleCache;
+        }
+
+        function makeHighlightExt() {
+          if (typeof syntaxHighlighting !== "function") return [];
+          const darkStyle = isDarkTheme() ? getDarkHighlightStyle() : null;
+          return syntaxHighlighting(darkStyle || defaultHighlightStyle, {
+            fallback: true,
+          });
+        }
+
+        function reconfigureThemeEffects() {
+          if (!view) return;
+          view.dispatch({
+            effects: [
+              themeComp.reconfigure(makeTheme()),
+              highlightComp.reconfigure(makeHighlightExt()),
+            ],
+          });
         }
 
         function getSystemFontSize() {
@@ -1165,18 +1281,33 @@
                 overflowAnchor: "none",
               },
               ".cm-content": {
-                padding: "10px",
+                padding: "10px 10px 10px 1px",
                 maxWidth: "none",
                 overflowWrap: "anywhere",
               },
               ".cm-gutters": {
-                backgroundColor: "var(--gutter-bg)",
+                backgroundColor: "var(--bg)",
                 color: "var(--gutter-text)",
                 borderRight: "1px solid var(--border)",
                 "-webkit-user-select": "none",
                 userSelect: "none",
                 pointerEvents: "none",
                 contain: "layout style paint",
+              },
+              ".cm-activeLineGutter": {
+                backgroundColor: "var(--active-line)",
+              },
+              ".cm-lineNumbers .cm-gutterElement": {
+                padding: "0 1px 0 4px",
+                minWidth: "0",
+                // 0.85em 缩号,行高 1.5/0.85 补偿,数字与代码行对齐
+                fontSize: "0.85em",
+                lineHeight: "1.7647",
+              },
+              ".cm-foldGutter .cm-gutterElement": {
+                width: "12px",
+                padding: "0",
+                textAlign: "center",
               },
               ".cm-gutters .cm-foldGutter, .cm-gutters .cm-foldPlaceholder": {
                 pointerEvents: "auto",
@@ -1197,9 +1328,8 @@
           } else {
             document.body.setAttribute("data-theme", themeMode);
           }
-          if (view) {
-            view.dispatch({ effects: themeComp.reconfigure(makeTheme()) });
-          }
+          applyAppThemeVars();
+          reconfigureThemeEffects();
         }
 
         function applyTabSize(size) {
@@ -1669,6 +1799,15 @@
           return parts.join(" ");
         }
 
+        /** 撤销/重做可用态跟随历史深度；bundle 未含 undoDepth/redoDepth 时保持常亮 */
+        function updateHistoryButtons(state) {
+          if (typeof undoDepth !== "function" || typeof redoDepth !== "function") {
+            return;
+          }
+          if (dom.undoBtn) dom.undoBtn.disabled = undoDepth(state) === 0;
+          if (dom.redoBtn) dom.redoBtn.disabled = redoDepth(state) === 0;
+        }
+
         function buildAutocompleteExtensions() {
           if (!autocompletion) return [];
           return [
@@ -1723,9 +1862,7 @@
           }
           if (typeof javascript === "function") exts.push(javascript());
           if (typeof syntaxHighlighting === "function") {
-            exts.push(
-              syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-            );
+            exts.push(highlightComp.of(makeHighlightExt()));
           }
           if (themeComp) exts.push(themeComp.of(makeTheme()));
           if (fontComp) exts.push(fontComp.of(makeFontTheme()));
@@ -1752,6 +1889,33 @@
             exts.push(bracketMatching());
           if (typeof highlightSelectionMatches === "function")
             exts.push(highlightSelectionMatches());
+          // 面板置顶:底部默认位会被软键盘盖住
+          if (typeof search === "function") exts.push(search({ top: true }));
+          if (
+            EditorState &&
+            EditorState.phrases &&
+            typeof EditorState.phrases.of === "function"
+          ) {
+            exts.push(
+              EditorState.phrases.of({
+                "Find": "查找",
+                "Replace": "替换",
+                "next": "下一个",
+                "previous": "上一个",
+                "all": "全部",
+                "match case": "区分大小写",
+                "by word": "全字匹配",
+                "regexp": "正则",
+                "replace": "替换",
+                "replace all": "全部替换",
+                "close": "关闭",
+                "current match": "当前匹配",
+                "replaced $ matches": "已替换 $ 处",
+                "replaced match on line $": "已替换第 $ 行",
+                "on line": "于行",
+              }),
+            );
+          }
           if (typeof closeCompletion === "function") {
             let hadCustomCompletionContext = false;
             exts.push(
@@ -1781,6 +1945,7 @@
           exts.push(
             EditorView.updateListener.of((update) => {
               if (!update.docChanged) return;
+              updateHistoryButtons(update.state);
               clearTimeout(_wrapCheckTimer);
               _wrapCheckTimer = setTimeout(() => {
                 updateWrappedScriptMode(update.state.doc.toString());
@@ -1821,6 +1986,7 @@
           applyFontSize(fontSize);
           applyTheme(themeMode);
           dom.wrapBtn.classList.toggle("active", isWrap);
+          updateHistoryButtons(view.state);
         } catch (e) {
           appendLog("error", errMsg(e));
           bootError("编辑器初始化失败: " + errMsg(e));
@@ -1849,8 +2015,8 @@
         })();
 
         const syncAutoTheme = () => {
-          if (themeMode !== "auto") return;
-          view.dispatch({ effects: themeComp.reconfigure(makeTheme()) });
+          if (themeMode !== "auto" || appTheme) return;
+          reconfigureThemeEffects();
         };
         if (mediaDark) {
           if (typeof mediaDark.addEventListener === "function") {
@@ -2183,139 +2349,51 @@
           }
         });
 
-        // ========== 自定义搜索替换 ==========
-        const searchState = { matches: [], current: -1, caseSensitive: false, useRegex: false, wholeWord: false };
-
-        function performSearch(selectClosest) {
-          const query = dom.searchInput.value;
-          const doc = getCode();
-          searchState.matches = [];
-          searchState.current = -1;
-          if (!query) { updateSearchInfo(); return; }
-          try {
-            let regex;
-            if (searchState.useRegex) {
-              const flags = searchState.caseSensitive ? "g" : "gi";
-              regex = new RegExp(query, flags);
-            } else {
-              const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-              const flags = searchState.caseSensitive ? "g" : "gi";
-              const pattern = searchState.wholeWord ? "\\b" + escaped + "\\b" : escaped;
-              regex = new RegExp(pattern, flags);
-            }
-            let match;
-            while ((match = regex.exec(doc)) !== null) {
-              searchState.matches.push({ from: match.index, to: match.index + match[0].length });
-              if (searchState.matches.length > 10000) break;
-              if (!match[0].length) { regex.lastIndex++; }
-            }
-          } catch (e) { /* invalid regex */ }
-          if (searchState.matches.length > 0 && selectClosest !== false) {
-            const pos = view.state.selection.main.from;
-            let closest = 0;
-            for (let i = 0; i < searchState.matches.length; i++) {
-              if (searchState.matches[i].from >= pos) { closest = i; break; }
-              closest = i;
-            }
-            searchState.current = closest;
-            selectMatch(closest);
+        bindClick(dom.searchToggleBtn, () => {
+          if (typeof openSearchPanel === "function") {
+            openSearchPanel(view);
           }
-          updateSearchInfo();
-        }
-
-        function selectMatch(index) {
-          if (index < 0 || index >= searchState.matches.length) return;
-          const m = searchState.matches[index];
-          view.dispatch({
-            selection: { anchor: m.from, head: m.to },
-            effects: EditorView.scrollIntoView(m.from, { y: "center" }),
-          });
-        }
-
-        function searchNext() {
-          if (!searchState.matches.length) return;
-          searchState.current = (searchState.current + 1) % searchState.matches.length;
-          selectMatch(searchState.current);
-          updateSearchInfo();
-        }
-
-        function searchPrev() {
-          if (!searchState.matches.length) return;
-          searchState.current = (searchState.current - 1 + searchState.matches.length) % searchState.matches.length;
-          selectMatch(searchState.current);
-          updateSearchInfo();
-        }
-
-        function replaceCurrent() {
-          if (searchState.current < 0 || !searchState.matches.length) return;
-          const m = searchState.matches[searchState.current];
-          const replaceText = dom.replaceInput.value;
-          view.dispatch({ changes: { from: m.from, to: m.to, insert: replaceText } });
-          performSearch(true);
-        }
-
-        function replaceAllMatches() {
-          if (!searchState.matches.length) return;
-          const replaceText = dom.replaceInput.value;
-          const changes = searchState.matches.slice().reverse().map(m => ({ from: m.from, to: m.to, insert: replaceText }));
-          view.dispatch({ changes });
-          showToast("已替换 " + changes.length + " 处");
-          performSearch(false);
-        }
-
-        function updateSearchInfo() {
-          if (!dom.searchInput.value) { dom.searchInfo.textContent = ""; }
-          else if (searchState.matches.length === 0) { dom.searchInfo.textContent = "无结果"; }
-          else { dom.searchInfo.textContent = (searchState.current + 1) + "/" + searchState.matches.length; }
-        }
-
-        function openCustomSearch() {
-          dom.searchPanel.classList.add("show");
-          const sel = view.state.selection.main;
-          if (!sel.empty && sel.to - sel.from < 200) {
-            dom.searchInput.value = view.state.sliceDoc(sel.from, sel.to);
-          }
-          dom.searchInput.focus();
-          dom.searchInput.select();
-          if (dom.searchInput.value) performSearch(true);
-        }
-
-        function closeCustomSearch() {
-          dom.searchPanel.classList.remove("show");
-          searchState.matches = [];
-          searchState.current = -1;
-          dom.searchInfo.textContent = "";
-          view.focus();
-        }
-
-        bindClick(dom.searchToggleBtn, openCustomSearch);
-        bindClick(dom.searchCloseBtn, closeCustomSearch);
-        bindClick(dom.searchNextBtn, searchNext);
-        bindClick(dom.searchPrevBtn, searchPrev);
-        bindClick(dom.replaceBtn, replaceCurrent);
-        bindClick(dom.replaceAllBtn, replaceAllMatches);
-
-        let _searchDebounce = 0;
-        dom.searchInput.addEventListener("input", () => {
-          clearTimeout(_searchDebounce);
-          _searchDebounce = setTimeout(() => performSearch(true), 150);
-        });
-        dom.searchInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); e.shiftKey ? searchPrev() : searchNext(); }
-          if (e.key === "Escape") { e.preventDefault(); closeCustomSearch(); }
-        });
-        dom.replaceInput.addEventListener("keydown", (e) => {
-          if (e.key === "Enter") { e.preventDefault(); replaceCurrent(); }
-          if (e.key === "Escape") { e.preventDefault(); closeCustomSearch(); }
         });
 
-        [["searchCaseBtn", "caseSensitive"], ["searchRegexBtn", "useRegex"], ["searchWordBtn", "wholeWord"]].forEach(([id, key]) => {
-          bindClick(dom[id], () => {
-            searchState[key] = !searchState[key];
-            dom[id].classList.toggle("on", searchState[key]);
-            performSearch(true);
-          });
-        });
+        // findNext/findPrevious 命令收尾会重聚焦搜索输入框并全选(桌面端交互),
+        // 手机上表现为点按钮时输入法闪现。面板按钮按下时按住默认聚焦,
+        // 并在触发窗内把输入框的 focus/select 短路掉。
+        (function tameSearchPanelFocus() {
+          let suppressUntil = 0;
+          const origFocus = HTMLInputElement.prototype.focus;
+          const origSelect = HTMLInputElement.prototype.select;
+          HTMLInputElement.prototype.focus = function (...args) {
+            if (
+              Date.now() < suppressUntil &&
+              this.closest && this.closest(".cm-panel.cm-search")
+            ) {
+              return;
+            }
+            return origFocus.apply(this, args);
+          };
+          HTMLInputElement.prototype.select = function (...args) {
+            if (
+              Date.now() < suppressUntil &&
+              this.closest && this.closest(".cm-panel.cm-search")
+            ) {
+              return;
+            }
+            return origSelect.apply(this, args);
+          };
+          document.addEventListener(
+            "mousedown",
+            (e) => {
+              const t = e.target;
+              if (!(t instanceof Element)) return;
+              if (t.closest(".cm-panel.cm-search button, .cm-panel.cm-search .cm-button")) {
+                // 按钮按下不夺焦(preventDefault),命令执行后的重聚焦也一并抑制
+                e.preventDefault();
+                suppressUntil = Date.now() + 300;
+              }
+            },
+            true,
+          );
+        })();
 
         function bindClick(el, handler) {
           el.onclick = handler;
@@ -2678,9 +2756,45 @@
           showToast("发生错误：" + msg);
         };
 
+        /**
+         * Android 注入应用主题：payload 为 JSON 字符串或对象
+         * {dark: boolean, colors: {bg,gutterBg,gutterText,text,border,activeLine,accent,toolbarBg,selection}}
+         * auto（跟随）模式立即生效；显式选择 light/dark/sepia/nord 时仅存不用。
+         */
+        window.setAppTheme = function (payload) {
+          try {
+            const p =
+              typeof payload === "string" ? JSON.parse(payload) : payload;
+            if (!p || typeof p !== "object") return;
+            const colors =
+              p.colors && typeof p.colors === "object" ? { ...p.colors } : {};
+            if (colors.accent) {
+              colors.accent = ensureAccentVisible(colors.accent, !!p.dark);
+              if (!colors.accentSoft) {
+                colors.accentSoft = hexWithAlpha(
+                  colors.accent,
+                  p.dark ? 0.2 : 0.12,
+                );
+              }
+            }
+            appTheme = { dark: !!p.dark, colors };
+            const autoOption =
+              dom.themeSelect &&
+              dom.themeSelect.querySelector('option[value="auto"]');
+            if (autoOption) autoOption.textContent = "跟随应用";
+            if (themeMode === "auto") {
+              applyAppThemeVars();
+              reconfigureThemeEffects();
+            }
+          } catch (e) {
+            appendLog("error", "应用主题注入失败: " + errMsg(e));
+          }
+        };
+
         window.setCodeFromAndroid = function (b64) {
           resetDoc(b64ToUtf8(b64), { addToHistory: false });
           updateWrappedScriptMode(getCode());
+          updateHistoryButtons(view.state);
           scheduleSyntaxCheck();
         };
 
@@ -2694,121 +2808,103 @@
           return getCode();
         };
 
-        // 自定义滚动条
-        (function initCustomScrollbar() {
-          const thumb = document.querySelector(".custom-scrollbar-thumb");
-          const track = document.querySelector(".custom-scrollbar-track");
-          if (!thumb || !track) return;
-          let scroller = null;
-          let hideTimer = null;
+        // 滚动指示条:transform 位移+rAF 合帧,滚动路径零布局读写;
+        // 几何(scrollHeight/clientHeight)只在 rAF 里读且每帧一次
+        (function initScrollIndicator() {
+          const bar = $("scroll-indicator");
+          const hit = $("scroll-indicator-hit");
+          if (!bar || !hit || !view || !view.scrollDOM) return;
+          const scroller = view.scrollDOM;
+          const BAR_H = 40;
+          let rafPending = false;
+          let hideTimer = 0;
           let dragging = false;
-          let startY = 0;
-          let startScrollTop = 0;
+          let trackTop = 0;
+          let trackRange = 1;
 
-          function getScroller() {
-            if (!scroller) scroller = document.querySelector(".cm-scroller");
-            return scroller;
-          }
-
-          function updateThumb() {
-            const s = getScroller();
-            if (!s) return;
-            const scrollH = s.scrollHeight;
-            const clientH = s.clientHeight;
-            if (scrollH <= clientH) {
-              thumb.style.display = "none";
-              return;
+          function layout() {
+            const scrollRange = scroller.scrollHeight - scroller.clientHeight;
+            const canScroll = scrollRange > 4;
+            hit.classList.toggle("enabled", canScroll);
+            if (!canScroll) {
+              bar.classList.remove("visible");
+              return false;
             }
-            thumb.style.display = "block";
-            const trackH = track.clientHeight;
-            const thumbH = 50;
-            const scrollRange = scrollH - clientH;
-            const thumbRange = trackH - thumbH;
-            const top = (s.scrollTop / scrollRange) * thumbRange;
-            thumb.style.top = top + "px";
+            const host = bar.parentElement;
+            trackTop = 4;
+            trackRange = host.clientHeight - 8 - BAR_H;
+            const ratio = scroller.scrollTop / scrollRange;
+            bar.style.transform =
+              "translateY(" + (trackTop + ratio * trackRange - 4) + "px)";
+            return true;
           }
 
-          function showThumb() {
-            clearTimeout(hideTimer);
-            thumb.classList.add("visible");
-          }
-
-          function scheduleHide() {
-            clearTimeout(hideTimer);
-            hideTimer = setTimeout(() => {
-              if (!dragging) thumb.classList.remove("visible");
-            }, 1500);
-          }
-
-          // 监听编辑器滚动 - 找到 scroller 后立即断开观察
-          const observer = new MutationObserver(() => {
-            const s = document.querySelector(".cm-scroller");
-            if (s) {
-              observer.disconnect();
-              scroller = s;
-              s.addEventListener("scroll", () => {
-                updateThumb();
-                if (!dragging) { showThumb(); scheduleHide(); }
-              }, { passive: true });
-              updateThumb();
+          function onFrame() {
+            rafPending = false;
+            if (!layout()) return;
+            bar.classList.add("visible");
+            if (!dragging) {
+              clearTimeout(hideTimer);
+              hideTimer = setTimeout(() => {
+                bar.classList.remove("visible");
+              }, 1200);
             }
-          });
-          observer.observe(document.getElementById("editor"), { childList: true, subtree: true });
-
-          // 触摸拖拽 - touchmove/touchend 仅在拖拽期间注册
-          function onTouchMove(e) {
-            e.preventDefault();
-            const s = getScroller();
-            if (!s) return;
-            const touch = e.touches[0];
-            const deltaY = touch.clientY - startY;
-            const trackH = track.clientHeight;
-            const scrollRange = s.scrollHeight - s.clientHeight;
-            const thumbH = 50;
-            const thumbRange = trackH - thumbH;
-            const scrollDelta = (deltaY / thumbRange) * scrollRange;
-            s.scrollTop = startScrollTop + scrollDelta;
-            updateThumb();
           }
 
-          function onTouchEnd() {
+          scroller.addEventListener(
+            "scroll",
+            () => {
+              if (rafPending) return;
+              rafPending = true;
+              requestAnimationFrame(onFrame);
+            },
+            { passive: true },
+          );
+
+          function dragTo(clientY) {
+            const hostRect = bar.parentElement.getBoundingClientRect();
+            const y = clientY - hostRect.top - trackTop - BAR_H / 2;
+            const ratio = Math.max(0, Math.min(1, y / trackRange));
+            scroller.scrollTop =
+              ratio * (scroller.scrollHeight - scroller.clientHeight);
+          }
+
+          hit.addEventListener(
+            "touchstart",
+            (e) => {
+              if (!layout()) return;
+              e.preventDefault();
+              dragging = true;
+              bar.classList.add("dragging", "visible");
+              clearTimeout(hideTimer);
+              dragTo(e.touches[0].clientY);
+            },
+            { passive: false },
+          );
+          hit.addEventListener(
+            "touchmove",
+            (e) => {
+              if (!dragging) return;
+              e.preventDefault();
+              dragTo(e.touches[0].clientY);
+            },
+            { passive: false },
+          );
+          const endDrag = () => {
+            if (!dragging) return;
             dragging = false;
-            thumb.classList.remove("dragging");
-            document.removeEventListener("touchmove", onTouchMove);
-            document.removeEventListener("touchend", onTouchEnd);
-            scheduleHide();
-          }
+            bar.classList.remove("dragging");
+            hideTimer = setTimeout(() => {
+              bar.classList.remove("visible");
+            }, 1200);
+          };
+          hit.addEventListener("touchend", endDrag);
+          hit.addEventListener("touchcancel", endDrag);
 
-          track.addEventListener("touchstart", (e) => {
-            const s = getScroller();
-            if (!s) return;
-            e.preventDefault();
-            e.stopPropagation();
-            const touch = e.touches[0];
-            const trackRect = track.getBoundingClientRect();
-            const thumbRect = thumb.getBoundingClientRect();
-            // 判断是否点在 thumb 上
-            if (touch.clientY >= thumbRect.top && touch.clientY <= thumbRect.bottom) {
-              dragging = true;
-              startY = touch.clientY;
-              startScrollTop = s.scrollTop;
-            } else {
-              // 点击轨道空白：跳到对应位置
-              dragging = true;
-              const clickRatio = (touch.clientY - trackRect.top) / trackRect.height;
-              s.scrollTop = clickRatio * (s.scrollHeight - s.clientHeight);
-              startY = touch.clientY;
-              startScrollTop = s.scrollTop;
-            }
-            thumb.classList.add("dragging");
-            showThumb();
-            updateThumb();
-            document.addEventListener("touchmove", onTouchMove, { passive: false });
-            document.addEventListener("touchend", onTouchEnd);
-          }, { passive: false });
-
-          // 窗口/内容变化时更新
-          window.addEventListener("resize", updateThumb);
+          // 文档尺寸变化(输入/格式化)时校准热区可用性,不做每帧监听
+          view.dom.addEventListener("focusout", layout);
+          window.addEventListener("resize", layout);
+          layout();
         })();
 
         if (window.Android && typeof window.Android.onEditorReady === "function") {

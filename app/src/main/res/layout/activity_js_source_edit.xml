@@ -12,12 +12,32 @@
         android:layout_height="wrap_content"
         app:title="@string/js_source" />
 
-    <io.legado.app.ui.widget.code.CodeView
-        android:id="@+id/code_view"
+    <FrameLayout
+        android:id="@+id/fl_editor"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@null"
-        android:gravity="top|start"
-        android:padding="8dp"
-        android:textSize="@dimen/text_body" />
+        android:layout_height="match_parent">
+
+        <FrameLayout
+            android:id="@+id/web_view_container"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:alpha="0" />
+
+        <io.legado.app.ui.widget.code.CodeView
+            android:id="@+id/code_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@null"
+            android:gravity="top|start"
+            android:padding="8dp"
+            android:textSize="@dimen/text_body"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/loading_progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
 </LinearLayout>

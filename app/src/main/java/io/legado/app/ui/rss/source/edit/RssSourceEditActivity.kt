@@ -63,7 +63,9 @@ class RssSourceEditActivity :
     private val webEditRequests = linkedMapOf<String, EditEntity>()
     private val adapter by lazy {
         RssSourceEditAdapter { entity ->
-            val requestId = java.util.UUID.randomUUID().toString()
+            // requestId 前缀编码 tab:key——Activity 重建丢 map 后仍可按其回填重建的同名字段
+            val requestId = "${binding.tabLayout.selectedTabPosition}:${entity.key}:" +
+                java.util.UUID.randomUUID().toString()
             if (
                 WebCodeDialog.show(
                     supportFragmentManager,
@@ -448,7 +450,10 @@ class RssSourceEditActivity :
     }
 
     override fun onCodeSave(code: String, requestId: String?) {
-        val entity = requestId?.let { webEditRequests.remove(it) } ?: return
+        requestId ?: return
+        val entity = webEditRequests.remove(requestId)
+            ?: findEntityByRequestId(requestId)
+            ?: return
         entity.value = code
         val index = adapter.editEntities.indexOf(entity)
         if (index >= 0) {
@@ -456,6 +461,18 @@ class RssSourceEditActivity :
         } else {
             adapter.notifyDataSetChanged()
         }
+    }
+
+    /** Activity 重建后 requestId→entity 映射丢失，按 requestId 内编码的 tab:key 定位重建后的同名字段 */
+    private fun findEntityByRequestId(requestId: String): EditEntity? {
+        val parts = requestId.split(":", limit = 3)
+        if (parts.size < 3) return null
+        val entities = when (parts[0].toIntOrNull() ?: return null) {
+            1 -> listEntities
+            2 -> webViewEntities
+            else -> sourceEntities
+        }
+        return entities.find { it.key == parts[1] }
     }
 
 }

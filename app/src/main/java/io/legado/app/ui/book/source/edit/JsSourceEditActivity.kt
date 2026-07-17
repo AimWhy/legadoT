@@ -2,6 +2,7 @@ package io.legado.app.ui.book.source.edit
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
 import androidx.lifecycle.lifecycleScope
@@ -15,7 +16,9 @@ import io.legado.app.lib.dialogs.alert
 import io.legado.app.model.jsSource.JsSourceConfig
 import io.legado.app.ui.book.source.debug.BookSourceDebugActivity
 import io.legado.app.ui.widget.code.addJsPattern
+import io.legado.app.ui.widget.dialog.CodeEditorWebViewPool
 import io.legado.app.utils.getClipText
+import io.legado.app.utils.gone
 import io.legado.app.utils.imeHeight
 import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.sendToClip
@@ -25,6 +28,7 @@ import io.legado.app.utils.showHelp
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import io.legado.app.utils.visible
 import java.io.File
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.launch
@@ -32,10 +36,13 @@ import kotlinx.coroutines.withContext
 import splitties.views.bottomPadding
 
 /**
- * 纯JS单文件源编辑器(spec §5):整页 CodeView,脚本是元数据唯一真理源,
- * 保存=JsSourceConfig.extract 重提 config 覆盖元字段(enabled/customOrder 等用户态保留)。
+ * 纯JS单文件源编辑器(spec §5):整页 CodeMirror(保活 WebView 池,与字段弹窗共用),
+ * 行号/折叠/搜索/格式化/语法检查全套;池被占用或 boot 失败回退原生 CodeView。
+ * 脚本是元数据唯一真理源,保存=JsSourceConfig.extract 重提 config 覆盖元字段
+ * (enabled/customOrder 等用户态保留)。
  */
-class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
+class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>(),
+    CodeEditorWebViewPool.Client {
 
     override val binding by viewBinding(ActivityJsSourceEditBinding::inflate)
 
@@ -46,17 +53,33 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
     // 全文赋给 mainJs、equal 逐字比 mainJs,纯文本比较更简单且无 Rhino eval 开销/非法脚本误弹)
     private var baselineText: String = ""
 
+    // 内容会话键:存 instance state 跨重建稳定;重建回来编辑器文档仍是本会话时
+    // 跳过初始注入,保住未保存编辑
+    private var editorSessionKey: String = ""
+
+    private var webEditorAttached = false
+    private var editorReady = false
+    private var initialCodeApplied = false
+    private var fallbackMode = false
+    private var pendingInitialText: String? = null
+    private var exitCheckPending = false
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
-        binding.codeView.addJsPattern()
+        editorSessionKey = savedInstanceState?.getString("editorSessionKey")
+            ?: "js:" + java.util.UUID.randomUUID().toString()
         // 本页无 KeyboardToolPop 工具条兜底,与书源编辑器(imeHeight==0 时才用 navigationBarHeight)不同,
         // 这里 IME 高度直接作为 padding,让输入区始终不被键盘遮挡
-        binding.codeView.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
+        binding.flEditor.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
             val imeHeight = windowInsets.imeHeight
             view.bottomPadding = if (imeHeight == 0) windowInsets.navigationBarHeight else imeHeight
             windowInsets
         }
         val sourceUrl = intent.getStringExtra("sourceUrl")
         if (!sourceUrl.isNullOrBlank()) openedSourceUrl = sourceUrl
+        webEditorAttached = CodeEditorWebViewPool.attach(binding.webViewContainer, this)
+        if (!webEditorAttached) {
+            enterFallbackMode()
+        }
         lifecycleScope.launch {
             val text = withContext(IO) {
                 if (sourceUrl.isNullOrBlank()) {
@@ -65,10 +88,116 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                     appDb.bookSourceDao.getBookSource(sourceUrl)?.mainJs.orEmpty()
                 }
             }
-            binding.codeView.setText(text)
             baselineText = text
+            pendingInitialText = text
+            applyInitialTextIfReady()
         }
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("editorSessionKey", editorSessionKey)
+    }
+
+    override fun onDestroy() {
+        if (webEditorAttached) {
+            CodeEditorWebViewPool.detach(this)
+        }
+        super.onDestroy()
+    }
+
+    // ------ 编辑器承载:池化 CodeMirror / 回退 CodeView ------
+
+    override fun onEditorReady() {
+        if (isDestroyed) return
+        editorReady = true
+        CodeEditorWebViewPool.applyAppTheme()
+        applyInitialTextIfReady()
+    }
+
+    override fun onEditorBootError(message: String?) {
+        if (isDestroyed || editorReady) return
+        enterFallbackMode()
+    }
+
+    // 保存不走 __save 桥(菜单动作各自经 withEditorText 取文本),此回调无消费
+    override fun onEditorSave(text: String) = Unit
+
+    private fun enterFallbackMode() {
+        if (fallbackMode) return
+        fallbackMode = true
+        if (webEditorAttached) {
+            CodeEditorWebViewPool.detach(this)
+            webEditorAttached = false
+        }
+        binding.webViewContainer.gone()
+        binding.codeView.addJsPattern()
+        binding.codeView.visible()
+        applyInitialTextIfReady()
+    }
+
+    /** 初始文本与编辑器就绪双异步汇合点:两者齐备才注入,重复调用幂等 */
+    private fun applyInitialTextIfReady() {
+        val text = pendingInitialText ?: return
+        if (fallbackMode) {
+            pendingInitialText = null
+            binding.codeView.setText(text)
+            onInitialContentShown()
+            return
+        }
+        if (!editorReady) return
+        if (CodeEditorWebViewPool.isContentSession(editorSessionKey)) {
+            // 重建回来:编辑器文档就是本会话内容(可能含未保存编辑),重发会覆盖
+            pendingInitialText = null
+            initialCodeApplied = true
+            onInitialContentShown()
+            return
+        }
+        val encoded = Base64.encodeToString(text.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        CodeEditorWebViewPool.evaluateJavascript(
+            "window.setCodeFromAndroid && window.setCodeFromAndroid('$encoded');"
+        ) {
+            if (isDestroyed) return@evaluateJavascript
+            pendingInitialText = null
+            initialCodeApplied = true
+            CodeEditorWebViewPool.markContentSession(editorSessionKey)
+            onInitialContentShown()
+        }
+    }
+
+    private fun onInitialContentShown() {
+        binding.loadingProgress.gone()
+        binding.webViewContainer.alpha = 1f
+    }
+
+    /** 统一取文:web 编辑器异步经 __getCode,回退模式同步;初始注入未完成时以待注入文本为准 */
+    private fun withEditorText(action: (String) -> Unit) {
+        if (fallbackMode) {
+            action(binding.codeView.text.toString())
+            return
+        }
+        if (!initialCodeApplied) {
+            action(pendingInitialText ?: baselineText)
+            return
+        }
+        CodeEditorWebViewPool.evaluateJavascript("window.__getCode && window.__getCode();") { value ->
+            if (isDestroyed) return@evaluateJavascript
+            action(CodeEditorWebViewPool.decodeJsResult(value) ?: "")
+        }
+    }
+
+    private fun setEditorText(text: String) {
+        if (fallbackMode) {
+            binding.codeView.setText(text)
+            return
+        }
+        val encoded = Base64.encodeToString(text.toByteArray(Charsets.UTF_8), Base64.NO_WRAP)
+        CodeEditorWebViewPool.evaluateJavascript(
+            "window.setCodeFromAndroid && window.setCodeFromAndroid('$encoded');"
+        )
+    }
+
+    // ------ 菜单与保存链路 ------
 
     override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.js_source_edit, menu)
@@ -88,8 +217,8 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                     putExtra("key", source.bookSourceUrl)
                 }
             }
-            R.id.menu_copy_source -> sendToClip(binding.codeView.text.toString())
-            R.id.menu_paste_source -> getClipText()?.let { binding.codeView.setText(it) }
+            R.id.menu_copy_source -> withEditorText { sendToClip(it) }
+            R.id.menu_paste_source -> getClipText()?.let { setEditorText(it) }
             R.id.menu_share_js -> shareJsFile()
             R.id.menu_help -> showHelp("jsHelp")
         }
@@ -100,15 +229,19 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
      * 与 extract 后 equal() 比对严格等价(见 baselineText 字段注释),但零 Rhino eval 开销,
      * 且非法脚本(未通过 extract)在未改动时也不会误弹 */
     override fun finish() {
-        val current = binding.codeView.text.toString()
-        if (current == baselineText) {
-            super.finish()
-        } else {
-            alert(R.string.exit) {
-                setMessage(R.string.exit_no_save)
-                positiveButton(R.string.yes)
-                negativeButton(R.string.no) {
-                    super@JsSourceEditActivity.finish()
+        if (exitCheckPending) return
+        exitCheckPending = true
+        withEditorText { current ->
+            exitCheckPending = false
+            if (current == baselineText) {
+                super@JsSourceEditActivity.finish()
+            } else {
+                alert(R.string.exit) {
+                    setMessage(R.string.exit_no_save)
+                    positiveButton(R.string.yes)
+                    negativeButton(R.string.no) {
+                        super@JsSourceEditActivity.finish()
+                    }
                 }
             }
         }
@@ -117,17 +250,18 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
     /** 分享脚本为 .js 文件:写临时文件到 cacheDir 再经 FileProvider 分享,
      * 文件名取脚本内 bookSourceName(去非法字符),提取失败则 toast 明确原因 */
     private fun shareJsFile() {
-        val text = binding.codeView.text.toString()
-        runCatching {
-            // extract() 已保证 bookSourceName 非空白,这里只做文件系统非法字符净化
-            val name = JsSourceConfig.extract(text).bookSourceName
-            val fileName = name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().trim('.')
-                .ifBlank { "jsSource" }
-            val file = File(cacheDir, "$fileName.js")
-            file.writeText(text)
-            share(file, "text/javascript")
-        }.onFailure {
-            toastOnUi(it.localizedMessage)
+        withEditorText { text ->
+            runCatching {
+                // extract() 已保证 bookSourceName 非空白,这里只做文件系统非法字符净化
+                val name = JsSourceConfig.extract(text).bookSourceName
+                val fileName = name.replace(Regex("[\\\\/:*?\"<>|]"), "_").trim().trim('.')
+                    .ifBlank { "jsSource" }
+                val file = File(cacheDir, "$fileName.js")
+                file.writeText(text)
+                share(file, "text/javascript")
+            }.onFailure {
+                toastOnUi(it.localizedMessage)
+            }
         }
     }
 
@@ -135,57 +269,58 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
         showSuccessToast: Boolean = true,
         onSuccess: ((BookSource) -> Unit)? = null
     ) {
-        val text = binding.codeView.text.toString()
-        lifecycleScope.launch {
-            runCatching {
-                withContext(IO) {
-                    val source = JsSourceConfig.extract(text, coroutineContext)
-                    val openedUrl = openedSourceUrl
-                    // 用户态字段来源:改名场景(openedSourceUrl 非空且与新 URL 不同)旧记录只能按
-                    // openedSourceUrl 查到;直接导入后首次编辑等场景没有改名,退回按新 URL 查
-                    val old = openedUrl?.let { appDb.bookSourceDao.getBookSource(it) }
-                        ?: appDb.bookSourceDao.getBookSource(source.bookSourceUrl)
-                    // 用户态字段不归脚本管:从旧记录保留(spec §5"脚本是元数据唯一真理源"的边界);
-                    // 分组两属:脚本声明时脚本值生效,未声明时保留应用内所设
-                    old?.let {
-                        source.enabled = it.enabled
-                        source.enabledExplore = it.enabledExplore
-                        source.customOrder = it.customOrder
-                        source.weight = it.weight
-                        source.respondTime = it.respondTime
-                        if (source.bookSourceGroup.isNullOrBlank()) {
-                            source.bookSourceGroup = it.bookSourceGroup
-                        }
-                        if (!it.equal(source)) {
+        withEditorText { text ->
+            lifecycleScope.launch {
+                runCatching {
+                    withContext(IO) {
+                        val source = JsSourceConfig.extract(text, coroutineContext)
+                        val openedUrl = openedSourceUrl
+                        // 用户态字段来源:改名场景(openedSourceUrl 非空且与新 URL 不同)旧记录只能按
+                        // openedSourceUrl 查到;直接导入后首次编辑等场景没有改名,退回按新 URL 查
+                        val old = openedUrl?.let { appDb.bookSourceDao.getBookSource(it) }
+                            ?: appDb.bookSourceDao.getBookSource(source.bookSourceUrl)
+                        // 用户态字段不归脚本管:从旧记录保留(spec §5"脚本是元数据唯一真理源"的边界);
+                        // 分组两属:脚本声明时脚本值生效,未声明时保留应用内所设
+                        old?.let {
+                            source.enabled = it.enabled
+                            source.enabledExplore = it.enabledExplore
+                            source.customOrder = it.customOrder
+                            source.weight = it.weight
+                            source.respondTime = it.respondTime
+                            if (source.bookSourceGroup.isNullOrBlank()) {
+                                source.bookSourceGroup = it.bookSourceGroup
+                            }
+                            if (!it.equal(source)) {
+                                stampSource(source)
+                            } else {
+                                source.lastUpdateTime = it.lastUpdateTime
+                            }
+                        } ?: run {
                             stampSource(source)
-                        } else {
-                            source.lastUpdateTime = it.lastUpdateTime
                         }
-                    } ?: run {
-                        stampSource(source)
+                        // 脚本内把 bookSourceUrl 改了名:旧行不会被新 URL 的 insert 覆盖,须显式删除,
+                        // 否则旧记录成僵尸(仍 enabled 参与搜索),对齐 BookSourceEditViewModel.save() 的先例
+                        if (openedUrl != null && openedUrl != source.bookSourceUrl) {
+                            SourceHelp.deleteBookSource(openedUrl)
+                        }
+                        appDb.bookSourceDao.insert(source)
+                        openedSourceUrl = source.bookSourceUrl
+                        source
                     }
-                    // 脚本内把 bookSourceUrl 改了名:旧行不会被新 URL 的 insert 覆盖,须显式删除,
-                    // 否则旧记录成僵尸(仍 enabled 参与搜索),对齐 BookSourceEditViewModel.save() 的先例
-                    if (openedUrl != null && openedUrl != source.bookSourceUrl) {
-                        SourceHelp.deleteBookSource(openedUrl)
+                }.onSuccess {
+                    if (showSuccessToast) {
+                        toastOnUi(R.string.success)
                     }
-                    appDb.bookSourceDao.insert(source)
-                    openedSourceUrl = source.bookSourceUrl
-                    source
+                    // 保存后以入库文本(可能被写回新版本号)刷新编辑区与退出确认基线
+                    val savedText = it.mainJs ?: text
+                    if (savedText != text) {
+                        setEditorText(savedText)
+                    }
+                    baselineText = savedText
+                    onSuccess?.invoke(it)
+                }.onFailure {
+                    toastOnUi(it.localizedMessage)
                 }
-            }.onSuccess {
-                if (showSuccessToast) {
-                    toastOnUi(R.string.success)
-                }
-                // 保存后以入库文本(可能被写回新版本号)刷新编辑区与退出确认基线
-                val savedText = it.mainJs ?: text
-                if (savedText != binding.codeView.text.toString()) {
-                    binding.codeView.setText(savedText)
-                }
-                baselineText = savedText
-                onSuccess?.invoke(it)
-            }.onFailure {
-                toastOnUi(it.localizedMessage)
             }
         }
     }

@@ -1,8 +1,9 @@
 import { EditorState, Compartment, Transaction } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter } from "@codemirror/view";
-import { history, undo, redo, insertNewlineAndIndent, indentMore, indentLess } from "@codemirror/commands";
-import { indentOnInput, bracketMatching, syntaxHighlighting, defaultHighlightStyle, indentUnit, foldGutter } from "@codemirror/language";
-import { highlightSelectionMatches, openSearchPanel } from "@codemirror/search";
+import { history, undo, redo, undoDepth, redoDepth, insertNewlineAndIndent, indentMore, indentLess } from "@codemirror/commands";
+import { indentOnInput, bracketMatching, syntaxHighlighting, defaultHighlightStyle, HighlightStyle, indentUnit, foldGutter } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
+import { highlightSelectionMatches, search, openSearchPanel } from "@codemirror/search";
 import { autocompletion, closeCompletion, closeBrackets, closeBracketsKeymap, startCompletion, completeAnyWord } from "@codemirror/autocomplete";
 import { javascript } from "@codemirror/lang-javascript";
 
@@ -17,6 +18,8 @@ export {
   history,
   undo,
   redo,
+  undoDepth,
+  redoDepth,
   insertNewlineAndIndent,
   indentMore,
   indentLess,
@@ -24,9 +27,12 @@ export {
   bracketMatching,
   syntaxHighlighting,
   defaultHighlightStyle,
+  HighlightStyle,
+  tags,
   indentUnit,
   foldGutter,
   highlightSelectionMatches,
+  search,
   openSearchPanel,
   autocompletion,
   closeCompletion,
