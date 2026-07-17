@@ -82,7 +82,8 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                 setResult(RESULT_OK, Intent().putExtra("origin", it.bookSourceUrl))
                 finish()
             }
-            R.id.menu_debug_source -> saveSource { source ->
+            // 调试跑库内版本,先静默落库再进调试页
+            R.id.menu_debug_source -> saveSource(showSuccessToast = false) { source ->
                 startActivity<BookSourceDebugActivity> {
                     putExtra("key", source.bookSourceUrl)
                 }
@@ -130,7 +131,10 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
         }
     }
 
-    private fun saveSource(onSuccess: ((BookSource) -> Unit)? = null) {
+    private fun saveSource(
+        showSuccessToast: Boolean = true,
+        onSuccess: ((BookSource) -> Unit)? = null
+    ) {
         val text = binding.codeView.text.toString()
         lifecycleScope.launch {
             runCatching {
@@ -170,7 +174,9 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                     source
                 }
             }.onSuccess {
-                toastOnUi(R.string.success)
+                if (showSuccessToast) {
+                    toastOnUi(R.string.success)
+                }
                 // 保存后以入库文本(可能被写回新版本号)刷新编辑区与退出确认基线
                 val savedText = it.mainJs ?: text
                 if (savedText != binding.codeView.text.toString()) {

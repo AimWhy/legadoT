@@ -30,13 +30,13 @@ object JsSourceBook {
         val json = engine.callFunction("search", listOf("key" to key, "page" to (page ?: 1)))
         // 调试页"源码查看"的四个缓冲位(state 10/20/30/40):声明式源存响应体,JS 源无从
         // 拦截函数内请求,存函数返回值——检视 JS 给出的原始数据,与日志列表的编组结果互证
+        Debug.log(bookSource.bookSourceUrl, "≡函数执行成功:search")
         Debug.log(bookSource.bookSourceUrl, json ?: "", state = 10)
         val books = JsSourceMarshaller.parseSearchBooks(json, bookSource)
         if (filter != null) {
             books.removeAll { !filter(it.name, it.author) }
         }
-        Debug.log(bookSource.bookSourceUrl, "◇JS源搜索完成,共${books.size}条")
-        logFirstBook(bookSource, books)
+        logBookList(bookSource, books)
         return books
     }
 
@@ -48,21 +48,34 @@ object JsSourceBook {
     ): ArrayList<SearchBook> {
         val engine = JsSourceEngine(bookSource, coroutineContext)
         val json = engine.callFunction("explore", listOf("url" to url, "page" to (page ?: 1)))
+        Debug.log(bookSource.bookSourceUrl, "≡函数执行成功:explore")
         Debug.log(bookSource.bookSourceUrl, json ?: "", state = 10)
         val books = JsSourceMarshaller.parseSearchBooks(json, bookSource)
-        Debug.log(bookSource.bookSourceUrl, "◇JS源发现完成,共${books.size}条")
-        logFirstBook(bookSource, books)
+        logBookList(bookSource, books)
         return books
     }
 
-    private fun logFirstBook(bookSource: BookSource, books: List<SearchBook>) {
-        val it = books.firstOrNull() ?: return
-        Debug.log(
-            bookSource.bookSourceUrl,
-            "≡首条结果\n◇书名:${it.name}\n◇作者:${it.author}\n◇分类:${it.kind ?: ""}\n" +
-                    "◇字数:${it.wordCount ?: ""}\n◇最新章节:${it.latestChapterTitle ?: ""}\n" +
-                    "◇简介:${it.intro ?: ""}\n◇封面:${it.coverUrl ?: ""}\n◇详情页:${it.bookUrl}"
-        )
+    /** 与声明式 BookList 同款行文:列表规模 → 首条逐字段 ┌└ → 总数 */
+    private fun logBookList(bookSource: BookSource, books: List<SearchBook>) {
+        val url = bookSource.bookSourceUrl
+        Debug.log(url, "┌获取书籍列表")
+        Debug.log(url, "└列表大小:${books.size}")
+        books.firstOrNull()?.let {
+            logField(url, "书名", it.name)
+            logField(url, "作者", it.author)
+            logField(url, "分类", it.kind)
+            logField(url, "字数", it.wordCount)
+            logField(url, "最新章节", it.latestChapterTitle)
+            logField(url, "简介", it.intro)
+            logField(url, "封面链接", it.coverUrl)
+            logField(url, "详情页链接", it.bookUrl)
+        }
+        Debug.log(url, "◇书籍总数:${books.size}")
+    }
+
+    private fun logField(sourceUrl: String, label: String, value: Any?) {
+        Debug.log(sourceUrl, "┌获取$label")
+        Debug.log(sourceUrl, "└${value ?: ""}")
     }
 
     suspend fun getBookInfoAwait(bookSource: BookSource, book: Book): Book {
@@ -74,18 +87,22 @@ object JsSourceBook {
         if (json == null) {
             Debug.log(bookSource.bookSourceUrl, "≡getBookInfo 未定义或无返回,沿用搜索阶段字段")
         } else {
+            Debug.log(bookSource.bookSourceUrl, "≡函数执行成功:getBookInfo")
             Debug.log(bookSource.bookSourceUrl, json, state = 20)
         }
         JsSourceMarshaller.mergeBookInfo(book, json, bookSource)
         if (book.tocUrl.isBlank()) {
             book.tocUrl = book.bookUrl   // 声明式同款兜底:无目录页则详情页即目录页
         }
-        Debug.log(
-            bookSource.bookSourceUrl,
-            "≡详情合并结果\n◇书名:${book.name}\n◇作者:${book.author}\n◇分类:${book.kind ?: ""}\n" +
-                    "◇字数:${book.wordCount ?: ""}\n◇最新章节:${book.latestChapterTitle ?: ""}\n" +
-                    "◇简介:${book.intro ?: ""}\n◇封面:${book.coverUrl ?: ""}\n◇目录页:${book.tocUrl}"
-        )
+        val url = bookSource.bookSourceUrl
+        logField(url, "书名", book.name)
+        logField(url, "作者", book.author)
+        logField(url, "分类", book.kind)
+        logField(url, "字数", book.wordCount)
+        logField(url, "最新章节", book.latestChapterTitle)
+        logField(url, "简介", book.intro)
+        logField(url, "封面链接", book.coverUrl)
+        logField(url, "目录链接", book.tocUrl)
         return book
     }
 
@@ -99,17 +116,20 @@ object JsSourceBook {
         return kotlin.runCatching {
             val engine = JsSourceEngine(bookSource, cc)
             val json = engine.callFunction("getChapters", listOf("book" to book))
+            Debug.log(bookSource.bookSourceUrl, "≡函数执行成功:getChapters")
             Debug.log(bookSource.bookSourceUrl, json ?: "", state = 30)
             val chapters = JsSourceMarshaller.parseChapters(json, book, bookSource)
+            Debug.log(bookSource.bookSourceUrl, "┌获取目录列表")
+            Debug.log(bookSource.bookSourceUrl, "└列表大小:${chapters.size}")
             if (chapters.isEmpty()) {
                 throw NoStackTraceException("JS源目录为空")
             }
             // 声明式同款 book 回写(totalChapterNum 等):目录页/书架进度/更新检查都读这些字段
             BookChapterList.updateBookTocInfo(book, chapters)
-            Debug.log(bookSource.bookSourceUrl, "◇JS源目录完成,共${chapters.size}章")
-            Debug.log(bookSource.bookSourceUrl, chapterInfo("首章", chapters.first()))
+            Debug.log(bookSource.bookSourceUrl, "◇目录总数:${chapters.size}")
+            logChapter(bookSource, "首章", chapters.first())
             if (chapters.size > 1) {
-                Debug.log(bookSource.bookSourceUrl, chapterInfo("末章", chapters.last()))
+                logChapter(bookSource, "末章", chapters.last())
             }
             chapters
         }.onFailure {
@@ -117,10 +137,15 @@ object JsSourceBook {
         }
     }
 
-    private fun chapterInfo(label: String, chapter: BookChapter): String {
-        return "≡$label ${chapter.title}\n◇链接:${chapter.url}" +
-                "\n◇VIP:${chapter.isVip} 购买:${chapter.isPay}" +
-                (chapter.tag?.let { "\n◇信息:$it" } ?: "")
+    /** 与声明式 BookChapterList 首章信息同款行文,末章为 JS 源附加(检视目录抓全与否) */
+    private fun logChapter(bookSource: BookSource, label: String, chapter: BookChapter) {
+        val url = bookSource.bookSourceUrl
+        Debug.log(url, "≡${label}信息")
+        Debug.log(url, "◇章节名称:${chapter.title}")
+        Debug.log(url, "◇章节链接:${chapter.url}")
+        Debug.log(url, "◇章节信息:${chapter.tag ?: ""}")
+        Debug.log(url, "◇是否VIP:${chapter.isVip}")
+        Debug.log(url, "◇是否购买:${chapter.isPay}")
     }
 
     suspend fun getContentAwait(
@@ -143,9 +168,12 @@ object JsSourceBook {
         if (content.isNullOrBlank()) {
             throw NoStackTraceException("JS源正文为空")
         }
+        Debug.log(bookSource.bookSourceUrl, "≡函数执行成功:getContent")
         Debug.log(bookSource.bookSourceUrl, content, state = 40)
-        Debug.log(bookSource.bookSourceUrl, "≡正文长度:${content.length}")
-        Debug.log(bookSource.bookSourceUrl, content)
+        Debug.log(bookSource.bookSourceUrl, "┌获取章节名称")
+        Debug.log(bookSource.bookSourceUrl, "└${bookChapter.title}")
+        Debug.log(bookSource.bookSourceUrl, "┌获取正文内容")
+        Debug.log(bookSource.bookSourceUrl, "└\n$content")
         if (needSave) {
             BookHelp.saveContent(bookSource, book, bookChapter, content)
         }
