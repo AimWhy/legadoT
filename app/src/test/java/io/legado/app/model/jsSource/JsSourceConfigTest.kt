@@ -125,6 +125,42 @@ class JsSourceConfigTest {
     }
 
     @Test
+    fun stampRewritesNumericLiteralAndKeepsComment() {
+        val text = "var source = {\n  lastUpdateTime: 0 // 版本时间戳,写死毫秒数值\n}"
+        assertEquals(
+            "var source = {\n  lastUpdateTime: 123 // 版本时间戳,写死毫秒数值\n}",
+            JsSourceConfig.stampLastUpdateTime(text, 123),
+        )
+    }
+
+    @Test
+    fun stampRewritesDateNowAndQuotedKey() {
+        assertEquals(
+            "var source = { lastUpdateTime: 123 }",
+            JsSourceConfig.stampLastUpdateTime("var source = { lastUpdateTime: Date.now() }", 123),
+        )
+        assertEquals(
+            "var source = { \"lastUpdateTime\": 123 }",
+            JsSourceConfig.stampLastUpdateTime("var source = { \"lastUpdateTime\": 0 }", 123),
+        )
+    }
+
+    @Test
+    fun stampOnlyFirstDeclaration() {
+        val text = "var source = { lastUpdateTime: 1 }\nvar other = { lastUpdateTime: 2 }"
+        assertEquals(
+            "var source = { lastUpdateTime: 123 }\nvar other = { lastUpdateTime: 2 }",
+            JsSourceConfig.stampLastUpdateTime(text, 123),
+        )
+    }
+
+    @Test
+    fun stampMissingOrExpressionDeclarationReturnsNull() {
+        assertNull(JsSourceConfig.stampLastUpdateTime("var source = { bookSourceUrl: \"a\" }", 123))
+        assertNull(JsSourceConfig.stampLastUpdateTime("var source = { lastUpdateTime: base + 1 }", 123))
+    }
+
+    @Test
     fun topLevelIoFailsCleanly() {
         // 无能力 scope:顶层引用 java 直接失败(安全设计,spec §5)
         assertExtractError(

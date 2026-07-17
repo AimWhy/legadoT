@@ -228,10 +228,11 @@ class ImportBookSourceDialog() : BaseDialogFragment(R.layout.dialog_recycler_vie
     }
 
     override fun onCodeSave(code: String, requestId: String?) {
-        requestId?.toInt()?.let {
+        requestId?.toInt()?.let { index ->
             GSON.fromJsonObject<BookSource>(code).getOrNull()?.let { source ->
-                viewModel.allSources[it] = source
-                adapter.setItem(it, source)
+                viewModel.updateSource(index, source) {
+                    adapter.setItem(index, source)
+                }
             }
         }
     }
@@ -252,11 +253,10 @@ class ImportBookSourceDialog() : BaseDialogFragment(R.layout.dialog_recycler_vie
             binding.apply {
                 cbSourceName.isChecked = viewModel.selectStatus[holder.layoutPosition]
                 cbSourceName.text = item.bookSourceName
-                val localSource = viewModel.checkSources[holder.layoutPosition]
                 tvSourceState.showImportState(
                     when {
-                        localSource == null -> ImportState.NEW
-                        item.lastUpdateTime > localSource.lastUpdateTime -> ImportState.UPDATE
+                        viewModel.newSourceStatus[holder.layoutPosition] -> ImportState.NEW
+                        viewModel.updateSourceStatus[holder.layoutPosition] -> ImportState.UPDATE
                         else -> ImportState.EXIST
                     }
                 )

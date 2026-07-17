@@ -141,19 +141,24 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                     // openedSourceUrl 查到;直接导入后首次编辑等场景没有改名,退回按新 URL 查
                     val old = openedUrl?.let { appDb.bookSourceDao.getBookSource(it) }
                         ?: appDb.bookSourceDao.getBookSource(source.bookSourceUrl)
-                    // 用户态字段不归脚本管:从旧记录保留(spec §5"脚本是元数据唯一真理源"的边界)
+                    // 用户态字段不归脚本管:从旧记录保留(spec §5"脚本是元数据唯一真理源"的边界);
+                    // 分组两属:脚本声明时脚本值生效,未声明时保留应用内所设
                     old?.let {
                         source.enabled = it.enabled
+                        source.enabledExplore = it.enabledExplore
                         source.customOrder = it.customOrder
                         source.weight = it.weight
                         source.respondTime = it.respondTime
+                        if (source.bookSourceGroup.isNullOrBlank()) {
+                            source.bookSourceGroup = it.bookSourceGroup
+                        }
                         if (!it.equal(source)) {
-                            source.lastUpdateTime = System.currentTimeMillis()
+                            stampSource(source)
                         } else {
                             source.lastUpdateTime = it.lastUpdateTime
                         }
                     } ?: run {
-                        source.lastUpdateTime = System.currentTimeMillis()
+                        stampSource(source)
                     }
                     // 脚本内把 bookSourceUrl 改了名:旧行不会被新 URL 的 insert 覆盖,须显式删除,
                     // 否则旧记录成僵尸(仍 enabled 参与搜索),对齐 BookSourceEditViewModel.save() 的先例
@@ -166,12 +171,25 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
                 }
             }.onSuccess {
                 toastOnUi(R.string.success)
-                // 保存后刷新退出确认基线,使保存即退出不再误弹
-                baselineText = text
+                // 保存后以入库文本(可能被写回新版本号)刷新编辑区与退出确认基线
+                val savedText = it.mainJs ?: text
+                if (savedText != binding.codeView.text.toString()) {
+                    binding.codeView.setText(savedText)
+                }
+                baselineText = savedText
                 onSuccess?.invoke(it)
             }.onFailure {
                 toastOnUi(it.localizedMessage)
             }
+        }
+    }
+
+    /** 实质改动打新版本号,并写回脚本文本内的声明,脚本与库内保持单一时钟 */
+    private fun stampSource(source: BookSource) {
+        val stamp = System.currentTimeMillis()
+        source.lastUpdateTime = stamp
+        JsSourceConfig.stampLastUpdateTime(source.mainJs!!, stamp)?.let {
+            source.mainJs = it
         }
     }
 }

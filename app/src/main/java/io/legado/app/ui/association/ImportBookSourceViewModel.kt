@@ -226,16 +226,31 @@ class ImportBookSourceViewModel(app: Application) : BaseViewModel(app) {
         }
     }
 
+    /** 版本语义:导入侧 lastUpdateTime 大于库内才算"更新"(JS源同款,其值来自脚本内声明) */
     private fun comparisonSource() {
         execute {
             allSources.forEach {
-                val source = appDb.bookSourceDao.getBookSourcePart(it.bookSourceUrl)
-                checkSources.add(source)
-                selectStatus.add(source == null || source.lastUpdateTime < it.lastUpdateTime)
-                newSourceStatus.add(source == null)
-                updateSourceStatus.add(source != null && source.lastUpdateTime < it.lastUpdateTime)
+                val local = appDb.bookSourceDao.getBookSourcePart(it.bookSourceUrl)
+                val update = local != null && local.lastUpdateTime < it.lastUpdateTime
+                checkSources.add(local)
+                selectStatus.add(local == null || update)
+                newSourceStatus.add(local == null)
+                updateSourceStatus.add(update)
             }
             successLiveData.postValue(allSources.size)
+        }
+    }
+
+    /** 弹窗内经 CodeDialog 改写条目后,同步条目与新增/更新状态 */
+    fun updateSource(index: Int, source: BookSource, success: () -> Unit) {
+        execute {
+            allSources[index] = source
+            val local = appDb.bookSourceDao.getBookSourcePart(source.bookSourceUrl)
+            checkSources[index] = local
+            newSourceStatus[index] = local == null
+            updateSourceStatus[index] = local != null && local.lastUpdateTime < source.lastUpdateTime
+        }.onSuccess {
+            success.invoke()
         }
     }
 

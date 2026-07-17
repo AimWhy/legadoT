@@ -66,4 +66,18 @@ object JsSourceConfig {
         bookSource.mainJs = text
         return bookSource
     }
+
+    /** 数字字面量或 Date.now() 形态的 lastUpdateTime 声明(键可带引号),只认首个 */
+    private val lastUpdateTimeRegex =
+        Regex("""(["']?lastUpdateTime["']?\s*:\s*)(Date\.now\(\)|\d+)""")
+
+    /**
+     * 把脚本文本中声明的 lastUpdateTime 改写为 [stamp],供编辑器保存时把新版本号写回
+     * 脚本——脚本文本与库内列保持单一时钟,分享出去的文件才带得上新版本号。
+     * 声明缺失或是其他表达式形态时返回 null,原文不动。
+     */
+    fun stampLastUpdateTime(text: String, stamp: Long): String? {
+        val match = lastUpdateTimeRegex.find(text) ?: return null
+        return text.replaceRange(match.range, "${match.groupValues[1]}$stamp")
+    }
 }

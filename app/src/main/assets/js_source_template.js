@@ -1,61 +1,56 @@
 /**
- * @file 纯JS单文件书源模板
+ * @file 纯 JavaScript 单文件书源模板
  *
- * 一个 .js 文件即一个完整书源:顶层为一个 source 配置对象与若干 function 声明。
- * search / getChapters / getContent 必备,getBookInfo 可选;
- * explore 与 source.exploreUrl 成对,声明分类即须实现,启用发现页。
+ * 一个顶层 source 配置对象和若干函数声明组成完整书源。
+ * search、getChapters、getContent 必须实现；getBookInfo 可选。
+ * source.exploreUrl 与 explore 必须成对使用。
  *
- * 运行环境:
- * - 绑定 java / source / cookie / cache / baseUrl;java.ajax(url) 同步取网页,
- *   java.post/get/webView、加解密(含 CryptoJS)等完整清单见编辑器菜单-帮助。
- * - 全部同步写法,并发由应用调度;每次调用在新 scope 执行,顶层变量不跨调用保留,
- *   跨请求状态存 cache.put/get 或 source.setVariable/getVariable。
- * - 引擎 Rhino:let/const、箭头函数、模板字符串、for-of、解构、默认参数、
- *   字面量展开 [...arr]/{...obj}、?.、?? 可用;class、async/await、Promise 回调、
- *   调用处展开 f(...arr)、剩余解构不可用。
- * - java.log(msg) 输出到书源调试日志。
- * - book/chapter 属性、Jsoup 取值、java.ajax() 返回等 Java 来源字符串:拼接、传参、
- *   作返回字段值直接用;调 JS 字符串方法(正则 replace/match 等)与判空前先 String(...) 归一化。
+ * 运行时约束：
+ * - 可直接使用 java、source、cookie、cache、baseUrl 等绑定对象。网络请求使用同步 API，
+ *   例如 java.ajax(url)；调试输出使用 java.log(msg)。
+ * - 每次函数调用都在新的脚本作用域执行。需要跨请求保存状态时，使用 cache.put/get
+ *   或 source.setVariable/getVariable。
+ * - 支持常用 ES6 语法，包括 let/const、箭头函数、模板字符串、for-of、解构、默认参数、
+ *   展开运算符、可选链和空值合并；不支持 class、async/await、Promise 回调、函数展开调用
+ *   和剩余解构。
+ * - book/chapter 属性、java.ajax 和 Jsoup 的返回值可能是 Java 字符串对象。使用字符串方法
+ *   或进行判空前，先用 String(value) 转换。
+ * - 完整 API（http、webView、编解码和加解密等）请参阅应用内帮助。
  */
 
 /**
- * 书源配置。键名与书源实体字段逐字对应,其余常用键:
- * - header:请求头,JSON 字符串,如 '{"User-Agent": "Mozilla/5.0 ..."}'
- * - loginUrl:登录地址,填写后源列表菜单出现"登录"入口
- * - concurrentRate:并发率,如 "1" 或 "3/1000"(次数/毫秒)
- * - enabledCookieJar:是否启用 CookieJar
- * - jsLib:本源所有函数共用的公共 JS 库文本
- * enabled/customOrder 等用户态字段由应用维护,脚本值不生效。
+ * 书源配置。字段名与 BookSource 实体一致。
+ * 常用可选字段包括 header（JSON 格式请求头）、loginUrl、concurrentRate、
+ * enabledCookieJar 和 jsLib。enabled、customOrder 等用户态字段由应用维护。
  */
 const source = {
-  bookSourceUrl: "https://example.com", // 必填,源唯一身份;修改即成为新源
+  bookSourceUrl: "https://example.com", // 必填；主键，修改后视为新源
   bookSourceName: "示例JS源",           // 必填
-  bookSourceType: 0,                    // 0文本 1音频 2图片 3下载站
+  bookSourceType: 0,                    // 0 文本，1 音频，2 图片，3 下载
   bookSourceGroup: "",
   bookSourceComment: "",
-  exploreUrl: "",                       // 发现分类,"名称::url" 每行一个(如 "玄幻::/sort/1\n完本::/finish");填写后由 explore 函数抓取
-  lastUpdateTime: 0                     // 版本时间戳,同 URL 重复导入按此判断新旧
+  exploreUrl: "",                       // 发现分类；每行一个“名称::url”，由 explore 抓取
+  lastUpdateTime: 0                     // 版本时间戳（毫秒）；导入值较新时提示更新
 }
 
 /**
- * search 返回条目。name/bookUrl 必填,缺失的条目被丢弃;origin 系字段由应用注入。
- *
+ * search/explore 返回的书籍条目。name 和 bookUrl 必填，缺失的条目会被丢弃。
+ * bookUrl 和 tocUrl 应返回绝对地址；origin 系字段由应用注入。
  * @typedef {Object} SearchBook
- * @property {string} name 书名
- * @property {string} bookUrl 详情页地址
+ * @property {string} name
+ * @property {string} bookUrl 详情页地址，必须为绝对地址
  * @property {string} [author]
- * @property {string} [kind] 分类,逗号分隔,详情页显示为标签
+ * @property {string} [kind] 分类，多个分类用逗号分隔
  * @property {string} [coverUrl]
  * @property {string} [intro]
- * @property {string} [wordCount] 如 "36万字"
+ * @property {string} [wordCount] 字数，例如 "36万字"
  * @property {string} [latestChapterTitle]
- * @property {string} [tocUrl] 缺省用 bookUrl
- * @property {number} [type] BookType 位值:文本8 音频32 图片64 下载128
+ * @property {string} [tocUrl] 目录地址；缺省使用 bookUrl
+ * @property {number} [type] 类型位值：文本 8、音频 32、图片 64、下载 128
  */
 
 /**
- * getBookInfo 返回值,按键覆盖书籍字段,仅以下键生效。
- *
+ * getBookInfo 返回的书籍字段补丁。仅写出的白名单字段会覆盖原值。
  * @typedef {Object} BookInfoPatch
  * @property {string} [name]
  * @property {string} [author]
@@ -64,59 +59,54 @@ const source = {
  * @property {string} [kind]
  * @property {string} [wordCount]
  * @property {string} [latestChapterTitle]
- * @property {string} [tocUrl] 缺省用 book.bookUrl
- * @property {number} [type] 同 SearchBook.type
- * @property {string} [variable] JSON 字符串,如 '{"k":"v"}'
+ * @property {string} [tocUrl] 目录地址；缺省使用 book.bookUrl
+ * @property {number} [type] 类型位值，同 SearchBook.type
+ * @property {string} [variable] JSON 字符串
  */
 
 /**
- * getChapters 返回条目。title/url 必填,缺失的条目被丢弃;相对 url 按 book.tocUrl 补全。
- * 分卷行:isVolume 为 true 且 url 与 title 相同,不抓正文。
- *
+ * getChapters 返回的目录条目。title 和 url 必填，缺失的条目会被丢弃。
+ * 相对 url 会以 book.tocUrl 为基准补全；分卷条目需设置 isVolume: true，且 url 与 title 相同。
  * @typedef {Object} Chapter
- * @property {string} title 章节名
- * @property {string} url 章节地址
- * @property {boolean} [isVolume] 分卷行
+ * @property {string} title
+ * @property {string} url
+ * @property {boolean} [isVolume]
  * @property {boolean} [isVip]
  * @property {boolean} [isPay]
- * @property {string} [wordCount] 如 "3210字"
- * @property {string} [tag] 更新时间等附加说明
- * @property {string} [resourceUrl] 音频真实地址
+ * @property {string} [wordCount] 字数，例如 "3210字"
+ * @property {string} [tag] 更新时间等附加信息
+ * @property {string} [resourceUrl] 音频资源地址
  */
 
 /**
- * 搜索。
- *
- * @param {string} key 搜索词
- * @param {number} page 页码,从 1 起
- * @returns {SearchBook[]} 返回数组或 JSON 字符串均可,下同
+ * 搜索书籍。
+ * @param {string} key 搜索关键词
+ * @param {number} page 页码，从 1 开始
+ * @returns {SearchBook[]|string} 书籍数组或 JSON 字符串
  */
 function search(key, page) {
   const html = java.ajax(`${source.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`)
   const list = []
-  // list.push({ name: "书名", bookUrl: "https://.../book/1", author: "作者" })
+  // list.push({ name: "书名", bookUrl: "https://example.com/book/1", author: "作者" })
   return list
 }
 
 /**
- * 发现,与 source.exploreUrl 成对(声明分类则必须实现)。
- *
- * @param {string} url 当前分类的地址(exploreUrl 条目的 url 段),原样传入;翻页用 page 自行拼接
- * @param {number} page 页码,从 1 起
- * @returns {SearchBook[]} 契约同 search
+ * 获取发现页书籍，与 source.exploreUrl 成对使用。
+ * @param {string} url exploreUrl 中的分类地址，原样传入
+ * @param {number} page 页码，从 1 开始；翻页参数由函数自行拼接
+ * @returns {SearchBook[]|string} 书籍数组或 JSON 字符串
  */
 function explore(url, page) {
   const html = java.ajax(url)
   const list = []
-  // list.push({ name: "书名", bookUrl: "https://.../book/1", author: "作者" })
   return list
 }
 
 /**
- * 详情,可选;缺省沿用 search 阶段字段。
- *
- * @param {Object} book 书籍对象
- * @returns {BookInfoPatch}
+ * 获取书籍详情。可选；未实现时沿用 search 阶段的字段。
+ * @param {Object} book 搜索结果中的书籍对象
+ * @returns {BookInfoPatch|Object|string} 书籍字段补丁或其 JSON 字符串
  */
 function getBookInfo(book) {
   const html = java.ajax(book.bookUrl)
@@ -124,26 +114,24 @@ function getBookInfo(book) {
 }
 
 /**
- * 目录。
- *
+ * 获取目录。
  * @param {Object} book 书籍对象
- * @returns {Chapter[]} 数组顺序即目录顺序
+ * @returns {Chapter[]|string} 目录数组或 JSON 字符串，数组顺序即目录顺序
  */
 function getChapters(book) {
   const html = java.ajax(book.tocUrl)
   const chapters = []
   // chapters.push({ title: "第一卷", url: "第一卷", isVolume: true })
-  // chapters.push({ title: "第1章", url: "https://.../read/1" })
+  // chapters.push({ title: "第1章", url: "https://example.com/read/1" })
   return chapters
 }
 
 /**
- * 正文。环境另绑定 nextChapterUrl:下一章地址,可能为 null。
- *
+ * 获取正文。运行时额外提供 nextChapterUrl，表示下一章地址，可能为 null。
  * @param {Object} chapter 章节对象
  * @param {Object} book 书籍对象
- * @returns {string} 正文;返回值即最终展示文本,空视为失败。
- *   拼纯文本段落 \n 分隔;取节点 HTML 用 java.htmlFormat(html, chapter.url) 转段落文本(保留插图)
+ * @returns {string} 正文文本；返回空字符串视为失败。纯文本段落用 \n 分隔；
+ *   也可将正文 HTML 传入 java.htmlFormat(html, chapter.url) 转换为文本并保留插图
  */
 function getContent(chapter, book) {
   const html = java.ajax(chapter.url)
