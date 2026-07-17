@@ -28,6 +28,7 @@ import org.htmlunit.corejs.javascript.Context
 import org.htmlunit.corejs.javascript.NativeJavaPackage
 import org.htmlunit.corejs.javascript.ScriptRuntime
 import org.htmlunit.corejs.javascript.Scriptable
+import org.htmlunit.corejs.javascript.VarScope
 import org.htmlunit.corejs.javascript.WrapFactory
 import org.htmlunit.corejs.javascript.lc.type.TypeInfo
 
@@ -50,7 +51,7 @@ object RhinoWrapFactory : WrapFactory() {
 
     override fun wrapAsJavaObject(
         cx: Context,
-        scope: Scriptable?,
+        scope: VarScope?,
         javaObject: Any,
         staticType: TypeInfo?
     ): Scriptable? {
@@ -64,7 +65,7 @@ object RhinoWrapFactory : WrapFactory() {
 
     override fun wrapJavaClass(
         cx: Context,
-        scope: Scriptable,
+        scope: VarScope,
         javaClass: Class<*>
     ): Scriptable {
         if (!RhinoClassShutter.visibleToScripts(javaClass)) {
@@ -77,7 +78,7 @@ object RhinoWrapFactory : WrapFactory() {
     }
 
     private fun wrapOrNull(
-        scope: Scriptable?,
+        scope: VarScope?,
         javaObject: Any,
         staticType: Class<*>?
     ): Scriptable? {

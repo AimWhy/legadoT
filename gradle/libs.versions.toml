@@ -53,7 +53,7 @@ jsoup = "1.16.2"
 commonsText = "1.13.1"
 
 # HtmlUnit fork of Rhino
-rhino = "5.0.0-legado.1"
+rhino = "5.3.0-legado.2"
 
 #noinspection GradleDependency,NewerVersionAvailable
 media3 = "1.8.0"

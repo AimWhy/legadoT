@@ -15,8 +15,6 @@ import io.legado.app.utils.isJsonObject
 import io.legado.app.constant.AppLog
 import io.legado.app.model.Debug
 import kotlinx.coroutines.runBlocking
-import org.htmlunit.corejs.javascript.Scriptable
-import org.htmlunit.corejs.javascript.ScriptableObject
 import splitties.init.appCtx
 import java.io.File
 import java.lang.ref.WeakReference
@@ -27,12 +25,12 @@ object SharedJsScope {
     private val cacheFolder = File(appCtx.cacheDir, "shareJs")
     private val aCache = ACache.get(cacheFolder)
 
-    private val scopeMap = LruCache<String, WeakReference<Scriptable>>(16)
+    private val scopeMap = LruCache<String, WeakReference<ScriptBindings>>(16)
     private const val CRYPTO_JS_ASSET = "scripts/cryptojs.min.js"
     @Volatile
     private var cryptoJsText: String? = null
     @Volatile
-    private var cryptoScope: WeakReference<Scriptable>? = null
+    private var cryptoScope: WeakReference<ScriptBindings>? = null
     private val cryptoLock = Any()
     private const val CRYPTO_JS_ERROR_KEY = "cryptojs_load_error"
 
@@ -52,35 +50,29 @@ object SharedJsScope {
         }
     }
 
-    fun getCryptoScope(coroutineContext: CoroutineContext?): Scriptable? {
+    fun getCryptoScope(coroutineContext: CoroutineContext?): ScriptBindings? {
         val cached = cryptoScope?.get()
         if (cached != null) return cached
         synchronized(cryptoLock) {
             val second = cryptoScope?.get()
             if (second != null) return second
             val js = loadCryptoJs() ?: return null
-            val scope = RhinoScriptEngine.run {
-                getRuntimeScope(ScriptBindings())
-            }
+            val scope = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
             RhinoScriptEngine.eval(js, scope, coroutineContext)
-            if (scope is ScriptableObject) {
-                scope.sealObject()
-            }
+            scope.sealObject()
             cryptoScope = WeakReference(scope)
             return scope
         }
     }
 
-    fun getScope(jsLib: String?, coroutineContext: CoroutineContext?): Scriptable? {
+    fun getScope(jsLib: String?, coroutineContext: CoroutineContext?): ScriptBindings? {
         if (jsLib.isNullOrBlank()) {
             return null
         }
         val key = MD5Utils.md5Encode(jsLib)
         var scope = scopeMap[key]?.get()
         if (scope == null) {
-            scope = RhinoScriptEngine.run {
-                getRuntimeScope(ScriptBindings())
-            }
+            scope = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
             loadCryptoJs()?.let { js ->
                 RhinoScriptEngine.eval(js, scope, coroutineContext)
             }
@@ -115,9 +107,7 @@ object SharedJsScope {
             } else {
                 RhinoScriptEngine.eval(jsLib, scope, coroutineContext)
             }
-            if (scope is ScriptableObject) {
-                scope.sealObject()
-            }
+            scope.sealObject()
             scopeMap.put(key, WeakReference(scope))
         }
         return scope

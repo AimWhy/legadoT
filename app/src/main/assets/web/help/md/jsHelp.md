@@ -611,10 +611,10 @@ function getContent(chapter, book) {
 ### 语法边界
 
 引擎是 Rhino，ES2015+ 大部分特性可用：`let`/`const`、箭头函数、模板字符串、`for-of`、
-解构赋值、函数默认参数、数组/对象字面量展开 `[...arr]`/`{...obj}`、可选链 `?.`、
-空值合并 `??`（逐条锚定在 `JsTest.es6SupportedFeatures`）。不可用：`class`、
-`async`/`await`、`Promise` 回调（可注册但无事件循环，从不执行）、调用处的展开语法
-`f(...arr)`、数组剩余解构 `var [a, ...b] = arr`、`export`/`import`
+解构赋值与剩余解构 `[a, ...b]`/`{a, ...r}`、函数默认参数、剩余参数、数组/对象字面量
+展开 `[...arr]`/`{...obj}`、可选链 `?.`、空值合并 `??`（逐条锚定在
+`JsTest.es6SupportedFeatures`）。不可用：`class`、`async`/`await`、`Promise` 回调
+（可注册但无事件循环，从不执行）、调用处的展开语法 `f(...arr)`、`export`/`import`
 （锚定在 `JsTest.es6CompatBoundary`）。
 
 ### 导入与分享

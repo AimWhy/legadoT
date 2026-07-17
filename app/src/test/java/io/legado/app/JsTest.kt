@@ -121,18 +121,17 @@ class JsTest {
     }
 
     /**
-     * ES6 兼容性边界探针(2026-07-04 实测锚定),书源 skill 的兼容表依据
-     * (legado-source-skill/references/js-api.md)。引擎(htmlunit-core-js)升级后
+     * ES6 兼容性边界探针(2026-07-17 随引擎 5.3.0-legado.1 重定界),书源 skill 的兼容表
+     * 依据(legado-source-skill/references/js-api.md)。引擎(htmlunit-core-js)升级后
      * 若本测试翻红,说明支持边界变了,同步更新兼容表。
      */
     @Test
     fun es6CompatBoundary() {
-        // 解析期报错的语法:class / async / 函数调用展开 / 数组剩余解构
+        // 解析期报错的语法:class / async / 函数调用展开
         listOf(
             "class A { }; new A()",
             "typeof (async () => 42)",
             "Math.max(...[1, 2, 5])",
-            "let [a, ...b] = [1, 2, 3]; b.join('-')",
         ).forEach { js ->
             val outcome = runCatching { RhinoScriptEngine.eval(js, ScriptBindings()) }
             Assert.assertTrue("引擎已支持(原判不支持): $js", outcome.isFailure)
@@ -173,6 +172,8 @@ class JsTest {
             "var u = {v: {w: 5}}; '' + (u.v?.w)" to "5",
             "var z = null; '' + (z ?? 'dft')" to "dft",
             "function r(a, ...rest) { return '' + rest.length }; r(1, 2, 3)" to "2",
+            "let [h, ...t] = [1, 2, 3]; t.join('-')" to "2-3",
+            "var {q1, ...qr} = {q1: 1, q2: 2}; '' + qr.q2" to "2",
         ).forEach { (js, expect) ->
             val outcome = runCatching { RhinoScriptEngine.eval(js, ScriptBindings()) }
             Assert.assertEquals("求值失败或结果不符: $js -> ${outcome.exceptionOrNull()?.message}",
@@ -187,6 +188,22 @@ class JsTest {
             Assert.assertNotEquals("顶层 $kw 声明经 getProperty 不可见",
                 org.htmlunit.corejs.javascript.Scriptable.NOT_FOUND, found)
         }
+    }
+
+    /**
+     * jsLib 函数动态 this 探针(FEATURE_LEGADO_DYNAMIC_DEFAULT_THIS,引擎 fork 补丁
+     * JSFunction.getThisObj):共享作用域(jsLib)里声明的非严格函数被书源裸调用时,
+     * this = 当次执行环境的 globalThis——社区书源 `const { java, cache } = this` 惯用法
+     * 依赖此语义。引擎升级后本测试翻红即补丁丢失。
+     */
+    @Test
+    fun jsLibFunctionDynamicThis() {
+        val shared = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
+        RhinoScriptEngine.eval("function libFn() { return this.cache }", shared)
+        val bindings = ScriptBindings()
+        bindings["cache"] = "EXEC_ENV"
+        bindings.chainTo(shared)
+        Assert.assertEquals("EXEC_ENV", RhinoScriptEngine.eval("libFn()", bindings))
     }
 
     /**

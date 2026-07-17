@@ -3,10 +3,11 @@ package io.legado.app.help.rhino
 import com.script.rhino.JavaObjectWrapFactory
 import org.htmlunit.corejs.javascript.NativeJavaObject
 import org.htmlunit.corejs.javascript.Scriptable
+import org.htmlunit.corejs.javascript.VarScope
 import org.htmlunit.corejs.javascript.lc.type.TypeInfo
 import org.htmlunit.corejs.javascript.lc.type.TypeInfoFactory
 
-class NativeBaseSource(scope: Scriptable?, javaObject: Any, staticType: Class<*>?) :
+class NativeBaseSource(scope: VarScope?, javaObject: Any, staticType: Class<*>?) :
     NativeJavaObject(scope, javaObject, staticType.toTypeInfo()) {
 
     override fun has(name: String, start: Scriptable): Boolean {

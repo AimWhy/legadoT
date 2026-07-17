@@ -38,6 +38,7 @@ import org.jsoup.nodes.Node
 import org.htmlunit.corejs.javascript.NativeArray
 import org.htmlunit.corejs.javascript.NativeObject
 import org.htmlunit.corejs.javascript.Scriptable
+import org.htmlunit.corejs.javascript.TopLevel
 import java.lang.ref.WeakReference
 import java.net.URL
 import java.util.Locale
@@ -76,7 +77,7 @@ class AnalyzeRule(
     private val regexCache = hashMapOf<String, Regex?>()
     private val scriptCache = hashMapOf<String, CompiledScript>()
     private val localVars = HashMap<String, String>()
-    private var topScopeRef: WeakReference<Scriptable>? = null
+    private var topScopeRef: WeakReference<TopLevel>? = null
     private var evalJSCallCount = 0
 
     private var coroutineContext: CoroutineContext = EmptyCoroutineContext
@@ -840,18 +841,20 @@ class AnalyzeRule(
             bindings["paraData"] = get("paraData")
             bindings["page"] = pageValue
         }
-        val topScope = source?.getShareScope(coroutineContext)
+        val topScope: TopLevel? = source?.getShareScope(coroutineContext)
             ?: topScopeRef?.get()
             ?: SharedJsScope.getCryptoScope(coroutineContext)
         val scope = if (topScope == null) {
-            RhinoScriptEngine.getRuntimeScope(bindings).apply {
-                if (evalJSCallCount++ > 16) {
-                    topScopeRef = WeakReference(prototype)
-                }
+            val fresh = RhinoScriptEngine.newStandardTopLevel()
+            if (evalJSCallCount++ > 16) {
+                topScopeRef = WeakReference(fresh)
+            }
+            bindings.apply {
+                chainTo(fresh)
             }
         } else {
             bindings.apply {
-                prototype = topScope
+                chainTo(topScope)
             }
         }
         val script = compileScriptCache(jsStr)

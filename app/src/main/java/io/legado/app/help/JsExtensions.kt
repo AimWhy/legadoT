@@ -1085,8 +1085,19 @@ interface JsExtensions : JsEncodeUtils {
         val key = "${getSource()?.getKey()}@$name"
         SourceLock.singleFlight(key, timeoutMs) {
             val cx = rhinoContext
-            action.call(cx, action.parentScope, action.parentScope, emptyArray<Any?>())
+            action.call(cx, action.parentScope, functionThisObj(action), emptyArray<Any?>())
         }
+    }
+
+    /** 未 bind 函数的 this 取所属顶层作用域的 globalThis(内联函数即书源执行环境) */
+    private fun functionThisObj(
+        action: org.htmlunit.corejs.javascript.Function
+    ): org.htmlunit.corejs.javascript.Scriptable {
+        val top = action.parentScope?.let {
+            org.htmlunit.corejs.javascript.ScriptableObject.getTopLevelScope(it)
+        }
+        return (top as? org.htmlunit.corejs.javascript.TopLevel)?.globalThis
+            ?: org.htmlunit.corejs.javascript.Undefined.SCRIPTABLE_UNDEFINED
     }
 
     fun singleFlight(
@@ -1110,7 +1121,7 @@ interface JsExtensions : JsEncodeUtils {
         val key = "${getSource()?.getKey()}@$name"
         SourceLock.lock(key, timeoutMs) {
             val cx = rhinoContext
-            action.call(cx, action.parentScope, action.parentScope, emptyArray<Any?>())
+            action.call(cx, action.parentScope, functionThisObj(action), emptyArray<Any?>())
         }
     }
 

@@ -2,6 +2,7 @@ package io.legado.app.model.jsSource
 
 import androidx.collection.LruCache
 import com.script.CompiledScript
+import com.script.ScriptBindings
 import com.script.buildScriptBindings
 import com.script.rhino.RhinoContext
 import com.script.rhino.RhinoScriptEngine
@@ -16,6 +17,7 @@ import io.legado.app.model.SharedJsScope
 import io.legado.app.utils.GSON
 import kotlinx.coroutines.Job
 import org.htmlunit.corejs.javascript.Context
+import org.htmlunit.corejs.javascript.NativeJSON
 import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
 import org.htmlunit.corejs.javascript.Undefined
@@ -58,7 +60,7 @@ class JsSourceEngine(
         return normalizeJsResult(raw, coroutineContext)
     }
 
-    private fun buildScope(args: List<Pair<String, Any?>>): Scriptable {
+    private fun buildScope(args: List<Pair<String, Any?>>): ScriptBindings {
         val mainJs = source.mainJs
         if (mainJs.isNullOrBlank()) throw NoStackTraceException("mainJs 为空,不是JS源")
         val bindings = buildScriptBindings { b ->
@@ -74,7 +76,7 @@ class JsSourceEngine(
         val scope = if (shared == null) {
             RhinoScriptEngine.getRuntimeScope(bindings)
         } else {
-            bindings.apply { prototype = shared }
+            bindings.apply { chainTo(shared) }
         }
         compile(mainJs).eval(scope, coroutineContext)
         return scope
@@ -118,38 +120,28 @@ class JsSourceEngine(
         }
 
         /**
-         * 回退方案(简报 Step 4 预案,由 JsSourceCallProbeTest.evalCallExpressionInvokesTopLevelFunction
-         * 探针实测触发):GSON 反射不认识 Rhino 内部惰性类型,'u' + page 这类字符串拼接产生的是
-         * ConsString,嵌套在 NativeArray/NativeObject 属性里时 GSON 会把它当成普通 Java 对象反射出
-         * {left,right,length,isFlat} 内部字段,而不是拼接后的文本。改走 JS 引擎自身的
-         * JSON.stringify——通过 Rhino Function.call 调用全局 JSON.stringify,不依赖猜测
-         * NativeJSON 类的具体包路径。对纯数据(字面量对象/数组)与书源手写
-         * `JSON.stringify(...)`(jsonStringifyEquivalentToDirectReturn 探针)结果一致;
-         * 差异在返回值带自定义 toJSON/getter 时:书源内手写走 eval 通道(allowScriptRun 开)
-         * 可执行它们,此处临时 Context 闸门关闭,解释执行会被 doTopCall 拦下并包装成
-         * NoStackTraceException 明确报错——这是有意的:为 toJSON 开闸等价于变相 invokeMethod,
+         * GSON 反射不认识 Rhino 内部惰性类型:'u' + page 这类拼接产生 ConsString,嵌套在
+         * NativeArray/NativeObject 属性里会被反射成 {left,right,length,isFlat} 内部字段。
+         * 改走引擎自身序列化:直调公开静态入口 NativeJSON.stringify——不经函数对象调用
+         * 机制(引擎 5.3.0 起 Java 侧经函数对象的调用一律过 doTopCall,会被 allowScriptRun
+         * 闸门拦下)。对纯数据与书源手写 `JSON.stringify(...)` 结果一致
+         * (jsonStringifyEquivalentToDirectReturn 探针);返回值带自定义 toJSON/getter 时,
+         * 其解释执行在本临时 Context(闸门关闭)被 doTopCall 拦下并包装成
+         * NoStackTraceException 明确报错——为 toJSON 开闸等价于变相 invokeMethod,
          * 正是 spec §7-4 回避的通道。契约=返回纯数据。
          *
-         * 这里的调用点在 eval 之外,没有活跃 Context 可复用,只能自行 Context.enter()/exit()
-         * 独立进入一个临时 Context——与 JsExtensions.singleFlight/lock(action.call(cx, ...)
-         * 里的 cx 取自调用方当前正在执行的活跃 rhinoContext,不新建)是不同款的处理方式。
-         * 进入临时 Context 后会把外部传入的 [coroutineContext] 写入其 coroutineContext 字段
-         * (同 RhinoScriptEngine.eval 的注入/还原写法)。注意:当前闸门关闭下 toJSON/getter
-         * 根本执行不到(见上),此注入在现有调用路径上实际不可达,保留是为将来若有受控开闸
-         * 场景时取消信号即刻生效,不是活语义。
-         *
-         * 找不到 JSON/JSON.stringify(理论上不会发生,标准对象总会初始化)时返回 null 交给
-         * 调用方回退 GSON;但 stringify 执行本身抛异常(典型如返回值含循环引用)会包装成
-         * NoStackTraceException 明确抛出、不再静默回退 GSON——GSON 反射遇循环引用会栈溢出,
-         * 明确报错优于栈炸。
+         * 调用点在 eval 之外,无活跃 Context 可复用,自行 Context.enter()/exit() 进临时
+         * Context,并注入 [coroutineContext](同 RhinoScriptEngine.eval 的注入/还原写法)。
+         * stringify 执行抛异常(典型如循环引用)包装成 NoStackTraceException 明确抛出,
+         * GSON 反射遇循环引用会栈溢出,明确报错优于栈炸;取不到顶层作用域时返回 null
+         * 交给调用方回退 GSON。
          */
         private fun stringifyScriptable(
             value: Scriptable,
             coroutineContext: CoroutineContext? = null,
         ): String? {
-            val topScope = ScriptableObject.getTopLevelScope(value) ?: return null
-            val json = ScriptableObject.getProperty(topScope, "JSON") as? Scriptable ?: return null
-            val stringify = ScriptableObject.getProperty(json, "stringify") as? JsFunction ?: return null
+            val topScope = value.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
+                ?: return null
             val cx = Context.enter() as RhinoContext
             val previousCoroutineContext = cx.coroutineContext
             if (coroutineContext != null && coroutineContext[Job] != null) {
@@ -157,7 +149,7 @@ class JsSourceEngine(
             }
             try {
                 val raw = try {
-                    stringify.call(cx, topScope, json, arrayOf<Any?>(value))
+                    NativeJSON.stringify(cx, topScope, value, null, null)
                 } catch (e: Exception) {
                     throw NoStackTraceException("JS返回值 JSON.stringify 失败: ${e.message}")
                 }

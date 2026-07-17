@@ -10,9 +10,9 @@
  *   例如 java.ajax(url)；调试输出使用 java.log(msg)。
  * - 每次函数调用都在新的脚本作用域执行。需要跨请求保存状态时，使用 cache.put/get
  *   或 source.setVariable/getVariable。
- * - 支持常用 ES6 语法，包括 let/const、箭头函数、模板字符串、for-of、解构、默认参数、
- *   展开运算符、可选链和空值合并；不支持 class、async/await、Promise 回调、函数展开调用
- *   和剩余解构。
+ * - 支持常用 ES6 语法，包括 let/const、箭头函数、模板字符串、for-of、解构（含剩余解构）、
+ *   默认参数、展开运算符、可选链和空值合并；不支持 class、async/await、Promise 回调
+ *   和函数展开调用。
  * - book/chapter 属性、java.ajax 和 Jsoup 的返回值可能是 Java 字符串对象。使用字符串方法
  *   或进行判空前，先用 String(value) 转换。
  * - 完整 API（http、webView、编解码和加解密等）请参阅应用内帮助。
