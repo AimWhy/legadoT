@@ -58,6 +58,11 @@ object JsSourceConfig {
                 throw NoStackTraceException("JS源缺少必备函数 $name")
             }
         }
+        if (!bookSource.exploreUrl.isNullOrBlank() &&
+            ScriptableObject.getProperty(scope, "explore") !is JsFunction
+        ) {
+            throw NoStackTraceException("JS源声明了 exploreUrl,缺少配对的 explore 函数")
+        }
         bookSource.mainJs = text
         return bookSource
     }

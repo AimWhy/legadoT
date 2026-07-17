@@ -171,11 +171,9 @@ class CheckSourceService : BaseService() {
                 source.addGroup("搜索链接规则为空")
             }
         }
-        //校验发现书籍
+        //校验发现书籍(JS源声明 exploreUrl 后与声明式同管道,经 WebBook 分派)
         if (CheckSource.checkDiscovery) {
-            if (source.isJsSource()) {
-                // JS源无发现,跳过不挂标
-            } else if (!source.exploreUrl.isNullOrBlank()) {
+            if (!source.exploreUrl.isNullOrBlank()) {
                 val url = source.exploreKinds().firstOrNull {
                     !it.url.isNullOrBlank()
                 }?.url

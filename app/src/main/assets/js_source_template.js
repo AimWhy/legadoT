@@ -2,7 +2,8 @@
  * @file 纯JS单文件书源模板
  *
  * 一个 .js 文件即一个完整书源:顶层为一个 source 配置对象与若干 function 声明。
- * search / getChapters / getContent 必备,getBookInfo 可选。
+ * search / getChapters / getContent 必备,getBookInfo 可选;
+ * explore 与 source.exploreUrl 成对,声明分类即须实现,启用发现页。
  *
  * 运行环境:
  * - 绑定 java / source / cookie / cache / baseUrl;java.ajax(url) 同步取网页,
@@ -32,6 +33,7 @@ const source = {
   bookSourceType: 0,                    // 0文本 1音频 2图片 3下载站
   bookSourceGroup: "",
   bookSourceComment: "",
+  exploreUrl: "",                       // 发现分类,"名称::url" 每行一个(如 "玄幻::/sort/1\n完本::/finish");填写后由 explore 函数抓取
   lastUpdateTime: 0                     // 版本时间戳,同 URL 重复导入按此判断新旧
 }
 
@@ -91,6 +93,20 @@ const source = {
  */
 function search(key, page) {
   const html = java.ajax(`${source.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`)
+  const list = []
+  // list.push({ name: "书名", bookUrl: "https://.../book/1", author: "作者" })
+  return list
+}
+
+/**
+ * 发现,与 source.exploreUrl 成对(声明分类则必须实现)。
+ *
+ * @param {string} url 当前分类的地址(exploreUrl 中"名称::url"的 url 段)
+ * @param {number} page 页码,从 1 起
+ * @returns {SearchBook[]} 契约同 search
+ */
+function explore(url, page) {
+  const html = java.ajax(url)
   const list = []
   // list.push({ name: "书名", bookUrl: "https://.../book/1", author: "作者" })
   return list

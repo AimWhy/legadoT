@@ -111,6 +111,9 @@ object WebBook {
         url: String,
         page: Int? = 1,
     ): ArrayList<SearchBook> {
+        if (bookSource.isJsSource()) {
+            return JsSourceBook.exploreAwait(bookSource, url, page)
+        }
         val ruleData = RuleData()
         val analyzeUrl = AnalyzeUrl(
             mUrl = url,

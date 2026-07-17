@@ -98,6 +98,33 @@ class JsSourceConfigTest {
     }
 
     @Test
+    fun exploreUrlRequiresExploreFunction() {
+        assertExtractError(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "缺发现", exploreUrl: "玄幻::/sort/1" }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            """.trimIndent(),
+            "explore",
+        )
+    }
+
+    @Test
+    fun exploreUrlWithExploreFunctionPasses() {
+        val s = JsSourceConfig.extract(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "带发现", exploreUrl: "玄幻::/sort/1" }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function explore(url, p) { return [] }
+            """.trimIndent(),
+        )
+        assertEquals("玄幻::/sort/1", s.exploreUrl)
+    }
+
+    @Test
     fun topLevelIoFailsCleanly() {
         // 无能力 scope:顶层引用 java 直接失败(安全设计,spec §5)
         assertExtractError(

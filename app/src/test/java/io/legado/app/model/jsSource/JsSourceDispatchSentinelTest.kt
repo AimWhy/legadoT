@@ -5,7 +5,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * 哨兵:WebBook 四入口必须在声明式骨架之前分派 JS 源(spec §5)。
+ * 哨兵:WebBook 五入口必须在声明式骨架之前分派 JS 源(spec §5)。
  * 单测工作目录 = app 模块根。
  */
 class JsSourceDispatchSentinelTest {
@@ -17,6 +17,7 @@ class JsSourceDispatchSentinelTest {
     fun fourAwaitEntriesDispatchToJsSourceBook() {
         listOf(
             "JsSourceBook.searchAwait",
+            "JsSourceBook.exploreAwait",
             "JsSourceBook.getBookInfoAwait",
             "JsSourceBook.getChapterListAwait",
             "JsSourceBook.getContentAwait",

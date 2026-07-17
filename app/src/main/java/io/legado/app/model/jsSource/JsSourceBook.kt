@@ -14,7 +14,7 @@ import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.coroutineContext
 
 /**
- * 纯JS源四段抓取(spec §5),与 WebBook 四入口同构;
+ * 纯JS源抓取(spec §5),搜索/发现/详情/目录/正文与 WebBook 入口同构;
  * Debug/CheckSource/换源/缓存只经 WebBook,分派后自动继承。
  */
 object JsSourceBook {
@@ -35,15 +35,33 @@ object JsSourceBook {
             books.removeAll { !filter(it.name, it.author) }
         }
         Debug.log(bookSource.bookSourceUrl, "◇JS源搜索完成,共${books.size}条")
-        books.firstOrNull()?.let {
-            Debug.log(
-                bookSource.bookSourceUrl,
-                "≡首条结果\n◇书名:${it.name}\n◇作者:${it.author}\n◇分类:${it.kind ?: ""}\n" +
-                        "◇字数:${it.wordCount ?: ""}\n◇最新章节:${it.latestChapterTitle ?: ""}\n" +
-                        "◇简介:${it.intro ?: ""}\n◇封面:${it.coverUrl ?: ""}\n◇详情页:${it.bookUrl}"
-            )
-        }
+        logFirstBook(bookSource, books)
         return books
+    }
+
+    /** 发现:与 exploreUrl 分类成对,url=分类项的 url 段;返回契约同 search */
+    suspend fun exploreAwait(
+        bookSource: BookSource,
+        url: String,
+        page: Int? = 1,
+    ): ArrayList<SearchBook> {
+        val engine = JsSourceEngine(bookSource, coroutineContext)
+        val json = engine.callFunction("explore", listOf("url" to url, "page" to (page ?: 1)))
+        Debug.log(bookSource.bookSourceUrl, json ?: "", state = 10)
+        val books = JsSourceMarshaller.parseSearchBooks(json, bookSource)
+        Debug.log(bookSource.bookSourceUrl, "◇JS源发现完成,共${books.size}条")
+        logFirstBook(bookSource, books)
+        return books
+    }
+
+    private fun logFirstBook(bookSource: BookSource, books: List<SearchBook>) {
+        val it = books.firstOrNull() ?: return
+        Debug.log(
+            bookSource.bookSourceUrl,
+            "≡首条结果\n◇书名:${it.name}\n◇作者:${it.author}\n◇分类:${it.kind ?: ""}\n" +
+                    "◇字数:${it.wordCount ?: ""}\n◇最新章节:${it.latestChapterTitle ?: ""}\n" +
+                    "◇简介:${it.intro ?: ""}\n◇封面:${it.coverUrl ?: ""}\n◇详情页:${it.bookUrl}"
+        )
     }
 
     suspend fun getBookInfoAwait(bookSource: BookSource, book: Book): Book {
