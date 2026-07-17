@@ -127,13 +127,23 @@ class BookSourceViewModel(application: Application) : BaseViewModel(application)
 
     private fun saveToFile(sources: List<BookSource>, success: (file: File) -> Unit) {
         execute {
-            val path = "${context.filesDir}/shareBookSource.json"
-            FileUtils.delete(path)
-            val file = FileUtils.createFileWithReplace(path)
-            file.outputStream().buffered().use {
-                GSON.writeToOutputStream(it, sources)
+            val single = sources.singleOrNull()
+            if (single != null && single.isJsSource()) {
+                // 单选纯JS源导出脚本原文(.js,与编辑器分享同款形态);多选/混选走 JSON 备份容器
+                val name = single.bookSourceName.replace(Regex("[/\\\\:*?\"<>|]"), "_")
+                    .trim().trim('.').ifBlank { "jsSource" }
+                val file = File(context.cacheDir, "$name.js")
+                file.writeText(single.mainJs!!)
+                file
+            } else {
+                val path = "${context.filesDir}/shareBookSource.json"
+                FileUtils.delete(path)
+                val file = FileUtils.createFileWithReplace(path)
+                file.outputStream().buffered().use {
+                    GSON.writeToOutputStream(it, sources)
+                }
+                file
             }
-            file
         }.onSuccess {
             success.invoke(it)
         }.onError {

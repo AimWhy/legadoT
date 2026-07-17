@@ -476,12 +476,13 @@ class BookSourceActivity : VMBaseActivity<ActivityBookSourceBinding, BookSourceV
                 sortAscending,
                 sort
             ) { file ->
+                val isJs = file.name.endsWith(".js")
                 exportDir.launch {
                     mode = HandleFileContract.EXPORT
                     fileData = HandleFileContract.FileData(
-                        "bookSource.json",
+                        if (isJs) file.name else "bookSource.json",
                         file,
-                        "application/json"
+                        if (isJs) "text/javascript" else "application/json"
                     )
                 }
             }
@@ -492,7 +493,7 @@ class BookSourceActivity : VMBaseActivity<ActivityBookSourceBinding, BookSourceV
                 sortAscending,
                 sort
             ) {
-                share(it)
+                share(it, if (it.name.endsWith(".js")) "text/javascript" else "text/*")
             }
 
             R.id.menu_check_selected_interval -> adapter.checkSelectedInterval()
