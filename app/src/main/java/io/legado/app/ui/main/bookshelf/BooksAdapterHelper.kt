@@ -48,7 +48,7 @@ fun upBookBadge(
 }
 
 /**
- * 封面/列表项阅读进度条更新（未读=null 时零视觉噪声,gone）。
+ * 封面/列表项阅读进度条更新（开关关闭或未读=null 时 gone,零视觉噪声）。
  * indicatorColor 走 accentColor 运行时着色——LinearProgressIndicator 不在 SkinInflaterFactory
  * 的规则 A 换肤表内,需与 hero 卡([BaseBookshelfFragment.refreshShelfHeader])同款施色单轨。
  * @param percentView 列表款百分比文本,网格款不传(封面上不放文字)
@@ -58,7 +58,7 @@ private fun upReadProgress(
     item: Book,
     percentView: TextView? = null,
 ) {
-    val progress = item.readProgress()
+    val progress = if (AppConfig.showBookshelfReadProgress) item.readProgress() else null
     if (progress == null) {
         pbReadProgress.gone()
         percentView?.gone()
