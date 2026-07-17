@@ -548,7 +548,7 @@ function getContent(chapter, book) {
 |lastUpdateTime|版本时间戳；同 `bookSourceUrl` 重复导入按它判断是否"更新"|
 |header|请求头 JSON 字符串，同声明式源|
 |loginUrl / loginUi / loginCheckJs|登录相关；填了 loginUrl 后管理列表该源菜单会出现"登录"入口，与声明式源一致|
-|exploreUrl|发现分类，`名称::url` 每行一个（语法同声明式）；填写后须实现 `explore` 函数，该源即上发现页|
+|exploreUrl|发现分类：文本行 `名称::url`（换行或 `&&` 分隔），或 JSON 数组（可带 `style` 网格样式，同声明式）；填写后须实现 `explore` 函数，该源即上发现页|
 |concurrentRate|并发限制，同声明式源|
 |enabledCookieJar|是否启用 CookieJar|
 |jsLib|共享给本源所有函数调用的公共 JS 库文本|
@@ -561,7 +561,7 @@ function getContent(chapter, book) {
 |函数|时机|入参|返回|
 |------|------|------|------|
 |`search(key, page)`|搜索|`key`:搜索词；`page`:页码(从1起)|书籍数组|
-|`explore(url, page)`|发现，与 `exploreUrl` 成对|`url`:当前分类的地址(`名称::url` 的 url 段)；`page`:页码(从1起)|书籍数组，契约同 `search`|
+|`explore(url, page)`|发现，与 `exploreUrl` 成对|`url`:当前分类的地址，**原样传入**(不做 `{{page}}` 等模板处理，翻页用 `page` 自行拼)；`page`:页码(从1起)|书籍数组，契约同 `search`|
 |`getBookInfo(book)`|详情，可选|`book`:书籍对象(已含 search 阶段字段)|要覆盖的字段对象|
 |`getChapters(book)`|目录|`book`:书籍对象|章节数组|
 |`getContent(chapter, book)`|正文|`chapter`:章节对象；`book`:书籍对象；另绑定同名变量 `nextChapterUrl`(下一章地址,可能为 null)|正文字符串|

@@ -101,7 +101,7 @@ function search(key, page) {
 /**
  * 发现,与 source.exploreUrl 成对(声明分类则必须实现)。
  *
- * @param {string} url 当前分类的地址(exploreUrl 中"名称::url"的 url 段)
+ * @param {string} url 当前分类的地址(exploreUrl 条目的 url 段),原样传入;翻页用 page 自行拼接
  * @param {number} page 页码,从 1 起
  * @returns {SearchBook[]} 契约同 search
  */
