@@ -548,7 +548,7 @@ function getContent(chapter, book) {
 |lastUpdateTime|版本时间戳，写死毫秒数值；App 内编辑器保存有实质改动时自动改写为当前时间，文件外改动发布新版时调大；同 `bookSourceUrl` 重复导入大于库内值才提示"更新"，也用于源列表排序|
 |header|请求头 JSON 字符串，同声明式源|
 |loginUrl / loginUi / loginCheckJs|登录相关；填了 loginUrl 后管理列表该源菜单会出现"登录"入口，与声明式源一致|
-|exploreUrl|发现分类：文本行 `名称::url`（换行或 `&&` 分隔），或 JSON 数组（可带 `style` 网格样式，同声明式）；填写后须实现 `explore` 函数，该源即上发现页|
+|exploreUrl|发现分类，首选数组：每项 `{title, url}`，省略 `url` 的项渲染为分区标题，可带 `style` 网格样式（同声明式）；每项须有非空 `title`，空数组视同未声明。也接受文本行 `名称::url`（换行或 `&&` 分隔）或 JSON 数组文本。填写后须实现 `explore` 函数，该源即上发现页|
 |concurrentRate|并发限制，同声明式源|
 |enabledCookieJar|是否启用 CookieJar|
 |jsLib|共享给本源所有函数调用的公共 JS 库文本|

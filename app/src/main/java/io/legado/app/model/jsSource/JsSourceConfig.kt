@@ -45,6 +45,7 @@ object JsSourceConfig {
         val jsonObj = runCatching { GSON.fromJson(json, JsonObject::class.java) }.getOrNull()
             ?: throw NoStackTraceException("source 配置对象不是合法对象")
         strippedKeys.forEach { jsonObj.remove(it) }
+        normalizeExploreUrl(jsonObj)
         val bookSource = runCatching { GSON.fromJson(jsonObj, BookSource::class.java) }.getOrNull()
             ?: throw NoStackTraceException("source 配置对象字段类型不符")
         if (bookSource.bookSourceUrl.isNullOrBlank()) {
@@ -65,6 +66,31 @@ object JsSourceConfig {
         }
         bookSource.mainJs = text
         return bookSource
+    }
+
+    /**
+     * exploreUrl 数组形态归一化:JS 里写分类数组([{title,url,style?},...])更合母语,
+     * 落库前序列化为 JSON 数组字符串——exploreKinds() 对该形态原生支持,消费侧零改动。
+     * 字符串形态(名称::url 行文/JSON 文本)原样保留;每项须有非空 title,url 可缺省(分区头)。
+     */
+    private fun normalizeExploreUrl(jsonObj: JsonObject) {
+        val element = jsonObj.get("exploreUrl") ?: return
+        if (!element.isJsonArray) return
+        val array = element.asJsonArray
+        // 空数组=未声明分类(模板留空态),折叠为无发现,免触发 explore 配对校验
+        if (array.isEmpty) {
+            jsonObj.remove("exploreUrl")
+            return
+        }
+        array.forEachIndexed { index, item ->
+            val title = runCatching {
+                item.asJsonObject.get("title")?.asString
+            }.getOrNull()
+            if (title.isNullOrBlank()) {
+                throw NoStackTraceException("exploreUrl 第 ${index + 1} 项缺少 title")
+            }
+        }
+        jsonObj.addProperty("exploreUrl", GSON.toJson(array))
     }
 
     /** 数字字面量或 Date.now() 形态的 lastUpdateTime 声明(键可带引号),只认首个 */

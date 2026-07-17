@@ -29,7 +29,12 @@ const source = {
   bookSourceType: 0,                    // 0 文本，1 音频，2 图片，3 下载
   bookSourceGroup: "",
   bookSourceComment: "",
-  exploreUrl: "",                       // 发现分类；每行一个“名称::url”，由 explore 抓取
+  // 发现分类，由 explore 抓取。数组每项 {title, url}，url 原样传入 explore；
+  // 省略 url 的项渲染为分区标题。也接受“名称::url”每行一个的字符串形态。
+  exploreUrl: [
+    // { title: "玄幻", url: "https://example.com/sort/1.html" },
+    // { title: "都市", url: "https://example.com/sort/2.html" },
+  ],
   lastUpdateTime: 0                     // 版本时间戳（毫秒）；导入值较新时提示更新
 }
 

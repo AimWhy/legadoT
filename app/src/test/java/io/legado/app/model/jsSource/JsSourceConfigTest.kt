@@ -125,6 +125,84 @@ class JsSourceConfigTest {
     }
 
     @Test
+    fun exploreUrlArrayNormalizedToJsonString() {
+        val s = JsSourceConfig.extract(
+            """
+            var source = {
+              bookSourceUrl: "https://a.com",
+              bookSourceName: "数组发现",
+              exploreUrl: [
+                { title: "玄幻", url: "/sort/1" },
+                { title: "分区头" }
+              ]
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function explore(url, p) { return [] }
+            """.trimIndent(),
+        )
+        // 落库为 JSON 数组字符串,exploreKinds() 原生认该形态;url 可缺省(分区头)
+        val kinds = io.legado.app.utils.GSON.fromJson(
+            s.exploreUrl, Array<io.legado.app.data.entities.rule.ExploreKind>::class.java
+        )
+        assertEquals(2, kinds.size)
+        assertEquals("玄幻", kinds[0].title)
+        assertEquals("/sort/1", kinds[0].url)
+        assertEquals("分区头", kinds[1].title)
+        assertNull(kinds[1].url)
+    }
+
+    @Test
+    fun exploreUrlArrayItemMissingTitleFails() {
+        assertExtractError(
+            """
+            var source = {
+              bookSourceUrl: "https://a.com",
+              bookSourceName: "坏发现",
+              exploreUrl: [ { url: "/sort/1" } ]
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function explore(url, p) { return [] }
+            """.trimIndent(),
+            "缺少 title",
+        )
+    }
+
+    @Test
+    fun exploreUrlEmptyArrayFoldsToNoExplore() {
+        // 模板留空态:空数组=未声明分类,不触发 explore 配对校验(此脚本未实现 explore)
+        val s = JsSourceConfig.extract(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "空发现", exploreUrl: [] }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            """.trimIndent(),
+        )
+        assertNull(s.exploreUrl)
+    }
+
+    @Test
+    fun exploreUrlArrayStillRequiresExploreFunction() {
+        assertExtractError(
+            """
+            var source = {
+              bookSourceUrl: "https://a.com",
+              bookSourceName: "数组缺函数",
+              exploreUrl: [ { title: "玄幻", url: "/sort/1" } ]
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            """.trimIndent(),
+            "explore",
+        )
+    }
+
+    @Test
     fun stampRewritesNumericLiteralAndKeepsComment() {
         val text = "var source = {\n  lastUpdateTime: 0 // 版本时间戳,写死毫秒数值\n}"
         assertEquals(
