@@ -849,6 +849,7 @@
     <string name="export_all">Exportar todo</string>
     <string name="complete">Listo</string>
     <string name="show_unread">Mostrar no leídos</string>
+    <string name="show_read_progress">显示阅读进度</string>
     <string name="use_default_cover">Mostrar siempre la portada predeterminada</string>
     <string name="use_default_cover_s">Mostrar siempre la cobertura predeterminada, no mostrar la cobertura de la red</string>
     <string name="search_src">Código fuente de búsqueda</string>
