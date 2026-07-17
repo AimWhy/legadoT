@@ -1,5 +1,6 @@
 package io.legado.app.ui.book.source.edit
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -76,7 +77,11 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>() {
 
     override fun onCompatOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_save -> saveSource()
+            R.id.menu_save -> saveSource {
+                // 与声明式编辑器同款:保存即回传 origin 并退出(基线已刷新,不触发未保存确认)
+                setResult(RESULT_OK, Intent().putExtra("origin", it.bookSourceUrl))
+                finish()
+            }
             R.id.menu_debug_source -> saveSource { source ->
                 startActivity<BookSourceDebugActivity> {
                     putExtra("key", source.bookSourceUrl)
