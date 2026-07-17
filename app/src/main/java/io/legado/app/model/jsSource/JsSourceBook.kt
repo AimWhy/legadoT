@@ -10,6 +10,7 @@ import io.legado.app.help.book.addType
 import io.legado.app.help.book.removeAllBookType
 import io.legado.app.help.source.getBookType
 import io.legado.app.model.Debug
+import io.legado.app.model.webBook.BookChapterList
 import kotlinx.coroutines.ensureActive
 import kotlin.coroutines.coroutineContext
 
@@ -103,6 +104,8 @@ object JsSourceBook {
             if (chapters.isEmpty()) {
                 throw NoStackTraceException("JS源目录为空")
             }
+            // 声明式同款 book 回写(totalChapterNum 等):目录页/书架进度/更新检查都读这些字段
+            BookChapterList.updateBookTocInfo(book, chapters)
             Debug.log(bookSource.bookSourceUrl, "◇JS源目录完成,共${chapters.size}章")
             Debug.log(bookSource.bookSourceUrl, chapterInfo("首章", chapters.first()))
             if (chapters.size > 1) {

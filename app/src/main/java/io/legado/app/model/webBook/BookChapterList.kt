@@ -150,6 +150,16 @@ object BookChapterList {
                 }
             }
         }
+        updateBookTocInfo(book, list)
+        return list
+    }
+
+    /**
+     * 目录解析成功后的 book 字段回写:durChapterTitle/lastCheckCount/lastCheckTime/
+     * totalChapterNum/latestChapterTitle/章节字数。声明式与 JS 源(JsSourceBook)共用,
+     * 两类源在目录侧对 book 的契约保持一致;list 须非空,两侧调用前均已空判抛出。
+     */
+    suspend fun updateBookTocInfo(book: Book, list: List<BookChapter>) {
         val replaceRules = ContentProcessor.get(book).getTitleReplaceRules()
         book.durChapterTitle = list.getOrElse(book.durChapterIndex) { list.last() }
             .getDisplayTitle(replaceRules, book.getUseReplaceRule())
@@ -164,7 +174,6 @@ object BookChapterList {
                 .getDisplayTitle(replaceRules, book.getUseReplaceRule())
         coroutineContext.ensureActive()
         getWordCount(list, book)
-        return list
     }
 
     private suspend fun analyzeChapterList(
@@ -269,7 +278,7 @@ object BookChapterList {
         return Pair(chapterList, nextUrlList)
     }
 
-    private fun getWordCount(list: ArrayList<BookChapter>, book: Book) {
+    private fun getWordCount(list: List<BookChapter>, book: Book) {
         if (!AppConfig.tocCountWords) {
             return
         }
