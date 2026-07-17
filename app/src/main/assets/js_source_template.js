@@ -13,6 +13,8 @@
  *   字面量展开 [...arr]/{...obj}、?.、?? 可用;class、async/await、Promise 回调、
  *   调用处展开 f(...arr)、剩余解构不可用。
  * - java.log(msg) 输出到书源调试日志。
+ * - book/chapter 属性、Jsoup 取值、java.ajax() 返回等 Java 来源字符串:拼接、传参、
+ *   作返回字段值直接用;调 JS 字符串方法(正则 replace/match 等)与判空前先 String(...) 归一化。
  */
 
 /**

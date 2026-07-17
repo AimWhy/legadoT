@@ -205,6 +205,44 @@ class JsTest {
         Assert.assertEquals("x,y", RhinoScriptEngine.eval(js, ScriptBindings()))
     }
 
+    /**
+     * Java 互操作字符串边界探针(2026-07-17 实测锚定),书源 skill 归一化条目的依据
+     * (legado-source-skill/references/js-source-format.md、js-api.md)。
+     * 裸绑定字符串(result/key/baseUrl)即 Rhino 原生 string,JS 方法全量可用;
+     * 经 Java 对象成员访问取得的字符串(实体属性、Jsoup text()/attr()、java.* 返回值)
+     * 是 WrapFactory 包装对象:同名 Java 方法优先分派,未被遮蔽的名字回落
+     * String.prototype;String() 归一化后与原生 string 无差。
+     */
+    @Test
+    fun javaStringInteropBoundary() {
+        val chapter = BookChapter(title = "第1章", url = "https://a/b/", tag = "")
+        val bindings = ScriptBindings()
+        bindings["chapter"] = chapter
+        fun ev(js: String) = RhinoScriptEngine.eval(js, bindings)
+
+        // 包装对象体征:typeof object、length 是 Java 方法非属性、空串真值、
+        // === 与同文本 JS 字符串不等(== 相等)
+        Assert.assertEquals("object", ev("typeof chapter.title"))
+        Assert.assertEquals("object", ev("typeof org.jsoup.Jsoup.parse('<a>x</a>').select('a').text()"))
+        Assert.assertEquals("function", ev("typeof chapter.title.length"))
+        Assert.assertEquals("T", ev("chapter.tag ? 'T' : 'F'"))
+        Assert.assertEquals("false:true", ev("(chapter.title === '第1章') + ':' + (chapter.title == '第1章')"))
+
+        // 同名 Java 方法优先分派:(RegExp, string) 对 String.replace 两个重载都不唯一 → 歧义报错;
+        // split 走 Java 语义,尾部空串被丢弃(JS 语义应为 5)
+        val ambiguous = runCatching { ev("chapter.url.replace(/b/, 'X')") }
+        Assert.assertTrue("正则 replace 应因 Java 重载歧义报错", ambiguous.isFailure)
+        Assert.assertEquals("4", ev("'' + chapter.url.split('/').length"))
+
+        // 未被 Java 遮蔽的名字回落 String.prototype;Java 自有方法可直调
+        Assert.assertEquals("M", ev("chapter.title.match(/1/) ? 'M' : 'N'"))
+        Assert.assertEquals("0", ev("'' + chapter.url.indexOf('http')"))
+
+        // String() 归一化后 JS 全套可用;包装串作返回对象字段值经 JSON.stringify 正确解包
+        Assert.assertEquals("https://a/X/", ev("String(chapter.url).replace(/b/, 'X')"))
+        Assert.assertEquals("""{"u":"https://a/b/"}""", ev("JSON.stringify({u: chapter.url})"))
+    }
+
     @Test
     fun typeofString() {
         val bindings = ScriptBindings()

@@ -592,6 +592,11 @@ function getContent(chapter, book) {
 - `source`、`cookie`、`cache`、`baseUrl` 同名绑定可直接使用；`key`/`page`/`book`/`chapter`/
   `nextChapterUrl` 既是当前函数的形参，也是同名的环境绑定（`jsLib` 里定义的辅助函数如果要用
   这些绑定，需要显式接收对应参数，不能隐式取到调用方的绑定）。
+- 字符串有两型：`key` 等裸绑定参数是 JS 原生字符串；`book.bookUrl`/`chapter.url` 这类对象属性、
+  Jsoup 的 `.text()`/`.attr()`、`java.ajax()` 等返回值是 Java 包装字符串——空串当真值、`typeof`
+  是 object、与 JS 字符串 `===` 不等、正则 `replace` 直接报"重载选择不明确"。拼接、模板字符串、
+  传给 `java.*`/Jsoup 做参数、放进返回对象都直接用；要用 JS 字符串方法（正则 `replace`/`match`）
+  或判空，先 `String(...)` 转一层（锚定在 `JsTest.javaStringInteropBoundary`）。
 - 并发由应用协程层负责调度，函数按同步写法写就行，不需要自己管线程。但同一个源的多个函数
   可能被并发调用（比如批量搜索），函数内部不要依赖顶层可变状态做跨调用传值（顶层 `var` 当
   只读常量用），需要跨请求持久化的数据存 `cache`（`cache.put/get`）或书源变量
