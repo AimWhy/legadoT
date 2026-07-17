@@ -63,6 +63,7 @@ import splitties.init.appCtx
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.net.URL
 import java.net.URLEncoder
 import java.nio.charset.Charset
 import java.security.MessageDigest
@@ -570,6 +571,12 @@ interface JsExtensions : JsEncodeUtils {
 
     fun htmlFormat(str: String): String {
         return HtmlFormatter.formatKeepImg(str)
+    }
+
+    /** 声明式正文管道同款(BookContent formatKeepImg + rUrl):相对 <img> 地址按 redirectUrl 补全 */
+    fun htmlFormat(str: String, redirectUrl: String): String {
+        val url = kotlin.runCatching { URL(redirectUrl) }.getOrNull()
+        return HtmlFormatter.formatKeepImg(str, url)
     }
 
     fun t2s(text: String): String {

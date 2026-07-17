@@ -561,7 +561,7 @@ function getContent(chapter, book) {
 |函数|时机|入参|返回|
 |------|------|------|------|
 |`search(key, page)`|搜索|`key`:搜索词；`page`:页码(从1起)|书籍数组|
-|`explore(url, page)`|发现，与 `exploreUrl` 成对|`url`:当前分类的地址，**原样传入**(不做 `{{page}}` 等模板处理，翻页用 `page` 自行拼)；`page`:页码(从1起)|书籍数组，契约同 `search`|
+|`explore(url, page)`|发现，与 `exploreUrl` 成对|`url`:当前分类的地址，**原样传入**，翻页用 `page` 拼接；`page`:页码(从1起)|书籍数组，契约同 `search`|
 |`getBookInfo(book)`|详情，可选|`book`:书籍对象(已含 search 阶段字段)|要覆盖的字段对象|
 |`getChapters(book)`|目录|`book`:书籍对象|章节数组|
 |`getContent(chapter, book)`|正文|`chapter`:章节对象；`book`:书籍对象；另绑定同名变量 `nextChapterUrl`(下一章地址,可能为 null)|正文字符串|
@@ -581,6 +581,9 @@ function getContent(chapter, book) {
   `tag`、`wordCount`、`resourceUrl`。相对 `url` 会按 `book.tocUrl` 自动补全成绝对地址。
   卷名行的约定：`isVolume: true` 且 `url` 与 `title` 写成相同字符串——命中这个约定的行点开
   不会尝试抓正文（不会报错，直接展示 `tag` 或空文本）。
+- **`getContent` 返回值即最终正文**，阅读器按纯文本排版、正文内 `<img src>` 渲染为插图：
+  拼纯文本（段落用 `\n` 分隔），或取正文节点的 HTML 用 `java.htmlFormat(html, chapter.url)`
+  转段落文本——与声明式源的正文处理同款（保留 `<img>` 并补全相对地址）。
 - **`type` 覆写**：`search`/`getBookInfo` 返回值里都可以带 `type` 字段，用 BookType 位值：
   文本=8、音频=32、图片=64、只提供下载服务=128；不写或写了非法值时用
   `bookSourceType` 换算出的缺省值，不合法的值会在源调试日志里提示、不会中断抓取。

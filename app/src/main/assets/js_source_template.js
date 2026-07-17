@@ -142,9 +142,11 @@ function getChapters(book) {
  *
  * @param {Object} chapter 章节对象
  * @param {Object} book 书籍对象
- * @returns {string} 正文;空视为失败
+ * @returns {string} 正文;返回值即最终展示文本,空视为失败。
+ *   拼纯文本段落 \n 分隔;取节点 HTML 用 java.htmlFormat(html, chapter.url) 转段落文本(保留插图)
  */
 function getContent(chapter, book) {
   const html = java.ajax(chapter.url)
+  // return java.htmlFormat(org.jsoup.Jsoup.parse(html).select("div.content").html(), chapter.url)
   return html
 }
