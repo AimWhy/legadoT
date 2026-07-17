@@ -14,7 +14,7 @@
         android:id="@+id/menu_debug_source"
         android:icon="@drawable/ic_bug_report"
         android:title="@string/debug_source"
-        app:showAsAction="never" />
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/menu_copy_source"
