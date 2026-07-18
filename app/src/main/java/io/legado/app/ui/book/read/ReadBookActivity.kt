@@ -71,6 +71,7 @@ import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
 import io.legado.app.model.SourceCallBack
 import io.legado.app.model.analyzeRule.AnalyzeByJSonPath
+import io.legado.app.model.jsSource.JsSourceReview
 import io.legado.app.model.analyzeRule.AnalyzeRule
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setChapter
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setCoroutineContext
@@ -1804,6 +1805,14 @@ class ReadBookActivity : BaseReadBookActivity(),
         Coroutine.async(lifecycleScope, IO) {
             val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, chapterIndex) ?: return@async null
             if (chapter.isVolume) return@async null
+        if (source.isJsSource()) {
+            return@async JsSourceReview.getReviewSummaryAwait(source, book, chapter)?.let { map ->
+                ReviewSummaryResult(
+                    counts = map.mapValues { it.value.first },
+                    keys = map.mapValues { it.value.second }
+                )
+            }
+        }
             val analyzeUrl = AnalyzeUrl(
                 rule,
                 baseUrl = chapter.url,
