@@ -1727,6 +1727,10 @@ class ReadBookActivity : BaseReadBookActivity(),
             return
         }
         val source = ReadBook.bookSource ?: return
+        if (source.isJsSource()) {
+            showDialogFragment(ReviewDetailDialog(paragraphNum, count))
+            return
+        }
         val rule = source.ruleReview ?: run {
             toastOnUi("未配置段评规则")
             return
@@ -1747,6 +1751,10 @@ class ReadBookActivity : BaseReadBookActivity(),
             reviewSummaryAppliedKey = null
             reviewSummaryLoadingKey = null
             ChapterProvider.clearReviewProviders()
+            return
+        }
+        if (source.isJsSource()) {
+            loadJsReviewSummaryIfNeeded(source)
             return
         }
         val reviewRule = source.ruleReview ?: run {
@@ -1805,14 +1813,6 @@ class ReadBookActivity : BaseReadBookActivity(),
         Coroutine.async(lifecycleScope, IO) {
             val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, chapterIndex) ?: return@async null
             if (chapter.isVolume) return@async null
-        if (source.isJsSource()) {
-            return@async JsSourceReview.getReviewSummaryAwait(source, book, chapter)?.let { map ->
-                ReviewSummaryResult(
-                    counts = map.mapValues { it.value.first },
-                    keys = map.mapValues { it.value.second }
-                )
-            }
-        }
             val analyzeUrl = AnalyzeUrl(
                 rule,
                 baseUrl = chapter.url,
@@ -1843,6 +1843,73 @@ class ReadBookActivity : BaseReadBookActivity(),
                 }
                 applyReviewSummary(key, chapterIndex, result)
                 prefetchAdjacentReviewSummary(book, source, reviewRule, chapterIndex)
+            } else {
+                ChapterProvider.clearReviewProviders()
+            }
+        }.onError {
+            releaseReviewSummaryLoadingKey(key)
+            if (requestToken != reviewSummaryRequestToken) return@onError
+            val curBook = ReadBook.book
+            val curKey = curBook?.let { book ->
+                buildReviewSummaryKey(book, ReadBook.durChapterIndex)
+            }
+            if (curKey != key) return@onError
+            ChapterProvider.clearReviewProviders()
+            AppLog.put("加载段评统计出错\n${it.localizedMessage}", it)
+        }
+    }
+
+    /**
+     * JS 源段评统计加载:复刻声明式路径的通用机制(book/正文就绪门、key 短路、cache、token、providers 清理),
+     * 数据来源改由 JsSourceReview.getReviewSummaryAwait 直接 eval getReviewSummary 函数取得。
+     * JS 源换章即时加载,未做相邻章预取(eval 成本与 search/toc 同量级,即时加载足够)。
+     */
+    private fun loadJsReviewSummaryIfNeeded(source: BookSource) {
+        val book = ReadBook.book ?: return
+        val chapterIndex = ReadBook.durChapterIndex
+        val textChapter = ReadBook.curTextChapter
+        if (textChapter != null &&
+            textChapter.chapter.index == chapterIndex &&
+            !textChapter.hasBodyContent
+        ) {
+            reviewSummaryAppliedKey = null
+            reviewSummaryLoadingKey = null
+            ChapterProvider.clearReviewProviders()
+            return
+        }
+        val key = buildReviewSummaryKey(book, chapterIndex)
+        if (reviewSummaryAppliedKey == key || reviewSummaryLoadingKey == key) return
+        val cached = synchronized(reviewSummaryCache) { reviewSummaryCache[key] }
+        if (cached != null) {
+            applyReviewSummary(key, chapterIndex, cached)
+            return
+        }
+        reviewSummaryLoadingKey = key
+        val requestToken = ++reviewSummaryRequestToken
+        if (reviewSummaryAppliedKey != key) {
+            ChapterProvider.clearReviewProviders()
+        }
+
+        Coroutine.async(lifecycleScope, IO) {
+            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, chapterIndex) ?: return@async null
+            if (chapter.isVolume) return@async null
+            JsSourceReview.getReviewSummaryAwait(source, book, chapter)?.let { map ->
+                ReviewSummaryResult(
+                    counts = map.mapValues { it.value.first },
+                    keys = map.mapValues { it.value.second }
+                )
+            }
+        }.onSuccess(Main) { result ->
+            releaseReviewSummaryLoadingKey(key)
+            if (requestToken != reviewSummaryRequestToken) return@onSuccess
+            val curBook = ReadBook.book ?: return@onSuccess
+            val curKey = buildReviewSummaryKey(curBook, ReadBook.durChapterIndex)
+            if (curKey != key) return@onSuccess
+            if (result != null) {
+                synchronized(reviewSummaryCache) {
+                    reviewSummaryCache[key] = result
+                }
+                applyReviewSummary(key, chapterIndex, result)
             } else {
                 ChapterProvider.clearReviewProviders()
             }

@@ -1,7 +1,6 @@
 package io.legado.app.model.jsSource
 
 import io.legado.app.exception.NoStackTraceException
-import org.htmlunit.corejs.javascript.Function as JsFunction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
