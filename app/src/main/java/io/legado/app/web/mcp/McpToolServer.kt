@@ -101,6 +101,9 @@ object McpToolServer {
                 val source = request.arguments.str("source")
                     ?: return@addTool err("参数source不能为空")
                 val fmt = request.arguments.str("format") ?: McpFormat.detectFormat(source)
+                if (fmt != "js" && fmt != "json") {
+                    return@addTool err("参数format必须为 js 或 json")
+                }
                 if (fmt == "js") {
                     val saved = BookSourceController.saveJsSource(source).dataOrThrow() as BookSource
                     ok("已保存(js):${saved.bookSourceName}\nbookSourceUrl: ${saved.bookSourceUrl}")
@@ -142,7 +145,7 @@ object McpToolServer {
                     ?: return@addTool err("参数url不能为空")
                 val key = request.arguments.str("key")
                     ?: return@addTool err("参数key不能为空")
-                val timeoutSec = request.arguments.int("timeoutSec") ?: 120
+                val timeoutSec = (request.arguments.int("timeoutSec") ?: 120).coerceIn(10, 600)
                 val source = appDb.bookSourceDao.getBookSource(url)
                     ?: return@addTool err("未找到源，请检查书源地址")
                 if (!debugMutex.tryLock()) {

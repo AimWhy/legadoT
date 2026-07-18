@@ -99,7 +99,9 @@ class McpService : BaseService() {
             val port = getPort()
             try {
                 engine = embeddedServer(CIO, port = port, host = "0.0.0.0") {
-                    mcpStreamableHttp {
+                    // SDK 默认的 DNS-rebinding 防护只放行 localhost,拦掉局域网直连;
+                    // 信任模型与相邻端口的 WebService(无 Host 校验)一致,关闭之
+                    mcpStreamableHttp(enableDnsRebindingProtection = false) {
                         McpToolServer.create()
                     }
                 }.also { it.start(wait = false) }
