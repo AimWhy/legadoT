@@ -12,7 +12,9 @@ export interface SourceSummary {
 }
 
 export function summarizeSources(raw: unknown, search?: string): SourceSummary[] {
-  const arr = (Array.isArray(raw) ? raw : []) as Array<Record<string, unknown>>;
+  const arr = (Array.isArray(raw) ? raw : []).filter(
+    (s): s is Record<string, unknown> => typeof s === "object" && s !== null,
+  );
   const summaries = arr.map((s) => ({
     bookSourceName: String(s.bookSourceName ?? ""),
     bookSourceUrl: String(s.bookSourceUrl ?? ""),

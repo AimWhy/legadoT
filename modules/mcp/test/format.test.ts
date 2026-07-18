@@ -52,6 +52,10 @@ describe("summarizeSources", () => {
   it("非数组输入返回空数组", () => {
     expect(summarizeSources(null)).toEqual([]);
   });
+
+  it("数组内非对象元素被跳过", () => {
+    expect(summarizeSources([null, raw[0], undefined, 7])).toHaveLength(1);
+  });
 });
 
 describe("truncateText", () => {
