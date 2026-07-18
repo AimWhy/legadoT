@@ -157,5 +157,8 @@ cn.hutool.core.util.**{*;}
 
 # MCP SDK:kotlinx-serialization 序列化器按名访问,整包保留(库量小)
 -keep class io.modelcontextprotocol.** { *; }
+# ktor CIO 引擎通过 ServiceLoader 注册,R8 默认移除服务提供者类;显式保留
+-keep class io.ktor.** { *; }
+-keep class kotlinx.coroutines.** { *; }
 -dontwarn io.ktor.**
 -dontwarn org.slf4j.**
