@@ -106,11 +106,7 @@ class MyFragment() : BaseFragment(R.layout.fragment_my_config), MainFragmentInte
             observeEventSticky<String>(EventBus.MCP_SERVICE) {
                 findPreference<SwitchPreference>(PreferKey.mcpService)?.let {
                     it.isChecked = McpService.isRun
-                    it.summary = if (McpService.isRun) {
-                        McpService.hostAddress
-                    } else {
-                        getString(R.string.mcp_service_desc)
-                    }
+                    it.summary = if (McpService.isRun) McpService.hostAddress else ""
                 }
             }
             findPreference<NameListPreference>(PreferKey.themeMode)?.let {

@@ -49,7 +49,6 @@
         android:defaultValue="false"
         android:icon="@drawable/ic_cfg_web"
         android:key="mcpService"
-        android:summary="@string/mcp_service_desc"
         android:title="@string/mcp_service"
         app:allowDividerBelow="false" />
 
