@@ -261,6 +261,10 @@ dependencies {
     implementation(libs.nanohttpd.nanohttpd)
     implementation(libs.nanohttpd.websocket)
 
+    //MCP server(Streamable HTTP)
+    implementation(libs.mcp.sdk.server)
+    implementation(libs.ktor.server.cio)
+
     //二维码
     //noinspection GradleDependency
     implementation(libs.zxing.lite)
