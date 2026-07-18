@@ -1,6 +1,7 @@
 package io.legado.app.model.jsSource
 
 import io.legado.app.exception.NoStackTraceException
+import org.htmlunit.corejs.javascript.Function as JsFunction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -360,5 +361,48 @@ class JsSourceConfigTest {
             """.trimIndent(),
         )
         assertEquals("https://a.com/login", s.loginUrl)
+    }
+
+    @Test
+    fun reviewFunctionsPairValid() {
+        val s = JsSourceConfig.extract(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "段评源" }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function getReviewSummary(chapter, book) { return [] }
+            function getReviewDetail(chapter, book, paraIndex, paraData, page) { return { items: [] } }
+            """.trimIndent(),
+        )
+        assertEquals("段评源", s.bookSourceName)
+    }
+
+    @Test
+    fun reviewSummaryWithoutDetailFails() {
+        assertExtractError(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "缺detail" }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function getReviewSummary(chapter, book) { return [] }
+            """.trimIndent(),
+            "getReviewDetail",
+        )
+    }
+
+    @Test
+    fun reviewDetailWithoutSummaryFails() {
+        assertExtractError(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "缺summary" }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function getReviewDetail(chapter, book, paraIndex, paraData, page) { return { items: [] } }
+            """.trimIndent(),
+            "getReviewSummary",
+        )
     }
 }

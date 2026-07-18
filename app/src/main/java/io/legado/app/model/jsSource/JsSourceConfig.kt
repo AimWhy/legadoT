@@ -70,6 +70,16 @@ object JsSourceConfig {
         ) {
             throw NoStackTraceException("JS源声明了 loginUi,缺少配对的 login 函数")
         }
+        if (ScriptableObject.getProperty(scope, "getReviewSummary") is JsFunction &&
+            ScriptableObject.getProperty(scope, "getReviewDetail") !is JsFunction
+        ) {
+            throw NoStackTraceException("JS源声明了 getReviewSummary,缺少配对的 getReviewDetail 函数")
+        }
+        if (ScriptableObject.getProperty(scope, "getReviewDetail") is JsFunction &&
+            ScriptableObject.getProperty(scope, "getReviewSummary") !is JsFunction
+        ) {
+            throw NoStackTraceException("JS源声明了 getReviewDetail,缺少配对的 getReviewSummary 函数")
+        }
         bookSource.mainJs = text
         return bookSource
     }
