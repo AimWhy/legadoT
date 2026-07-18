@@ -249,4 +249,116 @@ class JsSourceConfigTest {
             "执行失败",
         )
     }
+
+    @Test
+    fun loginUiArrayNormalizedToJsonString() {
+        val s = JsSourceConfig.extract(
+            """
+            var source = {
+              bookSourceUrl: "https://a.com",
+              bookSourceName: "表单登录",
+              loginUi: [
+                { name: "账号", type: "text" },
+                { name: "密码", type: "password" },
+                { name: "发送验证码", type: "button", action: "sendCaptcha(result)" }
+              ]
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function login() { }
+            function sendCaptcha(result) { }
+            """.trimIndent(),
+        )
+        // 落库为 JSON 数组字符串,BaseSource.loginUi() 原生认该形态
+        val rows = io.legado.app.utils.GSON.fromJson(
+            s.loginUi, Array<io.legado.app.data.entities.rule.RowUi>::class.java
+        )
+        assertEquals(3, rows.size)
+        assertEquals("账号", rows[0].name)
+        assertEquals("text", rows[0].type)
+        assertEquals("password", rows[1].type)
+        assertEquals("sendCaptcha(result)", rows[2].action)
+    }
+
+    @Test
+    fun loginUiEmptyArrayFoldsToNone() {
+        // 模板留空态:空数组=未声明,不触发 login 配对校验(此脚本未实现 login)
+        val s = JsSourceConfig.extract(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "空表单", loginUi: [] }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            """.trimIndent(),
+        )
+        assertNull(s.loginUi)
+    }
+
+    @Test
+    fun loginUiStringFormPreserved() {
+        val s = JsSourceConfig.extract(
+            """
+            var source = {
+              bookSourceUrl: "https://a.com",
+              bookSourceName: "字符串表单",
+              loginUi: '[{"name":"账号","type":"text"}]'
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function login() { }
+            """.trimIndent(),
+        )
+        assertEquals("""[{"name":"账号","type":"text"}]""", s.loginUi)
+    }
+
+    @Test
+    fun loginUiArrayItemMissingNameFails() {
+        assertExtractError(
+            """
+            var source = {
+              bookSourceUrl: "https://a.com",
+              bookSourceName: "坏表单",
+              loginUi: [ { type: "text" } ]
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function login() { }
+            """.trimIndent(),
+            "缺少 name",
+        )
+    }
+
+    @Test
+    fun loginUiRequiresLoginFunction() {
+        assertExtractError(
+            """
+            var source = {
+              bookSourceUrl: "https://a.com",
+              bookSourceName: "缺登录函数",
+              loginUi: [ { name: "账号", type: "text" } ]
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            """.trimIndent(),
+            "login",
+        )
+    }
+
+    @Test
+    fun loginUrlAloneNeedsNoLoginFunction() {
+        // WebView 登录形态:只声明 loginUrl,无需 login 函数
+        val s = JsSourceConfig.extract(
+            """
+            var source = { bookSourceUrl: "https://a.com", bookSourceName: "网页登录", loginUrl: "https://a.com/login" }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            """.trimIndent(),
+        )
+        assertEquals("https://a.com/login", s.loginUrl)
+    }
 }

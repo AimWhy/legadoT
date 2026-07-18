@@ -46,6 +46,7 @@ object JsSourceConfig {
             ?: throw NoStackTraceException("source 配置对象不是合法对象")
         strippedKeys.forEach { jsonObj.remove(it) }
         normalizeExploreUrl(jsonObj)
+        normalizeLoginUi(jsonObj)
         val bookSource = runCatching { GSON.fromJson(jsonObj, BookSource::class.java) }.getOrNull()
             ?: throw NoStackTraceException("source 配置对象字段类型不符")
         if (bookSource.bookSourceUrl.isNullOrBlank()) {
@@ -63,6 +64,11 @@ object JsSourceConfig {
             ScriptableObject.getProperty(scope, "explore") !is JsFunction
         ) {
             throw NoStackTraceException("JS源声明了 exploreUrl,缺少配对的 explore 函数")
+        }
+        if (!bookSource.loginUi.isNullOrBlank() &&
+            ScriptableObject.getProperty(scope, "login") !is JsFunction
+        ) {
+            throw NoStackTraceException("JS源声明了 loginUi,缺少配对的 login 函数")
         }
         bookSource.mainJs = text
         return bookSource
@@ -91,6 +97,31 @@ object JsSourceConfig {
             }
         }
         jsonObj.addProperty("exploreUrl", GSON.toJson(array))
+    }
+
+    /**
+     * loginUi 数组形态归一化:JS 里写 RowUi 数组([{name,type,action?,style?},...])更合母语,
+     * 落库前序列化为 JSON 数组字符串——BaseSource.loginUi() 对该形态原生支持,消费侧零改动。
+     * 字符串形态原样保留;每项须有非空 name(既是输入框提示也是凭据键)。
+     * 空数组=未声明(模板留空态),折叠为无表单,免触发 login 配对校验。
+     */
+    private fun normalizeLoginUi(jsonObj: JsonObject) {
+        val element = jsonObj.get("loginUi") ?: return
+        if (!element.isJsonArray) return
+        val array = element.asJsonArray
+        if (array.isEmpty) {
+            jsonObj.remove("loginUi")
+            return
+        }
+        array.forEachIndexed { index, item ->
+            val name = runCatching {
+                item.asJsonObject.get("name")?.asString
+            }.getOrNull()
+            if (name.isNullOrBlank()) {
+                throw NoStackTraceException("loginUi 第 ${index + 1} 项缺少 name")
+            }
+        }
+        jsonObj.addProperty("loginUi", GSON.toJson(array))
     }
 
     /** 数字字面量或 Date.now() 形态的 lastUpdateTime 声明(键可带引号),只认首个 */
