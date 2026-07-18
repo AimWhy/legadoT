@@ -91,6 +91,16 @@ URL = http://127.0.0.1:1234/getHttpLog?id=1
 Method = GET
 ```
 
+##### 开关记录
+
+远程开关「记录HTTP日志」,与设置页开关状态同步;切换不清空已有记录。
+
+```
+URL = http://127.0.0.1:1234/setHttpLogRecording
+Method = POST
+Body = { enabled: [Boolean] }
+```
+
 #### 获取替换规则
 
 ```
