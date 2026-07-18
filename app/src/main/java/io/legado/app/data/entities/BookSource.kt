@@ -240,6 +240,12 @@ data class BookSource(
         return !mainJs.isNullOrBlank()
     }
 
+    /** JS 源的登录脚本载体是 mainJs:login 函数与按钮 action 与 search 等同居顶层 */
+    override fun getLoginJs(): String? {
+        if (isJsSource()) return mainJs
+        return super.getLoginJs()
+    }
+
     fun equal(source: BookSource): Boolean {
         return equal(bookSourceName, source.bookSourceName)
                 && equal(bookSourceUrl, source.bookSourceUrl)
