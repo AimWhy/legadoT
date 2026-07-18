@@ -13,7 +13,8 @@
 
 /**
  * 书源配置。字段名与 BookSource 实体一致。
- * 常用可选字段包括 header（JSON 格式请求头）、loginUrl、concurrentRate、
+ * 常用可选字段包括 header（JSON 格式请求头）、loginUrl（登录页地址，WebView 登录）、
+ * loginUi（表单登录，RowUi 数组，与顶层 login 函数成对）、concurrentRate、
  * enabledCookieJar 和 jsLib。enabled、customOrder 等用户态字段由应用维护。
  */
 const source = {

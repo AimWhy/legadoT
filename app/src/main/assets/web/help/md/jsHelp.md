@@ -532,7 +532,8 @@ function getContent(chapter, book) {
 `search`、`getChapters`、`getContent` 三个函数必备，缺一在导入/保存时即报错（形如
 "JS源缺少必备函数 getContent"）；`getBookInfo` 可选，不写就跳过、只用 `search` 阶段给出的字段；
 `explore` 与配置里的 `exploreUrl` 成对——声明了发现分类就必须实现它（导入时校验），都不写则
-该源不上发现页、校验时发现检查自动跳过。登录入口由 `loginUrl` 决定，同声明式源。
+该源不上发现页、校验时发现检查自动跳过；`login` 与配置里的 `loginUi` 成对——声明了登录表单
+就必须实现它（导入时校验），详见下方"登录"一节。
 
 ### source 配置对象
 
@@ -547,7 +548,8 @@ function getContent(chapter, book) {
 |bookSourceComment|备注|
 |lastUpdateTime|版本时间戳，写死毫秒数值；App 内编辑器保存有实质改动时自动改写为当前时间，文件外改动发布新版时调大；同 `bookSourceUrl` 重复导入大于库内值才提示"更新"，也用于源列表排序|
 |header|请求头 JSON 字符串，同声明式源|
-|loginUrl / loginUi / loginCheckJs|登录相关；填了 loginUrl 后管理列表该源菜单会出现"登录"入口，与声明式源一致|
+|loginUrl|登录页地址（WebView 登录）：管理列表该源菜单出现"登录"入口，打开网页手动登录，cookie 自动存取|
+|loginUi|表单登录（RowUi 数组，同声明式，也接受 JSON 字符串）：声明后须实现顶层 `login` 函数，同样点亮"登录"入口，详见"登录"一节|
 |exploreUrl|发现分类，首选数组：每项 `{title, url}`，省略 `url` 的项渲染为分区标题，可带 `style` 网格样式（同声明式）；每项须有非空 `title`，空数组视同未声明。也接受文本行 `名称::url`（换行或 `&&` 分隔）或 JSON 数组文本。填写后须实现 `explore` 函数，该源即上发现页|
 |concurrentRate|并发限制，同声明式源|
 |enabledCookieJar|是否启用 CookieJar|
@@ -565,6 +567,7 @@ function getContent(chapter, book) {
 |`getBookInfo(book)`|详情，可选|`book`:书籍对象(已含 search 阶段字段)|要覆盖的字段对象|
 |`getChapters(book)`|目录|`book`:书籍对象|章节数组|
 |`getContent(chapter, book)`|正文|`chapter`:章节对象；`book`:书籍对象；另绑定同名变量 `nextChapterUrl`(下一章地址,可能为 null)|正文字符串|
+|`login()`|表单登录提交时（"登录"入口内点确定）|无参；用 `source.getLoginInfo()` 读表单数据|无返回值要求；`throw` 即登录失败，内容作为提示弹出|
 
 返回值可以直接 `return` 一个数组/对象，也可以 `return JSON.stringify(...)` 手写好的字符串，
 两者等价——引擎收到字符串直接用，收到对象/数组会自动转成 JSON 再解析。
@@ -588,6 +591,51 @@ function getContent(chapter, book) {
   文本=8、音频=32、图片=64、只提供下载服务=128；不写或写了非法值时用
   `bookSourceType` 换算出的缺省值，不合法的值会在源调试日志里提示、不会中断抓取。
   `wordCount` 是字符串，不是数字。
+
+### 登录
+
+两种形态各自独立，可并存（都声明时进表单界面，`loginUrl` 不再被 WebView 使用）：
+
+- **WebView 登录**：`source.loginUrl` 填登录页地址。打开网页手动登录，登录产生的
+  cookie 自动存储，后续请求自动携带。
+- **表单登录**：`source.loginUi` 填表单描述（数组），并实现顶层 `login` 函数
+  （声明了 loginUi 缺 login 函数在导入/保存时报错）。
+
+```js
+const source = {
+  // ...
+  loginUi: [
+    { name: "账号", type: "text" },
+    { name: "密码", type: "password" },
+    { name: "发送验证码", type: "button", action: "sendCaptcha(result)" },
+  ],
+}
+
+function login() {
+  const info = JSON.parse(source.getLoginInfo())   // {"账号":"...","密码":"..."}
+  const resp = java.post(`${source.bookSourceUrl}/api/login`, JSON.stringify(info), {})
+  if (!String(resp.body()).includes("ok")) throw "账号或密码错误"
+  source.putLoginHeader(JSON.stringify({ Cookie: String(cookie.getCookie(baseUrl)) }))
+}
+
+function sendCaptcha(result) {
+  // 按钮 action 在脚本作用域执行,可调任意顶层函数;result 为当前表单数据对象
+  java.ajax(`${source.bookSourceUrl}/api/captcha?phone=${result["账号"]}`)
+}
+```
+
+- **提交流程**：填完表单点"确定"→ 表单数据 AES 加密保存 → 调 `login` 函数；`throw` 的
+  内容作为失败提示弹出，不抛即成功。表单全空点"确定"= 清除已存登录信息。
+- **`loginUi` 每项**：`name` 必填（既是输入框提示也是数据键，导入时校验）；`type` 取
+  `text` / `password` / `button`；`button` 项的 `action` 是一段 JS，点击时在脚本作用域
+  执行（可调任意顶层函数），绑定 `result` 为当前表单数据对象；`action` 也可以直接填一个
+  `http(s)` 地址，点击改为打开浏览器。
+- **凭据 API**（login 与普通函数里均可用）：`source.getLoginInfo()`（表单数据 JSON 字符串）/
+  `source.getLoginInfoMap()`；`source.putLoginHeader(headerJson)` 保存登录头——后续本源
+  所有请求自动附带，JSON 里含 `Cookie` 键时同步写入 CookieStore；`source.getLoginHeaderMap()`、
+  `source.removeLoginHeader()`。
+- **`loginCheckJs` 对 JS 源不适用**：请求由脚本自己发出，登录态失效由函数自行检测处理
+  （发现未登录标记时 `throw` 提示，或重新请求）。
 
 ### 运行环境
 
