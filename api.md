@@ -32,6 +32,17 @@ URL = http://127.0.0.1:1234/saveRssSources
 Method = POST
 ```
 
+#### 插入JS单文件书源
+
+请求BODY为纯JS源脚本原文。
+App 侧执行与导入相同的校验与元数据提取，返回落库后的完整书源；
+同 URL 覆盖时保留分组、启用开关等用户态字段，`lastUpdateTime` 以脚本内声明为准。
+
+```
+URL = http://127.0.0.1:1234/saveJsSource
+Method = POST
+```
+
 #### 获取书源
 
 ```
@@ -67,6 +78,17 @@ key为书源搜索关键词，tag为源链接
 URL = ws://127.0.0.1:1235/bookSourceDebug
 URL = ws://127.0.0.1:1235/rssSourceDebug
 Message = { key: [String], tag: [String] }
+```
+
+#### HTTP请求日志
+
+获取APP端HTTP请求日志。需在设置中开启"记录HTTP日志"；内存保留最新50条，请求/响应正文在记录时截断至4096字符。
+列表返回`{ recording: [Boolean], logs: [摘要数组] }`，`recording`为开关当前状态；详情按`id`返回完整记录（含请求/响应头体）。
+
+```
+URL = http://127.0.0.1:1234/getHttpLogs?limit=50
+URL = http://127.0.0.1:1234/getHttpLog?id=1
+Method = GET
 ```
 
 #### 获取替换规则
