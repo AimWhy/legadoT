@@ -22,8 +22,8 @@ import kotlin.coroutines.CoroutineContext
 
 object SharedJsScope {
 
-    private val cacheFolder = File(appCtx.cacheDir, "shareJs")
-    private val aCache = ACache.get(cacheFolder)
+    private val cacheFolder by lazy { File(appCtx.cacheDir, "shareJs") }
+    private val aCache by lazy { ACache.get(cacheFolder) }
 
     private val scopeMap = LruCache<String, WeakReference<ScriptBindings>>(16)
     private const val CRYPTO_JS_ASSET = "scripts/cryptojs.min.js"
@@ -43,9 +43,11 @@ object SharedJsScope {
             text
         } catch (e: Throwable) {
             val msg = "加载CryptoJS失败: ${e.message}"
-            aCache.put(CRYPTO_JS_ERROR_KEY, msg)
-            Debug.log(msg)
-            AppLog.putDebug(msg)
+            runCatching {
+                aCache.put(CRYPTO_JS_ERROR_KEY, msg)
+                Debug.log(msg)
+                AppLog.putDebug(msg)
+            }
             null
         }
     }
