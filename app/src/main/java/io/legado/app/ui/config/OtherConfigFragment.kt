@@ -123,7 +123,7 @@ class OtherConfigFragment : PreferenceFragment(),
                 }
 
             PreferKey.mcpPort -> NumberPickerDialog(requireContext())
-                .setTitle(getString(R.string.web_port_title))
+                .setTitle(getString(R.string.mcp_port_title))
                 .setMaxValue(60000)
                 .setMinValue(1024)
                 .setValue(AppConfig.mcpPort)
@@ -251,7 +251,7 @@ class OtherConfigFragment : PreferenceFragment(),
 
             PreferKey.threadCount -> preference.summary = getString(R.string.threads_num, value)
             PreferKey.webPort -> preference.summary = getString(R.string.web_port_summary, value)
-            PreferKey.mcpPort -> preference.summary = getString(R.string.web_port_summary, value)
+            PreferKey.mcpPort -> preference.summary = getString(R.string.mcp_port_summary, value)
             PreferKey.bitmapCacheSize -> preference.summary =
                 getString(R.string.bitmap_cache_size_summary, value)
             PreferKey.imageRetainNum -> preference.summary =

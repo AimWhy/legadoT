@@ -551,6 +551,8 @@
     <string name="web_menu">Servicio web</string>
     <string name="web_port_title">Puerto web</string>
     <string name="web_port_summary">Puerto actual %s</string>
+    <string name="mcp_port_title">Puerto MCP</string>
+    <string name="mcp_port_summary">Puerto actual %s</string>
     <string name="qr_share">Compartir código QR</string>
     <string name="str_share">Compartir cadenas</string>
     <string name="wifi_share">Compartir Wifi</string>

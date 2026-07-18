@@ -560,6 +560,8 @@
     <string name="web_menu">Web服務</string>
     <string name="web_port_title">web埠</string>
     <string name="web_port_summary">目前埠 %s</string>
+    <string name="mcp_port_title">MCP埠</string>
+    <string name="mcp_port_summary">目前埠 %s</string>
     <string name="qr_share">二維碼分享</string>
     <string name="str_share">字串分享</string>
     <string name="wifi_share">wifi分享</string>

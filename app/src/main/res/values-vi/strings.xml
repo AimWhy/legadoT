@@ -549,6 +549,8 @@
     <string name="web_menu">Dịch vụ web</string>
     <string name="web_port_title">Cổng web</string>
     <string name="web_port_summary">Cổng hiện tại %s</string>
+    <string name="mcp_port_title">Cổng MCP</string>
+    <string name="mcp_port_summary">Cổng hiện tại %s</string>
     <string name="qr_share">Chia sẻ mã QR</string>
     <string name="str_share">Chia sẻ chuỗi</string>
     <string name="wifi_share">Chia sẻ Wifi</string>
