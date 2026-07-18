@@ -6,9 +6,11 @@ import io.legado.app.api.ReturnData
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.help.source.SourceHelp
+import io.legado.app.model.jsSource.JsSourceConfig
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.fromJsonObject
+import kotlin.coroutines.coroutineContext
 
 object BookSourceController {
 
@@ -76,5 +78,34 @@ object BookSourceController {
             return ReturnData().setErrorMsg(it.localizedMessage ?: "数据格式错误")
         }
         return ReturnData().setData("已执行"/*okSources*/)
+    }
+
+    /**
+     * 纯JS单文件源保存:body 为脚本原文,与导入同一条提取/校验路径。
+     * 脚本是元数据唯一真理源,不改写 lastUpdateTime;
+     * 用户态字段不归脚本管,覆盖旧记录时保留(与编辑器保存同边界)。
+     */
+    suspend fun saveJsSource(postData: String?): ReturnData {
+        val returnData = ReturnData()
+        if (postData.isNullOrBlank()) {
+            return returnData.setErrorMsg("数据不能为空")
+        }
+        return try {
+            val source = JsSourceConfig.extract(postData, coroutineContext)
+            appDb.bookSourceDao.getBookSource(source.bookSourceUrl)?.let { old ->
+                source.enabled = old.enabled
+                source.enabledExplore = old.enabledExplore
+                source.customOrder = old.customOrder
+                source.weight = old.weight
+                source.respondTime = old.respondTime
+                if (source.bookSourceGroup.isNullOrBlank()) {
+                    source.bookSourceGroup = old.bookSourceGroup
+                }
+            }
+            appDb.bookSourceDao.insert(source)
+            returnData.setData(source)
+        } catch (e: Exception) {
+            returnData.setErrorMsg(e.localizedMessage ?: "JS源解析失败")
+        }
     }
 }
