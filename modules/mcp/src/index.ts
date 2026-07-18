@@ -4,4 +4,7 @@ import { registerTools } from "./tools.js";
 
 const server = new McpServer({ name: "legado", version: "0.1.0" });
 registerTools(server);
-await server.connect(new StdioServerTransport());
+server.connect(new StdioServerTransport()).catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

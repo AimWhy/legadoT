@@ -47,11 +47,20 @@ export function registerTools(server: McpServer): void {
           url = String(data.bookSourceUrl ?? "");
         } else {
           await appPost("/saveBookSource", source);
-          const parsed = JSON.parse(source) as Record<string, unknown>;
-          name = String(parsed.bookSourceName ?? "");
-          url = String(parsed.bookSourceUrl ?? "");
+          try {
+            const parsed = JSON.parse(source) as Record<string, unknown>;
+            name = String(parsed.bookSourceName ?? "");
+            url = String(parsed.bookSourceUrl ?? "");
+          } catch {
+            name = "";
+            url = "";
+          }
         }
-        return ok(`已保存(${fmt}):${name}\nbookSourceUrl: ${url}`);
+        return ok(
+          url
+            ? `已保存(${fmt}):${name}\nbookSourceUrl: ${url}`
+            : `已保存(${fmt}),但无法从源文本解析出 bookSourceUrl(保存本身已成功)`,
+        );
       } catch (e) {
         return err(e);
       }
@@ -108,7 +117,10 @@ export function registerTools(server: McpServer): void {
           throw e;
         }
         const summaries = summarizeSources(raw, search);
-        return ok(`共 ${summaries.length} 条\n` + JSON.stringify(summaries, null, 1));
+        return ok(
+          `共 ${summaries.length} 条\n` +
+            truncateText(JSON.stringify(summaries, null, 1)),
+        );
       } catch (e) {
         return err(e);
       }
