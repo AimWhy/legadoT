@@ -637,6 +637,48 @@ function sendCaptcha(result) {
 - **`loginCheckJs` 对 JS 源不适用**：请求由脚本自己发出，登录态失效由函数自行检测处理
   （发现未登录标记时 `throw` 提示，或重新请求）。
 
+### 段评
+
+段评是正文的段落级评论，用两个成对的顶层函数承载——两者同时声明才启用，缺一在导入/保存时报错。
+分两阶段：章节加载后调 `getReviewSummary` 批量取每段的评论数（决定哪些段落显示评论图标），点击
+某段图标时调 `getReviewDetail` 按需取该段评论列表、支持翻页。
+
+```js
+function getReviewSummary(chapter, book) {
+  const json = JSON.parse(java.ajax(`${source.bookSourceUrl}/review/summary?cid=${chapter.url}`))
+  // paraIndex:段落序号(1-based)；count:评论数(≤0 的段不显示图标)；paraData:可选,透传给 detail
+  return json.map(it => ({ paraIndex: it.para, count: it.num, paraData: it.token }))
+}
+
+function getReviewDetail(chapter, book, paraIndex, paraData, page) {
+  const json = JSON.parse(java.ajax(`${source.bookSourceUrl}/review/detail?para=${paraIndex}&data=${paraData}&page=${page}`))
+  const items = json.list.map(it => ({
+    content: it.text,                 // 必填,缺失的条目被丢弃
+    id: it.id,                        // 建议提供,翻页时用于去重
+    name: it.user,
+    avatar: it.head,
+    badge: it.tag,                    // 徽章文本,如"作者""VIP",显示在用户名旁
+    replies: (it.reply || []).map(r => ({ content: r.text, name: r.user, id: r.id })),
+  }))
+  return { items, nextPageUrl: page < json.totalPage ? "more" : null }  // 非空=还有下一页
+}
+```
+
+- **`getReviewSummary(chapter, book)`** 章节加载后调一次，返回数组，每项 `{paraIndex, count, paraData?}`：
+  `paraIndex`（number）段落序号，1-based，对应正文第 N 段；`count`（number）该段评论数，≤0 的条目被
+  忽略、不显示图标；`paraData`（string，可选）透传给 `getReviewDetail` 的额外数据（加密 token、段落
+  哈希等），缺省时默认用 `paraIndex` 的字符串。
+- **`getReviewDetail(chapter, book, paraIndex, paraData, page)`** 点击段评图标时调，返回
+  `{items, nextPageUrl?}`。`items` 是评论数组，每项只有 `content`（string）必填、缺失的条目被丢弃，
+  其余可选：`id`（string，建议提供，翻页时用于去重）、`name`（缺失显示"匿名"）、`avatar`（头像 URL）、
+  `badge`（徽章文本，显示在用户名旁）、`replies`（子评论数组，结构同主评论、递归嵌套；UI 最多显示两
+  层，更深层级平铺展示）。
+- **翻页**：`nextPageUrl` 只是"有没有下一页"的信号——非空即允许继续翻页，为 null/缺失表示到底，它
+  的值不会回传给函数。翻页时应用把 `page` 参数递增后再调一次 `getReviewDetail`，下一页的请求由脚本
+  用递增后的 `page` 自行拼接（`nextPageUrl` 填任意非空值即可，如 `"more"`）。
+- **错误处理**（同其他 JS 源函数）：`throw "错误信息"` 弹 toast 提示用户（严重错误）；返回空数组或
+  空 `items` 静默表示"无内容"，不报错。
+
 ### 运行环境
 
 - `java.*` 全量可用：`java.ajax(url)` 同步取网页、`java.post(...)`/`java.get(...)`、

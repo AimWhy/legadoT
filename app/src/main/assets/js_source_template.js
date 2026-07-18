@@ -2,6 +2,7 @@
  * 纯 JavaScript 单文件书源模板。
  * source 配置对象加若干函数声明即完整书源：search、getChapters、getContent 必须实现，
  * getBookInfo 可选，source.exploreUrl 与 explore 成对使用。
+ * getReviewSummary 与 getReviewDetail 成对声明即启用段评。
  *
  * - 可直接使用 java、source、cookie、cache、baseUrl 等绑定。网络请求为同步 API，
  *   如 java.ajax(url)；调试输出用 java.log(msg)；完整 API 参阅应用内帮助。
