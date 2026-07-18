@@ -566,6 +566,7 @@ Placeholders:
     <string name="behavior_main_t">Auto hide ToolBar</string>
     <string name="behavior_main_s">The toolbar will be hidden automatically when scroll the Bookshelf</string>
     <string name="login">Login</string>
+    <string name="js_source_no_login">Login is not configured in this source (loginUrl or loginUi)</string>
     <string name="login_source">Login%s</string>
     <string name="success">Success</string>
     <string name="source_no_login">The current source has not configured with a login address</string>

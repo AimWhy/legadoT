@@ -15,6 +15,7 @@ import io.legado.app.help.source.SourceHelp
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.model.jsSource.JsSourceConfig
 import io.legado.app.ui.book.source.debug.BookSourceDebugActivity
+import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.widget.code.addJsPattern
 import io.legado.app.ui.widget.dialog.CodeEditorWebViewPool
 import io.legado.app.utils.getClipText
@@ -215,6 +216,17 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>(),
             R.id.menu_debug_source -> saveSource(showSuccessToast = false) { source ->
                 startActivity<BookSourceDebugActivity> {
                     putExtra("key", source.bookSourceUrl)
+                }
+            }
+            // 登录页读库内数据,先静默落库;两登录字段全空时提示而非空转
+            R.id.menu_login -> saveSource(showSuccessToast = false) { source ->
+                if (source.loginUrl.isNullOrBlank() && source.loginUi.isNullOrBlank()) {
+                    toastOnUi(R.string.js_source_no_login)
+                } else {
+                    startActivity<SourceLoginActivity> {
+                        putExtra("type", "bookSource")
+                        putExtra("key", source.bookSourceUrl)
+                    }
                 }
             }
             R.id.menu_copy_source -> withEditorText { sendToClip(it) }

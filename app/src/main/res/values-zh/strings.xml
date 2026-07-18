@@ -536,6 +536,7 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="behavior_main_t">书架工具栏自动隐藏</string>
     <string name="behavior_main_s">滚动书架时工具栏自动隐藏与显示</string>
     <string name="login">登录</string>
+    <string name="js_source_no_login">该源未配置登录（loginUrl 或 loginUi）</string>
     <string name="login_source">登录 %s</string>
     <string name="success">成功</string>
     <string name="source_no_login">当前源没有配置登陆地址</string>
