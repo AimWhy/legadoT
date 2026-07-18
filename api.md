@@ -323,3 +323,14 @@ Method = query
 URL = content://providerHost/book/cover/query?path=xxxx
 Method = query
 ```
+
+## MCP 服务
+
+App 内直出 MCP server(Streamable HTTP,端点 `/mcp`,端口默认 1236,可在设置修改)。设置页开启「MCP 服务」后,PC 侧一条命令注册:
+
+```
+claude mcp add legado --scope user --transport http http://<手机IP>:1236/mcp
+```
+
+工具 8 个:save_source / debug_source / list_sources / get_source / delete_sources / get_http_logs / get_http_log / set_http_log_recording。
+与「Web 服务」相互独立;工具直调 App 内部,Web 服务关闭时全部可用。

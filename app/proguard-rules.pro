@@ -154,3 +154,8 @@ cn.hutool.core.util.**{*;}
 # Throwable
 -keepnames class * extends java.lang.Throwable
 -keepclassmembernames,allowobfuscation class * extends java.lang.Throwable{*;}
+
+# MCP SDK:kotlinx-serialization 序列化器按名访问,整包保留(库量小)
+-keep class io.modelcontextprotocol.** { *; }
+-dontwarn io.ktor.**
+-dontwarn org.slf4j.**
