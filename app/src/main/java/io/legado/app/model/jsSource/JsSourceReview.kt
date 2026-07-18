@@ -66,7 +66,7 @@ object JsSourceReview {
             GSON.fromJson(json, JsonObject::class.java)
         }.getOrNull() ?: return null
 
-        val itemsArray = obj.getAsJsonArray("items") ?: return null
+        val itemsArray = obj.optArray("items") ?: return null
         val items = parseDetailItems(itemsArray)
         val nextPageUrl = obj.optString("nextPageUrl")
 
@@ -78,7 +78,7 @@ object JsSourceReview {
         array.forEach { element ->
             val obj = element as? JsonObject ?: return@forEach
             val content = obj.optString("content")?.takeIf { it.isNotBlank() } ?: return@forEach
-            val repliesArray = obj.getAsJsonArray("replies")
+            val repliesArray = obj.optArray("replies")
             val replies = if (repliesArray != null) {
                 parseDetailItems(repliesArray)
             } else {
@@ -114,5 +114,15 @@ object JsSourceReview {
         val element = get(key) ?: return null
         if (element.isJsonNull) return null
         return runCatching { element.asString }.getOrNull()
+    }
+
+    /**
+     * 取数组字段:键缺失或 JSON null 返回 null;非数组型经 runCatching 兜底为 null。
+     * 防止 {replies:null} 等常见形态下 (JsonArray) JsonNull 抛 ClassCastException。
+     */
+    private fun JsonObject.optArray(key: String): JsonArray? {
+        val element = get(key) ?: return null
+        if (element.isJsonNull) return null
+        return runCatching { element as? JsonArray }.getOrNull()
     }
 }

@@ -205,4 +205,36 @@ class JsSourceReviewTest {
         assertEquals(1, result!!.first.size)
         assertEquals("正常评论", result.first[0].content)
     }
+
+    @Test
+    fun parseDetailRepliesNullDoesNotCrash() = runBlocking {
+        val source = BookSource(
+            bookSourceUrl = "https://a.com",
+            mainJs = """
+                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                function search(k,p) { return [] }
+                function getChapters(b) { return [] }
+                function getContent(c,b) { return "" }
+                function getReviewSummary(c,b) { return [] }
+                function getReviewDetail(c,b,pi,pd,pg) {
+                    return {
+                        items: [
+                            { content: "评论", replies: null },
+                            { content: "无replies字段" }
+                        ],
+                        nextPageUrl: null
+                    }
+                }
+            """.trimIndent()
+        )
+        val book = Book(bookUrl = "https://a.com/book/1", name = "测试书")
+        val chapter = BookChapter(bookUrl = book.bookUrl, title = "第1章", url = "https://a.com/c1")
+
+        val result = JsSourceReview.getReviewDetailAwait(source, book, chapter, 1, "", 1)
+
+        assertNotNull(result)
+        assertEquals(2, result!!.first.size)
+        assertTrue(result.first[0].replies.isEmpty())
+        assertTrue(result.first[1].replies.isEmpty())
+    }
 }
