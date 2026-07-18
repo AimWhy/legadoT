@@ -21,7 +21,7 @@ async function connect(): Promise<Client> {
 }
 
 describe("legado mcp server", () => {
-  it("stdio 起服并暴露 7 个工具", async () => {
+  it("stdio 起服并暴露 8 个工具", async () => {
     const client = await connect();
     try {
       const { tools } = await client.listTools();
@@ -33,6 +33,7 @@ describe("legado mcp server", () => {
         "get_source",
         "list_sources",
         "save_source",
+        "set_http_log_recording",
       ]);
     } finally {
       await client.close();

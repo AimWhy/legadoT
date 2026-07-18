@@ -188,7 +188,7 @@ export function registerTools(server: McpServer): void {
         );
         const head = data.recording
           ? `最新 ${lines.length} 条(内存上限 50):`
-          : "「记录HTTP日志」开关未开启(App 设置→记录HTTP日志),以下为开关关闭前的残留记录:";
+          : "「记录HTTP日志」开关未开启(可用 set_http_log_recording 开启),以下为开关关闭前的残留记录:";
         return ok(head + "\n" + (lines.length ? lines.join("\n") : "(空)"));
       } catch (e) {
         return err(e);
@@ -227,6 +227,29 @@ export function registerTools(server: McpServer): void {
           parts.push("", "-- 错误 --", String(r.error));
         }
         return ok(parts.join("\n"));
+      } catch (e) {
+        return err(e);
+      }
+    },
+  );
+
+  server.registerTool(
+    "set_http_log_recording",
+    {
+      description:
+        "远程开关阅读T的「记录HTTP日志」,与 App 设置页开关同步。开启后 App 发出的请求才会被记录(get_http_logs 可查);" +
+        "调试深挖前开启,收尾时关闭。状态持久在 App 设置里,非会话态;切换不清空已有记录。",
+      inputSchema: {
+        enabled: z.boolean().describe("true 开启记录,false 关闭"),
+      },
+    },
+    async ({ enabled }) => {
+      try {
+        const data = (await appPost(
+          "/setHttpLogRecording",
+          JSON.stringify({ enabled }),
+        )) as { recording: boolean };
+        return ok(`「记录HTTP日志」已${data.recording ? "开启" : "关闭"}`);
       } catch (e) {
         return err(e);
       }
