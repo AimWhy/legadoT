@@ -37,6 +37,7 @@ import io.legado.app.model.analyzeRule.AnalyzeRule
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setChapter
 import io.legado.app.model.analyzeRule.AnalyzeRule.Companion.setCoroutineContext
 import io.legado.app.model.analyzeRule.AnalyzeUrl
+import io.legado.app.model.jsSource.JsSourceReview
 import io.legado.app.utils.NetworkUtils
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.gone
@@ -381,6 +382,21 @@ class ReviewDetailDialog() : BaseDialogFragment(R.layout.dialog_recycler_view) {
         isLoading = true
         Coroutine.async(lifecycleScope, IO) {
             val source = ReadBook.bookSource ?: return@async null
+            val book = ReadBook.book ?: return@async null
+            val chapterIndex = ReadBook.durChapterIndex
+            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, chapterIndex) ?: return@async null
+            val rawKey = ChapterProvider.getReviewKeyById(paragraphNum)
+            val paraData = rawKey?.takeIf { it.isNotBlank() } ?: ""
+            if (source.isJsSource()) {
+                val result = JsSourceReview.getReviewDetailAwait(
+                    source, book, chapter, paragraphNum, paraData, page
+                ) ?: return@async null
+                return@async ReviewResult(
+                    items = result.first.map { convertJsReviewItemToUi(it) },
+                    nextPageUrl = result.second,
+                    hasNextPageRule = result.second != null
+                )
+            }
             val rule = source.ruleReview ?: return@async null
             if (!rule.enabled) return@async null
             val firstPageUrlRule = rule.reviewDetailUrl?.takeIf { it.isNotBlank() } ?: return@async null
@@ -395,12 +411,7 @@ class ReviewDetailDialog() : BaseDialogFragment(R.layout.dialog_recycler_view) {
             if (rule.detailListRule.isNullOrBlank() || rule.detailContentRule.isNullOrBlank()) {
                 return@async null
             }
-            val book = ReadBook.book ?: return@async null
-            val chapterIndex = ReadBook.durChapterIndex
-            val chapter = appDb.bookChapterDao.getChapter(book.bookUrl, chapterIndex) ?: return@async null
-            val rawKey = ChapterProvider.getReviewKeyById(paragraphNum)
             val paraIndex = paragraphNum.toString()
-            val paraData = rawKey?.takeIf { it.isNotBlank() } ?: ""
             val analyzeUrl = AnalyzeUrl(
                 detailUrlRule,
                 page = page,
@@ -556,6 +567,48 @@ class ReviewDetailDialog() : BaseDialogFragment(R.layout.dialog_recycler_view) {
         val nextPageUrl: String?,
         val hasNextPageRule: Boolean
     )
+
+    /**
+     * 引擎层 JsSourceReview.ReviewDetailItem 转 UI 层 ReviewDetailItem。
+     * badge(单值)映射为 badges 列表;JS 契约无 img/audio/time/likeCount 字段,对应 UI 字段取 null。
+     * 嵌套 replies 平铺为单层:UI 渲染路径(flattenItems)只展示主评论+一层回复,
+     * 平铺后每条回复为叶子,与声明式源产出的一层回复结构一致。
+     */
+    private fun convertJsReviewItemToUi(item: JsSourceReview.ReviewDetailItem): ReviewDetailItem {
+        val flatReplies = flattenJsReplies(item.replies).map { jsReviewItemToUi(it, emptyList()) }
+        return jsReviewItemToUi(item, flatReplies)
+    }
+
+    private fun jsReviewItemToUi(
+        item: JsSourceReview.ReviewDetailItem,
+        replies: List<ReviewDetailItem>
+    ): ReviewDetailItem {
+        return ReviewDetailItem(
+            id = item.id,
+            avatar = item.avatar,
+            name = item.name,
+            badges = item.badge?.takeIf { it.isNotBlank() }?.let { listOf(it) } ?: emptyList(),
+            content = item.content,
+            imageUrl = null,
+            audioUrl = null,
+            time = null,
+            likeCount = null,
+            replyCount = null,
+            replies = replies
+        )
+    }
+
+    private fun flattenJsReplies(
+        replies: List<JsSourceReview.ReviewDetailItem>
+    ): List<JsSourceReview.ReviewDetailItem> {
+        if (replies.isEmpty()) return emptyList()
+        val flat = ArrayList<JsSourceReview.ReviewDetailItem>()
+        replies.forEach { reply ->
+            flat.add(reply)
+            flat.addAll(flattenJsReplies(reply.replies))
+        }
+        return flat
+    }
 
     private data class ReviewDetailItem(
         val id: String?,
