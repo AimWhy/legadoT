@@ -11,9 +11,9 @@ class HighlightTitleOptionTest {
         val entity = File("src/main/java/io/legado/app/data/entities/HighlightRule.kt").readText()
         assertTrue("HighlightRule 应有 applyToTitle 列", entity.contains("var applyToTitle"))
         val db = File("src/main/java/io/legado/app/data/AppDatabase.kt").readText()
-        assertTrue("DB 版本应升到 86", db.contains("version = 86"))
-        assertTrue("应有 84→85 AutoMigration", db.contains("AutoMigration(from = 84, to = 85)"))
+        assertTrue("DB 版本应升到 87", db.contains("version = 87"))
         assertTrue("应有 85→86 AutoMigration", db.contains("AutoMigration(from = 85, to = 86)"))
+        assertTrue("应有 86→87 AutoMigration", db.contains("AutoMigration(from = 86, to = 87)"))
     }
 
     @Test
