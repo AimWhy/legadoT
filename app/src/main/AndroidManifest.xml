@@ -502,6 +502,9 @@
             android:name=".service.WebService"
             android:foregroundServiceType="dataSync" />
         <service
+            android:name=".service.McpService"
+            android:foregroundServiceType="dataSync" />
+        <service
             android:name=".service.AutoTaskService"
             android:foregroundServiceType="dataSync|shortService" />
         <service

@@ -167,6 +167,10 @@
             android:title="@string/web_port_title" />
 
         <io.legado.app.lib.prefs.Preference
+            android:key="mcpPort"
+            android:title="@string/web_port_title" />
+
+        <io.legado.app.lib.prefs.Preference
             android:key="cleanCache"
             android:summary="@string/clear_cache_summary"
             android:title="@string/clear_cache" />

@@ -26,6 +26,7 @@ import io.legado.app.model.CheckSource
 import io.legado.app.model.ImageProvider
 import io.legado.app.receiver.SharedReceiverActivity
 import io.legado.app.service.WebService
+import io.legado.app.service.McpService
 import io.legado.app.ui.file.HandleFileContract
 import io.legado.app.ui.widget.number.NumberPickerDialog
 import io.legado.app.utils.LogUtils
@@ -64,6 +65,7 @@ class OtherConfigFragment : PreferenceFragment(),
         upPreferenceSummary(PreferKey.preDownloadNum, AppConfig.preDownloadNum.toString())
         upPreferenceSummary(PreferKey.threadCount, AppConfig.threadCount.toString())
         upPreferenceSummary(PreferKey.webPort, AppConfig.webPort.toString())
+        upPreferenceSummary(PreferKey.mcpPort, AppConfig.mcpPort.toString())
         AppConfig.defaultBookTreeUri?.let {
             upPreferenceSummary(PreferKey.defaultBookTreeUri, it)
         }
@@ -118,6 +120,15 @@ class OtherConfigFragment : PreferenceFragment(),
                 .setValue(AppConfig.webPort)
                 .show {
                     AppConfig.webPort = it
+                }
+
+            PreferKey.mcpPort -> NumberPickerDialog(requireContext())
+                .setTitle(getString(R.string.web_port_title))
+                .setMaxValue(60000)
+                .setMinValue(1024)
+                .setValue(AppConfig.mcpPort)
+                .show {
+                    AppConfig.mcpPort = it
                 }
 
             PreferKey.cleanCache -> clearCache()
@@ -180,6 +191,14 @@ class OtherConfigFragment : PreferenceFragment(),
                 }
             }
 
+            PreferKey.mcpPort -> {
+                upPreferenceSummary(key, AppConfig.mcpPort.toString())
+                if (McpService.isRun) {
+                    McpService.stop(requireContext())
+                    McpService.start(requireContext())
+                }
+            }
+
             PreferKey.defaultBookTreeUri -> {
                 upPreferenceSummary(key, AppConfig.defaultBookTreeUri)
             }
@@ -232,6 +251,7 @@ class OtherConfigFragment : PreferenceFragment(),
 
             PreferKey.threadCount -> preference.summary = getString(R.string.threads_num, value)
             PreferKey.webPort -> preference.summary = getString(R.string.web_port_summary, value)
+            PreferKey.mcpPort -> preference.summary = getString(R.string.web_port_summary, value)
             PreferKey.bitmapCacheSize -> preference.summary =
                 getString(R.string.bitmap_cache_size_summary, value)
             PreferKey.imageRetainNum -> preference.summary =

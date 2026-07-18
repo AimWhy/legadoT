@@ -91,6 +91,8 @@
     <string name="retry">Reintentar</string>
     <string name="web_service">Servicio Web</string>
     <string name="web_service_desc">Fuente de edición web y lectura de libros</string>
+    <string name="mcp_service">MCP 服务</string>
+    <string name="mcp_service_desc">AI 客户端直连的书源开发接口,注册见 api.md 的 MCP 小节</string>
     <string name="web_edit_source">Editar fuentes de libros en la web</string>
     <string name="offline_cache">Caché sin conexión</string>
     <string name="offline_cache_t">Caché sin conexión</string>
