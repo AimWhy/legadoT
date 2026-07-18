@@ -93,3 +93,32 @@ function getContent(chapter, book) {
   // return java.htmlFormat(org.jsoup.Jsoup.parse(html).select("div.content").html(), chapter.url)
   return html
 }
+
+/**
+ * 段评统计，与 getReviewDetail 成对使用。章节加载后调用，返回各段落的评论数。
+ * @param {Object} chapter 章节对象
+ * @param {Object} book 书籍对象
+ * @returns { [{paraIndex, count, paraData}] } 数组或 JSON 字符串；paraIndex 段落序号（从 1 起），count 评论数（≤0 忽略），paraData 可选，传给 getReviewDetail
+ */
+function getReviewSummary(chapter, book) {
+  const html = java.ajax(`${source.bookSourceUrl}/review/summary?cid=${chapter.url}`)
+  const list = []
+  // list.push({ paraIndex: 1, count: 5, paraData: "token" })
+  return list
+}
+
+/**
+ * 段评详情，与 getReviewSummary 成对使用。点击段评图标时调用，支持翻页。
+ * @param {Object} chapter 章节对象
+ * @param {Object} book 书籍对象
+ * @param {number} paraIndex 段落序号
+ * @param {string} paraData getReviewSummary 返回的附加数据，可能为空字符串
+ * @param {number} page 页码，从 1 开始
+ * @returns { {items: [{content, id, name, avatar, badge, replies}], nextPageUrl} } content 必填，replies 为同结构子评论数组；nextPageUrl 非空则可继续翻页，翻页由 page 递增自行拼接
+ */
+function getReviewDetail(chapter, book, paraIndex, paraData, page) {
+  const html = java.ajax(`${source.bookSourceUrl}/review/detail?para=${paraIndex}&page=${page}`)
+  const items = []
+  // items.push({ content: "评论内容", name: "用户名", replies: [{ content: "回复内容" }] })
+  return { items, nextPageUrl: null }
+}
