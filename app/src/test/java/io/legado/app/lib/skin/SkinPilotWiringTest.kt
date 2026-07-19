@@ -107,7 +107,6 @@ class SkinPilotWiringTest {
     fun `static background accent error migrated and group row manual paint is gone`() {
         // 代表性布局:双写(静态留作兜底 + skin 角色声明)
         mapOf(
-            "activity_main" to """app:skin_background="background"""",
             "item_group_manage" to """app:skin_background="background"""",
             "dialog_chapter_change_source" to """app:skin_background="background"""",
             "activity_welcome" to """app:skin_background="primary"""",
@@ -139,6 +138,11 @@ class SkinPilotWiringTest {
         assertFalse(
             "view_book_page 不应有 skin 声明(阅读器自绘)",
             readProjectFile("src/main/res/layout/view_book_page.xml").contains("app:skin_")
+        )
+        assertFalse(
+            "主界面底栏背景由 ThemeBottomNavigationVIew 按沉浸式设置管理",
+            readProjectFile("src/main/res/layout/activity_main.xml")
+                .contains("app:skin_background")
         )
     }
 
