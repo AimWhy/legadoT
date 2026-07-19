@@ -11,7 +11,7 @@ import org.junit.Test
 class JsSourceImportBadgeProbeTest {
 
     private fun script(configLines: String) = """
-        var source = {
+        var config = {
           bookSourceUrl: "https://example.com",
           bookSourceName: "探针源"$configLines
         }

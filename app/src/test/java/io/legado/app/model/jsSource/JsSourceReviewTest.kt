@@ -18,7 +18,7 @@ class JsSourceReviewTest {
             bookSourceUrl = "https://a.com",
             bookSourceName = "段评测试",
             mainJs = """
-                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                var config = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
                 function search(k,p) { return [] }
                 function getChapters(b) { return [] }
                 function getContent(c,b) { return "" }
@@ -49,7 +49,7 @@ class JsSourceReviewTest {
         val source = BookSource(
             bookSourceUrl = "https://a.com",
             mainJs = """
-                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                var config = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
                 function search(k,p) { return [] }
                 function getChapters(b) { return [] }
                 function getContent(c,b) { return "" }
@@ -78,7 +78,7 @@ class JsSourceReviewTest {
         val source = BookSource(
             bookSourceUrl = "https://a.com",
             mainJs = """
-                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                var config = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
                 function search(k,p) { return [] }
                 function getChapters(b) { return [] }
                 function getContent(c,b) { return "" }
@@ -100,7 +100,7 @@ class JsSourceReviewTest {
         val source = BookSource(
             bookSourceUrl = "https://a.com",
             mainJs = """
-                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                var config = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
                 function search(k,p) { return [] }
                 function getChapters(b) { return [] }
                 function getContent(c,b) { return "" }
@@ -137,7 +137,7 @@ class JsSourceReviewTest {
         val source = BookSource(
             bookSourceUrl = "https://a.com",
             mainJs = """
-                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                var config = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
                 function search(k,p) { return [] }
                 function getChapters(b) { return [] }
                 function getContent(c,b) { return "" }
@@ -180,7 +180,7 @@ class JsSourceReviewTest {
         val source = BookSource(
             bookSourceUrl = "https://a.com",
             mainJs = """
-                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                var config = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
                 function search(k,p) { return [] }
                 function getChapters(b) { return [] }
                 function getContent(c,b) { return "" }
@@ -211,7 +211,7 @@ class JsSourceReviewTest {
         val source = BookSource(
             bookSourceUrl = "https://a.com",
             mainJs = """
-                var source = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
+                var config = { bookSourceUrl: "https://a.com", bookSourceName: "test" }
                 function search(k,p) { return [] }
                 function getChapters(b) { return [] }
                 function getContent(c,b) { return "" }

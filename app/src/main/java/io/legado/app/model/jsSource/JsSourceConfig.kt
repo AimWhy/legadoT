@@ -36,24 +36,24 @@ object JsSourceConfig {
         } catch (e: Exception) {
             throw NoStackTraceException("JS源脚本执行失败: ${e.message}")
         }
-        val configRaw = ScriptableObject.getProperty(scope, "source")
+        val configRaw = ScriptableObject.getProperty(scope, "config")
         if (configRaw == null || configRaw === Scriptable.NOT_FOUND) {
-            throw NoStackTraceException("JS源缺少顶层 source 配置对象")
+            throw NoStackTraceException("JS源缺少顶层 config 配置对象")
         }
         val json = JsSourceEngine.normalizeJsResult(configRaw, coroutineContext)
-            ?: throw NoStackTraceException("source 配置对象无法解析")
+            ?: throw NoStackTraceException("config 配置对象无法解析")
         val jsonObj = runCatching { GSON.fromJson(json, JsonObject::class.java) }.getOrNull()
-            ?: throw NoStackTraceException("source 配置对象不是合法对象")
+            ?: throw NoStackTraceException("config 配置对象不是合法对象")
         strippedKeys.forEach { jsonObj.remove(it) }
         normalizeExploreUrl(jsonObj)
         normalizeLoginUi(jsonObj)
         val bookSource = runCatching { GSON.fromJson(jsonObj, BookSource::class.java) }.getOrNull()
-            ?: throw NoStackTraceException("source 配置对象字段类型不符")
+            ?: throw NoStackTraceException("config 配置对象字段类型不符")
         if (bookSource.bookSourceUrl.isNullOrBlank()) {
-            throw NoStackTraceException("JS源 source.bookSourceUrl 不能为空")
+            throw NoStackTraceException("JS源 config.bookSourceUrl 不能为空")
         }
         if (bookSource.bookSourceName.isNullOrBlank()) {
-            throw NoStackTraceException("JS源 source.bookSourceName 不能为空")
+            throw NoStackTraceException("JS源 config.bookSourceName 不能为空")
         }
         requiredFunctions.forEach { name ->
             if (ScriptableObject.getProperty(scope, name) !is JsFunction) {

@@ -10,7 +10,7 @@ import org.junit.Test
 class JsSourceConfigTest {
 
     private val validScript = """
-        var source = {
+        var config = {
           bookSourceUrl: "https://example.com",
           bookSourceName: "示例源",
           bookSourceType: 0,
@@ -43,14 +43,14 @@ class JsSourceConfigTest {
 
     @Test
     fun missingConfigObject() {
-        assertExtractError("function search(k, p) { return [] }", "source 配置")
+        assertExtractError("function search(k, p) { return [] }", "config 配置")
     }
 
     @Test
     fun missingBookSourceUrl() {
         assertExtractError(
             """
-            var source = { bookSourceName: "无url" }
+            var config = { bookSourceName: "无url" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -63,7 +63,7 @@ class JsSourceConfigTest {
     fun missingRequiredFunction() {
         assertExtractError(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "缺函数" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "缺函数" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             """.trimIndent(),
@@ -82,7 +82,7 @@ class JsSourceConfigTest {
     fun declarativeRuleKeysStripped() {
         val s = JsSourceConfig.extract(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "带规则",
               ruleSearch: { bookList: "hack" },
@@ -101,7 +101,7 @@ class JsSourceConfigTest {
     fun exploreUrlRequiresExploreFunction() {
         assertExtractError(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "缺发现", exploreUrl: "玄幻::/sort/1" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "缺发现", exploreUrl: "玄幻::/sort/1" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -114,7 +114,7 @@ class JsSourceConfigTest {
     fun exploreUrlWithExploreFunctionPasses() {
         val s = JsSourceConfig.extract(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "带发现", exploreUrl: "玄幻::/sort/1" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "带发现", exploreUrl: "玄幻::/sort/1" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -128,7 +128,7 @@ class JsSourceConfigTest {
     fun exploreUrlArrayNormalizedToJsonString() {
         val s = JsSourceConfig.extract(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "数组发现",
               exploreUrl: [
@@ -157,7 +157,7 @@ class JsSourceConfigTest {
     fun exploreUrlArrayItemMissingTitleFails() {
         assertExtractError(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "坏发现",
               exploreUrl: [ { url: "/sort/1" } ]
@@ -176,7 +176,7 @@ class JsSourceConfigTest {
         // 模板留空态:空数组=未声明分类,不触发 explore 配对校验(此脚本未实现 explore)
         val s = JsSourceConfig.extract(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "空发现", exploreUrl: [] }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "空发现", exploreUrl: [] }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -189,7 +189,7 @@ class JsSourceConfigTest {
     fun exploreUrlArrayStillRequiresExploreFunction() {
         assertExtractError(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "数组缺函数",
               exploreUrl: [ { title: "玄幻", url: "/sort/1" } ]
@@ -204,9 +204,9 @@ class JsSourceConfigTest {
 
     @Test
     fun stampRewritesNumericLiteralAndKeepsComment() {
-        val text = "var source = {\n  lastUpdateTime: 0 // 版本时间戳,写死毫秒数值\n}"
+        val text = "var config = {\n  lastUpdateTime: 0 // 版本时间戳,写死毫秒数值\n}"
         assertEquals(
-            "var source = {\n  lastUpdateTime: 123 // 版本时间戳,写死毫秒数值\n}",
+            "var config = {\n  lastUpdateTime: 123 // 版本时间戳,写死毫秒数值\n}",
             JsSourceConfig.stampLastUpdateTime(text, 123),
         )
     }
@@ -214,28 +214,28 @@ class JsSourceConfigTest {
     @Test
     fun stampRewritesDateNowAndQuotedKey() {
         assertEquals(
-            "var source = { lastUpdateTime: 123 }",
-            JsSourceConfig.stampLastUpdateTime("var source = { lastUpdateTime: Date.now() }", 123),
+            "var config = { lastUpdateTime: 123 }",
+            JsSourceConfig.stampLastUpdateTime("var config = { lastUpdateTime: Date.now() }", 123),
         )
         assertEquals(
-            "var source = { \"lastUpdateTime\": 123 }",
-            JsSourceConfig.stampLastUpdateTime("var source = { \"lastUpdateTime\": 0 }", 123),
+            "var config = { \"lastUpdateTime\": 123 }",
+            JsSourceConfig.stampLastUpdateTime("var config = { \"lastUpdateTime\": 0 }", 123),
         )
     }
 
     @Test
     fun stampOnlyFirstDeclaration() {
-        val text = "var source = { lastUpdateTime: 1 }\nvar other = { lastUpdateTime: 2 }"
+        val text = "var config = { lastUpdateTime: 1 }\nvar other = { lastUpdateTime: 2 }"
         assertEquals(
-            "var source = { lastUpdateTime: 123 }\nvar other = { lastUpdateTime: 2 }",
+            "var config = { lastUpdateTime: 123 }\nvar other = { lastUpdateTime: 2 }",
             JsSourceConfig.stampLastUpdateTime(text, 123),
         )
     }
 
     @Test
     fun stampMissingOrExpressionDeclarationReturnsNull() {
-        assertNull(JsSourceConfig.stampLastUpdateTime("var source = { bookSourceUrl: \"a\" }", 123))
-        assertNull(JsSourceConfig.stampLastUpdateTime("var source = { lastUpdateTime: base + 1 }", 123))
+        assertNull(JsSourceConfig.stampLastUpdateTime("var config = { bookSourceUrl: \"a\" }", 123))
+        assertNull(JsSourceConfig.stampLastUpdateTime("var config = { lastUpdateTime: base + 1 }", 123))
     }
 
     @Test
@@ -244,7 +244,7 @@ class JsSourceConfigTest {
         assertExtractError(
             """
             var probe = java.ajax("https://evil.com")
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "越权" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "越权" }
             """.trimIndent(),
             "执行失败",
         )
@@ -254,7 +254,7 @@ class JsSourceConfigTest {
     fun loginUiArrayNormalizedToJsonString() {
         val s = JsSourceConfig.extract(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "表单登录",
               loginUi: [
@@ -286,7 +286,7 @@ class JsSourceConfigTest {
         // 模板留空态:空数组=未声明,不触发 login 配对校验(此脚本未实现 login)
         val s = JsSourceConfig.extract(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "空表单", loginUi: [] }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "空表单", loginUi: [] }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -299,7 +299,7 @@ class JsSourceConfigTest {
     fun loginUiStringFormPreserved() {
         val s = JsSourceConfig.extract(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "字符串表单",
               loginUi: '[{"name":"账号","type":"text"}]'
@@ -317,7 +317,7 @@ class JsSourceConfigTest {
     fun loginUiArrayItemMissingNameFails() {
         assertExtractError(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "坏表单",
               loginUi: [ { type: "text" } ]
@@ -335,7 +335,7 @@ class JsSourceConfigTest {
     fun loginUiRequiresLoginFunction() {
         assertExtractError(
             """
-            var source = {
+            var config = {
               bookSourceUrl: "https://a.com",
               bookSourceName: "缺登录函数",
               loginUi: [ { name: "账号", type: "text" } ]
@@ -353,7 +353,7 @@ class JsSourceConfigTest {
         // WebView 登录形态:只声明 loginUrl,无需 login 函数
         val s = JsSourceConfig.extract(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "网页登录", loginUrl: "https://a.com/login" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "网页登录", loginUrl: "https://a.com/login" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -366,7 +366,7 @@ class JsSourceConfigTest {
     fun reviewFunctionsPairValid() {
         val s = JsSourceConfig.extract(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "段评源" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "段评源" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -381,7 +381,7 @@ class JsSourceConfigTest {
     fun reviewSummaryWithoutDetailFails() {
         assertExtractError(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "缺detail" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "缺detail" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }
@@ -395,7 +395,7 @@ class JsSourceConfigTest {
     fun reviewDetailWithoutSummaryFails() {
         assertExtractError(
             """
-            var source = { bookSourceUrl: "https://a.com", bookSourceName: "缺summary" }
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "缺summary" }
             function search(k, p) { return [] }
             function getChapters(b) { return [] }
             function getContent(c, b) { return "" }

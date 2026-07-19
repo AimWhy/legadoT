@@ -392,9 +392,22 @@ $cache = NormalizeEntry $cache
 $book = NormalizeEntry $book
 $chapter = NormalizeEntry $chapter
 
+# JS 源顶层 config 对象的键面:JsSourceConfig 提取契约(与 validate-jssource.js VALID_CONFIG_KEYS 同源),
+# 非实体反射派生——config 是脚本字面量,合法键即可写键
+$config = [ordered]@{
+  props = @(
+    'bookSourceComment','bookSourceGroup','bookSourceName','bookSourceType','bookSourceUrl',
+    'bookUrlPattern','concurrentRate','coverDecodeJs','customButton','enabledCookieJar',
+    'eventListener','exploreUrl','header','jsLib','lastUpdateTime','loginCheckJs',
+    'loginUi','loginUrl','variableComment'
+  )
+  methods = @()
+}
+
 $custom = [ordered]@{
   java    = $java
   source  = $source
+  config  = $config
   cookie  = $cookie
   cache   = $cache
   book    = $book

@@ -1,7 +1,7 @@
 /**
  * 纯 JavaScript 单文件书源模板。
- * source 配置对象加若干函数声明即完整书源：search、getChapters、getContent 必须实现，
- * getBookInfo 可选，source.exploreUrl 与 explore 成对使用。
+ * config 配置对象加若干函数声明即完整书源：search、getChapters、getContent 必须实现，
+ * getBookInfo 可选，config.exploreUrl 与 explore 成对使用。
  * getReviewSummary 与 getReviewDetail 成对声明即启用段评。
  *
  * - 可直接使用 java、source、cookie、cache、baseUrl 等绑定。网络请求为同步 API，
@@ -18,10 +18,10 @@
  * loginUi（表单登录，RowUi 数组，与顶层 login 函数成对）、concurrentRate、
  * enabledCookieJar 和 jsLib。enabled、customOrder 等用户态字段由应用维护。
  */
-const source = {
+const config = {
   bookSourceUrl: "https://example.com", // 必填；主键，修改后视为新源
-  bookSourceName: "示例JS源",           // 必填
-  bookSourceType: 0,                    // 0 文本，1 音频，2 图片，3 下载
+  bookSourceName: "示例JS源", // 必填
+  bookSourceType: 0, // 0 文本，1 音频，2 图片，3 下载
   bookSourceGroup: "",
   bookSourceComment: "",
   // 发现分类，由 explore 抓取。数组每项 {title, url}，url 原样传入 explore；
@@ -30,8 +30,8 @@ const source = {
     // { title: "玄幻", url: "https://example.com/sort/1.html" },
     // { title: "都市", url: "https://example.com/sort/2.html" },
   ],
-  lastUpdateTime: 0                     // 版本时间戳（毫秒）；导入值较新时提示更新
-}
+  lastUpdateTime: 0, // 版本时间戳（毫秒）；导入值较新时提示更新
+};
 
 /**
  * 搜索书籍。
@@ -40,22 +40,24 @@ const source = {
  * @returns { [{name, bookUrl, author, kind, coverUrl, intro, wordCount, latestChapterTitle, tocUrl, type}] } 书籍数组或 JSON 字符串；name、bookUrl 必填，地址用绝对 URL
  */
 function search(key, page) {
-  const html = java.ajax(`${source.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`)
-  const list = []
+  const html = java.ajax(
+    `${config.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`,
+  );
+  const list = [];
   // list.push({ name: "书名", bookUrl: "https://example.com/book/1", author: "作者" })
-  return list
+  return list;
 }
 
 /**
- * 获取发现页书籍，与 source.exploreUrl 成对使用。
+ * 获取发现页书籍，与 config.exploreUrl 成对使用。
  * @param {string} url exploreUrl 中的分类地址，原样传入
  * @param {number} page 页码，从 1 开始
  * @returns 同 search
  */
 function explore(url, page) {
-  const html = java.ajax(url)
-  const list = []
-  return list
+  const html = java.ajax(url);
+  const list = [];
+  return list;
 }
 
 /**
@@ -64,8 +66,13 @@ function explore(url, page) {
  * @returns { {name, author, intro, coverUrl, kind, wordCount, latestChapterTitle, tocUrl, type, variable} } 字段补丁对象或 JSON 字符串
  */
 function getBookInfo(book) {
-  const html = java.ajax(book.bookUrl)
-  return { intro: "", coverUrl: "", latestChapterTitle: "", tocUrl: book.bookUrl }
+  const html = java.ajax(book.bookUrl);
+  return {
+    intro: "",
+    coverUrl: "",
+    latestChapterTitle: "",
+    tocUrl: book.bookUrl,
+  };
 }
 
 /**
@@ -74,11 +81,11 @@ function getBookInfo(book) {
  * @returns { [{title, url, isVolume, isVip, isPay, wordCount, tag, resourceUrl}] } 目录数组或 JSON 字符串；title、url 必填，数组序即目录序
  */
 function getChapters(book) {
-  const html = java.ajax(book.tocUrl)
-  const chapters = []
+  const html = java.ajax(book.tocUrl);
+  const chapters = [];
   // chapters.push({ title: "第一卷", url: "第一卷", isVolume: true })
   // chapters.push({ title: "第1章", url: "https://example.com/read/1" })
-  return chapters
+  return chapters;
 }
 
 /**
@@ -89,9 +96,9 @@ function getChapters(book) {
  *   也可将正文 HTML 传入 java.htmlFormat(html, chapter.url) 转换为文本并保留插图
  */
 function getContent(chapter, book) {
-  const html = java.ajax(chapter.url)
+  const html = java.ajax(chapter.url);
   // return java.htmlFormat(org.jsoup.Jsoup.parse(html).select("div.content").html(), chapter.url)
-  return html
+  return html;
 }
 
 /**
@@ -101,10 +108,12 @@ function getContent(chapter, book) {
  * @returns { [{paraIndex, count, paraData}] } 数组或 JSON 字符串；paraIndex 段落序号（从 1 起），count 评论数（≤0 忽略），paraData 可选，传给 getReviewDetail
  */
 function getReviewSummary(chapter, book) {
-  const html = java.ajax(`${source.bookSourceUrl}/review/summary?cid=${chapter.url}`)
-  const list = []
+  const html = java.ajax(
+    `${config.bookSourceUrl}/review/summary?cid=${chapter.url}`,
+  );
+  const list = [];
   // list.push({ paraIndex: 1, count: 5, paraData: "token" })
-  return list
+  return list;
 }
 
 /**
@@ -117,8 +126,10 @@ function getReviewSummary(chapter, book) {
  * @returns { {items: [{content, id, name, avatar, badge, replies}], nextPageUrl} } content 必填，replies 为同结构子评论数组；nextPageUrl 非空则可继续翻页，翻页由 page 递增自行拼接
  */
 function getReviewDetail(chapter, book, paraIndex, paraData, page) {
-  const html = java.ajax(`${source.bookSourceUrl}/review/detail?para=${paraIndex}&page=${page}`)
-  const items = []
+  const html = java.ajax(
+    `${config.bookSourceUrl}/review/detail?para=${paraIndex}&page=${page}`,
+  );
+  const items = [];
   // items.push({ content: "评论内容", name: "用户名", replies: [{ content: "回复内容" }] })
-  return { items, nextPageUrl: null }
+  return { items, nextPageUrl: null };
 }

@@ -1,12 +1,13 @@
 # js变量和函数
+
 > 阅读使用[htmlunit-core-js](https://github.com/HtmlUnit/htmlunit-core-js) 作为JavaScript引擎以便于[调用Java类和方法](https://m.jb51.net/article/92138.htm)，查看[ECMAScript兼容性表格](https://mozilla.github.io/rhino/compat/engines.html)
 > [Rhino运行时](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/ScriptRuntime.java)懒加载导入的Java类和方法
 
-|构造函数|函数|对象|调用类|简要说明|
-|------|-----|------|----|------|
-|JavaImporter|importClass importPackage| |[ImporterTopLevel](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/ImporterTopLevel.java)|导入Java类到JavaScript|
-||getClass|Packages java javax ...|[NativeJavaTopPackage](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/NativeJavaTopPackage.java)|默认导入JavaScript中的Java类|
-|JavaAdapter|||[JavaAdapter](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/JavaAdapter.java)|继承Java类|
+| 构造函数     | 函数                      | 对象                    | 调用类                                                                                                                                                              | 简要说明                     |
+| ------------ | ------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| JavaImporter | importClass importPackage |                         | [ImporterTopLevel](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/ImporterTopLevel.java)         | 导入Java类到JavaScript       |
+|              | getClass                  | Packages java javax ... | [NativeJavaTopPackage](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/NativeJavaTopPackage.java) | 默认导入JavaScript中的Java类 |
+| JavaAdapter  |                           |                         | [JavaAdapter](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/JavaAdapter.java)                   | 继承Java类                   |
 
 > 注意`java`变量指向已经被阅读修改，如果想要调用`java.*`下的包，请使用`Packages.java.*`
 
@@ -16,43 +17,46 @@
 
 > 不同的书源规则中支持的调用的Java类和方法可能有所不同
 
-|变量名|调用类|
-|------|-----|
-|java|当前类|
-|baseUrl|当前url,String  |
-|result|上一步的结果|
-|book|[书籍类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/Book.kt)|
-|rssArticle|[Article类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/RssArticle.kt)|
-|chapter|[章节类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/BookChapter.kt)|
-|source|[基础书源类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/BaseSource.kt)|
-|cookie|[cookie操作类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/http/CookieStore.kt)| 
-|cache|[缓存操作类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/CacheManager.kt)|
-|title|章节当前标题 String|
-|src| 请求返回的源码|
-|nextChapterUrl|下一章节url|
+| 变量名         | 调用类                                                                                                                 |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| java           | 当前类                                                                                                                 |
+| baseUrl        | 当前url,String                                                                                                         |
+| result         | 上一步的结果                                                                                                           |
+| book           | [书籍类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/Book.kt)           |
+| rssArticle     | [Article类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/RssArticle.kt)  |
+| chapter        | [章节类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/BookChapter.kt)    |
+| source         | [基础书源类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/BaseSource.kt) |
+| cookie         | [cookie操作类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/http/CookieStore.kt)  |
+| cache          | [缓存操作类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/CacheManager.kt)        |
+| title          | 章节当前标题 String                                                                                                    |
+| src            | 请求返回的源码                                                                                                         |
+| nextChapterUrl | 下一章节url                                                                                                            |
 
 ## 当前类对象的可使用的部分方法
 
 ### [RssJsExtensions](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/ui/rss/read/RssJsExtensions.kt)
+
 > 只能在订阅源`shouldOverrideUrlLoading`规则中使用  
 > 订阅添加跳转url拦截, js, 返回true拦截,js变量url,可以通过js打开url  
 > url跳转拦截规则不能执行耗时操作
 > 例子https://github.com/gedoor/legado/discussions/3259
 
-* 调用阅读搜索
+- 调用阅读搜索
 
 ```js
 java.searchBook(bookName: String)
 ```
 
-* 添加书架
+- 添加书架
 
 ```js
 java.addBook(bookUrl: String)
 ```
 
 ### [AnalyzeUrl](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeUrl.kt) 部分函数
+
 > js中通过java.调用,只在`登录检查JS`规则中有效
+
 ```js
 initUrl() //重新解析url,可以用于登录检测js登录后重新解析url重新访问
 getHeaderMap().putAll(source.getHeaderMap(true)) //重新设置登录头
@@ -61,20 +65,23 @@ getResponse(): Response //返回访问结果,网络朗读引擎采用的是这�
 ```
 
 ### [AnalyzeRule](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeRule.kt) 部分函数
-* 获取文本/文本列表
-> `mContent` 待解析源代码，默认为当前页面  
-> `isUrl` 链接标识，默认为`false`
+
+- 获取文本/文本列表
+  > `mContent` 待解析源代码，默认为当前页面  
+  > `isUrl` 链接标识，默认为`false`
+
 ```js
 java.getString(ruleStr: String?, mContent: Any? = null, isUrl: Boolean = false)
 java.getStringList(ruleStr: String?, mContent: Any? = null, isUrl: Boolean = false)
 ```
-* 设置解析内容
+
+- 设置解析内容
 
 ```js
 java.setContent(content: Any?, baseUrl: String? = null):
 ```
 
-* 获取Element/Element列表
+- 获取Element/Element列表
 
 > 如果要改变解析源代码，请先使用`java.setContent`
 
@@ -83,22 +90,23 @@ java.getElement(ruleStr: String)
 java.getElements(ruleStr: String)
 ```
 
-* 重新搜索书籍/重新获取目录url
+- 重新搜索书籍/重新获取目录url
 
 > 只能在刷新目录之前使用,有些书源书籍地址和目录url会变
 
 ```js
-java.reGetBook()
-java.refreshTocUrl()
+java.reGetBook();
+java.refreshTocUrl();
 ```
-* 变量存取
+
+- 变量存取
 
 ```js
-java.get(key)
-java.put(key, value)
+java.get(key);
+java.put(key, value);
 ```
 
-* 并发合并(single-flight)
+- 并发合并(single-flight)
 
 > 同一 name 并发时只有一个线程跑 action,其余等它完成后跳过、自行读结果;action 失败由下个线程重试,等待超 timeoutMs(默认 15000)抛异常。
 > jsLib 里的函数如需调用java/source等对象需绑定this: fn.bind(this)。
@@ -107,7 +115,7 @@ java.put(key, value)
 java.singleFlight(name: String, action: Function, timeoutMs: Long = 15000)
 ```
 
-* 互斥锁(串行化)
+- 互斥锁(串行化)
 
 > 同一 name 并发时逐个排队、每个都执行(与 single-flight 跳过相反),把整段读-改-写包进 action 避免并发丢失更新;超时与 this 绑定规则同 single-flight。
 
@@ -115,7 +123,7 @@ java.singleFlight(name: String, action: Function, timeoutMs: Long = 15000)
 java.lock(name: String, action: Function, timeoutMs: Long = 15000)
 ```
 
-* 轮询计数器
+- 轮询计数器
 
 > 进程内原子自增计数器,返回非负序号,同 name 跨线程/执行共享;重启归零。
 
@@ -125,20 +133,25 @@ java.tick(name: String): Int
 
 ### [js扩展类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/JsExtensions.kt) 部分函数
 
-* 链接解析[JsURL](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/utils/JsURL.kt)
+- 链接解析[JsURL](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/utils/JsURL.kt)
+
 ```js
 java.toURL(url): JsURL
 java.toURL(url, baseUrl): JsURL
 ```
-* 获取SystemWebView User-Agent
+
+- 获取SystemWebView User-Agent
+
 ```js
 java.getWebViewUA(): String
 ```
-* 网络请求
+
+- 网络请求
+
 ```js
 java.ajax(urlStr): String
 java.ajaxAll(urlList: Array<String>): Array<StrResponse>
-//返回StrResponse 方法body() code() message() headers() raw() toString() 
+//返回StrResponse 方法body() code() message() headers() raw() toString()
 java.connect(urlStr): StrResponse
 
 java.post(url: String, body: String, headerMap: Map<String, String>): Connection.Response
@@ -171,38 +184,50 @@ java.startBrowser(url: String, title: String)
 * 使用内置浏览器打开链接，并等待网页结果 .body()获取网页内容
 java.startBrowserAwait(url: String, title: String, refetchAfterSuccess: Boolean? = true): StrResponse
 ```
-* 调试
+
+- 调试
+
 ```js
 java.log(msg)
 java.logType(var)
 ```
-* 获取用户输入的验证码
+
+- 获取用户输入的验证码
+
 ```js
-java.getVerificationCode(imageUrl)
+java.getVerificationCode(imageUrl);
 ```
-* 弹窗提示
+
+- 弹窗提示
+
 ```js
 java.longToast(msg: Any?)
 java.toast(msg: Any?)
 ```
-* 从网络(由java.cacheFile实现)、本地读取JavaScript文件，导入上下文请手动`eval(String(...))`
+
+- 从网络(由java.cacheFile实现)、本地读取JavaScript文件，导入上下文请手动`eval(String(...))`
+
 ```js
-java.importScript(url)
+java.importScript(url);
 //相对路径支持android/data/{package}/cache
-java.importScript(relativePath)
-java.importScript(absolutePath)
+java.importScript(relativePath);
+java.importScript(absolutePath);
 ```
-* 缓存网络文件
+
+- 缓存网络文件
+
 ```js
-获取
-java.cacheFile(url)
-java.cacheFile(url,saveTime)
-执行内容
-eval(String(java.cacheFile(url)))
-使缓存失效
-cache.delete(java.md5Encode16(url))
+获取;
+java.cacheFile(url);
+java.cacheFile(url, saveTime);
+执行内容;
+eval(String(java.cacheFile(url)));
+使缓存失效;
+cache.delete(java.md5Encode16(url));
 ```
-* 获取网络压缩文件里面指定路径的数据 *可替换Zip Rar 7Z
+
+- 获取网络压缩文件里面指定路径的数据 \*可替换Zip Rar 7Z
+
 ```js
 java.get*StringContent(url: String, path: String): String
 
@@ -211,20 +236,26 @@ java.get*StringContent(url: String, path: String, charsetName: String): String
 java.get*ByteArrayContent(url: String, path: String): ByteArray?
 
 ```
-* URI编码
+
+- URI编码
+
 ```js
 java.encodeURI(str: String) //默认enc="UTF-8"
 java.encodeURI(str: String, enc: String)
 ```
-* base64
-> flags参数可省略，默认Base64.NO_WRAP，查看[flags参数说明](https://blog.csdn.net/zcmain/article/details/97051870)
+
+- base64
+  > flags参数可省略，默认Base64.NO_WRAP，查看[flags参数说明](https://blog.csdn.net/zcmain/article/details/97051870)
+
 ```js
 java.base64Decode(str: String)
 java.base64Decode(str: String, charset: String)
 java.base64DecodeToByteArray(str: String, flags: Int)
 java.base64Encode(str: String, flags: Int)
 ```
-* ByteArray
+
+- ByteArray
+
 ```js
 Str转Bytes
 java.strToBytes(str: String)
@@ -233,7 +264,9 @@ Bytes转Str
 java.bytesToStr(bytes: ByteArray)
 java.bytesToStr(bytes: ByteArray, charset: String)
 ```
-* Hex
+
+- Hex
+
 ```js
 HexString 解码为字节数组
 java.hexDecodeToByteArray(hex: String)
@@ -242,29 +275,39 @@ java.hexDecodeToString(hex: String)
 utf8 编码为hexString
 java.hexEncodeToString(utf8: String)
 ```
-* 标识id
+
+- 标识id
+
 ```js
-java.randomUUID()
-java.androidId()
+java.randomUUID();
+java.androidId();
 ```
-* 繁简转换
+
+- 繁简转换
+
 ```js
 将文本转换为简体
 java.t2s(text: String): String
 将文本转换为繁体
 java.s2t(text: String): String
 ```
-* 时间格式化
+
+- 时间格式化
+
 ```js
 java.timeFormatUTC(time: Long, format: String, sh: Int): String?
 java.timeFormat(time: Long): String
 ```
-* html格式化
+
+- html格式化
+
 ```js
 java.htmlFormat(str: String): String
 ```
-* 文件
->  所有对于文件的读写删操作都是相对路径,只能操作阅读缓存/android/data/{package}/cache/内的文件
+
+- 文件
+  > 所有对于文件的读写删操作都是相对路径,只能操作阅读缓存/android/data/{package}/cache/内的文件
+
 ```js
 //文件下载 url用于生成文件名，返回文件路径
 downloadFile(url: String): String
@@ -278,7 +321,7 @@ getTxtInFolder(unzipPath: String): String
 //读取文本文件
 readTxtFile(path: String): String
 //删除文件
-deleteFile(path: String) 
+deleteFile(path: String)
 ```
 
 ### [js加解密类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/JsEncodeUtils.kt) 部分函数
@@ -286,36 +329,44 @@ deleteFile(path: String)
 > 规则中可直接使用 `CryptoJS`（如 `CryptoJS.MD5(...)`），也可按下方方法使用 `java.*` 加解密函数。
 
 > 提供在JavaScript环境中快捷调用crypto算法的函数，由[hutool-crypto](https://www.hutool.cn/docs/#/crypto/概述)实现  
-> 由于兼容性问题，hutool-crypto当前版本为5.8.22  
+> 由于兼容性问题，hutool-crypto当前版本为5.8.22
 
 > 注意：如果输入的参数不是Utf8String 可先调用`java.hexDecodeToByteArray java.base64DecodeToByteArray`转成ByteArray
-* 对称加密
-> 输入参数key iv 支持ByteArray|**Utf8String**
+
+- 对称加密
+  > 输入参数key iv 支持ByteArray|**Utf8String**
+
 ```js
 // 创建Cipher
-java.createSymmetricCrypto(transformation, key, iv)
+java.createSymmetricCrypto(transformation, key, iv);
 ```
->解密加密参数 data支持ByteArray|Base64String|HexString|InputStream
+
+> 解密加密参数 data支持ByteArray|Base64String|HexString|InputStream
+
 ```js
 //解密为ByteArray String
-cipher.decrypt(data)
-cipher.decryptStr(data)
+cipher.decrypt(data);
+cipher.decryptStr(data);
 //加密为ByteArray Base64字符 HEX字符
-cipher.encrypt(data)
-cipher.encryptBase64(data)
-cipher.encryptHex(data)
+cipher.encrypt(data);
+cipher.encryptBase64(data);
+cipher.encryptHex(data);
 ```
-* 非对称加密
-> 输入参数 key支持ByteArray|**Utf8String**
+
+- 非对称加密
+  > 输入参数 key支持ByteArray|**Utf8String**
+
 ```js
 //创建cipher
-java.createAsymmetricCrypto(transformation)
-//设置密钥
-.setPublicKey(key)
-.setPrivateKey(key)
-
+java
+  .createAsymmetricCrypto(transformation)
+  //设置密钥
+  .setPublicKey(key)
+  .setPrivateKey(key);
 ```
-> 解密加密参数 data支持ByteArray|Base64String|HexString|InputStream  
+
+> 解密加密参数 data支持ByteArray|Base64String|HexString|InputStream
+
 ```js
 //解密为ByteArray String
 cipher.decrypt(data,  usePublicKey: Boolean? = true
@@ -330,33 +381,44 @@ cipher.encryptBase64(data,  usePublicKey: Boolean? = true
 cipher.encryptHex(data,  usePublicKey: Boolean? = true
 )
 ```
-* 签名
-> 输入参数 key 支持ByteArray|**Utf8String**
+
+- 签名
+  > 输入参数 key 支持ByteArray|**Utf8String**
+
 ```js
 //创建Sign
-java.createSign(algorithm)
-//设置密钥
-.setPublicKey(key)
-.setPrivateKey(key)
+java
+  .createSign(algorithm)
+  //设置密钥
+  .setPublicKey(key)
+  .setPrivateKey(key);
 ```
+
 > 签名参数 data支持ByteArray|inputStream|String
+
 ```js
 //签名输出 ByteArray HexString
-sign.sign(data)
-sign.signHex(data)
+sign.sign(data);
+sign.signHex(data);
 ```
-* 摘要
+
+- 摘要
+
 ```js
 java.digestHex(data: String, algorithm: String,): String?
 
 java.digestBase64Str(data: String, algorithm: String,): String?
 ```
-* md5
+
+- md5
+
 ```js
-java.md5Encode(str)
-java.md5Encode16(str)
+java.md5Encode(str);
+java.md5Encode16(str);
 ```
-* HMac
+
+- HMac
+
 ```js
 java.HMacHex(data: String, algorithm: String, key: String): String
 
@@ -364,66 +426,76 @@ java.HMacBase64(data: String, algorithm: String, key: String): String
 ```
 
 ## book对象的可用属性
+
 ### 属性
+
 > 使用方法: 在js中或{{}}中使用book.属性的方式即可获取.如在正文内容后加上 ##{{book.name+"正文卷"+title}} 可以净化 书名+正文卷+章节名称（如 我是大明星正文卷第二章我爸是豪门总裁） 这一类的字符.
+
 ```js
-bookUrl // 详情页Url(本地书源存储完整文件路径)
-tocUrl // 目录页Url (toc=table of Contents)
-origin // 书源URL(默认BookType.local)
-originName //书源名称 or 本地书籍文件名
-name // 书籍名称(书源获取)
-author // 作者名称(书源获取)
-kind // 分类信息(书源获取)
-customTag // 分类信息(用户修改)
-coverUrl // 封面Url(书源获取)
-customCoverUrl // 封面Url(用户修改)
-intro // 简介内容(书源获取)
-customIntro // 简介内容(用户修改)
-charset // 自定义字符集名称(仅适用于本地书籍)
-type // 0:text 1:audio
-group // 自定义分组索引号
-latestChapterTitle // 最新章节标题
-latestChapterTime // 最新章节标题更新时间
-lastCheckTime // 最近一次更新书籍信息的时间
-lastCheckCount // 最近一次发现新章节的数量
-totalChapterNum // 书籍目录总数
-durChapterTitle // 当前章节名称
-durChapterIndex // 当前章节索引
-durChapterPos // 当前阅读的进度(首行字符的索引位置)
-durChapterTime // 最近一次阅读书籍的时间(打开正文的时间)
-canUpdate // 刷新书架时更新书籍信息
-order // 手动排序
-originOrder //书源排序
-variable // 自定义书籍变量信息(用于书源规则检索书籍信息)
- ```
+bookUrl; // 详情页Url(本地书源存储完整文件路径)
+tocUrl; // 目录页Url (toc=table of Contents)
+origin; // 书源URL(默认BookType.local)
+originName; //书源名称 or 本地书籍文件名
+name; // 书籍名称(书源获取)
+author; // 作者名称(书源获取)
+kind; // 分类信息(书源获取)
+customTag; // 分类信息(用户修改)
+coverUrl; // 封面Url(书源获取)
+customCoverUrl; // 封面Url(用户修改)
+intro; // 简介内容(书源获取)
+customIntro; // 简介内容(用户修改)
+charset; // 自定义字符集名称(仅适用于本地书籍)
+type; // 0:text 1:audio
+group; // 自定义分组索引号
+latestChapterTitle; // 最新章节标题
+latestChapterTime; // 最新章节标题更新时间
+lastCheckTime; // 最近一次更新书籍信息的时间
+lastCheckCount; // 最近一次发现新章节的数量
+totalChapterNum; // 书籍目录总数
+durChapterTitle; // 当前章节名称
+durChapterIndex; // 当前章节索引
+durChapterPos; // 当前阅读的进度(首行字符的索引位置)
+durChapterTime; // 最近一次阅读书籍的时间(打开正文的时间)
+canUpdate; // 刷新书架时更新书籍信息
+order; // 手动排序
+originOrder; //书源排序
+variable; // 自定义书籍变量信息(用于书源规则检索书籍信息)
+```
 
 ## chapter对象的部分可用属性
+
 > 使用方法: 在js中或{{}}中使用chapter.属性的方式即可获取.如在正文内容后加上 ##{{chapter.title+chapter.index}} 可以净化 章节标题+序号(如 第二章 天仙下凡2) 这一类的字符.
- ```js
- url // 章节地址
- title // 章节标题
- baseUrl //用来拼接相对url
- bookUrl // 书籍地址
- index // 章节序号
- resourceUrl // 音频真实URL
- tag //
- start // 章节起始位置
- end // 章节终止位置
- variable //变量
- ```
- 
-## source对象的部分可用函数
-* 获取书源url
+
 ```js
-source.getKey()
+url; // 章节地址
+title; // 章节标题
+baseUrl; //用来拼接相对url
+bookUrl; // 书籍地址
+index; // 章节序号
+resourceUrl; // 音频真实URL
+tag; //
+start; // 章节起始位置
+end; // 章节终止位置
+variable; //变量
 ```
-* 书源变量存取
+
+## source对象的部分可用函数
+
+- 获取书源url
+
+```js
+source.getKey();
+```
+
+- 书源变量存取
+
 ```js
 source.setVariable(variable: String?)
 source.getVariable()
 ```
 
-* 登录头操作
+- 登录头操作
+
 ```js
 获取登录头
 source.getLoginHeader()
@@ -434,8 +506,10 @@ source.putLoginHeader(header: String)
 清除登录头
 source.removeLoginHeader()
 ```
-* 用户登录信息操作
-> 使用`登录UI`规则，并成功登录，阅读自动加密保存登录UI规则中除type为button的信息
+
+- 用户登录信息操作
+  > 使用`登录UI`规则，并成功登录，阅读自动加密保存登录UI规则中除type为button的信息
+
 ```js
 login函数获取登录信息
 source.getLoginInfo()
@@ -444,23 +518,27 @@ source.getLoginInfoMap().get(key: String)
 清除登录信息
 source.removeLoginInfo()
 ```
+
 ## cookie对象的部分可用函数
+
 ```js
-获取全部cookie
-cookie.getCookie(url)
-获取cookie某一键值
-cookie.getKey(url,key)
-设置cookie
-cookie.setCookie(url,cookie)
-替换cookie
-cookie.replaceCookie(url,cookie)
-删除cookie
-cookie.removeCookie(url)
+获取全部cookie;
+cookie.getCookie(url);
+获取cookie某一键值;
+cookie.getKey(url, key);
+设置cookie;
+cookie.setCookie(url, cookie);
+替换cookie;
+cookie.replaceCookie(url, cookie);
+删除cookie;
+cookie.removeCookie(url);
 ```
 
 ## cache对象的部分可用函数
+
 > saveTime单位:秒，可省略  
 > 保存至数据库和缓存文件(50M)，保存的内容较大时请使用`getFile putFile`
+
 ```js
 保存
 cache.put(key: String, value: String, saveTime: Int)
@@ -481,6 +559,7 @@ cache.deleteMemory(key: String)
 ```
 
 ## 跳转外部链接/应用函数
+
 ```js
 // 跳转外部链接，传入http链接或者scheme跳转到浏览器或其他应用
 java.openUrl(url:String)
@@ -496,36 +575,38 @@ java.openUrl(url:String,mimeType:String)
 
 ### 文件结构
 
-顶层只放两类声明：一个 `source` 配置对象，若干个 `function` 声明。声明即导出，不需要
+顶层只放两类声明：一个 `config` 配置对象，若干个 `function` 声明。声明即导出，不需要
 `export`；也不需要在别处注册，函数名固定、由应用按名调用。
 
 ```js
-const source = {
+const config = {
   bookSourceUrl: "https://example.com",
   bookSourceName: "示例JS源",
   bookSourceType: 0,
   bookSourceGroup: "",
-  bookSourceComment: "纯JS单文件书源:顶层只放 source 配置与函数声明",
-  lastUpdateTime: 0
-}
+  bookSourceComment: "纯JS单文件书源:顶层只放 config 配置与函数声明",
+  lastUpdateTime: 0,
+};
 
 function search(key, page) {
-  const html = java.ajax(`${source.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`)
-  const list = []
+  const html = java.ajax(
+    `${config.bookSourceUrl}/search?q=${encodeURI(key)}&p=${page}`,
+  );
+  const list = [];
   // list.push({ name: "书名", author: "作者", bookUrl: "https://.../book/1", ... })
-  return list
+  return list;
 }
 
 function getChapters(book) {
-  const html = java.ajax(book.tocUrl)
-  const chapters = []
+  const html = java.ajax(book.tocUrl);
+  const chapters = [];
   // chapters.push({ title: "第1章", url: "https://.../read/1" })
-  return chapters
+  return chapters;
 }
 
 function getContent(chapter, book) {
-  const html = java.ajax(chapter.url)
-  return html
+  const html = java.ajax(chapter.url);
+  return html;
 }
 ```
 
@@ -535,39 +616,39 @@ function getContent(chapter, book) {
 该源不上发现页、校验时发现检查自动跳过；`login` 与配置里的 `loginUi` 成对——声明了登录表单
 就必须实现它（导入时校验），详见下方"登录"一节。
 
-### source 配置对象
+### config 配置对象
 
 键名与书源实体字段一一对应（逐字、大小写敏感），常用字段：
 
-|键名|说明|
-|------|------|
-|bookSourceUrl|必填，书源唯一身份，改它等于新建一个源|
-|bookSourceName|必填，显示名称|
-|bookSourceType|0文本 / 1音频 / 2图片 / 3下载站，决定 `book.type` 缺省值与详情/播放UI|
-|bookSourceGroup|分组，可留空|
-|bookSourceComment|备注|
-|lastUpdateTime|版本时间戳，写死毫秒数值；App 内编辑器保存有实质改动时自动改写为当前时间，文件外改动发布新版时调大；同 `bookSourceUrl` 重复导入大于库内值才提示"更新"，也用于源列表排序|
-|header|请求头 JSON 字符串，同声明式源|
-|loginUrl|登录页地址（WebView 登录）：管理列表该源菜单出现"登录"入口，打开网页手动登录，cookie 自动存取|
-|loginUi|表单登录（RowUi 数组，同声明式，也接受 JSON 字符串）：声明后须实现顶层 `login` 函数，同样点亮"登录"入口，详见"登录"一节|
-|exploreUrl|发现分类，首选数组：每项 `{title, url}`，省略 `url` 的项渲染为分区标题，可带 `style` 网格样式（同声明式）；每项须有非空 `title`，空数组视同未声明。也接受文本行 `名称::url`（换行或 `&&` 分隔）或 JSON 数组文本。填写后须实现 `explore` 函数，该源即上发现页|
-|concurrentRate|并发限制，同声明式源|
-|enabledCookieJar|是否启用 CookieJar|
-|jsLib|共享给本源所有函数调用的公共 JS 库文本|
+| 键名              | 说明                                                                                                                                                                                                                                                         |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| bookSourceUrl     | 必填，书源唯一身份，改它等于新建一个源                                                                                                                                                                                                                       |
+| bookSourceName    | 必填，显示名称                                                                                                                                                                                                                                               |
+| bookSourceType    | 0文本 / 1音频 / 2图片 / 3下载站，决定 `book.type` 缺省值与详情/播放UI                                                                                                                                                                                        |
+| bookSourceGroup   | 分组，可留空                                                                                                                                                                                                                                                 |
+| bookSourceComment | 备注                                                                                                                                                                                                                                                         |
+| lastUpdateTime    | 版本时间戳，写死毫秒数值；App 内编辑器保存有实质改动时自动改写为当前时间，文件外改动发布新版时调大；同 `bookSourceUrl` 重复导入大于库内值才提示"更新"，也用于源列表排序                                                                                      |
+| header            | 请求头 JSON 字符串，同声明式源                                                                                                                                                                                                                               |
+| loginUrl          | 登录页地址（WebView 登录）：管理列表该源菜单出现"登录"入口，打开网页手动登录，cookie 自动存取                                                                                                                                                                |
+| loginUi           | 表单登录（RowUi 数组，同声明式，也接受 JSON 字符串）：声明后须实现顶层 `login` 函数，同样点亮"登录"入口，详见"登录"一节                                                                                                                                      |
+| exploreUrl        | 发现分类，首选数组：每项 `{title, url}`，省略 `url` 的项渲染为分区标题，可带 `style` 网格样式（同声明式）；每项须有非空 `title`，空数组视同未声明。也接受文本行 `名称::url`（换行或 `&&` 分隔）或 JSON 数组文本。填写后须实现 `explore` 函数，该源即上发现页 |
+| concurrentRate    | 并发限制，同声明式源                                                                                                                                                                                                                                         |
+| enabledCookieJar  | 是否启用 CookieJar                                                                                                                                                                                                                                           |
+| jsLib             | 共享给本源所有函数调用的公共 JS 库文本                                                                                                                                                                                                                       |
 
 `enabled`、`customOrder`、`weight`、`respondTime` 等用户态/统计字段不受脚本控制——保存时从
 数据库里的旧记录继承，脚本里写了也会被忽略。
 
 ### 函数契约
 
-|函数|时机|入参|返回|
-|------|------|------|------|
-|`search(key, page)`|搜索|`key`:搜索词；`page`:页码(从1起)|书籍数组|
-|`explore(url, page)`|发现，与 `exploreUrl` 成对|`url`:当前分类的地址，**原样传入**，翻页用 `page` 拼接；`page`:页码(从1起)|书籍数组，契约同 `search`|
-|`getBookInfo(book)`|详情，可选|`book`:书籍对象(已含 search 阶段字段)|要覆盖的字段对象|
-|`getChapters(book)`|目录|`book`:书籍对象|章节数组|
-|`getContent(chapter, book)`|正文|`chapter`:章节对象；`book`:书籍对象；另绑定同名变量 `nextChapterUrl`(下一章地址,可能为 null)|正文字符串|
-|`login()`|表单登录提交时（"登录"入口内点确定）|无参；用 `source.getLoginInfo()` 读表单数据|无返回值要求；`throw` 即登录失败，内容作为提示弹出|
+| 函数                        | 时机                                 | 入参                                                                                         | 返回                                               |
+| --------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `search(key, page)`         | 搜索                                 | `key`:搜索词；`page`:页码(从1起)                                                             | 书籍数组                                           |
+| `explore(url, page)`        | 发现，与 `exploreUrl` 成对           | `url`:当前分类的地址，**原样传入**，翻页用 `page` 拼接；`page`:页码(从1起)                   | 书籍数组，契约同 `search`                          |
+| `getBookInfo(book)`         | 详情，可选                           | `book`:书籍对象(已含 search 阶段字段)                                                        | 要覆盖的字段对象                                   |
+| `getChapters(book)`         | 目录                                 | `book`:书籍对象                                                                              | 章节数组                                           |
+| `getContent(chapter, book)` | 正文                                 | `chapter`:章节对象；`book`:书籍对象；另绑定同名变量 `nextChapterUrl`(下一章地址,可能为 null) | 正文字符串                                         |
+| `login()`                   | 表单登录提交时（"登录"入口内点确定） | 无参；用 `source.getLoginInfo()` 读表单数据                                                  | 无返回值要求；`throw` 即登录失败，内容作为提示弹出 |
 
 返回值可以直接 `return` 一个数组/对象，也可以 `return JSON.stringify(...)` 手写好的字符串，
 两者等价——引擎收到字符串直接用，收到对象/数组会自动转成 JSON 再解析。
@@ -596,31 +677,37 @@ function getContent(chapter, book) {
 
 两种形态各自独立，可并存（都声明时进表单界面，`loginUrl` 不再被 WebView 使用）：
 
-- **WebView 登录**：`source.loginUrl` 填登录页地址。打开网页手动登录，登录产生的
+- **WebView 登录**：`config.loginUrl` 填登录页地址。打开网页手动登录，登录产生的
   cookie 自动存储，后续请求自动携带。
-- **表单登录**：`source.loginUi` 填表单描述（数组），并实现顶层 `login` 函数
+- **表单登录**：`config.loginUi` 填表单描述（数组），并实现顶层 `login` 函数
   （声明了 loginUi 缺 login 函数在导入/保存时报错）。
 
 ```js
-const source = {
+const config = {
   // ...
   loginUi: [
     { name: "账号", type: "text" },
     { name: "密码", type: "password" },
     { name: "发送验证码", type: "button", action: "sendCaptcha(result)" },
   ],
-}
+};
 
 function login() {
-  const info = JSON.parse(source.getLoginInfo())   // {"账号":"...","密码":"..."}
-  const resp = java.post(`${source.bookSourceUrl}/api/login`, JSON.stringify(info), {})
-  if (!String(resp.body()).includes("ok")) throw "账号或密码错误"
-  source.putLoginHeader(JSON.stringify({ Cookie: String(cookie.getCookie(baseUrl)) }))
+  const info = JSON.parse(source.getLoginInfo()); // {"账号":"...","密码":"..."}
+  const resp = java.post(
+    `${config.bookSourceUrl}/api/login`,
+    JSON.stringify(info),
+    {},
+  );
+  if (!String(resp.body()).includes("ok")) throw "账号或密码错误";
+  source.putLoginHeader(
+    JSON.stringify({ Cookie: String(cookie.getCookie(baseUrl)) }),
+  );
 }
 
 function sendCaptcha(result) {
   // 按钮 action 在脚本作用域执行,可调任意顶层函数;result 为当前表单数据对象
-  java.ajax(`${source.bookSourceUrl}/api/captcha?phone=${result["账号"]}`)
+  java.ajax(`${config.bookSourceUrl}/api/captcha?phone=${result["账号"]}`);
 }
 ```
 
@@ -645,22 +732,36 @@ function sendCaptcha(result) {
 
 ```js
 function getReviewSummary(chapter, book) {
-  const json = JSON.parse(java.ajax(`${source.bookSourceUrl}/review/summary?cid=${chapter.url}`))
+  const json = JSON.parse(
+    java.ajax(`${config.bookSourceUrl}/review/summary?cid=${chapter.url}`),
+  );
   // paraIndex:段落序号(1-based)；count:评论数(≤0 的段不显示图标)；paraData:可选,透传给 detail
-  return json.map(it => ({ paraIndex: it.para, count: it.num, paraData: it.token }))
+  return json.map((it) => ({
+    paraIndex: it.para,
+    count: it.num,
+    paraData: it.token,
+  }));
 }
 
 function getReviewDetail(chapter, book, paraIndex, paraData, page) {
-  const json = JSON.parse(java.ajax(`${source.bookSourceUrl}/review/detail?para=${paraIndex}&data=${paraData}&page=${page}`))
-  const items = json.list.map(it => ({
-    content: it.text,                 // 必填,缺失的条目被丢弃
-    id: it.id,                        // 建议提供,翻页时用于去重
+  const json = JSON.parse(
+    java.ajax(
+      `${config.bookSourceUrl}/review/detail?para=${paraIndex}&data=${paraData}&page=${page}`,
+    ),
+  );
+  const items = json.list.map((it) => ({
+    content: it.text, // 必填,缺失的条目被丢弃
+    id: it.id, // 建议提供,翻页时用于去重
     name: it.user,
     avatar: it.head,
-    badge: it.tag,                    // 徽章文本,如"作者""VIP",显示在用户名旁
-    replies: (it.reply || []).map(r => ({ content: r.text, name: r.user, id: r.id })),
-  }))
-  return { items, nextPageUrl: page < json.totalPage ? "more" : null }  // 非空=还有下一页
+    badge: it.tag, // 徽章文本,如"作者""VIP",显示在用户名旁
+    replies: (it.reply || []).map((r) => ({
+      content: r.text,
+      name: r.user,
+      id: r.id,
+    })),
+  }));
+  return { items, nextPageUrl: page < json.totalPage ? "more" : null }; // 非空=还有下一页
 }
 ```
 
@@ -683,8 +784,7 @@ function getReviewDetail(chapter, book, paraIndex, paraData, page) {
 
 - `java.*` 全量可用：`java.ajax(url)` 同步取网页、`java.post(...)`/`java.get(...)`、
   `java.base64Decode(...)`、`java.log(msg)` 输出到源调试控制台、`CryptoJS.MD5(...)` 等加解密
-  方法，见本文上方各节——纯JS单文件源与声明式源里的 `<js>` 共用同一套 `java.*` 能力，
-  没有裸的全局 `log(...)`，一律要写 `java.log(...)`。
+  方法，见本文上方各节——纯JS单文件源与声明式源里的 `<js>` 共用同一套 `java.*` 能力。
 - `source`、`cookie`、`cache`、`baseUrl` 同名绑定可直接使用；`key`/`page`/`book`/`chapter`/
   `nextChapterUrl` 既是当前函数的形参，也是同名的环境绑定（`jsLib` 里定义的辅助函数如果要用
   这些绑定，需要显式接收对应参数，不能隐式取到调用方的绑定）。
@@ -716,6 +816,6 @@ function getReviewDetail(chapter, book, paraIndex, paraData, page) {
   即得到同一个源。管理页只选中一个 JS 源做"导出/分享"时同样产出 `.js` 原文；多选或与
   声明式源混选时走 JSON 备份容器（导入侧两种都认）。
 - 支持三种导入方式：粘贴脚本全文、从文件管理器打开 `.js` 文件、填一个 `.js` 直链地址。
-- 脚本是配置的唯一真理源：改 `source` 里的字段、保存，立即生效；`enabled`/排序等用户态字段
+- 脚本是配置的唯一真理源：改 `config` 里的字段、保存，立即生效；`enabled`/排序等用户态字段
   不会因为保存而被重置。改 `bookSourceUrl` 相当于新建一个源，旧的那条记录会被删除。
 - 编辑器离开页面前，如果内容相对打开时有改动，会弹出"未保存"确认；没改动直接退出，不打扰。

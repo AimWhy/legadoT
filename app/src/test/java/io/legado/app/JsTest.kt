@@ -183,11 +183,11 @@ class JsTest {
                 expect, outcome.getOrNull())
         }
         // 顶层声明可见性:JsSourceConfig.extract 经 ScriptableObject.getProperty 取
-        // source/函数,var/let/const 三种顶层声明均须可见
+        // config/函数,var/let/const 三种顶层声明均须可见
         listOf("var", "let", "const").forEach { kw ->
             val scope = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
-            RhinoScriptEngine.eval("$kw source = { a: 1 }", scope)
-            val found = org.htmlunit.corejs.javascript.ScriptableObject.getProperty(scope, "source")
+            RhinoScriptEngine.eval("$kw config = { a: 1 }", scope)
+            val found = org.htmlunit.corejs.javascript.ScriptableObject.getProperty(scope, "config")
             Assert.assertNotEquals("顶层 $kw 声明经 getProperty 不可见",
                 org.htmlunit.corejs.javascript.Scriptable.NOT_FOUND, found)
         }
