@@ -103,7 +103,7 @@
     <string name="web_service">Web service</string>
     <string name="web_service_desc">Web edit source and read book</string>
     <string name="mcp_service">MCP 服务</string>
-    <string name="mcp_service_desc">AI 客户端直连的书源开发接口,注册见 api.md 的 MCP 小节</string>
+    <string name="mcp_service_desc">AI 直连本机开发调试书源</string>
     <string name="auto_task_service">Auto task</string>
     <string name="auto_task_last_run">Last run: %1$s</string>
     <string name="auto_task_script_empty">Auto task script is empty</string>

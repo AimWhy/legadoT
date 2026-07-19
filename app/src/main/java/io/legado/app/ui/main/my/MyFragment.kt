@@ -103,10 +103,22 @@ class MyFragment() : BaseFragment(R.layout.fragment_my_config), MainFragmentInte
                     }
                 }
             }
+            findPreference<SwitchPreference>(PreferKey.mcpService)?.let {
+                it.isChecked = McpService.isRun
+                it.summary = if (McpService.isRun) {
+                    McpService.hostAddress
+                } else {
+                    getString(R.string.mcp_service_desc)
+                }
+            }
             observeEventSticky<String>(EventBus.MCP_SERVICE) {
                 findPreference<SwitchPreference>(PreferKey.mcpService)?.let {
                     it.isChecked = McpService.isRun
-                    it.summary = if (McpService.isRun) McpService.hostAddress else ""
+                    it.summary = if (McpService.isRun) {
+                        McpService.hostAddress
+                    } else {
+                        getString(R.string.mcp_service_desc)
+                    }
                 }
             }
             findPreference<NameListPreference>(PreferKey.themeMode)?.let {
