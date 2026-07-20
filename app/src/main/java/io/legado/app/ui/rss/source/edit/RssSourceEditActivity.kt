@@ -1,5 +1,6 @@
 package io.legado.app.ui.rss.source.edit
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -12,6 +13,7 @@ import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.data.entities.RssSource
 import io.legado.app.databinding.ActivityRssSourceEditBinding
+import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.alert
@@ -195,7 +197,13 @@ class RssSourceEditActivity :
         binding.recyclerView.setEdgeEffectColor(primaryColor)
         binding.recyclerView.adapter = adapter
         setupTopHeader()
-        binding.tabLayout.setBackgroundColor(backgroundColor)
+        // 沉浸式操作栏:tab 栏透明,与标题栏一致透出页面背景(含背景图);透明时去 elevation,避免不可见栏投影
+        if (AppConfig.isTransparentActionBar) {
+            binding.tabLayout.setBackgroundColor(Color.TRANSPARENT)
+            binding.tabLayout.elevation = 0f
+        } else {
+            binding.tabLayout.setBackgroundColor(backgroundColor)
+        }
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabReselected(tab: TabLayout.Tab?) {

@@ -183,6 +183,14 @@ class SkinPilotWiringTest {
                 readProjectFile("src/main/res/layout/$it.xml").contains("app:skin_background")
             )
         }
+        // 沉浸式条件条:源编辑 tab 栏/调试帮助面板背景由代码按沉浸式设置染色
+        listOf("activity_book_source_edit", "activity_rss_source_edit", "activity_source_debug").forEach {
+            assertFalse(
+                "$it 的背景条由代码按沉浸式设置染色,不应声明 skin_background=\"background\"",
+                readProjectFile("src/main/res/layout/$it.xml")
+                    .contains("app:skin_background=\"background\"")
+            )
+        }
         // adaptation/FLOATING 模板重涂区不放哑弹声明(模板 onViewCreated 末尾必覆盖):
         // explore 三弹窗 vw_bg + 分组编辑体面板(验收回合查实回收,防再犯)
         listOf(

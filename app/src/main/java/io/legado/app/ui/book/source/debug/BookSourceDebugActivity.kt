@@ -1,6 +1,7 @@
 package io.legado.app.ui.book.source.debug
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -11,10 +12,12 @@ import androidx.lifecycle.lifecycleScope
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.databinding.ActivitySourceDebugBinding
+import io.legado.app.help.config.AppConfig
 import io.legado.app.help.source.clearExploreKindsCache
 import io.legado.app.help.source.exploreKinds
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.qrcode.QrCodeResult
 import io.legado.app.ui.widget.dialog.TextDialog
@@ -45,6 +48,10 @@ class BookSourceDebugActivity : VMBaseActivity<ActivitySourceDebugBinding, BookS
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
+        // 沉浸式操作栏:帮助面板透明,与标题栏一致透出页面背景(含背景图);非沉浸保持页面背景色
+        binding.help.setBackgroundColor(
+            if (AppConfig.isTransparentActionBar) Color.TRANSPARENT else backgroundColor
+        )
         initRecyclerView()
         initSearchView()
         viewModel.init(intent.getStringExtra("key")) {
@@ -169,13 +176,16 @@ class BookSourceDebugActivity : VMBaseActivity<ActivitySourceDebugBinding, BookS
     }
 
     /**
-     * 打开关闭历史界面
+     * 打开关闭历史界面。打开时隐藏日志列表:帮助面板高度不满屏,且沉浸式下面板透明,
+     * 列表继续可见会与帮助内容透叠。
      */
     private fun openOrCloseHelp(open: Boolean) {
         if (open) {
             binding.help.visibility = View.VISIBLE
+            binding.recyclerView.visibility = View.GONE
         } else {
             binding.help.visibility = View.GONE
+            binding.recyclerView.visibility = View.VISIBLE
         }
     }
 

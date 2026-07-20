@@ -1,6 +1,7 @@
 package io.legado.app.ui.book.source.edit
 
 import android.content.Intent
+import android.graphics.Color
 import android.os.Bundle
 import android.view.Menu
 import androidx.core.view.isGone
@@ -23,6 +24,7 @@ import io.legado.app.data.entities.rule.ReviewRule
 import io.legado.app.data.entities.rule.SearchRule
 import io.legado.app.data.entities.rule.TocRule
 import io.legado.app.databinding.ActivityBookSourceEditBinding
+import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.alert
@@ -263,7 +265,13 @@ class BookSourceEditActivity :
             binding.chipTypeImage.text = types.getOrNull(2) ?: "Image"
             binding.chipTypeFile.text = types.getOrNull(3) ?: "File"
         }
-        binding.tabLayout.setBackgroundColor(backgroundColor)
+        // 沉浸式操作栏:tab 栏透明,与标题栏一致透出页面背景(含背景图);透明时去 elevation,避免不可见栏投影
+        if (AppConfig.isTransparentActionBar) {
+            binding.tabLayout.setBackgroundColor(Color.TRANSPARENT)
+            binding.tabLayout.elevation = 0f
+        } else {
+            binding.tabLayout.setBackgroundColor(backgroundColor)
+        }
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabReselected(tab: TabLayout.Tab?) {
