@@ -258,8 +258,10 @@ class BookInfoActivity :
             // scheme 取,换肤 recreate 随视图重建。portrait 顶部两角圆(面板从氛围头图上
             // 升起,随 appBar 折叠上移);形状背景不能走 skin_background(SkinInflaterFactory
             // 平涂 setBackgroundColor 会抹掉圆角)。land 双栏纵切无"升起"方向,平顶纯色。
+            // 形状与裁剪施加在 content_panel(SwipeRefresh+列表+顶缘加载条的共同容器),
+            // 加载条同受圆角轮廓裁剪,两端随弧线收束。
             if (binding.appBar != null) {
-                rv.background = MaterialShapeDrawable(
+                binding.contentPanel.background = MaterialShapeDrawable(
                     ShapeAppearanceModel.builder()
                         .setTopLeftCornerSize(resources.getDimension(R.dimen.radius_xl))
                         .setTopRightCornerSize(resources.getDimension(R.dimen.radius_xl))
@@ -267,9 +269,9 @@ class BookInfoActivity :
                 ).apply {
                     fillColor = ColorStateList.valueOf(AppColorScheme.current.surfaceContainerLow)
                 }
-                rv.clipToOutline = true
+                binding.contentPanel.clipToOutline = true
             } else {
-                rv.setBackgroundColor(AppColorScheme.current.surfaceContainerLow)
+                binding.contentPanel.setBackgroundColor(AppColorScheme.current.surfaceContainerLow)
             }
             rv.layoutManager = LinearLayoutManager(this)
             rv.adapter = chapterAdapter

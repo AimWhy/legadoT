@@ -23,7 +23,7 @@
     <io.legado.app.ui.widget.anima.RefreshProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="match_parent"
-        android:layout_height="1dp"
+        android:layout_height="4dp"
         app:max_progress="100"
         app:layout_constraintTop_toTopOf="@id/web_view" />
 

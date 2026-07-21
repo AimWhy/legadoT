@@ -71,6 +71,8 @@ class RefreshProgressBar @JvmOverloads constructor(
         bgColor = ta.getColor(R.styleable.RefreshProgressBar_bg_color, bgColor)
         secondColor = ta.getColor(R.styleable.RefreshProgressBar_second_color, secondColor)
         ta.recycle()
+        // M3 样式默认在轨道末端画终点圆点(trackStopIndicatorSize);本控件轨道透明,终点标记无载体
+        indicator.trackStopIndicatorSize = 0
         addView(indicator, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT))
     }
 
@@ -87,14 +89,16 @@ class RefreshProgressBar @JvmOverloads constructor(
     fun setDurProgress(dur: Int) {
         exitIndeterminate()
         indicator.max = maxProgress
-        indicator.setProgressCompat(dur.coerceIn(0, maxProgress), true)
+        // 非动画路径=setProgress+jumpToCurrentState,分数立即落盘重绘;
+        // 按档跳变与旧手绘实现一致(搜索/网页加载的进度本就按事件逐档推进)
+        indicator.setProgressCompat(dur.coerceIn(0, maxProgress), false)
     }
 
     fun setSecondDurProgress(dur: Int) {
         exitIndeterminate()
         secondFinalProgress = dur
         indicator.max = secondMaxProgress
-        indicator.setProgressCompat(dur.coerceIn(0, secondMaxProgress), true)
+        indicator.setProgressCompat(dur.coerceIn(0, secondMaxProgress), false)
     }
 
     private fun exitIndeterminate() {

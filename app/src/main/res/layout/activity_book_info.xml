@@ -130,25 +130,31 @@
             </com.google.android.material.appbar.CollapsingToolbarLayout>
         </com.google.android.material.appbar.AppBarLayout>
 
-        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/refresh_layout"
+        <FrameLayout
+            android:id="@+id/content_panel"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recycler_view"
+            <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                android:id="@+id/refresh_layout"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingBottom="@dimen/space_l" />
-        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+                android:layout_height="match_parent">
 
-        <io.legado.app.ui.widget.anima.RefreshProgressBar
-            android:id="@+id/refresh_progress_bar"
-            android:layout_width="match_parent"
-            android:layout_height="2dp"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recycler_view"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:clipToPadding="false"
+                    android:paddingBottom="@dimen/space_l" />
+            </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+            <io.legado.app.ui.widget.anima.RefreshProgressBar
+                android:id="@+id/refresh_progress_bar"
+                android:layout_width="match_parent"
+                android:layout_height="4dp"
+                android:layout_gravity="top" />
+        </FrameLayout>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <LinearLayout
