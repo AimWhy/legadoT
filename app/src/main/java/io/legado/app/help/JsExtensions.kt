@@ -1096,7 +1096,7 @@ interface JsExtensions : JsEncodeUtils {
         val top = action.parentScope?.let {
             org.htmlunit.corejs.javascript.ScriptableObject.getTopLevelScope(it)
         }
-        return (top as? org.htmlunit.corejs.javascript.TopLevel)?.globalThis
+        return top?.globalThis
             ?: org.htmlunit.corejs.javascript.Undefined.SCRIPTABLE_UNDEFINED
     }
 

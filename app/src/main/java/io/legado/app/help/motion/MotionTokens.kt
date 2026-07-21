@@ -20,7 +20,7 @@ object MotionTokens {
     val enabled: Boolean
         get() = !AppConfig.isEInkMode && ValueAnimator.areAnimatorsEnabled()
 
-    enum class Spring(@AttrRes val attr: Int, @StyleRes val defStyle: Int) {
+    enum class Spring(@param:AttrRes val attr: Int, @param:StyleRes val defStyle: Int) {
         SPATIAL_DEFAULT(
             MaterialR.attr.motionSpringDefaultSpatial,
             MaterialR.style.Motion_Material3_Spring_Standard_Default_Spatial,

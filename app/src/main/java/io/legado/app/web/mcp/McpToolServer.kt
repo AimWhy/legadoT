@@ -266,8 +266,9 @@ object McpToolServer {
                 val data = HttpLogController.getLogs(mapOf("limit" to listOf(limit.toString())))
                     .dataOrThrow() as Map<*, *>
                 val recording = data["recording"] as Boolean
-                val logs = data["logs"] as List<Map<String, Any?>>
-                val lines = logs.map { m ->
+                val logs = data["logs"] as List<*>
+                val lines = logs.map { item ->
+                    val m = item as Map<*, *>
                     "#${m["id"]} ${Instant.ofEpochMilli(m["time"] as Long)} ${m["method"]} ${m["url"]}" +
                         " → ${m["statusCode"]} ${m["duration"]}ms" +
                         (m["error"]?.let { " | $it" } ?: "")
@@ -307,17 +308,17 @@ object McpToolServer {
                     "status: ${r.statusCode}  duration: ${r.duration}ms  time: ${Instant.ofEpochMilli(r.time)}",
                     "",
                     "-- 请求头 --",
-                    r.requestHeaders ?: "",
+                    r.requestHeaders,
                 )
-                if (!r.requestBody.isNullOrEmpty()) {
-                    parts += listOf("", "-- 请求体 --", McpFormat.truncate(r.requestBody!!))
+                if (r.requestBody.isNotEmpty()) {
+                    parts += listOf("", "-- 请求体 --", McpFormat.truncate(r.requestBody))
                 }
-                parts += listOf("", "-- 响应头 --", r.responseHeaders ?: "")
-                if (!r.responseBody.isNullOrEmpty()) {
-                    parts += listOf("", "-- 响应体 --", McpFormat.truncate(r.responseBody!!))
+                parts += listOf("", "-- 响应头 --", r.responseHeaders)
+                if (r.responseBody.isNotEmpty()) {
+                    parts += listOf("", "-- 响应体 --", McpFormat.truncate(r.responseBody))
                 }
                 if (!r.error.isNullOrEmpty()) {
-                    parts += listOf("", "-- 错误 --", r.error!!)
+                    parts += listOf("", "-- 错误 --", r.error)
                 }
                 ok(parts.joinToString("\n"))
             } catch (e: Exception) {
