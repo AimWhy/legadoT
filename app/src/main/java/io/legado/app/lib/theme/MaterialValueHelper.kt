@@ -221,12 +221,12 @@ val Context.filletBackground: GradientDrawable
         return background
     }
 
-/** 浮层菜单容器背景:M 圆角 + surfaceContainerHigh,溢出菜单/下拉历史/浮窗共用(bg_popup_menu 的运行时取色版,静态 drawable 仅系统菜单兜底) */
+/** 浮层菜单容器背景:M 圆角 + surfaceContainer,溢出菜单/下拉历史/浮窗共用(bg_popup_menu 的运行时取色版,静态 drawable 仅系统菜单兜底) */
 val Context.popupBackground: GradientDrawable
     get() {
         val background = GradientDrawable()
         background.cornerRadius = resources.getDimension(R.dimen.radius_m)
-        background.setColor(AppColorScheme.current.surfaceContainerHigh)
+        background.setColor(AppColorScheme.current.surfaceContainer)
         return background
     }
 
