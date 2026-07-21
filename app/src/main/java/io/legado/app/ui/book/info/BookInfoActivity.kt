@@ -1042,16 +1042,19 @@ class BookInfoActivity :
             toastOnUi(R.string.chapter_list_empty)
             return
         }
-        viewModel.getBook()?.let { book ->
-            if (!viewModel.inBookshelf) {
-                viewModel.saveBook(book) {
-                    viewModel.saveChapterList {
-                        openChapterList()
-                    }
+        val book = viewModel.getBook(false)
+        if (book == null) {
+            toastOnUi(R.string.book_not_exist)
+            return
+        }
+        if (!viewModel.inBookshelf) {
+            viewModel.saveBook(book) {
+                viewModel.saveChapterList {
+                    openChapterList()
                 }
-            } else {
-                openChapterList()
             }
+        } else {
+            openChapterList()
         }
     }
 
@@ -1061,14 +1064,24 @@ class BookInfoActivity :
      */
     private fun readFromChapter(index: Int, pos: Int = 0, changed: Boolean = false) {
         viewModel.getBook(false)?.let { book ->
-            lifecycleScope.launch {
-                withContext(IO) {
-                    book.durChapterIndex = index
-                    book.durChapterPos = pos
-                    chapterChanged = changed
-                    appDb.bookDao.update(book)
+            book.durChapterIndex = index
+            book.durChapterPos = pos
+            chapterChanged = changed
+            if (!viewModel.inBookshelf) {
+                // 未加入书架时先保存书籍和章节到数据库再进入阅读
+                book.addType(BookType.notShelf)
+                viewModel.saveBook(book) {
+                    viewModel.saveChapterList {
+                        startReadActivity(book)
+                    }
                 }
-                startReadActivity(book)
+            } else {
+                lifecycleScope.launch {
+                    withContext(IO) {
+                        appDb.bookDao.update(book)
+                    }
+                    startReadActivity(book)
+                }
             }
         }
     }
