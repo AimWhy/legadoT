@@ -416,6 +416,10 @@ class AnalyzeRule(
         }
         when (result) {
             is List<*> -> {
+                // 保留原始集合类型,JS 侧依赖其自身方法(如 Elements.attr/text)
+                if (result.none { it == null }) {
+                    return result as List<Any>
+                }
                 return result.filterNotNull()
             }
 

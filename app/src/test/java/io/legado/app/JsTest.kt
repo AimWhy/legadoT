@@ -120,6 +120,49 @@ class JsTest {
         Assert.assertEquals(result, 6.0)
     }
 
+    class ElementsProvider {
+        private val doc = org.jsoup.Jsoup.parse(
+            """<div id="video-artist-name"><a href="/artist/1">n</a></div>"""
+        )
+
+        fun getElements(rule: String): List<Any> = doc.select("$rule a")
+    }
+
+    @Test
+    fun javaListSubclassMethods() {
+        val provider = ElementsProvider()
+        val bindings = ScriptBindings()
+        bindings["java"] = provider
+        bindings["result"] = provider.getElements("#video-artist-name")
+        // 方法返回值路径(staticType = List<Any>),对应 java.getElements(rule).attr('href')
+        val viaMethod = RhinoScriptEngine.eval(
+            "java.getElements('#video-artist-name').attr('href')", bindings
+        )
+        Assert.assertEquals("/artist/1", viaMethod)
+        // 直接绑定路径(staticType 为空,按运行时类包装)
+        val viaBinding = RhinoScriptEngine.eval("result.attr('href')", bindings)
+        Assert.assertEquals("/artist/1", viaBinding)
+    }
+
+    /**
+     * java.getElements 的返回列表须保留原始集合类型:书源 JS 依赖 JSoup Elements
+     * 自身的方法(attr/text/html 等),归一化拷贝成普通 ArrayList 会让这些调用报
+     * "找不到函数 attr"。
+     */
+    @Test
+    fun analyzeRuleGetElementsKeepsCollectionMethods() {
+        val analyzeRule = io.legado.app.model.analyzeRule.AnalyzeRule()
+        analyzeRule.setContent(
+            """<div id="video-artist-name"><a href="/artist/1">n</a></div>"""
+        )
+        val bindings = ScriptBindings()
+        bindings["java"] = analyzeRule
+        val result = RhinoScriptEngine.eval(
+            "java.getElements('#video-artist-name a').attr('href')", bindings
+        )
+        Assert.assertEquals("/artist/1", result)
+    }
+
     /**
      * ES6 兼容性边界探针(2026-07-17 随引擎 5.3.0-legado.1 重定界),书源 skill 的兼容表
      * 依据(legado-source-skill/references/js-api.md)。引擎(htmlunit-core-js)升级后
