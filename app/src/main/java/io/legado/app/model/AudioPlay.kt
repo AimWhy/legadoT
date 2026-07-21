@@ -12,12 +12,15 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookSource
+import io.legado.app.data.entities.ReadRecord
 import io.legado.app.help.book.ContentProcessor
 import io.legado.app.help.book.getBookSource
 import io.legado.app.help.book.readSimulating
 import io.legado.app.help.book.simulatedTotalChapterNum
 import io.legado.app.help.book.update
+import io.legado.app.help.config.AppConfig
 import io.legado.app.help.coroutine.Coroutine
+import io.legado.app.help.globalExecutor
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.service.AudioPlayService
 import io.legado.app.utils.postEvent
@@ -78,10 +81,46 @@ object AudioPlay : CoroutineScope by MainScope() {
     private val preloadingPlayUrlKeys = hashSetOf<String>()
     private val invalidatedPreloadKeys = hashSetOf<String>()
     private var preloadSessionId = 0L
+    private var readRecord = ReadRecord()
+    /** 听书走时起点;null=未在走时 */
+    private var readStartTime: Long? = null
 
     fun changePlayMode() {
         playMode = playMode.next()
+        book?.let { b ->
+            b.setAudioPlayMode(playMode.ordinal)
+            Coroutine.async { b.update() }
+        }
         postEvent(EventBus.PLAY_MODE_CHANGED, playMode)
+    }
+
+    fun savePlaySpeed(speed: Float) {
+        val book = book ?: return
+        book.setAudioPlaySpeed(speed)
+        Coroutine.async { book.update() }
+    }
+
+    /** 开始走时;重复调用无副作用 */
+    fun markReadTimeStart() {
+        if (readStartTime == null) {
+            readStartTime = System.currentTimeMillis()
+        }
+    }
+
+    /** 结算听书时长入阅读记录;未在走时调用无副作用 */
+    fun upReadTime() {
+        val start = readStartTime ?: return
+        readStartTime = null
+        if (!AppConfig.enableReadRecord) {
+            return
+        }
+        val record = readRecord
+        val elapsed = System.currentTimeMillis() - start
+        globalExecutor.execute {
+            record.readTime += elapsed
+            record.lastRead = System.currentTimeMillis()
+            appDb.readRecordDao.insert(record)
+        }
     }
 
     fun upData(book: Book) {
@@ -108,7 +147,12 @@ object AudioPlay : CoroutineScope by MainScope() {
 
     fun resetData(book: Book) {
         stop()
+        upReadTime()
         AudioPlay.book = book
+        readRecord = ReadRecord(
+            bookName = book.name,
+            readTime = appDb.readRecordDao.getReadTime(book.name) ?: 0
+        )
         chapterSize = appDb.bookChapterDao.getChapterCount(book.bookUrl)
         simulatedChapterSize = if (book.readSimulating()) {
             book.simulatedTotalChapterNum()
@@ -118,6 +162,10 @@ object AudioPlay : CoroutineScope by MainScope() {
         setBookSource(book.getBookSource())
         durChapterIndex = book.durChapterIndex
         durChapterPos = book.durChapterPos
+        playMode = book.getAudioPlayMode()?.let { PlayMode.entries.getOrNull(it) }
+            ?: PlayMode.LIST_END_STOP
+        postEvent(EventBus.PLAY_MODE_CHANGED, playMode)
+        postEvent(EventBus.AUDIO_SPEED, book.getAudioPlaySpeed())
         durPlayUrl = ""
         durAudioSize = 0
         upDurChapter()
@@ -255,10 +303,11 @@ object AudioPlay : CoroutineScope by MainScope() {
             upLoading(true)
             WebBook.getContent(this, bookSource, book, chapter, needSave = false)
                 .onSuccess { content ->
-                    if (content.isEmpty()) {
+                    val playUrl = content.trim()
+                    if (playUrl.isEmpty()) {
                         appCtx.toastOnUi("未获取到资源链接")
                     } else {
-                        contentLoadFinish(chapter, content)
+                        contentLoadFinish(chapter, playUrl)
                     }
                 }.onError {
                     AppLog.put("获取资源链接出错\n$it", it, true)

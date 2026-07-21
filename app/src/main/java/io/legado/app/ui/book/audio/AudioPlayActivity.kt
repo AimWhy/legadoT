@@ -460,8 +460,12 @@ class AudioPlayActivity :
             // Slider 无二级进度语义,缓冲进度不再单独绘制
         }
         observeEventSticky<Float>(EventBus.AUDIO_SPEED) {
-            binding.tvSpeed.text = String.format(Locale.ROOT, "%.1fX", it)
-            binding.tvSpeed.visible()
+            if (it == 1f) {
+                binding.tvSpeed.invisible()
+            } else {
+                binding.tvSpeed.text = String.format(Locale.ROOT, "%.1fX", it)
+                binding.tvSpeed.visible()
+            }
         }
         observeEventSticky<Int>(EventBus.AUDIO_DS) { upTimerText() }
         observeEventSticky<Int>(EventBus.AUDIO_CHAPTER) { upTimerText() }

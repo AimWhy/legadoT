@@ -90,7 +90,9 @@ class AudioPlayService : BaseService(),
         private const val MEDIA_SESSION_ACTIONS = (PlaybackStateCompat.ACTION_PLAY
                 or PlaybackStateCompat.ACTION_PAUSE
                 or PlaybackStateCompat.ACTION_PLAY_PAUSE
-                or PlaybackStateCompat.ACTION_SEEK_TO)
+                or PlaybackStateCompat.ACTION_SEEK_TO
+                or PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS
+                or PlaybackStateCompat.ACTION_SKIP_TO_NEXT)
 
         private const val APP_ACTION_STOP = "Stop"
         private const val APP_ACTION_TIMER = "Timer"
@@ -161,6 +163,8 @@ class AudioPlayService : BaseService(),
                     pause = false
                     position = AudioPlay.book?.durChapterPos ?: 0
                     url = AudioPlay.durPlayUrl
+                    playSpeed = AudioPlay.book?.getAudioPlaySpeed() ?: 1f
+                    AudioPlay.markReadTimeStart()
                     resetSkipState()
                     play()
                 }
@@ -171,6 +175,8 @@ class AudioPlayService : BaseService(),
                     pause = false
                     position = 0
                     url = AudioPlay.durPlayUrl
+                    playSpeed = AudioPlay.book?.getAudioPlaySpeed() ?: 1f
+                    AudioPlay.markReadTimeStart()
                     resetSkipState()
                     play()
                 }
@@ -178,6 +184,7 @@ class AudioPlayService : BaseService(),
                 IntentAction.stopPlay -> {
                     exoPlayer.stop()
                     upPlayProgressJob?.cancel()
+                    AudioPlay.upReadTime()
                     AudioPlay.status = Status.STOP
                     postEvent(EventBus.AUDIO_STATE, Status.STOP)
                 }
@@ -207,6 +214,7 @@ class AudioPlayService : BaseService(),
             wifiLock?.release()
         }
         isRun = false
+        AudioPlay.upReadTime()
         abandonFocus()
         exoPlayer.release()
         mediaSessionCompat?.release()
@@ -246,6 +254,8 @@ class AudioPlayService : BaseService(),
             )
             val mediaItem = localMediaItem(url) ?: analyzeUrl.getMediaItem()
             exoPlayer.setMediaItem(mediaItem)
+            exoPlayer.setPlaybackSpeed(playSpeed)
+            postEvent(EventBus.AUDIO_SPEED, playSpeed)
             exoPlayer.playWhenReady = true
             exoPlayer.seekTo(position.toLong())
             exoPlayer.prepare()
@@ -266,6 +276,7 @@ class AudioPlayService : BaseService(),
         }
         try {
             pause = true
+            AudioPlay.upReadTime()
             if (abandonFocus) {
                 abandonFocus()
             }
@@ -296,6 +307,14 @@ class AudioPlayService : BaseService(),
                 AudioPlay.loadOrUpPlayUrl()
                 return
             }
+            if (exoPlayer.playbackState == Player.STATE_IDLE) {
+                // 播放器已停止(如手动停止/播放出错后), 直接 play() 重新装载才能出声
+                position = AudioPlay.book?.durChapterPos ?: position
+                AudioPlay.markReadTimeStart()
+                play()
+                return
+            }
+            AudioPlay.markReadTimeStart()
             if (!exoPlayer.isPlaying) {
                 exoPlayer.play()
             }
@@ -330,9 +349,10 @@ class AudioPlayService : BaseService(),
         kotlin.runCatching {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                playSpeed += adjust
+                playSpeed = (playSpeed + adjust).coerceIn(0.5f, 3f)
                 exoPlayer.setPlaybackSpeed(playSpeed)
                 postEvent(EventBus.AUDIO_SPEED, playSpeed)
+                AudioPlay.savePlaySpeed(playSpeed)
             }
         }
     }
@@ -355,6 +375,7 @@ class AudioPlayService : BaseService(),
                 // 准备好
                 AudioPlay.upLoading(false)
                 if (exoPlayer.playWhenReady) {
+                    AudioPlay.markReadTimeStart()
                     AudioPlay.status = Status.PLAY
                     postEvent(EventBus.AUDIO_STATE, Status.PLAY)
                 } else {
@@ -653,6 +674,14 @@ class AudioPlayService : BaseService(),
 
             override fun onPause() = pause()
 
+            override fun onSkipToPrevious() {
+                AudioPlay.prev()
+            }
+
+            override fun onSkipToNext() {
+                AudioPlay.next()
+            }
+
             override fun onCustomAction(action: String?, extras: Bundle?) {
                 action ?: return
 
@@ -749,6 +778,11 @@ class AudioPlayService : BaseService(),
                 activityPendingIntent<AudioPlayActivity>("activity")
             )
         builder.setLargeIcon(cover)
+        builder.addAction(
+            R.drawable.ic_skip_previous,
+            getString(R.string.skip_previous),
+            servicePendingIntent<AudioPlayService>(IntentAction.prev)
+        )
         if (pause) {
             builder.addAction(
                 R.drawable.ic_play_24dp,
@@ -762,6 +796,11 @@ class AudioPlayService : BaseService(),
                 servicePendingIntent<AudioPlayService>(IntentAction.pause)
             )
         }
+        builder.addAction(
+            R.drawable.ic_skip_next,
+            getString(R.string.skip_next),
+            servicePendingIntent<AudioPlayService>(IntentAction.next)
+        )
         builder.addAction(
             R.drawable.ic_stop_black_24dp,
             getString(R.string.stop),

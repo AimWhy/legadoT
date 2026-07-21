@@ -283,6 +283,22 @@ data class Book(
         return config.audioSkipMinDurationMs ?: AppConfig.audioSkipMinDurationMs
     }
 
+    fun setAudioPlaySpeed(speed: Float?) {
+        config.audioPlaySpeed = speed
+    }
+
+    fun getAudioPlaySpeed(): Float {
+        return config.audioPlaySpeed ?: 1f
+    }
+
+    fun setAudioPlayMode(mode: Int?) {
+        config.audioPlayMode = mode
+    }
+
+    fun getAudioPlayMode(): Int? {
+        return config.audioPlayMode
+    }
+
     fun setSplitLongChapter(limitLongContent: Boolean) {
         config.splitLongChapter = limitLongContent
     }
@@ -439,6 +455,8 @@ data class Book(
         var audioIntroMs: Int? = null,
         var audioOutroMs: Int? = null,
         var audioSkipMinDurationMs: Int? = null,
+        var audioPlaySpeed: Float? = null,
+        var audioPlayMode: Int? = null,
         var splitLongChapter: Boolean = true,
         var readSimulating: Boolean = false,
         var startDate: LocalDate? = null,
