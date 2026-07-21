@@ -8,10 +8,12 @@ import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewParent
 import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.AppCompatAutoCompleteTextView
+import com.google.android.material.textfield.TextInputLayout as MaterialTextInputLayout
 import io.legado.app.R
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.utils.applyTint
@@ -42,6 +44,22 @@ class AutoCompleteTextView @JvmOverloads constructor(
         dropDownHorizontalOffset = 0
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
             isLocalePreferredLineHeightForMinimumUsed = false
+        }
+    }
+
+    /**
+     * TextInputLayout 包裹时运行时 hint 即浮动标签：attach 时上浮到 TIL 并清空自身，避免双重渲染。
+     * TextView.setHint 为 final，上浮钩在 onAttachedToWindow——alert 流程在 show 前设 hint、attach
+     * 晚于其后，此时必可见；XML hint 由 TIL 在 addView 期自行上浮，attach 时自身 hint 已空、此处无操作。
+     */
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        val h = hint ?: return
+        var p: ViewParent? = parent
+        while (p != null && p !is MaterialTextInputLayout) p = p.parent
+        if (p is MaterialTextInputLayout) {
+            p.hint = h
+            hint = null
         }
     }
 
