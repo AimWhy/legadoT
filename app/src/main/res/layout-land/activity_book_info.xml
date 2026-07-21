@@ -151,18 +151,29 @@
 
     <!-- 右栏与 portrait 同形态:RecyclerView(信息头+目录头 addHeaderView+完整章节列表),
          面板背景由代码侧统一施加(land 平顶纯色,portrait 圆角,见 BookInfoActivity)。 -->
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/refresh_layout"
+    <FrameLayout
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="0.58">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recycler_view"
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/refresh_layout"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingBottom="@dimen/space_l" />
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+            android:layout_height="match_parent">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_view"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="@dimen/space_l" />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <io.legado.app.ui.widget.anima.RefreshProgressBar
+            android:id="@+id/refresh_progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_gravity="top" />
+    </FrameLayout>
 
 </LinearLayout>

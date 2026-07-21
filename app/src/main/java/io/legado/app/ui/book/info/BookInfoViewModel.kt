@@ -54,6 +54,7 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
     var bookSource: BookSource? = null
     private var changeSourceCoroutine: Coroutine<*>? = null
     val waitDialogData = MutableLiveData<Boolean>()
+    val loadingData = MutableLiveData<Boolean>()
     val actionLive = MutableLiveData<String>()
 
     fun initData(intent: Intent) {
@@ -186,6 +187,7 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                 context.toastOnUi(R.string.error_no_source)
                 return
             }
+            loadingData.postValue(true)
             WebBook.getBookInfo(scope, bookSource, book, canReName = canReName)
                 .onSuccess(IO) {
                     val dbBook = appDb.bookDao.getBook(book.name, book.author)
@@ -203,11 +205,13 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                         it.save()
                     }
                     if (it.isWebFile) {
+                        loadingData.postValue(false)
                         loadWebFile(it)
                     } else {
                         loadChapter(it, runPreUpdateJs)
                     }
                 }.onError {
+                    loadingData.postValue(false)
                     AppLog.put("获取书籍信息失败\n${it.localizedMessage}", it)
                     context.toastOnUi(R.string.error_get_book_info)
                 }
@@ -238,6 +242,7 @@ class BookInfoViewModel(application: Application) : BaseViewModel(application) {
                 context.toastOnUi(R.string.error_no_source)
                 return
             }
+            loadingData.postValue(true)
             val oldBook = book.copy()
             WebBook.getChapterList(scope, bookSource, book, runPreUpdateJs)
                 .onSuccess(IO) {

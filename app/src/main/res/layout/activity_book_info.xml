@@ -143,6 +143,12 @@
                 android:clipToPadding="false"
                 android:paddingBottom="@dimen/space_l" />
         </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+        <io.legado.app.ui.widget.anima.RefreshProgressBar
+            android:id="@+id/refresh_progress_bar"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <LinearLayout

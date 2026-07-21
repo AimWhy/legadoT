@@ -226,6 +226,7 @@ class BookInfoActivity :
             ?: ("book_cover_" + intent.getStringExtra("name").orEmpty() +
                 intent.getStringExtra("author").orEmpty())
         binding.refreshLayout.setColorSchemeColors(accentColor)
+        binding.refreshProgressBar.fontColor = accentColor
         binding.flAction.applyNavigationBarPadding()
         setSupportActionBar(binding.toolBar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -292,6 +293,14 @@ class BookInfoActivity :
         }
         viewModel.bookData.observe(this) { showBook(it) }
         viewModel.chapterListData.observe(this) { upLoading(false, it) }
+        viewModel.loadingData.observe(this) { isLoading ->
+            if (isLoading) {
+                upLoading(true)
+            } else {
+                binding.refreshProgressBar.isAutoLoading = false
+                upTocHeader()
+            }
+        }
         viewModel.waitDialogData.observe(this) { upWaitDialogStatus(it) }
         viewModel.initData(intent)
         initViewEvent()
@@ -752,6 +761,7 @@ class BookInfoActivity :
 
     /** 目录加载状态写入内嵌目录头 tvTocCount;成功态的 count 由 upChapterList → upTocHeader 回填 */
     private fun upLoading(isLoading: Boolean, chapterList: List<BookChapter>? = null) {
+        binding.refreshProgressBar.isAutoLoading = isLoading
         when {
             isLoading -> tocHeaderBinding?.tvTocCount?.text =
                 getString(R.string.toc_s, getString(R.string.loading))
