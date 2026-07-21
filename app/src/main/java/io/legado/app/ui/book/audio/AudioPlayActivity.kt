@@ -473,7 +473,7 @@ class AudioPlayActivity :
         val minute = AudioPlayService.timeMinute
         when {
             chapter > 0 -> {
-                binding.tvTimer.text = getString(R.string.read_aloud_stop_chapters, chapter)
+                binding.tvTimer.text = getString(R.string.audio_stop_chapters, chapter)
                 binding.tvTimer.visible(true)
             }
 
