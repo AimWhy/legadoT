@@ -212,6 +212,9 @@ object RhinoScriptEngine {
                     // 非严格裸调用的 this 取当次顶层调用作用域的 globalThis:
                     // jsLib 函数经 this.java/this.cache 访问书源执行环境的惯用法依赖此语义
                     Context.FEATURE_LEGADO_DYNAMIC_DEFAULT_THIS -> true
+                    // 间接 eval((0,eval)/别名调用)与 Function 构造器在当次顶层调用作用域
+                    // 求值:被 eval 的书源代码经此可见 java/cookie 等运行时绑定
+                    Context.FEATURE_LEGADO_DYNAMIC_EVAL_REALM -> true
                     else -> super.hasFeature(cx, featureIndex)
                 }
             }

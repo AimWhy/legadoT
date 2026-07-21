@@ -210,6 +210,32 @@ class JsTest {
     }
 
     /**
+     * 间接 eval 动态 realm 探针(FEATURE_LEGADO_DYNAMIC_EVAL_REALM,引擎 fork 补丁
+     * NativeGlobal.js_eval/BaseFunction.dynamicConstructorScope):经函数对象调用的 eval
+     * ((0,eval)/别名/this.eval)与 Function 构造器在当次顶层调用作用域求值,
+     * java/cookie 等运行时绑定对被 eval 代码可见——书源混淆代码常用此形态调
+     * java.createSymmetricCrypto 等能力。引擎升级后本测试翻红即补丁丢失。
+     */
+    @Test
+    fun indirectEvalDynamicRealm() {
+        val bindings = ScriptBindings()
+        bindings["cache"] = "EXEC_ENV"
+        Assert.assertEquals("EXEC_ENV", RhinoScriptEngine.eval("(0, eval)('cache')", bindings))
+        Assert.assertEquals("EXEC_ENV", RhinoScriptEngine.eval("new Function('return cache')()", bindings))
+        // 对照:直接 eval(裸名调用,SPECIALCALL_EVAL)不经此特性,天生走调用处词法链——
+        // 运行时绑定与函数局部同时可见;间接形态回顶层 scope,函数局部不可见
+        Assert.assertEquals("EXEC_ENV-L", RhinoScriptEngine.eval(
+            "function f() { var loc = '-L'; return eval('cache + loc') }; f()", bindings))
+        // jsLib 函数体内经 this.eval 的间接调用同样回当次执行环境
+        val shared = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
+        RhinoScriptEngine.eval("function libEval(code) { return this.eval(code) }", shared)
+        val chained = ScriptBindings()
+        chained["cache"] = "EXEC_ENV2"
+        chained.chainTo(shared)
+        Assert.assertEquals("EXEC_ENV2", RhinoScriptEngine.eval("libEval('cache')", chained))
+    }
+
+    /**
      * Jsoup 经顶层包对象可达(RhinoClassShutter 未拦 org.jsoup)——
      * 纯JS单文件源(java=JsExtensions,无 AnalyzeRule 选择器函数)的 HTML 解析通道。
      */
