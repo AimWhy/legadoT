@@ -221,6 +221,15 @@ val Context.filletBackground: GradientDrawable
         return background
     }
 
+/** 浮层菜单容器背景:M 圆角 + surfaceContainerHigh,溢出菜单/下拉历史/浮窗共用(bg_popup_menu 的运行时取色版,静态 drawable 仅系统菜单兜底) */
+val Context.popupBackground: GradientDrawable
+    get() {
+        val background = GradientDrawable()
+        background.cornerRadius = resources.getDimension(R.dimen.radius_m)
+        background.setColor(AppColorScheme.current.surfaceContainerHigh)
+        return background
+    }
+
 /**
  * 卡片背景色：沉浸式操作栏/状态栏时完全透明，列表行直接浮在页面背景上；
  * 非沉浸式时保持纯色不变。
