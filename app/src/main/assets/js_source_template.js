@@ -33,6 +33,8 @@ const config = {
   lastUpdateTime: 0, // 版本时间戳（毫秒）；导入值较新时提示更新
 };
 
+const Jsoup = org.jsoup.Jsoup;
+
 /**
  * 搜索书籍。
  * @param {string} key 搜索关键词
@@ -97,7 +99,7 @@ function getChapters(book) {
  */
 function getContent(chapter, book) {
   const html = java.ajax(chapter.url);
-  // return java.htmlFormat(org.jsoup.Jsoup.parse(html).select("div.content").html(), chapter.url)
+  // return java.htmlFormat(Jsoup.parse(html).select("div.content").html(), chapter.url)
   return html;
 }
 
