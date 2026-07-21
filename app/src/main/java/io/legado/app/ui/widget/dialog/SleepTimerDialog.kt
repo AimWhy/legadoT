@@ -181,12 +181,14 @@ class SleepTimerDialog : BaseDialogFragment(R.layout.dialog_sleep_timer) {
 
     private fun applyMinute(minute: Int, save: Boolean) {
         if (save && minute > 0) requireContext().putPrefInt(PreferKey.lastSleepTimer, minute)
+        if (minute > 0) AppConfig.sleepTimerPreferChapter = false
         callBack?.onSleepTimerMinute(minute)
         dismissAllowingStateLoss()
     }
 
     private fun applyChapter(count: Int, save: Boolean) {
         if (save && count > 0) requireContext().putPrefInt(PreferKey.lastSleepChapter, count)
+        if (count > 0) AppConfig.sleepTimerPreferChapter = true
         callBack?.onSleepTimerChapter(count)
         dismissAllowingStateLoss()
     }

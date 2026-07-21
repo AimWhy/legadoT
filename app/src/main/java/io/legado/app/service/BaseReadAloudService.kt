@@ -459,7 +459,16 @@ abstract class BaseReadAloudService : BaseService(),
         doDs()
     }
 
+    /** 定时+: 集数停止生效时+1集; 空闲时按上次停止模式起步(集数模式起1集); 其余+10分钟(180翻回0) */
     private fun addTimer() {
+        if (chapterToStop > 0) {
+            setChapterStop(chapterToStop + 1)
+            return
+        }
+        if (timeMinute <= 0 && AppConfig.sleepTimerPreferChapter) {
+            setChapterStop(1)
+            return
+        }
         if (timeMinute == 180) {
             timeMinute = 0
         } else {

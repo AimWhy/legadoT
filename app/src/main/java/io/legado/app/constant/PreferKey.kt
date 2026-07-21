@@ -146,6 +146,7 @@ object PreferKey {
     const val ttsTimer = "ttsTimer"
     const val lastSleepTimer = "lastSleepTimer"
     const val lastSleepChapter = "lastSleepChapter"
+    const val sleepTimerPreferChapter = "sleepTimerPreferChapter"
     const val noAnimScrollPage = "noAnimScrollPage"
     const val webDavDeviceName = "webDavDeviceName"
     const val webServiceWakeLock = "webServiceWakeLock"

@@ -509,6 +509,13 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     val streamReadAloudAudio get() = appCtx.getPrefBoolean(PreferKey.streamReadAloudAudio, false)
 
+    /** 停止设置弹窗最近一次选择的模式;通知栏定时钮空闲起步时按此模式 */
+    var sleepTimerPreferChapter: Boolean
+        get() = appCtx.getPrefBoolean(PreferKey.sleepTimerPreferChapter, false)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.sleepTimerPreferChapter, value)
+        }
+
     var audioSkipEnabled: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.audioSkipEnabled, false)
         set(value) {
