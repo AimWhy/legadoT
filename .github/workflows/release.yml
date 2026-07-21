@@ -47,6 +47,9 @@ jobs:
       CORE_JS_REPO: ${{ github.repository_owner }}/htmlunit-core-js
     steps:
       - uses: actions/checkout@v4
+        with:
+          # versionCode = 20000 + rev-list 全量计数(app/build.gradle),须全量历史
+          fetch-depth: 0
 
       - name: Checkout htmlunit-rhino-fork
         uses: actions/checkout@v4
