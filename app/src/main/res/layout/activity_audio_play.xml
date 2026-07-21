@@ -59,7 +59,7 @@
         app:layout_constraintWidth_percent="0.68"
         app:layout_constraintDimensionRatio="1:1"
         app:layout_constraintWidth_max="300dp"
-        app:layout_constraintBottom_toTopOf="@+id/ll_player_progress"
+        app:layout_constraintBottom_toTopOf="@+id/tv_sub_title"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/title_bar"
@@ -84,7 +84,7 @@
         android:padding="5dp"
         android:src="@drawable/ic_play_mode_list_end_stop"
         app:skin_tint="onSurface"
-        app:layout_constraintBottom_toTopOf="@+id/tv_sub_title"
+        app:layout_constraintBottom_toTopOf="@+id/ll_player_progress"
         app:layout_constraintStart_toStartOf="parent"
         tools:ignore="ImageContrastCheck" />
 
@@ -122,15 +122,38 @@
         android:id="@+id/tv_sub_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:ellipsize="end"
         android:gravity="center"
-        android:paddingStart="16dp"
-        android:paddingTop="6dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="6dp"
+        android:maxLines="2"
+        android:paddingStart="24dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="2dp"
         app:skin_textColor="onSurface"
         android:textColor="@color/primaryText"
+        android:textSize="@dimen/text_subtitle"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toTopOf="@+id/tv_chapter_index"
+        app:layout_constraintTop_toBottomOf="@+id/card_cover"
+        tools:ignore="TextContrastCheck"
+        tools:text="章节标题" />
+
+    <TextView
+        android:id="@+id/tv_chapter_index"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone"
+        app:skin_textColor="onSurfaceVariant"
+        android:textColor="@color/secondaryText"
+        android:textSize="@dimen/text_caption"
         app:layout_constraintBottom_toTopOf="@+id/ll_player_progress"
-        tools:ignore="TextContrastCheck" />
+        app:layout_constraintTop_toBottomOf="@+id/tv_sub_title"
+        tools:text="第 12 章 · 共 320 章"
+        tools:visibility="visible" />
 
     <LinearLayout
         android:id="@+id/ll_player_progress"

@@ -433,6 +433,13 @@ class AudioPlayActivity :
         }
         observeEventSticky<String>(EventBus.AUDIO_SUB_TITLE) {
             binding.tvSubTitle.text = it
+            val chapterSize = AudioPlay.simulatedChapterSize
+            binding.tvChapterIndex.visible(chapterSize > 0)
+            if (chapterSize > 0) {
+                binding.tvChapterIndex.text = getString(
+                    R.string.audio_chapter_progress, AudioPlay.durChapterIndex + 1, chapterSize
+                )
+            }
             binding.ivSkipPrevious.isEnabled = AudioPlay.durChapterIndex > 0
             binding.ivSkipNext.isEnabled =
                 AudioPlay.durChapterIndex < AudioPlay.simulatedChapterSize - 1
