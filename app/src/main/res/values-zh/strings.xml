@@ -297,8 +297,13 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="sleep_timer_by_chapter">按集数停止</string>
     <string name="sleep_timer_minute_hint">自定义分钟</string>
     <string name="sleep_timer_chapter_hint">自定义集数</string>
-    <string name="sleep_timer_last">上次 %s</string>
     <string name="sleep_timer_off">关闭定时</string>
+    <string name="sleep_timer_minute_short">%d分</string>
+    <string name="sleep_timer_chapter_short">%d集</string>
+    <string name="sleep_timer_custom">自定义</string>
+    <string name="sleep_timer_status_time">%d 分钟后停止</string>
+    <string name="sleep_timer_status_chapter">听完 %d 集后停止</string>
+    <string name="sleep_timer_status_none">未设置</string>
     <string name="playing_timer">正在播放（还剩 %d 分钟）</string>
     <string name="playing_timer_chapter">正在播放（还剩 %d 章）</string>
     <string name="ps_hide_navigation_bar">阅读界面隐藏虚拟按键</string>

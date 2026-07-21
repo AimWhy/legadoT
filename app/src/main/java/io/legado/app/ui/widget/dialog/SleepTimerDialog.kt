@@ -1,26 +1,42 @@
 package io.legado.app.ui.widget.dialog
 
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import android.widget.EditText
+import android.widget.TextView
+import androidx.core.view.isVisible
 import io.legado.app.R
+import io.legado.app.base.BaseDialogFragment
 import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.DialogSleepTimerBinding
-import io.legado.app.utils.applyAppSheetBackground
+import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.theme.AppColorScheme
+import io.legado.app.service.AudioPlayService
+import io.legado.app.service.BaseReadAloudService
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getPrefInt
 import io.legado.app.utils.gone
 import io.legado.app.utils.putPrefInt
+import io.legado.app.utils.setLayout
+import io.legado.app.utils.setRoundBackground
 import io.legado.app.utils.toastOnUi
+import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
 
 /**
- * 听书/音频书「停止设置」共用底部弹窗:
- * 上段定时(分钟)、下段按集数,各含 2 个常用预设 + 1 个「上次设置」+ 自定义输入。
- * 宿主实现 [CallBack] 路由到对应播放器(TTS / 音频)。
+ * 听书/音频书「停止设置」共用浮动弹窗:
+ * 定时/按集数各一行等宽预设 chip(点选立即生效并关闭),「自定义」原地展开输入并预填上次值,
+ * 底部状态条显示当前设置(集数优先于时间)与关闭入口。
+ * 宿主实现 [CallBack] 路由到对应播放器;TTS 经 parentFragment、音频书经 activity,
+ * 当前状态从同一宿主对应的服务读取。
  */
-class SleepTimerDialog : BottomSheetDialogFragment() {
+class SleepTimerDialog : BaseDialogFragment(R.layout.dialog_sleep_timer) {
 
     interface CallBack {
         /** 定时(分钟, 0=关闭) */
@@ -30,39 +46,49 @@ class SleepTimerDialog : BottomSheetDialogFragment() {
         fun onSleepTimerChapter(count: Int)
     }
 
-    private var _binding: DialogSleepTimerBinding? = null
-    private val binding get() = _binding!!
+    private val binding by viewBinding(DialogSleepTimerBinding::bind)
     private val callBack get() = (parentFragment as? CallBack) ?: (activity as? CallBack)
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
-        _binding = DialogSleepTimerBinding.inflate(inflater, container, false)
-        return binding.root
-    }
+    /** TTS 面板经 childFragmentManager 弹出(parentFragment 即宿主),否则为有声书页 */
+    private val isTtsHost get() = parentFragment is CallBack
+    private val currentMinute
+        get() = if (isTtsHost) BaseReadAloudService.timeMinute else AudioPlayService.timeMinute
+    private val currentChapter
+        get() = if (isTtsHost) BaseReadAloudService.chapterToStop else AudioPlayService.chapterToStop
+
+    private val timeChips
+        get() = binding.run { listOf(tvTimeP1, tvTimeP2, tvTimeP3, tvTimeP4) }
+    private val chapterChips
+        get() = binding.run { listOf(tvChapterP1, tvChapterP2, tvChapterP3, tvChapterP4) }
 
     override fun onStart() {
         super.onStart()
-        dialog?.window?.run {
-            setBackgroundDrawableResource(android.R.color.transparent)
-            decorView.setPadding(0, 0, 0, 0)
-            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-        }
-        dialog?.applyAppSheetBackground()
+        setLayout(0.9f, ViewGroup.LayoutParams.WRAP_CONTENT)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+    override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         binding.run {
-            tvTimeP1.text = getString(R.string.timer_m, TIME_PRESETS[0])
-            tvTimeP2.text = getString(R.string.timer_m, TIME_PRESETS[1])
-            tvChapterP1.text = getString(R.string.read_aloud_stop_chapters, CHAPTER_PRESETS[0])
-            tvChapterP2.text = getString(R.string.read_aloud_stop_chapters, CHAPTER_PRESETS[1])
+            llStatus.setRoundBackground(
+                AppColorScheme.current.surfaceContainer,
+                radius = resources.getDimension(R.dimen.radius_m)
+            )
+            timeChips.forEachIndexed { i, chip ->
+                chip.text = getString(R.string.sleep_timer_minute_short, TIME_PRESETS[i])
+                chip.setOnClickListener { applyMinute(TIME_PRESETS[i], save = false) }
+            }
+            chapterChips.forEachIndexed { i, chip ->
+                chip.text = getString(R.string.sleep_timer_chapter_short, CHAPTER_PRESETS[i])
+                chip.setOnClickListener { applyChapter(CHAPTER_PRESETS[i], save = false) }
+            }
+            (timeChips + chapterChips + tvTimeCustom + tvChapterCustom + tvTimeOk + tvChapterOk)
+                .forEach { it.background = chipBackground(selected = false) }
 
-            tvTimeP1.setOnClickListener { applyMinute(TIME_PRESETS[0], save = false) }
-            tvTimeP2.setOnClickListener { applyMinute(TIME_PRESETS[1], save = false) }
-            tvChapterP1.setOnClickListener { applyChapter(CHAPTER_PRESETS[0], save = false) }
-            tvChapterP2.setOnClickListener { applyChapter(CHAPTER_PRESETS[1], save = false) }
-
+            tvTimeCustom.setOnClickListener {
+                toggleInput(llTimeInput, etTime, PreferKey.lastSleepTimer)
+            }
+            tvChapterCustom.setOnClickListener {
+                toggleInput(llChapterInput, etChapter, PreferKey.lastSleepChapter)
+            }
             tvTimeOk.setOnClickListener {
                 val m = etTime.text.toString().toIntOrNull()
                 if (m == null || m <= 0) {
@@ -79,51 +105,94 @@ class SleepTimerDialog : BottomSheetDialogFragment() {
                     applyChapter(c, save = true)
                 }
             }
+            tvOff.setOnClickListener { applyMinute(0, save = false) }
 
-            tvClear.setOnClickListener { applyMinute(0, save = false) }
-
-            val lastMin = requireContext().getPrefInt(PreferKey.lastSleepTimer, 0)
-            if (lastMin > 0) {
-                tvTimeLast.visible()
-                tvTimeLast.text =
-                    getString(R.string.sleep_timer_last, getString(R.string.timer_m, lastMin))
-                tvTimeLast.setOnClickListener { applyMinute(lastMin, save = false) }
-            } else {
-                tvTimeLast.gone()
-            }
-            val lastChapter = requireContext().getPrefInt(PreferKey.lastSleepChapter, 0)
-            if (lastChapter > 0) {
-                tvChapterLast.visible()
-                tvChapterLast.text = getString(
-                    R.string.sleep_timer_last,
-                    getString(R.string.read_aloud_stop_chapters, lastChapter)
-                )
-                tvChapterLast.setOnClickListener { applyChapter(lastChapter, save = false) }
-            } else {
-                tvChapterLast.gone()
+            // 当前生效项高亮 + 状态条(集数优先,与服务层互斥语义一致)
+            val minute = currentMinute
+            val chapter = currentChapter
+            when {
+                chapter > 0 -> {
+                    markSelected(
+                        chapterChips.getOrNull(CHAPTER_PRESETS.indexOf(chapter)) ?: tvChapterCustom
+                    )
+                    tvStatus.text = getString(R.string.sleep_timer_status_chapter, chapter)
+                }
+                minute > 0 -> {
+                    markSelected(
+                        timeChips.getOrNull(TIME_PRESETS.indexOf(minute)) ?: tvTimeCustom
+                    )
+                    tvStatus.text = getString(R.string.sleep_timer_status_time, minute)
+                }
+                else -> tvStatus.text = getString(R.string.sleep_timer_status_none)
             }
         }
+    }
+
+    /** 自定义输入行收放;展开时空输入框预填上次自定义值 */
+    private fun toggleInput(row: View, editText: EditText, prefKey: String) {
+        if (row.isVisible) {
+            row.gone()
+        } else {
+            row.visible()
+            if (editText.text.isNullOrEmpty()) {
+                requireContext().getPrefInt(prefKey, 0).takeIf { it > 0 }?.let {
+                    editText.setText(it.toString())
+                    editText.setSelection(editText.text?.length ?: 0)
+                }
+            }
+            editText.requestFocus()
+        }
+    }
+
+    private fun markSelected(chip: TextView) {
+        chip.background = chipBackground(selected = true)
+        chip.setTextColor(
+            if (AppConfig.isEInkMode) Color.WHITE else AppColorScheme.current.onPrimaryContainer
+        )
+        chip.typeface = Typeface.DEFAULT_BOLD
+    }
+
+    /** chip 背景:默认 outline 描边,选中 primaryContainer 底;eink 选中反色。带按压 ripple */
+    private fun chipBackground(selected: Boolean): RippleDrawable {
+        val scheme = AppColorScheme.current
+        val radius = resources.getDimension(R.dimen.radius_m)
+        val content = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radius
+            when {
+                selected && AppConfig.isEInkMode -> setColor(Color.BLACK)
+                selected -> {
+                    setColor(scheme.primaryContainer)
+                    setStroke(1.dpToPx(), scheme.primary)
+                }
+                else -> {
+                    setColor(Color.TRANSPARENT)
+                    setStroke(1.dpToPx(), scheme.outline)
+                }
+            }
+        }
+        val mask = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radius
+            setColor(Color.WHITE)
+        }
+        return RippleDrawable(ColorStateList.valueOf(scheme.outlineVariant), content, mask)
     }
 
     private fun applyMinute(minute: Int, save: Boolean) {
         if (save && minute > 0) requireContext().putPrefInt(PreferKey.lastSleepTimer, minute)
         callBack?.onSleepTimerMinute(minute)
-        dismiss()
+        dismissAllowingStateLoss()
     }
 
     private fun applyChapter(count: Int, save: Boolean) {
         if (save && count > 0) requireContext().putPrefInt(PreferKey.lastSleepChapter, count)
         callBack?.onSleepTimerChapter(count)
-        dismiss()
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        _binding = null
+        dismissAllowingStateLoss()
     }
 
     companion object {
-        private val TIME_PRESETS = intArrayOf(30, 60)
-        private val CHAPTER_PRESETS = intArrayOf(1, 3)
+        private val TIME_PRESETS = intArrayOf(15, 30, 45, 60)
+        private val CHAPTER_PRESETS = intArrayOf(1, 2, 3, 5)
     }
 }
