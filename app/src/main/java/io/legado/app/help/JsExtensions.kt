@@ -3,6 +3,7 @@ package io.legado.app.help
 import android.webkit.WebSettings
 import androidx.annotation.Keep
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import cn.hutool.core.codec.Base64
 import cn.hutool.core.util.HexUtil
 import com.script.rhino.rhinoContext
@@ -24,6 +25,7 @@ import io.legado.app.help.source.getSourceType
 import io.legado.app.model.Debug
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.analyzeRule.QueryTTF
+import io.legado.app.ui.association.OnLineImportActivity
 import io.legado.app.ui.association.OpenUrlConfirmActivity
 import io.legado.app.ui.widget.dialog.BottomWebViewDialog
 import io.legado.app.utils.ArchiveUtils
@@ -1025,6 +1027,13 @@ interface JsExtensions : JsEncodeUtils {
     fun openUrl(url: String, mimeType: String? = null) {
         require(url.length < 64 * 1024) { "openUrl parameter url too long" }
         rhinoContext.ensureActive()
+        // 阅读自身的导入链接直开导入页, 导入页自带确认
+        if (url.startsWith("legado://") || url.startsWith("yuedu://")) {
+            appCtx.startActivity<OnLineImportActivity> {
+                data = url.toUri()
+            }
+            return
+        }
         val source = getSource() ?: throw NoStackTraceException("openUrl source cannot be null")
         appCtx.startActivity<OpenUrlConfirmActivity> {
             putExtra("uri", url)

@@ -53,6 +53,20 @@ java.searchBook(bookName: String)
 java.addBook(bookUrl: String)
 ```
 
+- 页面跳转调度
+
+```js
+java.open(name: String, url?: String, title?: String, origin?: String)
+// name: login=源登录页 rss=订阅阅读页 sort=订阅分类列表 search=书籍搜索 explore=发现结果页
+// url: rss=文章链接(空则开列表/单页源) explore=发现地址
+// title: 页面标题; search 时为搜索词
+// origin: 指定目标源(书源url/订阅源url), 缺省当前源
+java.open("login")                                  // 当前源登录页
+java.open("rss", "https://example.com/a/1", "文章") // 打开文章
+java.open("search", null, "关键词")                 // 按关键词搜书
+java.open("explore", exploreUrl, "分类名", 书源url)  // 打开发现结果页
+```
+
 ### [AnalyzeUrl](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeUrl.kt) 部分函数
 
 > js中通过java.调用,只在`登录检查JS`规则中有效
@@ -565,6 +579,7 @@ cache.deleteMemory(key: String)
 java.openUrl(url:String)
 // 指定mimeType，可以跳转指定类型应用，例如（video/*）
 java.openUrl(url:String,mimeType:String)
+// legado:// 或 yuedu:// 导入链接直开应用内导入页(导入页自带确认)
 ```
 
 ## 纯JS单文件书源
