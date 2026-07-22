@@ -7,6 +7,7 @@ import io.legado.app.data.entities.SearchBook
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.addType
+import io.legado.app.help.book.isWebFile
 import io.legado.app.help.book.removeAllBookType
 import io.legado.app.help.source.getBookType
 import io.legado.app.model.Debug
@@ -91,9 +92,6 @@ object JsSourceBook {
             Debug.log(bookSource.bookSourceUrl, json, state = 20)
         }
         JsSourceMarshaller.mergeBookInfo(book, json, bookSource)
-        if (book.tocUrl.isBlank()) {
-            book.tocUrl = book.bookUrl   // 声明式同款兜底:无目录页则详情页即目录页
-        }
         val url = bookSource.bookSourceUrl
         logField(url, "书名", book.name)
         logField(url, "作者", book.author)
@@ -102,7 +100,19 @@ object JsSourceBook {
         logField(url, "最新章节", book.latestChapterTitle)
         logField(url, "简介", book.intro)
         logField(url, "封面链接", book.coverUrl)
-        logField(url, "目录链接", book.tocUrl)
+        if (book.isWebFile) {
+            // 文件源不走目录/正文:详情页据 downloadUrls 弹下载列表转本地书
+            val downloadUrls = book.downloadUrls
+            logField(url, "文件下载链接", downloadUrls?.joinToString("，\n"))
+            if (downloadUrls.isNullOrEmpty()) {
+                throw NoStackTraceException("下载链接为空")
+            }
+        } else {
+            if (book.tocUrl.isBlank()) {
+                book.tocUrl = book.bookUrl   // 声明式同款兜底:无目录页则详情页即目录页
+            }
+            logField(url, "目录链接", book.tocUrl)
+        }
         return book
     }
 

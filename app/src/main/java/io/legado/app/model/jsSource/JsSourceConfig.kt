@@ -3,6 +3,7 @@ package io.legado.app.model.jsSource
 import com.google.gson.JsonObject
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
+import io.legado.app.constant.BookSourceType
 import io.legado.app.data.entities.BookSource
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.utils.GSON
@@ -20,6 +21,9 @@ import kotlin.coroutines.CoroutineContext
 object JsSourceConfig {
 
     val requiredFunctions = listOf("search", "getChapters", "getContent")
+
+    /** 文件源详情页直转下载导入,目录/正文不参与流程;downloadUrls 由 getBookInfo 供给 */
+    val fileSourceRequiredFunctions = listOf("search", "getBookInfo")
 
     /** config 不接受的键:主脚本自身与六个声明式规则字段(spec §1) */
     private val strippedKeys = listOf(
@@ -55,7 +59,12 @@ object JsSourceConfig {
         if (bookSource.bookSourceName.isNullOrBlank()) {
             throw NoStackTraceException("JS源 config.bookSourceName 不能为空")
         }
-        requiredFunctions.forEach { name ->
+        val required = if (bookSource.bookSourceType == BookSourceType.file) {
+            fileSourceRequiredFunctions
+        } else {
+            requiredFunctions
+        }
+        required.forEach { name ->
             if (ScriptableObject.getProperty(scope, name) !is JsFunction) {
                 throw NoStackTraceException("JS源缺少必备函数 $name")
             }

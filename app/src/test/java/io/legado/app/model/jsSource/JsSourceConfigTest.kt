@@ -363,6 +363,42 @@ class JsSourceConfigTest {
     }
 
     @Test
+    fun fileSourceRequiresOnlySearchAndBookInfo() {
+        // 文件源详情页直转下载导入,getChapters/getContent 可省略
+        val s = JsSourceConfig.extract(
+            """
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "文件源", bookSourceType: 3 }
+            function search(k, p) { return [] }
+            function getBookInfo(book) { return {} }
+            """.trimIndent(),
+        )
+        assertEquals(3, s.bookSourceType)
+    }
+
+    @Test
+    fun fileSourceMissingGetBookInfoFails() {
+        // downloadUrls 由 getBookInfo 供给,文件源缺它即死源,导入时拦下
+        assertExtractError(
+            """
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "文件源", bookSourceType: 3 }
+            function search(k, p) { return [] }
+            """.trimIndent(),
+            "getBookInfo",
+        )
+    }
+
+    @Test
+    fun fileSourceStillRequiresSearch() {
+        assertExtractError(
+            """
+            var config = { bookSourceUrl: "https://a.com", bookSourceName: "文件源", bookSourceType: 3 }
+            function getBookInfo(book) { return {} }
+            """.trimIndent(),
+            "search",
+        )
+    }
+
+    @Test
     fun reviewFunctionsPairValid() {
         val s = JsSourceConfig.extract(
             """

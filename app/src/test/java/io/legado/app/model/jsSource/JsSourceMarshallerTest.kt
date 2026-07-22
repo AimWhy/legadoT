@@ -149,6 +149,30 @@ class JsSourceMarshallerTest {
     }
 
     @Test
+    fun mergeBookInfoDownloadUrlsLandsAndResolves() {
+        val book = Book(bookUrl = "https://src.com/b/1")
+        JsSourceMarshaller.mergeBookInfo(
+            book,
+            """{"downloadUrls":["/down/1.txt","https://cdn.com/2.epub"]}""",
+            textSource,
+        )
+        // 文件源数据出口:相对 → 按详情页补全,绝对原样
+        assertEquals(
+            listOf("https://src.com/down/1.txt", "https://cdn.com/2.epub"),
+            book.downloadUrls,
+        )
+    }
+
+    @Test
+    fun mergeBookInfoDownloadUrlsNonArrayIgnoredNotCrash() {
+        val book = Book(bookUrl = "u")
+        JsSourceMarshaller.mergeBookInfo(book, """{"downloadUrls":"not-array"}""", textSource)
+        assertNull(book.downloadUrls)
+        JsSourceMarshaller.mergeBookInfo(book, """{"downloadUrls":[{"bad":1}]}""", textSource)
+        assertNull(book.downloadUrls)
+    }
+
+    @Test
     fun mergeBookInfoNonNumericTypeIsIgnoredNotCrash() {
         val book = Book(bookUrl = "u")
         val before = book.type

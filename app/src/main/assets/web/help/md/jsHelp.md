@@ -626,7 +626,9 @@ function getContent(chapter, book) {
 ```
 
 `search`、`getChapters`、`getContent` 三个函数必备，缺一在导入/保存时即报错（形如
-"JS源缺少必备函数 getContent"）；`getBookInfo` 可选，不写就跳过、只用 `search` 阶段给出的字段；
+"JS源缺少必备函数 getContent"）；文件源（`bookSourceType: 3`）必备的是 `search` 和
+`getBookInfo`——详情页不走目录/正文，直接按 `getBookInfo` 返回的 `downloadUrls` 弹下载列表，
+`getChapters`/`getContent` 可省略；其余类型 `getBookInfo` 可选，不写就跳过、只用 `search` 阶段给出的字段；
 `explore` 与配置里的 `exploreUrl` 成对——声明了发现分类就必须实现它（导入时校验），都不写则
 该源不上发现页、校验时发现检查自动跳过；`login` 与配置里的 `loginUi` 成对——声明了登录表单
 就必须实现它（导入时校验），详见下方"登录"一节。
@@ -673,9 +675,10 @@ function getContent(chapter, book) {
   `origin`/`originName`/`originOrder` 由应用注入，不需要也不能在返回值里覆盖。
 - **`getBookInfo` 返回对象**：只有写出的键才会覆盖 `book` 对应字段，白名单为 `name`、
   `author`、`intro`、`coverUrl`、`kind`、`wordCount`、`latestChapterTitle`、`tocUrl`、
-  `variable`、`type`；其余键（含 `bookUrl` 等主键、`dur*`/`custom*` 用户态字段）一律忽略。
+  `variable`、`type`、`downloadUrls`；其余键（含 `bookUrl` 等主键、`dur*`/`custom*` 用户态字段）一律忽略。
   不写 `tocUrl` 时应用会用 `book.bookUrl` 兜底当目录页。`variable` 的值必须是 **JSON 字符串**
-  （如 `"{\"k\":\"v\"}"`），直接写对象字面量会被忽略并记调试日志。
+  （如 `"{\"k\":\"v\"}"`），直接写对象字面量会被忽略并记调试日志。`downloadUrls` 是字符串数组
+  （相对地址按 `book.bookUrl` 补全），文件源必填：详情页据此弹下载列表，选中项下载导入为本地书。
 - **`getChapters` 每项**：`title`、`url` 必填，缺一丢弃；可选 `isVolume`、`isVip`、`isPay`、
   `tag`、`wordCount`、`resourceUrl`。相对 `url` 会按 `book.tocUrl` 自动补全成绝对地址。
   卷名行的约定：`isVolume: true` 且 `url` 与 `title` 写成相同字符串——命中这个约定的行点开

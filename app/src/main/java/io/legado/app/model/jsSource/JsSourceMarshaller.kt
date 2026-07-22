@@ -83,6 +83,19 @@ object JsSourceMarshaller {
                 "wordCount" -> book.wordCount = value.asString
                 "latestChapterTitle" -> book.latestChapterTitle = value.asString
                 "tocUrl" -> book.tocUrl = value.asString
+                "downloadUrls" -> {
+                    // 文件源(webFile)专用瞬态字段:详情页 loadWebFile 据此弹下载列表转本地书
+                    val urls = runCatching {
+                        value.asJsonArray.map {
+                            NetworkUtils.getAbsoluteURL(book.bookUrl, it.asString)
+                        }
+                    }.getOrNull()
+                    if (urls == null) {
+                        debugLog(source.bookSourceUrl, "⇒downloadUrls 不是字符串数组,忽略")
+                    } else {
+                        book.downloadUrls = urls
+                    }
+                }
                 "variable" -> {
                     val newMap: Map<String, String>? = runCatching {
                         GSON.fromJson<Map<String, String>>(
