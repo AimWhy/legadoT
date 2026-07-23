@@ -33,6 +33,13 @@ const config = {
   lastUpdateTime: 0, // 版本时间戳（毫秒）；导入值较新时提示更新
 };
 
+/**
+ * 登录UI v2（可选）：声明顶层 loginUi(state) 与 loginAction(action, state, form) 即启用，
+ * state 由应用持有，弹窗关闭即弃。loginAction 返回命令对象：{ state } 重渲染、
+ * { error: {key: 消息} } 字段红字、{ login: {...} } 持久化凭据（重开按 key 回填）、{ close: true } 关窗。
+ * 行类型 text/password/label/select（options 单选）/button（countdown 秒）。
+ */
+
 const Jsoup = org.jsoup.Jsoup;
 
 /**
