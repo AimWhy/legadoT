@@ -21,6 +21,7 @@ import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.fromJsonObject
 import io.legado.app.utils.has
 import io.legado.app.utils.printOnDebug
+import org.htmlunit.corejs.javascript.Scriptable
 import org.intellij.lang.annotations.Language
 
 /**
@@ -81,7 +82,14 @@ interface BaseSource : JsExtensions {
             val jsRule = extractInlineJs(rawLoginUi)
             if (jsRule != null) {
                 val result = evalJS(jsRule)
-                if (result is String) result else GSON.toJson(result)
+                when {
+                    result is String -> result
+                    // NativeArray/NativeObject 等 Scriptable 内部可能嵌套 ConsString(模板字符串插值
+                    // 产生的惰性拼接对象),GSON 反射会把它序列化成 {left,right,length,isFlat} 内部字段
+                    // 而非字符串本身,导致按钮 action 变成乱码。改走引擎自身 JSON.stringify
+                    result is Scriptable -> RhinoScriptEngine.stringifyScriptable(result) ?: GSON.toJson(result)
+                    else -> GSON.toJson(result)
+                }
             } else {
                 rawLoginUi
             }
@@ -124,7 +132,16 @@ interface BaseSource : JsExtensions {
     fun getHeaderMap(hasLoginHeader: Boolean = false) = HashMap<String, String>().apply {
         header?.let {
             try {
-                val json = extractInlineJs(it)?.let { js -> evalJS(js).toString() } ?: it
+                val json = extractInlineJs(it)?.let { js ->
+                    val result = evalJS(js)
+                    // 规则直接 return 对象字面量而非 JSON.stringify(obj) 时,result 是
+                    // NativeObject,.toString() 只会得到 "[object Object]" 导致解析静默失败
+                    if (result is Scriptable) {
+                        RhinoScriptEngine.stringifyScriptable(result) ?: result.toString()
+                    } else {
+                        result.toString()
+                    }
+                } ?: it
                 GSONStrict.fromJsonObject<Map<String, String>>(json).getOrNull()?.let { map ->
                     putAll(map)
                 } ?: GSON.fromJsonObject<Map<String, String>>(json).getOrNull()?.let { map ->

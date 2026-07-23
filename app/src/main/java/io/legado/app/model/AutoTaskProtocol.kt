@@ -10,6 +10,7 @@ import io.legado.app.constant.NotificationId
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
+import com.script.rhino.RhinoScriptEngine
 import io.legado.app.help.book.isLocal
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
@@ -205,6 +206,13 @@ object AutoTaskProtocol {
         if (result == null) return null
         return when (result) {
             is String -> parseActionsFromJson(result)
+            // NativeArray/NativeObject 内部可能嵌套模板字符串插值产生的 ConsString,
+            // GSON 反射会把它序列化成 {left,right,length,isFlat} 内部字段而非字符串本身
+            is org.htmlunit.corejs.javascript.Scriptable -> {
+                val json = RhinoScriptEngine.stringifyScriptable(result)
+                    ?: runCatching { GSON.toJson(result) }.getOrNull()
+                if (json.isNullOrBlank()) null else parseActionsFromJson(json)
+            }
             else -> {
                 val json = runCatching { GSON.toJson(result) }.getOrNull()
                 if (json.isNullOrBlank()) null else parseActionsFromJson(json)

@@ -11,9 +11,11 @@ import org.htmlunit.corejs.javascript.Context
 import org.htmlunit.corejs.javascript.ContextFactory
 import org.htmlunit.corejs.javascript.ContinuationPending
 import org.htmlunit.corejs.javascript.JavaScriptException
+import org.htmlunit.corejs.javascript.NativeJSON
 import org.htmlunit.corejs.javascript.RhinoException
 import org.htmlunit.corejs.javascript.Script
 import org.htmlunit.corejs.javascript.Scriptable
+import org.htmlunit.corejs.javascript.ScriptableObject
 import org.htmlunit.corejs.javascript.TopLevel
 import org.htmlunit.corejs.javascript.Undefined
 import org.htmlunit.corejs.javascript.VarScope
@@ -50,15 +52,14 @@ object RhinoScriptEngine {
 
     @Throws(ScriptException::class)
     fun eval(js: String, scope: VarScope, coroutineContext: CoroutineContext?): Any? {
-        return eval(StringReader(js), scope, coroutineContext)
+        return evalWithSource(js, scope, coroutineContext)
     }
 
+    /**
+     * 带源码缓存的求值，捕获异常时能显示出错行的源码和上下文
+     */
     @Throws(ScriptException::class)
-    fun eval(
-        reader: Reader,
-        scope: VarScope,
-        coroutineContext: CoroutineContext? = null
-    ): Any? {
+    private fun evalWithSource(js: String, scope: VarScope, coroutineContext: CoroutineContext?): Any? {
         val cx = Context.enter() as RhinoContext
         val previousCoroutineContext = cx.coroutineContext
         if (coroutineContext != null && coroutineContext[Job] != null) {
@@ -69,15 +70,17 @@ object RhinoScriptEngine {
         val ret: Any?
         try {
             cx.checkRecursive()
-            ret = cx.evaluateReader(scope, reader, SOURCE_NAME, 1, null)
+            ret = cx.evaluateString(scope, js, SOURCE_NAME, 1, null)
         } catch (re: RhinoException) {
             val line = if (re.lineNumber() == 0) -1 else re.lineNumber()
-            val msg: String = if (re is JavaScriptException) {
+            val baseMsg: String = if (re is JavaScriptException) {
                 re.value.toString()
             } else {
                 re.toString()
             }
-            val se = ScriptException(msg, re.sourceName(), line)
+            // 提取出错行和上下文
+            val enhancedMsg = buildEnhancedErrorMessage(baseMsg, js, line, re.columnNumber())
+            val se = ScriptException(enhancedMsg, re.sourceName(), line)
             se.initCause(re)
             throw se
         } catch (var14: IOException) {
@@ -92,12 +95,25 @@ object RhinoScriptEngine {
     }
 
     @Throws(ScriptException::class)
+    fun eval(
+        reader: Reader,
+        scope: VarScope,
+        coroutineContext: CoroutineContext? = null
+    ): Any? {
+        // 先读取全部内容以便在异常时显示源码上下文
+        val source = reader.readText()
+        return evalWithSource(source, scope, coroutineContext)
+    }
+
+    @Throws(ScriptException::class)
     suspend fun evalSuspend(js: String, scope: VarScope): Any? {
         return evalSuspend(StringReader(js), scope)
     }
 
     @Throws(ContinuationPending::class)
     suspend fun evalSuspend(reader: Reader, scope: VarScope): Any? {
+        // 先读取全部内容以便在异常时显示源码上下文
+        val source = reader.readText()
         val cx = Context.enter() as RhinoContext
         Context.exit()
         var ret: Any?
@@ -106,7 +122,7 @@ object RhinoScriptEngine {
             cx.recursiveCount++
             try {
                 cx.checkRecursive()
-                val script = cx.compileReader(reader, SOURCE_NAME, 1, null)
+                val script = cx.compileString(source, SOURCE_NAME, 1, null)
                 try {
                     ret = cx.executeScriptWithContinuations(script, scope)
                 } catch (e: ContinuationPending) {
@@ -126,12 +142,13 @@ object RhinoScriptEngine {
                 }
             } catch (re: RhinoException) {
                 val line = if (re.lineNumber() == 0) -1 else re.lineNumber()
-                val msg: String = if (re is JavaScriptException) {
+                val baseMsg: String = if (re is JavaScriptException) {
                     re.value.toString()
                 } else {
                     re.toString()
                 }
-                val se = ScriptException(msg, re.sourceName(), line)
+                val enhancedMsg = buildEnhancedErrorMessage(baseMsg, source, line, re.columnNumber())
+                val se = ScriptException(enhancedMsg, re.sourceName(), line)
                 se.initCause(re)
                 throw se
             } catch (var14: IOException) {
@@ -189,6 +206,101 @@ object RhinoScriptEngine {
             result1 = result1.toString()
         }
         return if (result1 is Undefined) null else result1
+    }
+
+    /**
+     * 用引擎自身 JSON.stringify 序列化 Rhino 原生对象(NativeObject/NativeArray/ConsString 等)。
+     * GSON 反射不认识这些内部惰性类型('u'+page 这类拼接产生 ConsString,嵌套在
+     * NativeArray/NativeObject 属性里会被反射成 {left,right,length,isFlat} 内部字段),
+     * 必须走引擎自身序列化才能拿到值本身而非内部实现细节。
+     * 取不到顶层作用域,或 stringify 执行失败(如循环引用),返回 null 交调用方自行回退。
+     */
+    fun stringifyScriptable(
+        value: Scriptable,
+        coroutineContext: CoroutineContext? = null,
+    ): String? {
+        val topScope = value.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
+            ?: return null
+        val cx = Context.enter() as RhinoContext
+        val previousCoroutineContext = cx.coroutineContext
+        if (coroutineContext != null && coroutineContext[Job] != null) {
+            cx.coroutineContext = coroutineContext
+        }
+        try {
+            val raw = try {
+                NativeJSON.stringify(cx, topScope, value, null, null)
+            } catch (e: Exception) {
+                return null
+            }
+            return unwrapReturnValue(raw) as? String
+        } finally {
+            cx.coroutineContext = previousCoroutineContext
+            Context.exit()
+        }
+    }
+
+    /**
+     * 构建增强的错误消息，包含出错行的源码和上下文（类似 Python traceback）。
+     * 出错位置的 `^` 精确指向 [errorColumn](RhinoException.columnNumber,1-indexed 列偏移),
+     * 而非笼统标出整行——书源脚本经常是拼接/压缩的长单行,整行加波浪线基本无诊断价值。
+     * @param baseMsg 原始错误消息
+     * @param source 完整源码
+     * @param errorLine 出错行号（1-indexed，<=0 表示未知）
+     * @param errorColumn 出错列号（1-indexed，Rhino 提供，0 表示未知）
+     * @return 增强后的错误消息
+     */
+    private fun buildEnhancedErrorMessage(
+        baseMsg: String,
+        source: String,
+        errorLine: Int,
+        errorColumn: Int
+    ): String {
+        if (errorLine <= 0) return baseMsg
+
+        val lines = source.lines()
+        if (errorLine > lines.size) return baseMsg
+
+        val contextBefore = 2  // 显示出错行前2行
+        val contextAfter = 2   // 显示出错行后2行
+
+        val startLine = maxOf(1, errorLine - contextBefore)
+        val endLine = minOf(lines.size, errorLine + contextAfter)
+
+        // 行号列宽对齐:按本次显示范围内最大行号的位数,而非固定4位(源码上千行时错位)
+        val lineNumWidth = endLine.toString().length
+
+        val sb = StringBuilder(baseMsg)
+        sb.append("\n\n")
+        sb.append("  源码位置（第 ").append(errorLine)
+        if (errorColumn > 0) sb.append(" 行, 第 ").append(errorColumn).append(" 列") else sb.append(" 行")
+        sb.append("）:\n")
+        sb.append("  ").append("─".repeat(60)).append("\n")
+
+        for (i in startLine..endLine) {
+            val lineContent = lines[i - 1]  // lines 是 0-indexed
+            val prefix = if (i == errorLine) "→ " else "  "
+            val lineNumStr = i.toString().padStart(lineNumWidth)
+            sb.append(prefix).append(lineNumStr).append(" │ ").append(lineContent).append("\n")
+
+            if (i == errorLine) {
+                // 缩进 = "  " + 行号列宽 + " │ " 的长度,与上一行的 " │ " 分隔符对齐
+                val gutterWidth = 2 + lineNumWidth + 3
+                sb.append(" ".repeat(gutterWidth))
+                if (errorColumn > 0) {
+                    // errorColumn 是 1-indexed 列偏移,前面填 errorColumn-1 个空格再放置指示符
+                    sb.append(" ".repeat((errorColumn - 1).coerceAtMost(400)))
+                    sb.append("^")
+                } else {
+                    // 列信息缺失时回退:整行加波浪线(优于完全不给指示)
+                    sb.append("^".repeat(lineContent.length.coerceIn(1, 60)))
+                }
+                sb.append("\n")
+            }
+        }
+
+        sb.append("  ").append("─".repeat(60))
+
+        return sb.toString()
     }
 
     init {

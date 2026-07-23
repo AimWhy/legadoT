@@ -4,7 +4,6 @@ import androidx.collection.LruCache
 import com.script.CompiledScript
 import com.script.ScriptBindings
 import com.script.buildScriptBindings
-import com.script.rhino.RhinoContext
 import com.script.rhino.RhinoScriptEngine
 import io.legado.app.data.entities.BaseSource
 import io.legado.app.data.entities.BookSource
@@ -15,9 +14,6 @@ import io.legado.app.help.http.CookieStore
 import io.legado.app.help.source.getShareScope
 import io.legado.app.model.SharedJsScope
 import io.legado.app.utils.GSON
-import kotlinx.coroutines.Job
-import org.htmlunit.corejs.javascript.Context
-import org.htmlunit.corejs.javascript.NativeJSON
 import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
 import org.htmlunit.corejs.javascript.Undefined
@@ -113,50 +109,9 @@ class JsSourceEngine(
                 value is String -> value
                 value is CharSequence -> value.toString()
                 value is Scriptable ->
-                    stringifyScriptable(value, coroutineContext) ?: GSON.toJson(value)
+                    RhinoScriptEngine.stringifyScriptable(value, coroutineContext) ?: GSON.toJson(value)
 
                 else -> GSON.toJson(value)
-            }
-        }
-
-        /**
-         * GSON 反射不认识 Rhino 内部惰性类型:'u' + page 这类拼接产生 ConsString,嵌套在
-         * NativeArray/NativeObject 属性里会被反射成 {left,right,length,isFlat} 内部字段。
-         * 改走引擎自身序列化:直调公开静态入口 NativeJSON.stringify——不经函数对象调用
-         * 机制(引擎 5.3.0 起 Java 侧经函数对象的调用一律过 doTopCall,会被 allowScriptRun
-         * 闸门拦下)。对纯数据与书源手写 `JSON.stringify(...)` 结果一致
-         * (jsonStringifyEquivalentToDirectReturn 探针);返回值带自定义 toJSON/getter 时,
-         * 其解释执行在本临时 Context(闸门关闭)被 doTopCall 拦下并包装成
-         * NoStackTraceException 明确报错——为 toJSON 开闸等价于变相 invokeMethod,
-         * 正是 spec §7-4 回避的通道。契约=返回纯数据。
-         *
-         * 调用点在 eval 之外,无活跃 Context 可复用,自行 Context.enter()/exit() 进临时
-         * Context,并注入 [coroutineContext](同 RhinoScriptEngine.eval 的注入/还原写法)。
-         * stringify 执行抛异常(典型如循环引用)包装成 NoStackTraceException 明确抛出,
-         * GSON 反射遇循环引用会栈溢出,明确报错优于栈炸;取不到顶层作用域时返回 null
-         * 交给调用方回退 GSON。
-         */
-        private fun stringifyScriptable(
-            value: Scriptable,
-            coroutineContext: CoroutineContext? = null,
-        ): String? {
-            val topScope = value.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
-                ?: return null
-            val cx = Context.enter() as RhinoContext
-            val previousCoroutineContext = cx.coroutineContext
-            if (coroutineContext != null && coroutineContext[Job] != null) {
-                cx.coroutineContext = coroutineContext
-            }
-            try {
-                val raw = try {
-                    NativeJSON.stringify(cx, topScope, value, null, null)
-                } catch (e: Exception) {
-                    throw NoStackTraceException("JS返回值 JSON.stringify 失败: ${e.message}")
-                }
-                return RhinoScriptEngine.unwrapReturnValue(raw) as? String
-            } finally {
-                cx.coroutineContext = previousCoroutineContext
-                Context.exit()
             }
         }
     }
