@@ -3,6 +3,7 @@ package io.legado.app.help.source
 import com.google.gson.JsonObject
 import io.legado.app.constant.AppPattern
 import io.legado.app.data.appDb
+import io.legado.app.data.entities.ExploreContainer
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.data.entities.rule.ExploreKind
 import io.legado.app.utils.ACache
@@ -107,6 +108,28 @@ object ExploreContainerHelp {
             }
         }
         return groups.sortedWith { o1, o2 -> o1.cnCompare(o2) }
+    }
+
+    /**
+     * 分组弹层行 value / 管理页筛选值命名空间:
+     * 特殊行用固定值,分组行加前缀,分组名与固定值不撞
+     */
+    const val GROUP_VALUE_ALL = "all"
+    const val GROUP_VALUE_NO_GROUP = "no_group"
+    const val GROUP_VALUE_MANAGE = "manage"
+    const val GROUP_VALUE_PREFIX = "group:"
+
+    /** 按筛选值过滤:空=全量;no_group=未分组;其余剥 group: 前缀后 hasGroup 精确匹配 */
+    fun filterByGroup(
+        containers: List<ExploreContainer>,
+        filter: String,
+    ): List<ExploreContainer> = when {
+        filter.isEmpty() -> containers
+        filter == GROUP_VALUE_NO_GROUP -> containers.filter { it.groupName.isEmpty() }
+        else -> {
+            val group = filter.removePrefix(GROUP_VALUE_PREFIX)
+            containers.filter { it.hasGroup(group) }
+        }
     }
 
     /** 相对时间;time<=0 返回 null(界面隐藏标签) */

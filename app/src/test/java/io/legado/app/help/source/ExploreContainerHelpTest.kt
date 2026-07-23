@@ -185,4 +185,45 @@ class ExploreContainerHelpTest {
         val out = ExploreContainerHelp.dealGroups(listOf("b组,a组", "a组;c组", ""))
         assertEquals(listOf("a组", "b组", "c组"), out)
     }
+
+    private fun container(id: Long, group: String) =
+        ExploreContainer(id = id, groupName = group)
+
+    private val containers = listOf(
+        container(1, "玄幻"),
+        container(2, "东方玄幻"),
+        container(3, "玄幻,都市"),
+        container(4, ""),
+        container(5, "no_group"),
+    )
+
+    @Test
+    fun filter_empty_returns_everything() {
+        val result = ExploreContainerHelp.filterByGroup(containers, "")
+        assertEquals(5, result.size)
+    }
+
+    @Test
+    fun filter_no_group_returns_only_ungrouped() {
+        val result = ExploreContainerHelp.filterByGroup(
+            containers, ExploreContainerHelp.GROUP_VALUE_NO_GROUP
+        )
+        assertEquals(listOf(4L), result.map { it.id })
+    }
+
+    @Test
+    fun filter_group_matches_exactly_not_substring() {
+        val result = ExploreContainerHelp.filterByGroup(
+            containers, ExploreContainerHelp.GROUP_VALUE_PREFIX + "玄幻"
+        )
+        assertEquals(listOf(1L, 3L), result.map { it.id })
+    }
+
+    @Test
+    fun filter_group_named_like_sentinel_is_unambiguous() {
+        val result = ExploreContainerHelp.filterByGroup(
+            containers, ExploreContainerHelp.GROUP_VALUE_PREFIX + "no_group"
+        )
+        assertEquals(listOf(5L), result.map { it.id })
+    }
 }
