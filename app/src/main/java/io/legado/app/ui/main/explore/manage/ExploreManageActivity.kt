@@ -3,6 +3,7 @@ package io.legado.app.ui.main.explore.manage
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.widget.PopupMenu
 import androidx.lifecycle.lifecycleScope
@@ -16,6 +17,7 @@ import io.legado.app.databinding.ActivityExploreManageBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.source.ExploreContainerHelp
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.SelectActionBar
 import io.legado.app.ui.widget.dialog.GroupManageDialog
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
@@ -42,11 +44,26 @@ class ExploreManageActivity :
     override val binding by viewBinding(ActivityExploreManageBinding::inflate)
     override val viewModel by viewModels<ExploreManageViewModel>()
     private val adapter by lazy { ExploreManageAdapter(this, this) }
+    private var allContainers: List<ExploreContainer> = emptyList()
+
+    /** 分组筛选值:空="全部";no_group="无分组";group:前缀=分组名;命名空间见 ExploreContainerHelp */
+    private var filterGroup: String = ""
+
+    companion object {
+        private const val KEY_FILTER_GROUP = "filterGroup"
+    }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
+        filterGroup = savedInstanceState?.getString(KEY_FILTER_GROUP) ?: ""
+        upFilterSubtitle()
         initRecyclerView()
         observeData()
         initSelectActionBar()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(KEY_FILTER_GROUP, filterGroup)
     }
 
     override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {
@@ -57,11 +74,9 @@ class ExploreManageActivity :
     override fun onCompatOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_add_container -> showDialogFragment(ExploreSourcePickerDialog())
+            R.id.menu_explore_group_filter -> showGroupFilterPopup()
             R.id.menu_enable_all -> viewModel.enableAll(true)
             R.id.menu_disable_all -> viewModel.enableAll(false)
-            R.id.menu_group_manage -> showDialogFragment(
-                GroupManageDialog(GroupManageDialog.Type.ExploreContainer)
-            )
         }
         return super.onCompatOptionsItemSelected(item)
     }
@@ -80,8 +95,101 @@ class ExploreManageActivity :
             appDb.exploreContainerDao.flowAll()
                 .catch { AppLog.put("发现容器管理界面更新数据出错", it) }
                 .flowOn(IO).conflate().collect {
-                    adapter.setItems(it, adapter.diffItemCallBack)
+                    allContainers = it
+                    upFilterValidity()
+                    upDisplayList()
                 }
+        }
+    }
+
+    private fun upDisplayList() {
+        adapter.setItems(
+            ExploreContainerHelp.filterByGroup(allContainers, filterGroup),
+            adapter.diffItemCallBack
+        )
+    }
+
+    /** 筛选中的分组被删/改名后回落"全部",对齐主页面 effectiveGroup 回退语义 */
+    private fun upFilterValidity() {
+        if (!filterGroup.startsWith(ExploreContainerHelp.GROUP_VALUE_PREFIX)) return
+        val group = filterGroup.removePrefix(ExploreContainerHelp.GROUP_VALUE_PREFIX)
+        if (allContainers.none { it.hasGroup(group) }) {
+            filterGroup = ""
+            upFilterSubtitle()
+        }
+    }
+
+    private fun setFilterGroup(value: String) {
+        filterGroup = value
+        upFilterSubtitle()
+        upDisplayList()
+    }
+
+    /** 页面无搜索框,筛选状态由副标题承载;"全部"清空副标题 */
+    private fun upFilterSubtitle() {
+        binding.titleBar.subtitle = when {
+            filterGroup.isEmpty() -> ""
+            filterGroup == ExploreContainerHelp.GROUP_VALUE_NO_GROUP ->
+                getString(R.string.no_group)
+            else -> filterGroup.removePrefix(ExploreContainerHelp.GROUP_VALUE_PREFIX)
+        }
+    }
+
+    private fun showGroupFilterPopup() {
+        val anchor = binding.titleBar.toolbar.findViewById<View>(R.id.menu_explore_group_filter)
+            ?: binding.titleBar.toolbar
+        lifecycleScope.launch {
+            val groups = withContext(IO) {
+                ExploreContainerHelp.dealGroups(
+                    appDb.exploreContainerDao.all.map { it.groupName }
+                )
+            }
+            PopupAction(this@ExploreManageActivity).apply {
+                setVertical(true)
+                setActionItems(buildList {
+                    add(
+                        PopupAction.PopupActionItem(
+                            title = getString(R.string.group_manage),
+                            value = ExploreContainerHelp.GROUP_VALUE_MANAGE
+                        )
+                    )
+                    add(
+                        PopupAction.PopupActionItem(
+                            title = getString(R.string.all),
+                            value = ExploreContainerHelp.GROUP_VALUE_ALL,
+                            checked = filterGroup.isEmpty()
+                        )
+                    )
+                    add(
+                        PopupAction.PopupActionItem(
+                            title = getString(R.string.no_group),
+                            value = ExploreContainerHelp.GROUP_VALUE_NO_GROUP,
+                            checked = filterGroup == ExploreContainerHelp.GROUP_VALUE_NO_GROUP
+                        )
+                    )
+                    groups.forEach { g ->
+                        val value = ExploreContainerHelp.GROUP_VALUE_PREFIX + g
+                        add(
+                            PopupAction.PopupActionItem(
+                                title = g,
+                                value = value,
+                                checked = filterGroup == value
+                            )
+                        )
+                    }
+                })
+                onActionClick = { value ->
+                    dismiss()
+                    when (value) {
+                        ExploreContainerHelp.GROUP_VALUE_MANAGE -> showDialogFragment(
+                            GroupManageDialog(GroupManageDialog.Type.ExploreContainer)
+                        )
+                        ExploreContainerHelp.GROUP_VALUE_ALL -> setFilterGroup("")
+                        else -> setFilterGroup(value)
+                    }
+                }
+                showAsDropDown(anchor, 0, 4.dpToPx())
+            }
         }
     }
 
