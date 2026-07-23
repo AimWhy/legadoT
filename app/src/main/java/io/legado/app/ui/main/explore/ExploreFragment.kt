@@ -1,26 +1,29 @@
 package io.legado.app.ui.main.explore
 
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.TextView
 import androidx.core.view.isGone
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.android.material.chip.Chip
 import io.legado.app.R
 import io.legado.app.base.VMBaseFragment
 import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.SearchBook
 import io.legado.app.databinding.FragmentExploreBinding
-import io.legado.app.databinding.ItemExploreGroupChipBinding
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.source.ExploreContainerHelp
 import io.legado.app.help.source.exploreKinds
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.ui.book.explore.ExploreShowActivity
 import io.legado.app.ui.book.info.BookInfoActivity
@@ -30,10 +33,14 @@ import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.main.MainFragmentInterface
 import io.legado.app.ui.main.explore.manage.ExploreContainerEditDialog
 import io.legado.app.ui.main.explore.manage.ExploreManageActivity
+import io.legado.app.ui.widget.PopupAction
 import io.legado.app.ui.widget.popupActionMenu
+import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.getPrefString
 import io.legado.app.utils.putPrefString
 import io.legado.app.utils.setEdgeEffectColor
+import io.legado.app.utils.setTintMutate
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.startActivity
 import io.legado.app.utils.toastOnUi
@@ -63,10 +70,12 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
     private var openingExplore = false
     private var allStates: List<ExploreContainerState> = emptyList()
     private var currentGroups: List<String> = emptyList()
-    private var rebuildingChips = false
+    private val groupSwitcher: TextView
+        get() = binding.titleBar.findViewById(R.id.tv_group_switcher)
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         setSupportToolbar(binding.titleBar.toolbar)
+        initGroupSwitcher()
         initRecyclerView()
         observeData()
     }
@@ -93,14 +102,6 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
             binding.refreshLayout.isRefreshing = false
             viewModel.refreshAll(effectiveGroup())
         }
-        binding.cgGroups.setOnCheckedStateChangeListener { group, checkedIds ->
-            if (rebuildingChips) return@setOnCheckedStateChangeListener
-            val id = checkedIds.firstOrNull() ?: return@setOnCheckedStateChangeListener
-            val g = group.findViewById<Chip>(id)?.tag as? String
-                ?: return@setOnCheckedStateChangeListener
-            requireContext().putPrefString(PreferKey.exploreGroup, g)
-            upDisplayStates()
-        }
         binding.btnAddContainer.setOnClickListener {
             startActivity<ExploreManageActivity>()
         }
@@ -110,7 +111,10 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
         viewModel.statesData.observe(viewLifecycleOwner) { states ->
             allStates = states
             binding.llEmpty.isGone = states.isNotEmpty()
-            upGroupChips()
+            currentGroups = ExploreContainerHelp.dealGroups(
+                allStates.map { it.container.groupName }
+            )
+            upGroupSwitcher()
             upDisplayStates()
         }
         viewModel.upBookshelfLiveData.observe(viewLifecycleOwner) {
@@ -134,28 +138,60 @@ class ExploreFragment() : VMBaseFragment<ExploreViewModel>(R.layout.fragment_exp
         adapter.setItems(display, adapter.diffItemCallBack)
     }
 
-    private fun upGroupChips() {
-        val groups = ExploreContainerHelp.dealGroups(
-            allStates.map { it.container.groupName }
+    /** 胶囊施色照书架 tabs 判据:沉浸式时栏透明露页面背景,明暗取实际可见的那个 */
+    private fun initGroupSwitcher() {
+        val barIsLight = appBarBackgroundIsLight(
+            transparentActionBar = AppConfig.isTransparentActionBar,
+            barBackgroundColor = primaryColor,
+            contentBackgroundColor = requireContext().backgroundColor
         )
-        if (groups == currentGroups && binding.cgGroups.childCount > 0) {
-            return // 分组集未变不重建,保住横向滚动位置
+        val fg = requireContext().getPrimaryTextColor(barIsLight)
+        groupSwitcher.setTextColor(fg)
+        groupSwitcher.compoundDrawablesRelative[2]?.setTintMutate(fg)
+        groupSwitcher.background = GradientDrawable().apply {
+            cornerRadius = 14.dpToPx().toFloat()
+            setStroke(1.dpToPx(), ColorUtils.adjustAlpha(fg, 0.3f))
         }
-        currentGroups = groups
-        binding.hostGroups.isGone = groups.isEmpty()
-        rebuildingChips = true
-        binding.cgGroups.removeAllViews()
+        groupSwitcher.setOnClickListener { showGroupPopup(it) }
+    }
+
+    private fun upGroupSwitcher() {
+        groupSwitcher.isGone = currentGroups.isEmpty()
+        groupSwitcher.text = effectiveGroup().ifEmpty { getString(R.string.all) }
+    }
+
+    private fun showGroupPopup(anchor: View) {
         val effective = effectiveGroup()
-        (listOf("") + groups).forEach { g ->
-            val chip = ItemExploreGroupChipBinding
-                .inflate(layoutInflater, binding.cgGroups, false).root
-            chip.id = View.generateViewId()
-            chip.tag = g
-            chip.text = g.ifEmpty { getString(R.string.all) }
-            chip.isChecked = g == effective
-            binding.cgGroups.addView(chip)
+        PopupAction(requireContext()).apply {
+            setVertical(true)
+            setActionItems(buildList {
+                add(
+                    PopupAction.PopupActionItem(
+                        title = getString(R.string.all),
+                        value = ExploreContainerHelp.GROUP_VALUE_ALL,
+                        checked = effective.isEmpty()
+                    )
+                )
+                currentGroups.forEach { g ->
+                    add(
+                        PopupAction.PopupActionItem(
+                            title = g,
+                            value = ExploreContainerHelp.GROUP_VALUE_PREFIX + g,
+                            checked = g == effective
+                        )
+                    )
+                }
+            })
+            onActionClick = { value ->
+                dismiss()
+                val group = if (value == ExploreContainerHelp.GROUP_VALUE_ALL) ""
+                else value.removePrefix(ExploreContainerHelp.GROUP_VALUE_PREFIX)
+                requireContext().putPrefString(PreferKey.exploreGroup, group)
+                upDisplayStates()
+                upGroupSwitcher()
+            }
+            showAsDropDown(anchor, 0, 4.dpToPx())
         }
-        rebuildingChips = false
     }
 
     fun gotoTop() {
