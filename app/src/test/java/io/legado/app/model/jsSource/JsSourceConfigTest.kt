@@ -1,6 +1,7 @@
 package io.legado.app.model.jsSource
 
 import io.legado.app.exception.NoStackTraceException
+import io.legado.app.model.login.LoginUiV2
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -438,6 +439,45 @@ class JsSourceConfigTest {
             function getReviewDetail(chapter, book, paraIndex, paraData, page) { return { items: [] } }
             """.trimIndent(),
             "getReviewSummary",
+        )
+    }
+
+    @Test
+    fun loginUiFunctionBecomesV2Marker() {
+        val s = JsSourceConfig.extract(
+            validScript + "\n" + """
+            function loginUi(state) { return { rows: [] } }
+            function loginAction(action, state, form) { return {} }
+            """.trimIndent()
+        )
+        assertEquals(LoginUiV2.MARKER, s.loginUi)
+    }
+
+    @Test
+    fun loginUiFunctionRequiresLoginAction() {
+        assertExtractError(
+            validScript + "\nfunction loginUi(state) { return { rows: [] } }",
+            "loginAction",
+        )
+    }
+
+    @Test
+    fun loginUiFunctionConflictsWithConfigData() {
+        assertExtractError(
+            """
+            var config = {
+              bookSourceUrl: "https://example.com",
+              bookSourceName: "冲突源",
+              loginUi: [{ name: "账号", type: "text" }]
+            }
+            function search(k, p) { return [] }
+            function getChapters(b) { return [] }
+            function getContent(c, b) { return "" }
+            function login() {}
+            function loginUi(state) { return { rows: [] } }
+            function loginAction(a, s, f) { return {} }
+            """.trimIndent(),
+            "二选一",
         )
     }
 }

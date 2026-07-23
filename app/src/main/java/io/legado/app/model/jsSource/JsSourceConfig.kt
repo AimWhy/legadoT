@@ -6,6 +6,7 @@ import com.script.rhino.RhinoScriptEngine
 import io.legado.app.constant.BookSourceType
 import io.legado.app.data.entities.BookSource
 import io.legado.app.exception.NoStackTraceException
+import io.legado.app.model.login.LoginUiV2
 import io.legado.app.utils.GSON
 import org.htmlunit.corejs.javascript.Scriptable
 import org.htmlunit.corejs.javascript.ScriptableObject
@@ -78,6 +79,16 @@ object JsSourceConfig {
             ScriptableObject.getProperty(scope, "login") !is JsFunction
         ) {
             throw NoStackTraceException("JS源声明了 loginUi,缺少配对的 login 函数")
+        }
+        // 登录UI v2:模块声明 loginUi 函数 → 落库 v2 标记;与 config.loginUi 数据形态互斥
+        if (ScriptableObject.getProperty(scope, "loginUi") is JsFunction) {
+            if (!bookSource.loginUi.isNullOrBlank()) {
+                throw NoStackTraceException("loginUi 函数与 config.loginUi 数据只能二选一")
+            }
+            if (ScriptableObject.getProperty(scope, "loginAction") !is JsFunction) {
+                throw NoStackTraceException("JS源声明了 loginUi 函数,缺少配对的 loginAction 函数")
+            }
+            bookSource.loginUi = LoginUiV2.MARKER
         }
         if (ScriptableObject.getProperty(scope, "getReviewSummary") is JsFunction &&
             ScriptableObject.getProperty(scope, "getReviewDetail") !is JsFunction
