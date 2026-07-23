@@ -8,6 +8,7 @@ import io.legado.app.constant.AppConst
 import io.legado.app.constant.AppLog
 import io.legado.app.constant.AppPattern.JS_PATTERN
 import io.legado.app.data.entities.rule.RowUi
+import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.CacheManager
 import io.legado.app.help.JsExtensions
 import io.legado.app.help.config.AppConfig
@@ -15,6 +16,8 @@ import io.legado.app.help.crypto.SymmetricCryptoAndroid
 import io.legado.app.help.http.CookieStore
 import io.legado.app.help.source.getShareScope
 import io.legado.app.model.SharedJsScope
+import io.legado.app.model.jsSource.JsSourceEngine
+import io.legado.app.model.login.LoginUiV2
 import io.legado.app.utils.GSON
 import io.legado.app.utils.GSONStrict
 import io.legado.app.utils.fromJsonArray
@@ -100,6 +103,37 @@ interface BaseSource : JsExtensions {
         return GSON.fromJsonArray<RowUi>(loginUiJson).onFailure {
             it.printOnDebug()
         }.getOrNull()
+    }
+
+    /** 登录UI v2:loginUi 字段为 {"version":2} 标记时启用显式状态协议 */
+    fun isLoginUiV2(): Boolean {
+        return LoginUiV2.isV2(loginUi)
+    }
+
+    /**
+     * v2 渲染:loginUi(state) 与 search 等同居(声明式源=loginUrl JS,JS源=mainJs),
+     * 状态跨边界走 JSON 字符串。返回归一化 JSON({rows:[...]})。
+     */
+    fun evalLoginUiV2(stateJson: String): String? {
+        val loginJs = getLoginJs()
+            ?: throw NoStackTraceException("登录UI v2 需要 loginUrl JS 承载 loginUi/loginAction 函数")
+        val js = "$loginJs\nloginUi(JSON.parse(String(__loginState)))"
+        val result = evalJS(js) { put("__loginState", stateJson) }
+        return JsSourceEngine.normalizeJsResult(result)
+    }
+
+    /** v2 动作派发:返回归一化命令 JSON */
+    fun evalLoginActionV2(action: String, stateJson: String, formJson: String): String? {
+        val loginJs = getLoginJs()
+            ?: throw NoStackTraceException("登录UI v2 需要 loginUrl JS 承载 loginUi/loginAction 函数")
+        val js = "$loginJs\n" +
+            "loginAction(String(__loginAction), JSON.parse(String(__loginState)), JSON.parse(String(__loginForm)))"
+        val result = evalJS(js) {
+            put("__loginAction", action)
+            put("__loginState", stateJson)
+            put("__loginForm", formJson)
+        }
+        return JsSourceEngine.normalizeJsResult(result)
     }
 
     fun getLoginJs(): String? {
