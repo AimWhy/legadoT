@@ -46,6 +46,7 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     private val viewModel by activityViewModels<SourceLoginViewModel>()
     private var currentLoginUi: List<RowUi>? = null
     private var renderJob: Job? = null
+    private var v2Delegate: SourceLoginV2Delegate? = null
 
     override fun onStart() {
         super.onStart()
@@ -55,9 +56,17 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         val source = viewModel.source ?: return
         binding.toolBar.title = getString(R.string.login_source, source.getTag())
-        renderLoginUi(source, null)
+        if (source.isLoginUiV2()) {
+            v2Delegate = SourceLoginV2Delegate(this, binding, source)
+        } else {
+            renderLoginUi(source, null)
+        }
         binding.toolBar.inflateMenu(R.menu.source_login)
         binding.toolBar.menu.applyTint(requireContext())
+        if (v2Delegate != null) {
+            // v2 提交是普通 action,无「确定」语义
+            binding.toolBar.menu.findItem(R.id.menu_ok)?.isVisible = false
+        }
         binding.toolBar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.menu_ok -> {
@@ -79,10 +88,23 @@ class SourceLoginDialog : BaseDialogFragment(R.layout.dialog_login, true) {
                 }
 
                 R.id.menu_del_login_header -> source.removeLoginHeader()
+                R.id.menu_clear_login_info -> lifecycleScope.launch(IO) {
+                    source.removeLoginInfo()
+                    source.removeLoginHeader()
+                    context?.toastOnUi(R.string.success)
+                }
+
                 R.id.menu_log -> showDialogFragment<AppLogDialog>()
             }
             return@setOnMenuItemClickListener true
         }
+        v2Delegate?.start()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        v2Delegate?.destroy()
+        v2Delegate = null
     }
 
     private fun handleButtonClick(source: BaseSource, rowUi: RowUi, loginUi: List<RowUi>) {
