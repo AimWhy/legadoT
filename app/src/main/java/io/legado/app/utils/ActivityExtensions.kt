@@ -253,7 +253,7 @@ val Activity.navigationBarGravity: Int
  */
 fun AppCompatActivity.showHelp(fileName: String) {
     val mdText = String(assets.open("web/help/md/${fileName}.md").readBytes())
-    showDialogFragment(TextDialog(getString(R.string.help), mdText, TextDialog.Mode.MD))
+    showDialogFragment(TextDialog(getString(R.string.help), mdText, TextDialog.Mode.MD, showToc = true))
 }
 
 /**

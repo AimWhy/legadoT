@@ -1,15 +1,23 @@
 package io.legado.app.ui.widget.dialog
 
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.view.textclassifier.TextClassifier
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogTextViewBinding
+import io.legado.app.databinding.ItemHelpTocBinding
+import io.legado.app.help.HelpSections
 import io.legado.app.help.IntentData
+import io.legado.app.lib.theme.AppColorScheme
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.setHtml
 import io.legado.app.utils.setLayout
@@ -19,6 +27,7 @@ import io.noties.markwon.ext.tables.TablePlugin
 import io.noties.markwon.html.HtmlPlugin
 import io.noties.markwon.image.glide.GlideImagesPlugin
 import kotlinx.coroutines.Dispatchers.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -38,13 +47,15 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
         content: String?,
         mode: Mode = Mode.TEXT,
         time: Long = 0,
-        autoClose: Boolean = false
+        autoClose: Boolean = false,
+        showToc: Boolean = false
     ) : this() {
         arguments = Bundle().apply {
             putString("title", title)
             putString("content", IntentData.put(content))
             putString("mode", mode.name)
             putLong("time", time)
+            putBoolean("showToc", showToc)
         }
         isCancelable = false
         this.autoClose = autoClose
@@ -53,6 +64,11 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
     private val binding by viewBinding(DialogTextViewBinding::bind)
     private var time = 0L
     private var autoClose: Boolean = false
+    private var markwon: Markwon? = null
+    private var fullContent: String = ""
+    private var sections: List<HelpSections.Section> = emptyList()
+    private var selectedSection = 0
+    private var renderJob: Job? = null
 
     override fun onStart() {
         super.onStart()
@@ -61,9 +77,11 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
         binding.toolBar.inflateMenu(R.menu.dialog_text)
+        binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
         binding.toolBar.menu.applyTint(requireContext())
         binding.toolBar.setOnMenuItemClickListener {
             when (it.itemId) {
+                R.id.menu_help_toc -> binding.drawerLayout.openDrawer(GravityCompat.END)
                 R.id.menu_close -> dismissAllowingStateLoss()
             }
             true
@@ -77,17 +95,17 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
                         binding.textView.setTextClassifier(TextClassifier.NO_OP)
                     }
                     binding.textView.setLineSpacing(0f, 1.3f)
-                    val markwon: Markwon
-                    val markdown = withContext(IO) {
-                        markwon = Markwon.builder(requireContext())
+                    fullContent = content
+                    markwon = withContext(IO) {
+                        Markwon.builder(requireContext())
                             .usePlugin(GlideImagesPlugin.create(requireContext()))
                             .usePlugin(HtmlPlugin.create())
                             .usePlugin(TablePlugin.create(HelpMarkwonTheme.tableTheme()))
                             .usePlugin(HelpMarkwonTheme.plugin())
                             .build()
-                        markwon.toMarkdown(content)
                     }
-                    markwon.setParsedMarkdown(binding.textView, markdown)
+                    renderMd(fullContent)
+                    if (it.getBoolean("showToc")) setupToc()
                 }
 
                 Mode.HTML.name -> binding.textView.setHtml(content)
@@ -121,6 +139,58 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
         } else {
             view.post {
                 dialog?.setCancelable(true)
+            }
+        }
+    }
+
+    private fun renderMd(md: String) {
+        val mw = markwon ?: return
+        renderJob?.cancel()
+        renderJob = viewLifecycleOwner.lifecycleScope.launch {
+            val parsed = withContext(IO) { mw.toMarkdown(md) }
+            mw.setParsedMarkdown(binding.textView, parsed)
+            binding.textView.scrollTo(0, 0)
+        }
+    }
+
+    /** 章节目录:切出 ≥2 节才亮入口;点章节只渲染该节,「全部」恢复全文 */
+    private fun setupToc() {
+        sections = HelpSections.parse(fullContent)
+        if (sections.isEmpty()) return
+        binding.tocList.layoutManager = LinearLayoutManager(requireContext())
+        binding.tocList.adapter = TocAdapter()
+        binding.toolBar.menu.findItem(R.id.menu_help_toc)?.isVisible = true
+        binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+    }
+
+    private inner class TocAdapter : RecyclerView.Adapter<TocAdapter.VH>() {
+
+        inner class VH(val itemBinding: ItemHelpTocBinding) :
+            RecyclerView.ViewHolder(itemBinding.root)
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+            VH(ItemHelpTocBinding.inflate(layoutInflater, parent, false))
+
+        override fun getItemCount() = sections.size + 1
+
+        override fun onBindViewHolder(holder: VH, position: Int) {
+            val scheme = AppColorScheme.current
+            val selected = position == selectedSection
+            holder.itemBinding.root.text =
+                if (position == 0) getString(R.string.all) else sections[position - 1].title
+            holder.itemBinding.root.setTextColor(if (selected) scheme.primary else scheme.onSurface)
+            holder.itemBinding.root.typeface =
+                if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+            holder.itemBinding.root.setOnClickListener {
+                val pos = holder.bindingAdapterPosition
+                if (pos != RecyclerView.NO_POSITION && pos != selectedSection) {
+                    val old = selectedSection
+                    selectedSection = pos
+                    notifyItemChanged(old)
+                    notifyItemChanged(pos)
+                    renderMd(if (pos == 0) fullContent else sections[pos - 1].text)
+                }
+                binding.drawerLayout.closeDrawers()
             }
         }
     }
