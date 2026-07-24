@@ -76,12 +76,14 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         binding.textView.setTextClassifier(TextClassifier.NO_OP)
                     }
+                    binding.textView.setLineSpacing(0f, 1.3f)
                     val markwon: Markwon
                     val markdown = withContext(IO) {
                         markwon = Markwon.builder(requireContext())
                             .usePlugin(GlideImagesPlugin.create(requireContext()))
                             .usePlugin(HtmlPlugin.create())
-                            .usePlugin(TablePlugin.create(requireContext()))
+                            .usePlugin(TablePlugin.create(HelpMarkwonTheme.tableTheme()))
+                            .usePlugin(HelpMarkwonTheme.plugin())
                             .build()
                         markwon.toMarkdown(content)
                     }
