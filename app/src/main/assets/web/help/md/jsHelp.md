@@ -693,12 +693,14 @@ function getContent(chapter, book) {
 
 ### 登录
 
-两种形态各自独立，可并存（都声明时进表单界面，`loginUrl` 不再被 WebView 使用）：
+三种形态各自独立（动态UI与表单二选一；与 WebView 都声明时进表单界面，`loginUrl` 不再被 WebView 使用）：
 
 - **WebView 登录**：`config.loginUrl` 填登录页地址。打开网页手动登录，登录产生的
   cookie 自动存储，后续请求自动携带。
 - **表单登录**：`config.loginUi` 填表单描述（数组），并实现顶层 `login` 函数
   （声明了 loginUi 缺 login 函数在导入/保存时报错）。
+- **动态登录UI**：顶层声明 `loginUi(state)` 与 `loginAction(action, state, form)` 两函数
+  即启用，适合分步登录，见下节。
 
 ```js
 const config = {
@@ -741,6 +743,80 @@ function sendCaptcha(result) {
   `source.removeLoginHeader()`。
 - **`loginCheckJs` 对 JS 源不适用**：请求由脚本自己发出，登录态失效由函数自行检测处理
   （发现未登录标记时 `throw` 提示，或重新请求）。
+
+### 动态登录UI（v2）
+
+分步登录（短信验证码、动态字段、多步流程）用显式状态协议：顶层声明 `loginUi(state)` 与
+`loginAction(action, state, form)` 即启用（loginUi 函数须配对 loginAction，缺则保存报错；
+与 `config.loginUi` 二选一），保存时自动在源上落 `{"version": 2}` 标记。
+
+```js
+function loginUi(state) {
+  if (!state.step) {
+    return {
+      rows: [
+        { key: "phone", name: "手机号", type: "text" },
+        { name: "发送验证码", type: "button", action: "sendCode", countdown: 60 },
+      ],
+    };
+  }
+  return {
+    rows: [
+      { name: `验证码已发送至 ${state.phone}`, type: "label" },
+      { key: "code", name: "验证码", type: "text" },
+      { name: "重新发送", type: "button", action: "sendCode", countdown: 60 },
+      { name: "登录", type: "button", action: "verify" },
+    ],
+  };
+}
+
+function loginAction(action, state, form) {
+  if (action === "sendCode") {
+    const r = JSON.parse(java.ajax(`${config.bookSourceUrl}/sms?phone=${form.phone}`));
+    if (!r.ok) return { error: { phone: r.msg || "发送失败" } };
+    return { state: { step: "code", phone: form.phone } };
+  }
+  if (action === "verify") {
+    const r = JSON.parse(
+      java.ajax(`${config.bookSourceUrl}/verify?phone=${state.phone}&code=${form.code}`),
+    );
+    if (!r.ok) return { error: { code: r.msg || "验证码错误" } };
+    source.putLoginHeader(JSON.stringify({ Authorization: `Bearer ${r.token}` }));
+    return { login: { phone: state.phone }, close: true };
+  }
+}
+```
+
+- **控制流**：首次打开 state 为 `{}`，调 `loginUi(state)` 取界面描述 `{rows:[...]}`；点按钮把
+  `action` 名派发给 `loginAction`，其返回命令对象——返回什么发生什么；state 由应用持有，弹窗
+  关闭即弃。`loginUi` 按 state 纯生成界面，请求和存储都发生在 `loginAction` 里。
+- **行类型**（`rows` 按序渲染）：
+
+| type     | 字段                                          | 说明                                                                       |
+| -------- | --------------------------------------------- | -------------------------------------------------------------------------- |
+| text     | `key`、`name` 必填，可选 `hint`/`value`       | 输入框；`name` 是浮动标签，`hint` 是占位提示                               |
+| password | 同 text                                       | 密码框，带明文切换                                                         |
+| label    | `name`                                        | 只读提示文字                                                               |
+| select   | `key`、`name`、`options`（字符串数组）        | 点击弹单选框，值为选中的选项字符串                                         |
+| button   | `name`、`action` 必填，可选 `countdown`（秒） | 点击派发 action；倒计时在动作返回无 `error` 时启动并禁用按钮，跨重渲染存活 |
+
+- **表单与回填**：有 `key` 的行进表单，`form` = `{key: 当前值}`。回填优先级：行的 `value` >
+  本次弹窗已输入 > 已存登录信息同 key 值；`value: ""` 强制清空。
+- **命令对象**（只执行下表四键，其余键忽略；返回空 = 纯副作用动作；抛异常 toast 提示并记日志）：
+
+| 键                       | 行为                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------ |
+| `state`（对象）          | 替换状态并重新渲染，唯一重渲染途径                                             |
+| `error`（`{key: 消息}`） | key 匹配输入行显示字段红字，不匹配（如表单级 `_form`）toast 弹出               |
+| `login`（对象）          | AES 持久化为登录信息（与 `source.getLoginInfo()` 同存储），重开弹窗按 key 回填 |
+| `close: true`            | 关闭弹窗；与 `state` 同时返回时只关窗                                          |
+
+- **登录头**：`login` 命令只存登录信息；后续请求要携带的认证头在动作里用
+  `source.putLoginHeader(json)` 保存（含 `Cookie` 键时同步 CookieStore）。
+- **特殊交互**：提示用 `java.toast(msg)`，外跳网页用 `java.startBrowser(url, title)`，图形验证码
+  用 `java.getVerificationCode(imageUrl)`。
+- **菜单**：v2 弹窗提交是普通 action，无「确定」按钮；工具栏菜单「清除登录信息」清空登录信息
+  与登录头。顶层 `login()` 函数 v2 弹窗不调用，可保留作静默重登约定。
 
 ### 段评
 
