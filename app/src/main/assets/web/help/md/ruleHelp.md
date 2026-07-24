@@ -102,6 +102,42 @@ getStrResponse( jsStr: String? = null, sourceRegex: String? = null) //返回访�
 getResponse(): Response //返回访问结果,网络朗读引擎采用的是这个,调用登录后在调用这方法可以重新访问,参考阿里云登录检测
 ```
 
+* 登录UI v2（动态状态协议）
+> `登录UI` 填 `{"version": 2}`，`loginUi(state)` 与 `loginAction(action, state, form)` 两个函数写在`登录URL`里  
+> `loginUi` 按 state 返回 `{rows:[...]}` 生成界面，state 由应用持有、弹窗关闭即弃；点按钮把 `action` 名派发给 `loginAction`，返回命令对象：`{state}` 重渲染、`{error:{key:消息}}` 字段红字、`{login:{...}}` 持久化并在重开时按 key 回填、`{close:true}` 关窗  
+> 行类型 `text`/`password`/`label`/`select`（`options` 单选）/`button`（`countdown` 秒倒计时）；输入行 `key` 作数据键；完整契约与示例见js帮助「动态登录UI」
+```
+登录UI 填写
+{"version": 2}
+
+登录URL 填写
+function loginUi(state) {
+  if (!state.step) {
+    return { rows: [
+      { key: "phone", name: "手机号", type: "text" },
+      { name: "发送验证码", type: "button", action: "sendCode", countdown: 60 },
+    ] };
+  }
+  return { rows: [
+    { key: "code", name: "验证码", type: "text" },
+    { name: "登录", type: "button", action: "verify" },
+  ] };
+}
+
+function loginAction(action, state, form) {
+  if (action === "sendCode") {
+    java.ajax("https://example.com/sms?phone=" + form.phone);
+    return { state: { step: "code", phone: form.phone } };
+  }
+  if (action === "verify") {
+    const r = JSON.parse(java.ajax("https://example.com/verify?code=" + form.code));
+    if (!r.ok) return { error: { code: "验证码错误" } };
+    source.putLoginHeader(JSON.stringify({ Cookie: r.cookie }));
+    return { login: { phone: state.phone }, close: true };
+  }
+}
+```
+
 * 发现url格式
 ```json
 [
