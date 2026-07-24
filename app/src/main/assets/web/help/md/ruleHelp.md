@@ -4,6 +4,9 @@
 * [书源帮助文档](https://mgz0227.github.io/The-tutorial-of-Legado/Rule/source.html)
 * [订阅源帮助文档](https://mgz0227.github.io/The-tutorial-of-Legado/Rule/rss.html)
 * 辅助键盘❓中可插入URL参数模板,打开帮助,js教程,正则教程,选择文件
+
+## 基础配置
+
 * 规则标志, {{......}}内使用规则必须有明显的规则标志,没有规则标志当作js执行
 ```
 @@ 默认规则,直接写时可以省略@@
@@ -35,6 +38,8 @@
 
 * CookieJar
 > 启用后会自动保存每次返回头中的Set-Cookie中的值，适用于验证码图片一类需要session的网站
+
+## 登录
 
 * 登录UI
 > 不使用内置webView登录网站，需要使用`登录URL`规则实现登录逻辑，可使用`登录检查JS`检查登录结果  
@@ -138,6 +143,8 @@ function loginAction(action, state, form) {
 }
 ```
 
+## 发现
+
 * 发现url格式
 ```json
 [
@@ -154,6 +161,8 @@ function loginAction(action, state, form) {
   }
 ]
 ```
+
+## 请求与URL
 
 * 请求头,支持http代理,socks4 socks5代理设置
 > 注意请求头的key是区分大小写的  
@@ -240,6 +249,8 @@ let options = {
 '<img src="'+src+","+JSON.stringify(options)+'">'
 ```
 
+## 正文处理
+
 * 字体解析使用
 > 使用方法,在正文替换规则中使用,原理根据f1字体的字形数据到f2中查找字形对应的编码
 ```
@@ -301,6 +312,8 @@ function decodeImage(data, key) {
 
 decodeImage(result, key)
 ```
+
+## 回调事件
 
 * 回调操作 (callBackJs)
 > 在书源编辑页面勾选「事件监听」并填写正文规则中的回调JS后生效。  
