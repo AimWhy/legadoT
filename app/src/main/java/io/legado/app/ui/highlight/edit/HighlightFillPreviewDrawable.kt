@@ -24,7 +24,7 @@ class HighlightFillPreviewDrawable(
         val b = bounds
         val h = b.height().toFloat()
         if (h <= 0f || b.width() <= 0) return
-        val baseline = h / 2f + 0.37f * textSize
+        val baseline = h / 2f + HighlightGeometry.GLYPH_BOX_CENTER_RATIO * textSize
         val band = HighlightGeometry.fillBand(baseline, textSize, h, style.fillShape, 1f.dpToPx())
         canvas.save()
         canvas.translate(0f, b.top.toFloat())

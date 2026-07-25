@@ -291,6 +291,11 @@ data class TextLine(
     /** 按连续同装饰的列区间画 下划线/删除线/方框(文字之上) */
     private fun drawHighlightRuns(canvas: Canvas) {
         val baseline = lineBase - lineTop
+        val textSize = if (isTitle) {
+            ChapterProvider.titlePaint.textSize
+        } else {
+            ChapterProvider.contentPaint.textSize
+        }
         var i = 0
         val cols = columns
         while (i < cols.size) {
@@ -307,7 +312,7 @@ data class TextLine(
             val x0 = (cols[i] as TextColumn).start
             val x1 = (cols[j - 1] as TextColumn).end
             val fallback = if (st.textColor != 0) st.textColor else ReadBookConfig.textColor
-            HighlightDraw.drawRun(canvas, x0, x1, baseline, height, u, sk, bx, fallback)
+            HighlightDraw.drawRun(canvas, x0, x1, baseline, height, textSize, u, sk, bx, fallback)
             i = j
         }
     }

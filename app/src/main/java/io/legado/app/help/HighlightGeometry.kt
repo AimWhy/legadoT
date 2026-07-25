@@ -10,6 +10,13 @@ import kotlin.math.sin
  */
 object HighlightGeometry {
 
+    /**
+     * 字身盒纵向中心相对基线的比例。
+     * 字身盒上边界 = baseline - 0.90×textSize, 下边界 = baseline + 0.16×textSize,
+     * 中心 = baseline - (0.90 - 0.16) / 2 × textSize = baseline - 0.37×textSize。
+     */
+    const val GLYPH_BOX_CENTER_RATIO = 0.37f
+
     data class Dot(val cx: Float, val cy: Float, val r: Float)
 
     /**

@@ -124,7 +124,7 @@ object HighlightDraw {
      * baseline = textLine.lineBase - textLine.lineTop;height = textLine.height。
      */
     fun drawRun(
-        canvas: Canvas, x0: Float, x1: Float, baseline: Float, height: Float,
+        canvas: Canvas, x0: Float, x1: Float, baseline: Float, height: Float, textSize: Float,
         underline: HighlightStyle.Underline?, strike: HighlightStyle.Deco?,
         box: HighlightStyle.Deco?, fallbackColor: Int
     ) {
@@ -168,14 +168,21 @@ object HighlightDraw {
 
         strike?.let { s ->
             strokePaint.color = if (s.color != 0) s.color else fallbackColor
-            val y = baseline - (baseline) * 0.30f
+            val y = baseline - textSize * HighlightGeometry.GLYPH_BOX_CENTER_RATIO
             canvas.drawLine(x0, y, x1, y, strokePaint)
         }
 
         box?.let { bx ->
             strokePaint.color = if (bx.color != 0) bx.color else fallbackColor
-            val inset = 0.5f.dpToPx()
-            canvas.drawRect(x0 + inset, inset, x1 - inset, height - inset, strokePaint)
+            val dp = 1f.dpToPx()
+            val band = HighlightGeometry.fillBand(baseline, textSize, height, HighlightStyle.FillShape.ROUNDED, dp)
+            val r = 3f.dpToPx()  // 与 drawFillRun ROUNDED 分支相同
+            val halfStroke = strokePaint.strokeWidth / 2f
+            canvas.drawRoundRect(
+                x0 + halfStroke, band.top + halfStroke,
+                x1 - halfStroke, band.bottom - halfStroke,
+                r, r, strokePaint
+            )
         }
     }
 }

@@ -54,6 +54,12 @@ class HighlightGeometryTest {
     }
 
     @Test
+    fun glyphBoxCenterRatioMatchesDefinition() {
+        val expected = (0.90f - 0.16f) / 2f
+        assertEquals(expected, HighlightGeometry.GLYPH_BOX_CENTER_RATIO, 1e-6f)
+    }
+
+    @Test
     fun emphasisDotsCenteredPerColumn() {
         val dots = HighlightGeometry.emphasisDots(
             floatArrayOf(0f, 10f), floatArrayOf(10f, 30f), 80f, 2f

@@ -80,9 +80,12 @@ data class TextColumn(
             canvas.drawText(charData, start, y, textPaint)
         }
         if (saved != null) HighlightDraw.restoreTextStyle(textPaint, saved)
-        hs?.emphasis?.let { e ->
-            val color = if (e.color != 0) e.color else textColor
-            HighlightDraw.drawEmphasis(canvas, start, end, textLine.height, color)
+        // 着重号与下划线互斥, 下划线优先
+        if (hs?.underline == null) {
+            hs?.emphasis?.let { e ->
+                val color = if (e.color != 0) e.color else textColor
+                HighlightDraw.drawEmphasis(canvas, start, end, textLine.height, color)
+            }
         }
         if (selected) {
             canvas.drawRect(start, 0f, end, textLine.height, view.selectedPaint)
