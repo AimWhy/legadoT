@@ -46,14 +46,6 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
             style = Paint.Style.FILL
         }
     }
-    private val highlightFillPaint by lazy {
-        Paint().apply { style = Paint.Style.FILL }
-    }
-
-    fun highlightPaint(bgColor: Int): Paint {
-        highlightFillPaint.color = bgColor
-        return highlightFillPaint
-    }
     private var callBack: CallBack
     private val visibleRect = ChapterProvider.visibleRect
     val selectStart = TextPos(0, -1, -1)

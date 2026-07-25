@@ -5,6 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Paint.FontMetrics
 import android.os.Build
 import androidx.annotation.Keep
+import io.legado.app.help.HighlightGeometry
+import io.legado.app.help.HighlightStyle
 import io.legado.app.help.PaintPool
 import io.legado.app.help.book.isImage
 import io.legado.app.help.config.AppConfig
@@ -171,6 +173,7 @@ data class TextLine(
     }
 
     private fun drawTextLine(view: ContentTextView, canvas: Canvas) {
+        drawHighlightFills(canvas)
         if (checkFastDraw()) {
             fastDrawTextLine(view, canvas)
         } else {
@@ -221,13 +224,6 @@ data class TextLine(
             paint.wordSpacing = wordSpacing
         }
         val offsetX = if (atLeastApi35) letterSpacingHalf else extraLetterSpacingOffsetX
-        for (i in columns.indices) {
-            val column = columns[i] as TextColumn
-            val fill = column.highlightStyle?.fill ?: 0
-            if (fill != 0) {
-                canvas.drawRect(column.start, 0f, column.end, height, view.highlightPaint(fill))
-            }
-        }
         canvas.drawText(text, indentSize, text.length, startX + offsetX, lineBase - lineTop, paint)
         PaintPool.recycle(paint)
         for (i in columns.indices) {
@@ -250,6 +246,46 @@ data class TextLine(
             lineY,
             ChapterProvider.contentPaint
         )
+    }
+
+    /** 按合并区间画背景填充(文字之下) */
+    private fun drawHighlightFills(canvas: Canvas) {
+        val cols = columns
+        val n = cols.size
+        var any = false
+        for (i in 0 until n) {
+            if (((cols[i] as? TextColumn)?.highlightStyle?.fill ?: 0) != 0) {
+                any = true
+                break
+            }
+        }
+        if (!any) return
+        val fills = IntArray(n)
+        val shapes = Array(n) { HighlightStyle.FillShape.ROUNDED }
+        val starts = FloatArray(n)
+        val ends = FloatArray(n)
+        for (i in 0 until n) {
+            val st = (cols[i] as? TextColumn)?.highlightStyle
+            fills[i] = st?.fill ?: 0
+            if (st != null) shapes[i] = st.fillShape
+            starts[i] = cols[i].start
+            ends[i] = cols[i].end
+        }
+        val baseline = lineBase - lineTop
+        val textSize = if (isTitle) {
+            ChapterProvider.titlePaint.textSize
+        } else {
+            ChapterProvider.contentPaint.textSize
+        }
+        val dp = 1f.dpToPx()
+        val runs = HighlightGeometry.mergeFillRuns(fills, shapes, starts, ends)
+        for (i in runs.indices) {
+            val run = runs[i]
+            val band = HighlightGeometry.fillBand(baseline, textSize, height, run.shape, dp)
+            HighlightDraw.drawFillRun(
+                canvas, run.x0, run.x1, band.top, band.bottom, run.fill, run.shape
+            )
+        }
     }
 
     /** 按连续同装饰的列区间画 下划线/删除线/方框(文字之上) */

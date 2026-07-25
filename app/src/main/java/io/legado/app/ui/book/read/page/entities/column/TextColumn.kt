@@ -70,10 +70,6 @@ data class TextColumn(
         if (textPaint.color != textColor) {
             textPaint.color = textColor
         }
-        val fill = hs?.fill ?: 0
-        if (fill != 0) {
-            canvas.drawRect(start, 0f, end, textLine.height, view.highlightPaint(fill))
-        }
         val saved = if (hs != null) HighlightDraw.applyTextStyle(textPaint, hs) else null
         val y = textLine.lineBase - textLine.lineTop
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {

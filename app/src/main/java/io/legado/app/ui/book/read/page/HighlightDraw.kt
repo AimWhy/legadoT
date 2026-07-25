@@ -13,8 +13,7 @@ import io.legado.app.ui.book.read.page.provider.ChapterProvider
 import io.legado.app.utils.dpToPx
 
 /**
- * 高亮「文字装饰」绘制。逐列装饰(着重号)与按 run 装饰(下划线/删除线/方框)。
- * 文字底色填充不在此处(见 ContentTextView.highlightPaint)。
+ * 高亮「文字装饰」绘制。逐列装饰(着重号)、按 run 装饰(下划线/删除线/方框/背景填充)。
  */
 object HighlightDraw {
 
