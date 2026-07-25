@@ -12,6 +12,7 @@ import io.legado.app.databinding.DialogHighlightStyleBinding
 import io.legado.app.databinding.ItemHighlightChannelBinding
 import io.legado.app.help.HighlightStyle
 import io.legado.app.help.HighlightStyle.Deco
+import io.legado.app.help.HighlightStyle.FillShape
 import io.legado.app.help.HighlightStyle.Kind
 import io.legado.app.help.HighlightStyle.Underline
 import io.legado.app.help.HighlightStyles
@@ -118,7 +119,9 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
         listOf(
             Channel(R.string.highlight_bg_color, HL_FILL, true,
                 { it.fill != 0 }, { it.fill },
-                { s, on -> s.copy(fill = if (on) (if (s.fill != 0) s.fill else 0x80FFF176.toInt()) else 0) }),
+                { s, on -> s.copy(fill = if (on) (if (s.fill != 0) s.fill else 0x80FFF176.toInt()) else 0) },
+                extra = { s -> shapeLabel(s.fillShape) },
+                onExtra = { s -> s.copy(fillShape = nextShape(s.fillShape)) }),
             Channel(R.string.highlight_text_color, HL_TEXT, false,
                 { it.textColor != 0 }, { it.textColor },
                 { s, on -> s.copy(textColor = if (on) (if (s.textColor != 0) s.textColor else 0xFFE53935.toInt()) else 0) }),
@@ -213,6 +216,19 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
     private fun nextKind(kind: Kind): Kind {
         val all = Kind.entries
         return all[(all.indexOf(kind) + 1) % all.size]
+    }
+
+    private fun shapeLabel(shape: FillShape): String = when (shape) {
+        FillShape.MARKER -> getString(R.string.highlight_fill_marker)
+        FillShape.HALF -> getString(R.string.highlight_fill_half)
+        FillShape.BASELINE -> getString(R.string.highlight_fill_baseline)
+        FillShape.PILL -> getString(R.string.highlight_fill_pill)
+        FillShape.ROUNDED -> getString(R.string.highlight_fill_rounded)
+    }
+
+    private fun nextShape(shape: FillShape): FillShape {
+        val all = FillShape.entries
+        return all[(all.indexOf(shape) + 1) % all.size]
     }
 
     companion object {
