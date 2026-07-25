@@ -2,8 +2,10 @@ package io.legado.app.ui.book.read.page
 
 import android.graphics.Canvas
 import android.graphics.DashPathEffect
+import android.graphics.LinearGradient
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.Shader
 import android.graphics.Typeface
 import io.legado.app.help.HighlightGeometry
 import io.legado.app.help.HighlightStyle
@@ -25,8 +27,15 @@ object HighlightDraw {
     private val dash by lazy { DashPathEffect(floatArrayOf(6f.dpToPx(), 4f.dpToPx()), 0f) }
     private val dot by lazy { DashPathEffect(floatArrayOf(2f.dpToPx(), 3f.dpToPx()), 0f) }
     private val wavePath = Path()
+    private val fillPath = Path()
 
     private fun lineWidth() = 1.5f.dpToPx()
+
+    /** 按比例缩放 ARGB 的 alpha 通道 */
+    private fun scaleAlpha(color: Int, factor: Float): Int {
+        val a = ((color ushr 24) * factor).toInt().coerceIn(0, 255)
+        return (a shl 24) or (color and 0x00FFFFFF)
+    }
 
     /** applyTextStyle 需还原的原始 Paint 状态 */
     class SavedTextStyle(val bold: Boolean, val skew: Float, val typeface: Typeface?)
@@ -46,6 +55,61 @@ object HighlightDraw {
         paint.isFakeBoldText = saved.bold
         paint.textSkewX = saved.skew
         paint.typeface = saved.typeface
+    }
+
+    /**
+     * 画一段合并后的背景填充。x0..x1 为连续同色同形列的合并区间,
+     * top..bottom 由 [HighlightGeometry.fillBand] 给出(行盒局部坐标)。
+     */
+    fun drawFillRun(
+        canvas: Canvas, x0: Float, x1: Float, top: Float, bottom: Float,
+        fill: Int, shape: HighlightStyle.FillShape
+    ) {
+        if (x1 <= x0 || bottom <= top) return
+        fillPaint.shader = null
+        when (shape) {
+            HighlightStyle.FillShape.ROUNDED -> {
+                val r = 3f.dpToPx()
+                fillPaint.color = fill
+                canvas.drawRoundRect(x0, top, x1, bottom, r, r, fillPaint)
+            }
+
+            HighlightStyle.FillShape.MARKER -> {
+                // 两端 alpha 渐隐 + 四角圆角不等 → 手涂痕迹
+                fillPaint.color = fill
+                fillPaint.shader = LinearGradient(
+                    x0, 0f, x1, 0f,
+                    intArrayOf(fill and 0x00FFFFFF, fill, fill, fill and 0x00FFFFFF),
+                    floatArrayOf(0f, 0.04f, 0.96f, 1f),
+                    Shader.TileMode.CLAMP
+                )
+                val u = 2f.dpToPx()
+                fillPath.reset()
+                fillPath.addRoundRect(
+                    x0, top, x1, bottom,
+                    floatArrayOf(u, u * 2f, u * 2.5f, u, u * 1.5f, u * 2f, u * 2f, u),
+                    Path.Direction.CW
+                )
+                canvas.drawPath(fillPath, fillPaint)
+                fillPaint.shader = null
+            }
+
+            HighlightStyle.FillShape.HALF,
+            HighlightStyle.FillShape.BASELINE -> {
+                fillPaint.color = fill
+                canvas.drawRect(x0, top, x1, bottom, fillPaint)
+            }
+
+            HighlightStyle.FillShape.PILL -> {
+                val r = (bottom - top) / 2f
+                fillPaint.color = scaleAlpha(fill, 0.35f)
+                canvas.drawRoundRect(x0, top, x1, bottom, r, r, fillPaint)
+                strokePaint.strokeWidth = 1f.dpToPx()
+                strokePaint.pathEffect = null
+                strokePaint.color = fill or 0xFF000000.toInt()
+                canvas.drawRoundRect(x0, top, x1, bottom, r, r, strokePaint)
+            }
+        }
     }
 
     /** 着重号:每列一个字下圆点(逐列调用) */
