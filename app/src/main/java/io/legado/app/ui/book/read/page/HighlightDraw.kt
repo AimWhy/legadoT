@@ -37,13 +37,14 @@ object HighlightDraw {
     }
 
     /** applyTextStyle 需还原的原始 Paint 状态 */
-    class SavedTextStyle(val bold: Boolean, val skew: Float, val typeface: Typeface?)
+    class SavedTextStyle(val bold: Boolean, val skew: Float, val typeface: Typeface?, val textSize: Float)
 
-    /** 用样式配置文字 Paint(加粗/斜体/自定义字体)。返回需要还原的原值以便调用方复位。 */
+    /** 用样式配置文字 Paint(加粗/斜体/字号缩放/自定义字体)。返回需要还原的原值以便调用方复位。 */
     fun applyTextStyle(paint: Paint, style: HighlightStyle): SavedTextStyle {
-        val saved = SavedTextStyle(paint.isFakeBoldText, paint.textSkewX, paint.typeface)
+        val saved = SavedTextStyle(paint.isFakeBoldText, paint.textSkewX, paint.typeface, paint.textSize)
         paint.isFakeBoldText = saved.bold || style.bold
         if (style.italic) paint.textSkewX = -0.25f
+        if (style.textScale != 1.0f) paint.textSize = saved.textSize * style.textScale
         if (style.fontPath.isNotEmpty()) {
             ChapterProvider.getHighlightTypeface(style.fontPath)?.let { paint.typeface = it }
         }
@@ -54,6 +55,7 @@ object HighlightDraw {
         paint.isFakeBoldText = saved.bold
         paint.textSkewX = saved.skew
         paint.typeface = saved.typeface
+        paint.textSize = saved.textSize
     }
 
     /**

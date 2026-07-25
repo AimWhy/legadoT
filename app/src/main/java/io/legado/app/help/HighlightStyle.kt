@@ -15,6 +15,7 @@ data class HighlightStyle(
     val strike: Deco? = null,          // 删除线;null=无
     val box: Deco? = null,             // 方框;null=无
     val emphasis: Deco? = null,        // 着重号(字下圆点);null=无
+    val textScale: Float = 1.0f,       // 字号缩放(0.8~1.5, 1.0=保持原字号)
     val fontPath: String = ""          // 自定义字体路径(空=跟随阅读字体)
 ) {
     data class Underline(val kind: Kind = Kind.SOLID, val color: Int = 0)
@@ -28,13 +29,13 @@ data class HighlightStyle(
     val isEmpty: Boolean
         get() = fill == 0 && textColor == 0 && !bold && !italic &&
                 underline == null && strike == null && box == null && emphasis == null &&
-                fontPath.isEmpty()
+                textScale == 1.0f && fontPath.isEmpty()
 
     /** 是否需要「逐列绘制」(任何非纯背景填充的通道都需要) */
     val needsPerColumnDraw: Boolean
         get() = textColor != 0 || bold || italic ||
                 underline != null || strike != null || box != null || emphasis != null ||
-                fontPath.isNotEmpty()
+                textScale != 1.0f || fontPath.isNotEmpty()
 
     companion object {
         /** 按通道 last-wins 叠加:other 只覆盖它设过(非默认)的通道;布尔取或 */
@@ -50,6 +51,7 @@ data class HighlightStyle(
                 strike = other.strike ?: b.strike,
                 box = other.box ?: b.box,
                 emphasis = other.emphasis ?: b.emphasis,
+                textScale = if (other.textScale != 1.0f) other.textScale else b.textScale,
                 fontPath = other.fontPath.ifEmpty { b.fontPath }
             )
         }

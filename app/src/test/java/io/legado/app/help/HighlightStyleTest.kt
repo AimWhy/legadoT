@@ -35,6 +35,7 @@ class HighlightStyleTest {
         assertTrue(HighlightStyle(strike = Deco()).needsPerColumnDraw)
         assertTrue(HighlightStyle(box = Deco()).needsPerColumnDraw)
         assertTrue(HighlightStyle(emphasis = Deco()).needsPerColumnDraw)
+        assertTrue(HighlightStyle(textScale = 1.2f).needsPerColumnDraw)
     }
 
     @Test
@@ -106,5 +107,36 @@ class HighlightStyleTest {
     @Test
     fun shapeAloneIsStillEmpty() {
         assertTrue(HighlightStyle(fillShape = HighlightStyle.FillShape.PILL).isEmpty)
+    }
+
+    @Test
+    fun textScaleDefaultIsOne() {
+        assertEquals(1.0f, HighlightStyle().textScale, 1e-6f)
+    }
+
+    @Test
+    fun textScaleOneIsEmpty() {
+        assertTrue(HighlightStyle(textScale = 1.0f).isEmpty)
+    }
+
+    @Test
+    fun textScaleNonOneNeedsPerColumnDraw() {
+        assertFalse(HighlightStyle(textScale = 1.0f).needsPerColumnDraw)
+        assertTrue(HighlightStyle(textScale = 0.8f).needsPerColumnDraw)
+        assertTrue(HighlightStyle(textScale = 1.5f).needsPerColumnDraw)
+    }
+
+    @Test
+    fun textScaleMergeLastWins() {
+        val base = HighlightStyle(textScale = 1.2f)
+        val m = HighlightStyle.merge(base, HighlightStyle(textScale = 0.8f))
+        assertEquals(0.8f, m.textScale, 1e-6f)
+    }
+
+    @Test
+    fun textScaleMergeKeepsBaseWhenOtherIsOne() {
+        val base = HighlightStyle(textScale = 1.5f)
+        val m = HighlightStyle.merge(base, HighlightStyle(fill = 1))
+        assertEquals(1.5f, m.textScale, 1e-6f)
     }
 }
