@@ -29,7 +29,7 @@ import io.legado.app.utils.applyAppSheetBackground
  * 编辑宿主 [StyleHost] 提供的当前样式;改即回调 [StyleHost.onHighlightStyleChanged] 应用(实时预览)。
  * 取色委托 [StyleHost.pickHighlightColor],宿主写回后调 [refresh]。
  */
-class HighlightStyleDialog : BottomSheetDialogFragment() {
+class HighlightStyleDialog : BottomSheetDialogFragment(), ShadowEditDialog.Callback {
 
     interface StyleHost {
         /** 当前正在编辑的样式 */
@@ -147,7 +147,10 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
                 { it.textScale != 1.0f }, { 0 },
                 { s, on -> s.copy(textScale = if (on) (if (s.textScale != 1.0f) s.textScale else 1.2f) else 1.0f) },
                 extra = { s -> scaleLabel(s.textScale) },
-                onExtra = { s -> s.copy(textScale = nextScale(s.textScale)) })
+                onExtra = { s -> s.copy(textScale = nextScale(s.textScale)) }),
+            Channel(R.string.highlight_shadow, -1, false,
+                { it.shadow != null }, { 0 },
+                { s, on -> s.copy(shadow = if (on) (s.shadow ?: HighlightStyle.Shadow()) else null) })
         )
     }
 
@@ -155,17 +158,30 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
 
     private fun buildChannels() {
         val inflater = layoutInflater
-        channels.forEach { ch ->
+        channels.forEachIndexed { idx, ch ->
             val rb = ItemHighlightChannelBinding.inflate(inflater, binding.llChannels, false)
             rb.cbChannel.setText(ch.labelRes)
             rb.cbChannel.setOnClickListener {
-                apply(ch.toggle(cur(), rb.cbChannel.isChecked))
+                val newStyle = ch.toggle(cur(), rb.cbChannel.isChecked)
+                apply(newStyle)
+                // 如果是 shadow 通道且刚开启, 立即弹编辑对话框
+                if (ch.labelRes == R.string.highlight_shadow && newStyle.shadow != null && cur().shadow == null) {
+                    ShadowEditDialog.show(childFragmentManager, newStyle.shadow)
+                }
             }
             rb.vSwatch.setOnClickListener {
                 if (ch.dialogId != -1) styleHost?.pickHighlightColor(ch.dialogId, ch.color(cur()), ch.withAlpha)
             }
             rb.tvExtra.setOnClickListener {
                 ch.onExtra?.let { apply(it(cur())) }
+            }
+            // shadow 通道点击整行弹编辑对话框
+            if (ch.labelRes == R.string.highlight_shadow) {
+                rb.root.setOnClickListener {
+                    cur().shadow?.let { s ->
+                        ShadowEditDialog.show(childFragmentManager, s)
+                    }
+                }
             }
             binding.llChannels.addView(rb.root)
             rows.add(rb)
@@ -248,6 +264,11 @@ class HighlightStyleDialog : BottomSheetDialogFragment() {
         0.8f -> 1.2f
         1.2f -> 1.5f
         else -> 0.8f
+    }
+
+    override fun onShadowChanged(shadow: HighlightStyle.Shadow) {
+        apply(cur().copy(shadow = shadow))
+        refresh()
     }
 
     companion object {

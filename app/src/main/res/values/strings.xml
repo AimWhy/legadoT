@@ -449,6 +449,11 @@ Placeholders:
     <string name="highlight_text_scale_normal">正常</string>
     <string name="highlight_text_scale_large">大</string>
     <string name="highlight_text_scale_xlarge">特大</string>
+    <string name="highlight_shadow">阴影</string>
+    <string name="highlight_shadow_radius">半径</string>
+    <string name="highlight_shadow_offset_x">横向偏移</string>
+    <string name="highlight_shadow_offset_y">纵向偏移</string>
+    <string name="highlight_shadow_color">颜色</string>
     <string name="highlight_font">字体</string>
     <string name="highlight_font_default">默认</string>
     <string name="highlight_underline_solid">实线</string>

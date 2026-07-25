@@ -139,4 +139,29 @@ class HighlightStyleTest {
         val m = HighlightStyle.merge(base, HighlightStyle(fill = 1))
         assertEquals(1.5f, m.textScale, 1e-6f)
     }
+
+    @Test
+    fun shadowNullIsEmpty() {
+        assertTrue(HighlightStyle(shadow = null).isEmpty)
+    }
+
+    @Test
+    fun shadowNonNullNeedsPerColumnDraw() {
+        assertTrue(HighlightStyle(shadow = HighlightStyle.Shadow()).needsPerColumnDraw)
+    }
+
+    @Test
+    fun shadowMergeLastWins() {
+        val base = HighlightStyle(shadow = HighlightStyle.Shadow(radius = 5f))
+        val other = HighlightStyle(shadow = HighlightStyle.Shadow(radius = 2f))
+        val m = HighlightStyle.merge(base, other)
+        assertEquals(2f, m.shadow?.radius ?: 0f, 1e-6f)
+    }
+
+    @Test
+    fun shadowMergeKeepsBaseWhenOtherIsNull() {
+        val base = HighlightStyle(shadow = HighlightStyle.Shadow(dx = 3f))
+        val m = HighlightStyle.merge(base, HighlightStyle(fill = 1))
+        assertEquals(3f, m.shadow?.dx ?: 0f, 1e-6f)
+    }
 }
