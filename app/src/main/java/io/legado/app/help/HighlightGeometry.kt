@@ -38,4 +38,72 @@ object HighlightGeometry {
         require(starts.size == ends.size) { "starts/ends size mismatch" }
         return List(starts.size) { i -> Dot((starts[i] + ends[i]) / 2f, cy, r) }
     }
+
+    /** 填充的纵向范围(局部坐标, 行盒内) */
+    data class Band(val top: Float, val bottom: Float)
+
+    /** 一段连续同色同形的填充区间 */
+    data class FillRun(
+        val x0: Float, val x1: Float,
+        val fill: Int, val shape: HighlightStyle.FillShape
+    )
+
+    /**
+     * 填充的纵向范围。字身按 textSize 的固定比例取(上 0.90em / 下 0.16em),
+     * 不取字体 ascent/descent —— 后者含 CJK 字体的大量行间留白, 会让色带显著高于字身。
+     * dp = 1dp 对应的像素值。结果夹到 [0, height]:canvasRecorder 按 height 录制。
+     */
+    fun fillBand(
+        baseline: Float, textSize: Float, height: Float,
+        shape: HighlightStyle.FillShape, dp: Float
+    ): Band {
+        var top: Float
+        var bottom: Float
+        when (shape) {
+            HighlightStyle.FillShape.HALF -> {
+                top = baseline - textSize * 0.50f
+                bottom = baseline + 2f * dp
+            }
+            HighlightStyle.FillShape.BASELINE -> {
+                top = baseline + 1f * dp
+                bottom = top + 4f * dp
+            }
+            else -> {
+                top = baseline - textSize * 0.90f - 2f * dp
+                bottom = baseline + textSize * 0.16f + 2f * dp
+            }
+        }
+        top = top.coerceIn(0f, height)
+        bottom = bottom.coerceIn(top, height)
+        return Band(top, bottom)
+    }
+
+    /**
+     * 把连续同色同形的列合并成一个区间。fill == 0 的列不产出 run 并切断合并。
+     * 四个数组按列索引一一对应。
+     */
+    fun mergeFillRuns(
+        fills: IntArray,
+        shapes: Array<HighlightStyle.FillShape>,
+        starts: FloatArray,
+        ends: FloatArray
+    ): List<FillRun> {
+        val n = fills.size
+        require(shapes.size == n && starts.size == n && ends.size == n) {
+            "fills/shapes/starts/ends size mismatch"
+        }
+        val runs = ArrayList<FillRun>()
+        var i = 0
+        while (i < n) {
+            if (fills[i] == 0) {
+                i++
+                continue
+            }
+            var j = i + 1
+            while (j < n && fills[j] == fills[i] && shapes[j] == shapes[i]) j++
+            runs.add(FillRun(starts[i], ends[j - 1], fills[i], shapes[i]))
+            i = j
+        }
+        return runs
+    }
 }
