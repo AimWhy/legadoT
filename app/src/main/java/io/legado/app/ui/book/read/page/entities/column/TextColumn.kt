@@ -72,13 +72,22 @@ data class TextColumn(
         }
         val saved = if (hs != null) HighlightDraw.applyTextStyle(textPaint, hs) else null
         val y = textLine.lineBase - textLine.lineTop
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
-            val letterSpacing = textPaint.letterSpacing * textPaint.textSize
-            val letterSpacingHalf = letterSpacing * 0.5f
-            canvas.drawText(charData, start + letterSpacingHalf, y, textPaint)
+
+        // textScale 改变字号但不改排版宽度, 居中绘制避免错位
+        val drawX = if (hs?.textScale != null && hs.textScale != 1.0f) {
+            val actualWidth = textPaint.measureText(charData)
+            val allocatedWidth = end - start
+            start + (allocatedWidth - actualWidth) / 2f
         } else {
-            canvas.drawText(charData, start, y, textPaint)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                val letterSpacing = textPaint.letterSpacing * textPaint.textSize
+                start + letterSpacing * 0.5f
+            } else {
+                start
+            }
         }
+
+        canvas.drawText(charData, drawX, y, textPaint)
         if (saved != null) HighlightDraw.restoreTextStyle(textPaint, saved)
         // 着重号与下划线互斥, 下划线优先
         if (hs?.underline == null) {
