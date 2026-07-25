@@ -44,6 +44,9 @@ data class TextChapter(
     var highlightRuleMatches: List<io.legado.app.help.HighlightRuleMatcher.RuleMatch>? = null
     var highlightRuleMatchesVersion: Int = -1
 
+    /** "偏移即章内 pos"的整章文本; 规则匹配与手动划线重锚共用, 随重排(新实例)失效 */
+    var highlightText: String? = null
+
     private var layout: TextChapterLayout? = null
 
     val layoutChannel get() = layout!!.channel

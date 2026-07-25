@@ -666,8 +666,9 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
                 .map { HighlightMatcher.Range(it.start, it.end, it.style, it.applyToTitle) }
                 .toList()
             // 手动高亮排在规则之后 → resolve 按列表序逐通道 merge, 手动压过规则
-            val manualRanges = ReadBook.highlightsOfChapter(page.chapterIndex).map {
-                HighlightMatcher.Range(it.chapterPos, it.chapterPosEnd, it.styleObj())
+            // 存量偏移经 bookText 重锚, 净化删字后仍落在原文上; 原文被删者不产出 → 隐藏
+            val manualRanges = ReadBook.anchoredHighlightsOfChapter(textChapter).map { (h, a) ->
+                HighlightMatcher.Range(a.start, a.end, h.styleObj())
             }
             val ranges = ruleRanges + manualRanges
             val lineSpecs = page.lines.map { line ->
@@ -776,8 +777,10 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
         val chapter = page.getTextChapter()
         val pos = chapter.getReadLength(page.index) +
                 page.getPosByLineColumn(textPos.lineIndex, textPos.columnIndex)
-        return ReadBook.highlightsOfChapter(page.chapterIndex)
-            .firstOrNull { pos >= it.chapterPos && pos < it.chapterPosEnd }
+        // 命中判定用重锚后的区间, 与绘制一致
+        return ReadBook.anchoredHighlightsOfChapter(chapter)
+            .firstOrNull { (_, a) -> pos >= a.start && pos < a.end }
+            ?.first
     }
 
     private fun ruleMatchAt(textPos: TextPos, page: TextPage): HighlightRule? {

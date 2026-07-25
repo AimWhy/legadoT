@@ -13,6 +13,7 @@ import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.HighlightRule
 import io.legado.app.data.entities.ReadRecord
 import io.legado.app.help.AppWebDav
+import io.legado.app.help.HighlightAnchor
 import io.legado.app.help.HighlightRuleMatcher
 import io.legado.app.help.HighlightStyle
 import io.legado.app.help.HighlightTextBuilder
@@ -147,6 +148,22 @@ object ReadBook : CoroutineScope by MainScope() {
         return highlights.filter { it.chapterIndex == chapterIndex }
     }
 
+    /**
+     * 本章手动划线的重锚区间(原文已被净化删除者不产出 → 隐藏)。
+     * 存量偏移取自创建时的正文, 净化/简繁/重新分段改动长度后须按 bookText 搜回。
+     */
+    fun anchoredHighlightsOfChapter(
+        textChapter: io.legado.app.ui.book.read.page.entities.TextChapter
+    ): List<Pair<BookHighlight, HighlightAnchor.Anchor>> {
+        val chapterHighlights = highlightsOfChapter(textChapter.position)
+        if (chapterHighlights.isEmpty()) return emptyList()
+        val text = chapterText(textChapter)
+        return chapterHighlights.mapNotNull { h ->
+            HighlightAnchor.reanchor(text, h.chapterPos, h.chapterPosEnd, h.bookText)
+                ?.let { h to it }
+        }
+    }
+
     var highlightRules: List<HighlightRule> = emptyList()
         private set
 
@@ -165,14 +182,11 @@ object ReadBook : CoroutineScope by MainScope() {
         callBack?.upContent(resetPageOffset = false)
     }
 
-    /** 本章规则命中(整章匹配, 缓存在 TextChapter 上, 随重排/规则版本失效) */
-    fun ruleMatchesOfChapter(
+    /** 本章"偏移即章内 pos"的文本(手动重锚与规则匹配共用; 缓存在 TextChapter 上, 随重排失效) */
+    private fun chapterText(
         textChapter: io.legado.app.ui.book.read.page.entities.TextChapter
-    ): List<HighlightRuleMatcher.RuleMatch> {
-        if (highlightRules.isEmpty()) return emptyList()
-        if (textChapter.highlightRuleMatchesVersion == highlightRulesVersion) {
-            return textChapter.highlightRuleMatches ?: emptyList()
-        }
+    ): String {
+        textChapter.highlightText?.let { return it }
         val lines = textChapter.pages.flatMap { it.lines }.map { line ->
             HighlightTextBuilder.LineInput(
                 line.columns.map { col -> (col as? TextColumn)?.charData ?: "" },
@@ -181,6 +195,22 @@ object ReadBook : CoroutineScope by MainScope() {
             )
         }
         val text = HighlightTextBuilder.build(lines)
+        // 仅排版完成后缓存, 否则半章文本会被缓存住(与规则命中缓存同一口径)
+        if (textChapter.isCompleted) {
+            textChapter.highlightText = text
+        }
+        return text
+    }
+
+    /** 本章规则命中(整章匹配, 缓存在 TextChapter 上, 随重排/规则版本失效) */
+    fun ruleMatchesOfChapter(
+        textChapter: io.legado.app.ui.book.read.page.entities.TextChapter
+    ): List<HighlightRuleMatcher.RuleMatch> {
+        if (highlightRules.isEmpty()) return emptyList()
+        if (textChapter.highlightRuleMatchesVersion == highlightRulesVersion) {
+            return textChapter.highlightRuleMatches ?: emptyList()
+        }
+        val text = chapterText(textChapter)
         val rules = highlightRules.map {
             HighlightRuleMatcher.Rule(it.id, it.pattern, it.isRegex, it.styleObj(), it.timeoutMillisecond, it.applyToTitle)
         }
