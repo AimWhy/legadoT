@@ -75,4 +75,36 @@ class HighlightStyleTest {
         assertEquals(Kind.DASHED, back.underline!!.kind)
         assertNull(back.box)
     }
+
+    @Test
+    fun fillShapeDefaultsToRounded() {
+        assertEquals(HighlightStyle.FillShape.ROUNDED, HighlightStyle().fillShape)
+    }
+
+    @Test
+    fun fillShapeFollowsFillOnMerge() {
+        val base = HighlightStyle(fill = 1, fillShape = HighlightStyle.FillShape.MARKER)
+        val other = HighlightStyle(fill = 2, fillShape = HighlightStyle.FillShape.PILL)
+        val m = HighlightStyle.merge(base, other)
+        assertEquals(2, m.fill)
+        assertEquals(HighlightStyle.FillShape.PILL, m.fillShape)
+    }
+
+    @Test
+    fun fillShapeKeptWhenOtherHasNoFill() {
+        val base = HighlightStyle(fill = 1, fillShape = HighlightStyle.FillShape.HALF)
+        val m = HighlightStyle.merge(base, HighlightStyle(textColor = 7))
+        assertEquals(HighlightStyle.FillShape.HALF, m.fillShape)
+    }
+
+    @Test
+    fun fillOnlyStillFastDrawWithShape() {
+        val s = HighlightStyle(fill = 0x80FFFF00.toInt(), fillShape = HighlightStyle.FillShape.MARKER)
+        assertFalse(s.needsPerColumnDraw)
+    }
+
+    @Test
+    fun shapeAloneIsStillEmpty() {
+        assertTrue(HighlightStyle(fillShape = HighlightStyle.FillShape.PILL).isEmpty)
+    }
 }

@@ -7,6 +7,7 @@ package io.legado.app.help
  */
 data class HighlightStyle(
     val fill: Int = 0,                 // 背景填充(含 alpha;0=不填充)
+    val fillShape: FillShape = FillShape.ROUNDED,  // 背景形态,fill != 0 时生效
     val textColor: Int = 0,            // 字体色(0=保持阅读默认字色)
     val bold: Boolean = false,
     val italic: Boolean = false,
@@ -19,6 +20,9 @@ data class HighlightStyle(
     data class Underline(val kind: Kind = Kind.SOLID, val color: Int = 0)
     data class Deco(val color: Int = 0)              // color==0 跟随字色
     enum class Kind { SOLID, WAVY, DASHED, DOTTED, DOUBLE }
+
+    /** 背景填充形态 */
+    enum class FillShape { ROUNDED, MARKER, HALF, BASELINE, PILL }
 
     /** 完全空样式(等价于「无高亮」) */
     val isEmpty: Boolean
@@ -38,6 +42,7 @@ data class HighlightStyle(
             val b = base ?: HighlightStyle()
             return b.copy(
                 fill = if (other.fill != 0) other.fill else b.fill,
+                fillShape = if (other.fill != 0) other.fillShape else b.fillShape,
                 textColor = if (other.textColor != 0) other.textColor else b.textColor,
                 bold = other.bold || b.bold,
                 italic = other.italic || b.italic,

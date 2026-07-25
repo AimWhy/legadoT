@@ -34,4 +34,22 @@ class HighlightStyleAppGsonTest {
         val back = GSON.fromJsonObject<HighlightStyle>(GSON.toJson(s)).getOrThrow()
         assertEquals(s, back)
     }
+
+    @Test
+    fun legacyJsonWithoutFillShapeFallsBackToRounded() {
+        // 存量数据没有 fillShape 字段
+        val json = """{"fill":-2147418368,"textColor":0,"bold":false,"italic":false}"""
+        val back = GSON.fromJsonObject<HighlightStyle>(json).getOrThrow()
+        assertEquals(HighlightStyle.FillShape.ROUNDED, back.fillShape)
+    }
+
+    @Test
+    fun appGsonRoundTripsAllFillShapes() {
+        for (shape in HighlightStyle.FillShape.entries) {
+            val s = HighlightStyle(fill = 0x80FFF176.toInt(), fillShape = shape)
+            val json = GSON.toJson(s)
+            val back = GSON.fromJsonObject<HighlightStyle>(json).getOrThrow()
+            assertEquals("shape=$shape json=$json", shape, back.fillShape)
+        }
+    }
 }
