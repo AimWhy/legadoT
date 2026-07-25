@@ -200,7 +200,11 @@ class HighlightRuleEditDialog : BaseDialogFragment(R.layout.dialog_highlight_rul
     }
 
     private fun upPreview() = binding.run {
-        tvStylePreview.setBackgroundColor(editingStyle.fill)
+        tvStylePreview.background = if (editingStyle.fill != 0) {
+            HighlightFillPreviewDrawable(editingStyle, tvStylePreview.textSize)
+        } else {
+            null
+        }
         if (editingStyle.textColor != 0) tvStylePreview.setTextColor(editingStyle.textColor)
     }
 
