@@ -41,20 +41,18 @@ object HighlightDraw {
         val bold: Boolean,
         val skew: Float,
         val typeface: Typeface?,
-        val textSize: Float,
         val hadShadow: Boolean
     )
 
-    /** 用样式配置文字 Paint(加粗/斜体/字号缩放/阴影/自定义字体)。返回需要还原的原值以便调用方复位。 */
+    /** 用样式配置文字 Paint(加粗/斜体/阴影/自定义字体)。返回需要还原的原值以便调用方复位。 */
     fun applyTextStyle(paint: Paint, style: HighlightStyle): SavedTextStyle {
         // Paint 无 getShadowLayer API, 记录是否有阴影以便还原时清除
         val hadShadow = false  // 假设原 paint 无阴影(阅读 paint 默认不带阴影)
         val saved = SavedTextStyle(
-            paint.isFakeBoldText, paint.textSkewX, paint.typeface, paint.textSize, hadShadow
+            paint.isFakeBoldText, paint.textSkewX, paint.typeface, hadShadow
         )
         paint.isFakeBoldText = saved.bold || style.bold
         if (style.italic) paint.textSkewX = -0.25f
-        if (style.textScale != 1.0f) paint.textSize = saved.textSize * style.textScale
         style.shadow?.let { s ->
             paint.setShadowLayer(s.radius, s.dx, s.dy, s.color)
         }
@@ -68,7 +66,6 @@ object HighlightDraw {
         paint.isFakeBoldText = saved.bold
         paint.textSkewX = saved.skew
         paint.typeface = saved.typeface
-        paint.textSize = saved.textSize
         if (!saved.hadShadow) {
             paint.clearShadowLayer()
         }

@@ -444,11 +444,6 @@ Placeholders:
     <string name="highlight_strike">删除线</string>
     <string name="highlight_box">方框</string>
     <string name="highlight_emphasis">着重号</string>
-    <string name="highlight_text_scale">字号</string>
-    <string name="highlight_text_scale_small">小</string>
-    <string name="highlight_text_scale_normal">正常</string>
-    <string name="highlight_text_scale_large">大</string>
-    <string name="highlight_text_scale_xlarge">特大</string>
     <string name="highlight_shadow">阴影</string>
     <string name="highlight_shadow_radius">半径</string>
     <string name="highlight_shadow_offset_x">横向偏移</string>

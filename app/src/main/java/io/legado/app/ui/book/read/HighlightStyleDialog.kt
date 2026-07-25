@@ -143,11 +143,6 @@ class HighlightStyleDialog : BottomSheetDialogFragment(), ShadowEditDialog.Callb
             Channel(R.string.highlight_emphasis, HL_EMPHASIS, false,
                 { it.emphasis != null }, { it.emphasis?.color ?: 0 },
                 { s, on -> s.copy(emphasis = if (on) (s.emphasis ?: Deco()) else null) }),
-            Channel(R.string.highlight_text_scale, -1, false,
-                { it.textScale != 1.0f }, { 0 },
-                { s, on -> s.copy(textScale = if (on) (if (s.textScale != 1.0f) s.textScale else 1.2f) else 1.0f) },
-                extra = { s -> scaleLabel(s.textScale) },
-                onExtra = { s -> s.copy(textScale = nextScale(s.textScale)) }),
             Channel(R.string.highlight_shadow, -1, false,
                 { it.shadow != null }, { 0 },
                 { s, on -> s.copy(shadow = if (on) (s.shadow ?: HighlightStyle.Shadow()) else null) })
@@ -250,20 +245,6 @@ class HighlightStyleDialog : BottomSheetDialogFragment(), ShadowEditDialog.Callb
     private fun nextShape(shape: FillShape): FillShape {
         val all = FillShape.entries
         return all[(all.indexOf(shape) + 1) % all.size]
-    }
-
-    private fun scaleLabel(scale: Float): String = when (scale) {
-        0.8f -> getString(R.string.highlight_text_scale_small)
-        1.2f -> getString(R.string.highlight_text_scale_large)
-        1.5f -> getString(R.string.highlight_text_scale_xlarge)
-        else -> String.format("%.1f", scale)
-    }
-
-    /** 在生效档位间循环; 1.0 是本通道的关闭值, 不入循环 */
-    private fun nextScale(scale: Float): Float = when (scale) {
-        0.8f -> 1.2f
-        1.2f -> 1.5f
-        else -> 0.8f
     }
 
     override fun onShadowChanged(shadow: HighlightStyle.Shadow) {
