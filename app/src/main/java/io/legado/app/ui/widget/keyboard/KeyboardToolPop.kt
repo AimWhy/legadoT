@@ -9,8 +9,14 @@ import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.Window
 import android.widget.PopupWindow
+import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.google.android.flexbox.FlexDirection
+import com.google.android.flexbox.FlexWrap
+import com.google.android.flexbox.FlexboxLayoutManager
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
@@ -19,10 +25,12 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.KeyboardAssist
 import io.legado.app.databinding.ItemFilletTextBinding
 import io.legado.app.databinding.PopupKeyboardToolBinding
+import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.utils.activity
 import io.legado.app.utils.applyMd3PopupStyle
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.windowSize
 import kotlinx.coroutines.CoroutineScope
@@ -50,6 +58,15 @@ class KeyboardToolPop(
     private val adapter = Adapter(context)
     private var mIsSoftKeyBoardShowing = false
     var initialPadding = 0
+    /** 0 表示未装配,首次 upRowCount 必然执行装配 */
+    private var rowCount = 0
+
+    /** 用真实 item 测量,行高跟随系统字体缩放与主题字体 */
+    private val measureItem: TextView by lazy {
+        ItemFilletTextBinding.inflate(context.layoutInflater).root.apply {
+            text = helpChar
+        }
+    }
 
     init {
         contentView = binding.root
@@ -60,15 +77,13 @@ class KeyboardToolPop(
         isFocusable = false
         inputMethodMode = INPUT_METHOD_NEEDED //解决遮盖输入法
         initRecyclerView()
+        upRowCount()
         upAdapterData()
     }
 
     fun attachToWindow(window: Window) {
         window.decorView.viewTreeObserver.addOnGlobalLayoutListener(this)
-        contentView.measure(
-            View.MeasureSpec.UNSPECIFIED,
-            View.MeasureSpec.UNSPECIFIED,
-        )
+        measureContentView()
     }
 
     override fun onGlobalLayout() {
@@ -113,6 +128,51 @@ class KeyboardToolPop(
                 }
             }
         }
+    }
+
+    /**
+     * 装配显示行数。行数 1 走横向滚动;≥2 走 flexbox 换行并把高度锁成行数 × 行高,
+     * 超出行数的按键竖向滚动。
+     */
+    fun upRowCount(rows: Int = AppConfig.keyboardToolRows) {
+        if (rowCount == rows) {
+            return
+        }
+        rowCount = rows
+        if (rows <= AppConfig.KEYBOARD_TOOL_MIN_ROWS) {
+            binding.recyclerView.layoutManager =
+                LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+        } else {
+            binding.recyclerView.layoutManager = FlexboxLayoutManager(context).apply {
+                flexDirection = FlexDirection.ROW
+                flexWrap = FlexWrap.WRAP
+            }
+            height = measureRowsHeight(rows)
+        }
+        measureContentView()
+        if (isShowing) {
+            update(width, contentView.measuredHeight)
+            rootView.setPadding(0, 0, 0, initialPadding + contentView.measuredHeight)
+        }
+    }
+
+    /** item 上下 margin 各 3dp(item_fillet_text),RecyclerView 上下 padding 各 space_s */
+    private fun measureRowsHeight(rows: Int): Int {
+        val unspec = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED)
+        measureItem.measure(unspec, unspec)
+        val rowHeight = measureItem.measuredHeight + 3.dpToPx() * 2
+        return rows * rowHeight + binding.recyclerView.paddingTop +
+                binding.recyclerView.paddingBottom
+    }
+
+    private fun measureContentView() {
+        val heightSpec = if (height > 0) {
+            View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+        } else {
+            View.MeasureSpec.UNSPECIFIED
+        }
+        contentView.measure(View.MeasureSpec.UNSPECIFIED, heightSpec)
     }
 
     @Suppress("MemberVisibilityCanBePrivate")
