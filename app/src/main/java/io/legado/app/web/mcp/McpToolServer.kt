@@ -6,6 +6,7 @@ import io.legado.app.api.controller.HttpLogController
 import io.legado.app.constant.AppConst
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
+import io.legado.app.help.http.CookieStore
 import io.legado.app.help.source.SourceHelp
 import io.legado.app.model.Debug
 import io.legado.app.model.HttpRecord
@@ -37,7 +38,7 @@ import kotlinx.serialization.json.putJsonObject
 import java.time.Instant
 
 /**
- * MCP 9 工具注册:直调 app 内部(controller/DAO/Debug),不经 HTTP 回环,
+ * MCP 12 工具注册:直调 app 内部(controller/DAO/Debug),不经 HTTP 回环,
  * Web 服务关闭时全功能可用。description/返回文本与原 Node 薄代理一致。
  * Debug 是全局单例:debugMutex 串行化 MCP 侧调试,他端(调试页/校验)占用时直接报忙。
  */
@@ -434,6 +435,71 @@ object McpToolServer {
                 } finally {
                     debugMutex.unlock()
                 }
+            } catch (e: Exception) {
+                err(e.localizedMessage ?: e.toString())
+            }
+        }
+
+        server.addTool(
+            name = "get_cookies",
+            description = "读取阅读T内某域的 cookie(持久层+会话层合并,与书源 JS 的 cookie 对象同源)。按 url 的二级域名取。",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("url", stringProp("URL 或域名,按其二级域名读取"))
+                },
+                required = listOf("url"),
+            ),
+        ) { request ->
+            try {
+                val url = request.arguments.str("url")
+                    ?: return@addTool err("参数url不能为空")
+                val cookie = CookieStore.getCookie(url)
+                ok(if (cookie.isEmpty()) "(该域无 cookie)" else McpFormat.truncate(cookie))
+            } catch (e: Exception) {
+                err(e.localizedMessage ?: e.toString())
+            }
+        }
+
+        server.addTool(
+            name = "set_cookie",
+            description = "向阅读T写入某域的 cookie,按键合并、不抹掉该域已有的其它键。" +
+                "典型用法:PC 侧浏览器完成登录后把登录态推进 App,再用 debug_source 调试需登录的源。" +
+                "格式:key1=value1; key2=value2",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("url", stringProp("URL 或域名,写入其二级域名"))
+                    put("cookie", stringProp("cookie 字符串,分号分隔键值对"))
+                },
+                required = listOf("url", "cookie"),
+            ),
+        ) { request ->
+            try {
+                val url = request.arguments.str("url")
+                    ?: return@addTool err("参数url不能为空")
+                val cookie = request.arguments.str("cookie")
+                    ?: return@addTool err("参数cookie不能为空")
+                CookieStore.replaceCookie(url, cookie)
+                ok("已写入,该域当前 cookie:\n" + McpFormat.truncate(CookieStore.getCookie(url)))
+            } catch (e: Exception) {
+                err(e.localizedMessage ?: e.toString())
+            }
+        }
+
+        server.addTool(
+            name = "clear_cookies",
+            description = "清除阅读T内某域的全部 cookie(持久层+会话层+WebView 一并清)。",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("url", stringProp("URL 或域名,清除其二级域名"))
+                },
+                required = listOf("url"),
+            ),
+        ) { request ->
+            try {
+                val url = request.arguments.str("url")
+                    ?: return@addTool err("参数url不能为空")
+                CookieStore.removeCookie(url)
+                ok("已清除该域 cookie")
             } catch (e: Exception) {
                 err(e.localizedMessage ?: e.toString())
             }
