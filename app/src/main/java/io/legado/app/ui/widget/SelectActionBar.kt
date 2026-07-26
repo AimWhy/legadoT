@@ -3,6 +3,7 @@ package io.legado.app.ui.widget
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.PorterDuff
 import android.util.AttributeSet
 import android.view.LayoutInflater
@@ -16,14 +17,16 @@ import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
 import io.legado.app.R
 import io.legado.app.databinding.ViewSelectActionBarBinding
+import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.theme.TintHelper
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.appBarBackgroundIsLight
+import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.bottomBackground
 import io.legado.app.lib.theme.elevation
 import io.legado.app.lib.theme.getPrimaryTextColor
 import io.legado.app.lib.theme.getSecondaryDisabledTextColor
-import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.applyNavigationBarPadding
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.visible
@@ -35,7 +38,11 @@ class SelectActionBar @JvmOverloads constructor(
     attrs: AttributeSet? = null
 ) : FrameLayout(context, attrs) {
 
-    private val bgIsLight = ColorUtils.isColorLight(context.bottomBackground)
+    private val bgIsLight = appBarBackgroundIsLight(
+        transparentActionBar = AppConfig.isTransparentActionBar,
+        barBackgroundColor = context.bottomBackground,
+        contentBackgroundColor = context.backgroundColor
+    )
     private val primaryTextColor = context.getPrimaryTextColor(bgIsLight)
     private val disabledColor = context.getSecondaryDisabledTextColor(bgIsLight)
 
@@ -47,11 +54,15 @@ class SelectActionBar @JvmOverloads constructor(
 
     init {
         if (!isInEditMode) {
-            setBackgroundColor(context.bottomBackground)
-            elevation = context.elevation
+            if (AppConfig.isTransparentActionBar) {
+                setBackgroundColor(Color.TRANSPARENT)
+            } else {
+                setBackgroundColor(context.bottomBackground)
+                elevation = context.elevation
+            }
             binding.cbSelectedAll.setTextColor(primaryTextColor)
             TintHelper.setTint(binding.cbSelectedAll, context.accentColor, !bgIsLight)
-            // 描边钮文字/描边跟强调色,禁用色沿用 bottomBackground 亮暗感知(替代原 AccentStrokeTextView 自绘)
+            // 描边钮文字/描边跟强调色,禁用色沿用实际可见背景的亮暗感知(替代原 AccentStrokeTextView 自绘)
             val btnColors = ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_enabled), intArrayOf()),
                 intArrayOf(context.accentColor, disabledColor)
