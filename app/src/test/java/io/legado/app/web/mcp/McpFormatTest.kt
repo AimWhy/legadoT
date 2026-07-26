@@ -77,4 +77,41 @@ class McpFormatTest {
         val rendered = McpFormat.renderEvalResult(m)
         assertTrue(rendered.endsWith("(HashMap)"))
     }
+
+    @Test
+    fun renderCheckSummarySeparatesGoodAndBad() {
+        val bad = BookSource(
+            bookSourceName = "坏站",
+            bookSourceUrl = "https://bad.com",
+            bookSourceGroup = "自定义,搜索失效",
+            bookSourceComment = "// Error: 搜索超时",
+        )
+        val good = BookSource(
+            bookSourceName = "好站",
+            bookSourceUrl = "https://good.com",
+            respondTime = 3000L,
+        )
+        val rendered = McpFormat.renderCheckSummary(
+            listOf(bad, good),
+            mapOf("https://bad.com" to "[00:12.000] 校验失败:搜索失效"),
+            180000L,
+        )
+        assertTrue(rendered.contains("坏源 1/2"))
+        assertTrue(rendered.contains("✗ 坏站"))
+        assertTrue(rendered.contains("搜索失效"))
+        assertTrue(rendered.contains("// Error: 搜索超时"))
+        assertTrue(rendered.contains("✓ 好站"))
+    }
+
+    @Test
+    fun renderCheckSummaryTimeoutJudgedBad() {
+        val slow = BookSource(
+            bookSourceName = "超时站",
+            bookSourceUrl = "https://slow.com",
+            respondTime = 200000L,
+        )
+        val rendered = McpFormat.renderCheckSummary(listOf(slow), emptyMap(), 180000L)
+        assertTrue(rendered.contains("坏源 1/1"))
+        assertTrue(rendered.contains("✗ 超时站"))
+    }
 }

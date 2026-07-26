@@ -8,6 +8,7 @@ import io.legado.app.data.appDb
 import io.legado.app.data.entities.BookSource
 import io.legado.app.help.http.CookieStore
 import io.legado.app.help.source.SourceHelp
+import io.legado.app.model.CheckSource
 import io.legado.app.model.Debug
 import io.legado.app.model.HttpRecord
 import io.legado.app.utils.GSON
@@ -36,6 +37,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
@@ -53,7 +55,7 @@ import splitties.init.appCtx
 import java.time.Instant
 
 /**
- * MCP 12 工具注册:直调 app 内部(controller/DAO/Debug),不经 HTTP 回环,
+ * MCP 13 工具注册:直调 app 内部(controller/DAO/Debug),不经 HTTP 回环,
  * Web 服务关闭时全功能可用。description/返回文本与原 Node 薄代理一致。
  * 另将 assets 帮助文档(web/help/md)全量注册为 resources。
  * Debug 是全局单例:debugMutex 串行化 MCP 侧调试,他端(调试页/校验)占用时直接报忙。
@@ -612,6 +614,111 @@ object McpToolServer {
                     ?: return@addTool err("参数url不能为空")
                 CookieStore.removeCookie(url)
                 ok("已清除该域 cookie")
+            } catch (e: Exception) {
+                err(e.localizedMessage ?: e.toString())
+            }
+        }
+
+        server.addTool(
+            name = "check_source",
+            description = "批量校验书源,与 App 内「校验书源」同管线:按配置逐环节验证搜索/发现/详情/目录/正文," +
+                "失效源自动打分组标记并落库。单批最多 50 个;校验期间 debug_source/eval_js 报忙。" +
+                "结束返回坏源清单与原因。App 需在前台,否则校验服务可能被系统拒启。",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    putJsonObject("urls") {
+                        put("type", "array")
+                        putJsonObject("items") { put("type", "string") }
+                        put("description", "要校验的 bookSourceUrl 列表,单批 ≤50")
+                    }
+                    put("keyword", stringProp("校验用搜索关键词,缺省沿用 App 配置"))
+                    putJsonObject("timeoutSec") {
+                        put("type", "integer")
+                        put("description", "整批超时秒数,默认 600")
+                    }
+                },
+                required = listOf("urls"),
+            ),
+        ) { request ->
+            try {
+                val urls = request.arguments?.get("urls")?.jsonArray
+                    ?.mapNotNull { it.jsonPrimitive.contentOrNull }
+                    ?.filter { it.isNotEmpty() }
+                    .orEmpty()
+                if (urls.isEmpty()) return@addTool err("参数urls不能为空")
+                if (urls.size > 50) return@addTool err("单批最多 50 个源(当前 ${urls.size}),请分批")
+                val timeoutSec = (request.arguments.int("timeoutSec") ?: 600).coerceIn(60, 1800)
+                val keyword = request.arguments.str("keyword")
+                val parts = urls.map { url ->
+                    appDb.bookSourceDao.getBookSourcePart(url)
+                        ?: return@addTool err("未找到源:$url")
+                }
+                if (!debugMutex.tryLock()) {
+                    return@addTool err("调试通道占用中,稍后重试")
+                }
+                val prevKeyword = CheckSource.keyword
+                val started: Boolean
+                val before: Map<String, String>
+                try {
+                    if (Debug.callback != null || Debug.isChecking) {
+                        return@addTool err("调试通道占用中,稍后重试")
+                    }
+                    if (!keyword.isNullOrEmpty()) CheckSource.keyword = keyword
+                    before = runCatching { HashMap(Debug.debugMessageMap) }.getOrDefault(hashMapOf())
+                    CheckSource.start(appCtx, parts)
+                    started = withTimeoutOrNull(3000L) {
+                        while (!Debug.isChecking) delay(100)
+                        true
+                    } ?: false
+                } finally {
+                    debugMutex.unlock()
+                }
+                try {
+                    if (!started) {
+                        val after = runCatching { HashMap(Debug.debugMessageMap) }.getOrDefault(hashMapOf())
+                        if (urls.none { after[it] != before[it] }) {
+                            return@addTool err("校验服务未能启动:App 可能在后台被系统拒启前台服务,请置于前台后重试")
+                        }
+                    }
+                    val progressToken = progressTokenOf(request)
+                    val finalRegex = Regex("成功|失败")
+                    val done = mutableSetOf<String>()
+                    val deadline = System.currentTimeMillis() + timeoutSec * 1000L
+                    var timedOut = false
+                    while (Debug.isChecking) {
+                        if (System.currentTimeMillis() > deadline) {
+                            timedOut = true
+                            CheckSource.stop(appCtx)
+                            break
+                        }
+                        val snapshot = runCatching { HashMap(Debug.debugMessageMap) }.getOrNull()
+                        if (snapshot != null) {
+                            for (url in urls) {
+                                if (url in done) continue
+                                val msg = snapshot[url] ?: continue
+                                if (finalRegex.containsMatchIn(msg)) {
+                                    done += url
+                                    sendProgressLine(
+                                        "[${done.size}/${urls.size}] $msg",
+                                        done.size, urls.size, progressToken, "legado.check_source",
+                                    )
+                                }
+                            }
+                        }
+                        delay(1000)
+                    }
+                    val messages = runCatching { HashMap(Debug.debugMessageMap) }.getOrDefault(hashMapOf())
+                    val sources = urls.mapNotNull { appDb.bookSourceDao.getBookSource(it) }
+                    val summary = McpFormat.renderCheckSummary(sources, messages, CheckSource.timeout)
+                    val head = if (timedOut) {
+                        "[整批超时 ${timeoutSec}s,已发起取消,以下为截至超时的状态]\n\n"
+                    } else {
+                        ""
+                    }
+                    ok(McpFormat.truncate(head + summary))
+                } finally {
+                    CheckSource.keyword = prevKeyword
+                }
             } catch (e: Exception) {
                 err(e.localizedMessage ?: e.toString())
             }

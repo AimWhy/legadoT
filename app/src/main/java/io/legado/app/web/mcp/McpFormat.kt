@@ -51,6 +51,42 @@ object McpFormat {
         return text.take(limit) + "\n…[已截断,原文 ${text.length} 字符]"
     }
 
+    /**
+     * 校验汇总。respondTime 语义:校验失败时 Debug 写入 timeout+耗时,故 > timeoutMs 即失败。
+     */
+    fun renderCheckSummary(
+        sources: List<BookSource>,
+        messages: Map<String, String>,
+        timeoutMs: Long,
+    ): String {
+        val bad = mutableListOf<String>()
+        val good = mutableListOf<String>()
+        for (s in sources) {
+            val invalid = s.getInvalidGroupNames()
+            val msg = messages[s.bookSourceUrl].orEmpty()
+            val errorComment = s.bookSourceComment
+                ?.lineSequence()
+                ?.firstOrNull { it.startsWith("// Error: ") }
+                .orEmpty()
+            if (invalid.isNotEmpty() || s.respondTime > timeoutMs) {
+                val reason = listOf(invalid, errorComment, msg)
+                    .filter { it.isNotEmpty() }
+                    .joinToString(" | ")
+                bad += "✗ ${s.bookSourceName}(${s.bookSourceUrl}):$reason"
+            } else {
+                good += "✓ ${s.bookSourceName}(${s.bookSourceUrl})" +
+                    if (msg.isNotEmpty()) " $msg" else ""
+            }
+        }
+        return buildString {
+            appendLine("坏源 ${bad.size}/${sources.size}:")
+            if (bad.isEmpty()) appendLine("(无)") else bad.forEach { appendLine(it) }
+            appendLine()
+            appendLine("正常 ${good.size}/${sources.size}:")
+            if (good.isEmpty()) appendLine("(无)") else good.forEach { appendLine(it) }
+        }.trimEnd()
+    }
+
     fun renderEvalResult(result: Any?): String = when (result) {
         null -> "null"
         is Undefined -> "undefined"
