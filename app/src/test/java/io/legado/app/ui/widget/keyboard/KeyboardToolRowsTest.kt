@@ -71,6 +71,34 @@ class KeyboardToolRowsTest {
         assertContains(pop, "update(width, contentView.measuredHeight)")
     }
 
+    @Test
+    fun `config dialog exposes row count entry`() {
+        val menu = readProjectFile("src/main/res/menu/keyboard_assists_config.xml")
+        val config = readProjectFile(
+            "src/main/java/io/legado/app/ui/widget/keyboard/KeyboardAssistsConfig.kt"
+        )
+
+        assertContains(menu, "android:id=\"@+id/menu_row_count\"")
+        assertContains(config, "R.id.menu_row_count")
+        assertContains(config, "NumberPickerDialog(requireContext())")
+        assertContains(config, "AppConfig.KEYBOARD_TOOL_MIN_ROWS")
+        assertContains(config, "AppConfig.KEYBOARD_TOOL_MAX_ROWS")
+        assertContains(config, "AppConfig.keyboardToolRows = it")
+    }
+
+    @Test
+    fun `row count change reaches the popup through event bus`() {
+        val config = readProjectFile(
+            "src/main/java/io/legado/app/ui/widget/keyboard/KeyboardAssistsConfig.kt"
+        )
+        val pop = readProjectFile("src/main/java/io/legado/app/ui/widget/keyboard/KeyboardToolPop.kt")
+
+        // 行数存 pref 无 Room flow 可依,配置页与浮窗无引用关系,靠事件贯通
+        assertContains(config, "postEvent(PreferKey.keyboardToolRows,")
+        assertContains(pop, "observeEvent<Int>(PreferKey.keyboardToolRows)")
+        assertContains(pop, "upRowCount(")
+    }
+
     private companion object {
         const val MIN_ROWS = 1
         const val MAX_ROWS = 5

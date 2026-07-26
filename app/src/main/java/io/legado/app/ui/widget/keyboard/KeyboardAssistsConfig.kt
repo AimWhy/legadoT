@@ -16,17 +16,21 @@ import io.legado.app.base.BaseDialogFragment
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.constant.AppLog
+import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.KeyboardAssist
 import io.legado.app.databinding.DialogMultipleEditTextBinding
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.Item1lineTextAndDelBinding
+import io.legado.app.help.config.AppConfig
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.ui.widget.number.NumberPickerDialog
 import io.legado.app.ui.widget.recycler.ItemTouchCallback
 import io.legado.app.ui.widget.recycler.VerticalDivider
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.dpToPx
+import io.legado.app.utils.postEvent
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
@@ -85,6 +89,7 @@ class KeyboardAssistsConfig : BaseDialogFragment(R.layout.dialog_recycler_view),
     override fun onMenuItemClick(item: MenuItem?): Boolean {
         when (item?.itemId) {
             R.id.menu_add -> editKey(null)
+            R.id.menu_row_count -> editRowCount()
         }
         return false
     }
@@ -118,6 +123,18 @@ class KeyboardAssistsConfig : BaseDialogFragment(R.layout.dialog_recycler_view),
                 }
             }
         }
+    }
+
+    private fun editRowCount() {
+        NumberPickerDialog(requireContext())
+            .setTitle(getString(R.string.keyboard_tool_rows))
+            .setMinValue(AppConfig.KEYBOARD_TOOL_MIN_ROWS)
+            .setMaxValue(AppConfig.KEYBOARD_TOOL_MAX_ROWS)
+            .setValue(AppConfig.keyboardToolRows)
+            .show {
+                AppConfig.keyboardToolRows = it
+                postEvent(PreferKey.keyboardToolRows, it)
+            }
     }
 
     private inner class KeyAdapter(context: Context) :

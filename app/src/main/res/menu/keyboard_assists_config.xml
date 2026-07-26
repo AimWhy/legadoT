@@ -8,4 +8,9 @@
         android:title="@string/add"
         app:showAsAction="always" />
 
+    <item
+        android:id="@+id/menu_row_count"
+        android:title="@string/keyboard_tool_rows"
+        app:showAsAction="never" />
+
 </menu>

@@ -21,6 +21,7 @@ import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.constant.AppLog
+import io.legado.app.constant.PreferKey
 import io.legado.app.data.appDb
 import io.legado.app.data.entities.KeyboardAssist
 import io.legado.app.databinding.ItemFilletTextBinding
@@ -31,6 +32,7 @@ import io.legado.app.lib.dialogs.selector
 import io.legado.app.utils.activity
 import io.legado.app.utils.applyMd3PopupStyle
 import io.legado.app.utils.dpToPx
+import io.legado.app.utils.observeEvent
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.windowSize
 import kotlinx.coroutines.CoroutineScope
@@ -84,6 +86,7 @@ class KeyboardToolPop(
     fun attachToWindow(window: Window) {
         window.decorView.viewTreeObserver.addOnGlobalLayoutListener(this)
         measureContentView()
+        observeRowCount()
     }
 
     override fun onGlobalLayout() {
@@ -154,6 +157,13 @@ class KeyboardToolPop(
         if (isShowing) {
             update(width, contentView.measuredHeight)
             rootView.setPadding(0, 0, 0, initialPadding + contentView.measuredHeight)
+        }
+    }
+
+    /** 宿主 Activity 同时充当订阅的 LifecycleOwner */
+    private fun observeRowCount() {
+        contentView.activity?.observeEvent<Int>(PreferKey.keyboardToolRows) { rows ->
+            upRowCount(rows)
         }
     }
 
