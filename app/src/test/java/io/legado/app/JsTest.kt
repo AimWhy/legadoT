@@ -3,6 +3,11 @@ package io.legado.app
 import com.script.ScriptBindings
 import com.script.rhino.RhinoScriptEngine
 import io.legado.app.data.entities.BookChapter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.intellij.lang.annotations.Language
 import org.junit.Assert
 import org.junit.Test
@@ -342,6 +347,20 @@ class JsTest {
         """.trimIndent()
         val result = RhinoScriptEngine.eval(js, bindings)
         Assert.assertEquals(result, "string")
+    }
+
+    // 取消契约锚:3 参 eval 挂协程上下文后,指令计数中断使死循环可被 job.cancel 终止
+    @Test
+    fun evalCancellationViaCoroutineContext() = runBlocking {
+        val job = launch(Dispatchers.IO) {
+            val scope = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
+            runCatching {
+                RhinoScriptEngine.eval("while(true){}", scope, coroutineContext)
+            }
+        }
+        delay(500)
+        job.cancel()
+        withTimeout(5000) { job.join() }
     }
 
 }

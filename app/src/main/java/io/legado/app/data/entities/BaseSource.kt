@@ -26,6 +26,7 @@ import io.legado.app.utils.has
 import io.legado.app.utils.printOnDebug
 import org.htmlunit.corejs.javascript.Scriptable
 import org.intellij.lang.annotations.Language
+import kotlin.coroutines.CoroutineContext
 
 /**
  * 可在js里调用,source.xxx()
@@ -301,7 +302,11 @@ interface BaseSource : JsExtensions {
      * 执行JS
      */
     @Throws(Exception::class)
-    fun evalJS(jsStr: String, bindingsConfig: ScriptBindings.() -> Unit = {}): Any? {
+    fun evalJS(
+        jsStr: String,
+        coroutineContext: CoroutineContext? = null,
+        bindingsConfig: ScriptBindings.() -> Unit = {},
+    ): Any? {
         val bindings = buildScriptBindings { bindings ->
             bindings["java"] = this
             bindings["source"] = this
@@ -318,6 +323,6 @@ interface BaseSource : JsExtensions {
                 chainTo(sharedScope)
             }
         }
-        return RhinoScriptEngine.eval(jsStr, scope)
+        return RhinoScriptEngine.eval(jsStr, scope, coroutineContext)
     }
 }
