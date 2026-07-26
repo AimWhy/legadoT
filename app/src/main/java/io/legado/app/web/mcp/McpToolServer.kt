@@ -16,8 +16,10 @@ import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceResult
 import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,11 +37,13 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import splitties.init.appCtx
 import java.time.Instant
 
 /**
  * MCP 12 工具注册:直调 app 内部(controller/DAO/Debug),不经 HTTP 回环,
  * Web 服务关闭时全功能可用。description/返回文本与原 Node 薄代理一致。
+ * 另将 assets 帮助文档(web/help/md)全量注册为 resources。
  * Debug 是全局单例:debugMutex 串行化 MCP 侧调试,他端(调试页/校验)占用时直接报忙。
  */
 object McpToolServer {
@@ -56,11 +60,45 @@ object McpToolServer {
             options = ServerOptions(
                 capabilities = ServerCapabilities(
                     tools = ServerCapabilities.Tools(listChanged = false),
+                    resources = ServerCapabilities.Resources(),
                 ),
             ),
         )
         registerTools(server)
+        registerResources(server)
         return server
+    }
+
+    private val helpDescriptions = mapOf(
+        "jsHelp" to "书源 JS 扩展 API(java.* 方法)文档",
+        "ruleHelp" to "书源规则语法(CSS/XPath/JSONPath/正则/JS)总览",
+        "xpathHelp" to "XPath 规则语法",
+        "regexHelp" to "正则规则语法",
+        "debugHelp" to "书源调试用法与调试入口格式",
+        "SourceMBookHelp" to "书源制作教程",
+        "SourceMRssHelp" to "RSS 订阅源制作教程",
+    )
+
+    private fun registerResources(server: Server) {
+        val names = appCtx.assets.list("web/help/md").orEmpty()
+            .filter { it.endsWith(".md") }
+            .map { it.removeSuffix(".md") }
+        for (name in names) {
+            val uri = "legado://help/$name"
+            server.addResource(
+                uri = uri,
+                name = name,
+                description = helpDescriptions[name] ?: "应用内帮助文档:$name",
+                mimeType = "text/markdown",
+            ) { _ ->
+                val text = String(appCtx.assets.open("web/help/md/$name.md").readBytes())
+                ReadResourceResult(
+                    contents = listOf(
+                        TextResourceContents(text = text, uri = uri, mimeType = "text/markdown")
+                    )
+                )
+            }
+        }
     }
 
     private fun ok(text: String) = CallToolResult(content = listOf(TextContent(text)))
