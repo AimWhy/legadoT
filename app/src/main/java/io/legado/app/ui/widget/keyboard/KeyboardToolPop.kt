@@ -60,13 +60,14 @@ class KeyboardToolPop(
     private val adapter = Adapter(context)
     private var mIsSoftKeyBoardShowing = false
     var initialPadding = 0
+
     /** 0 表示未装配,首次 upRowCount 必然执行装配 */
     private var rowCount = 0
 
-    /** 用真实 item 测量,行高跟随系统字体缩放与主题字体 */
+    /** 用真实 item 测量行高;采样含 CJK,单行高取两类字形度量的较大者 */
     private val measureItem: TextView by lazy {
         ItemFilletTextBinding.inflate(context.layoutInflater).root.apply {
-            text = helpChar
+            text = "${helpChar}中"
         }
     }
 

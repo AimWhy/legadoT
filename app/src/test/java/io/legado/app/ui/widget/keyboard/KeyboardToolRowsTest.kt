@@ -58,7 +58,6 @@ class KeyboardToolRowsTest {
         assertContains(pop, "LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)")
         assertContains(pop, "FlexboxLayoutManager(context)")
         assertContains(pop, "ViewGroup.LayoutParams.WRAP_CONTENT")
-        assertContains(pop, "height = measureRowsHeight(rows)")
     }
 
     @Test
@@ -69,6 +68,7 @@ class KeyboardToolRowsTest {
         assertContains(pop, "measureContentView()")
         assertContains(pop, "if (isShowing)")
         assertContains(pop, "update(width, contentView.measuredHeight)")
+        assertContains(pop, "height = measureRowsHeight(rows)")
     }
 
     @Test

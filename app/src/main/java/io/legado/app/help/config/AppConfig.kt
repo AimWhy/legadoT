@@ -650,7 +650,7 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
     const val KEYBOARD_TOOL_MIN_ROWS = 1
     const val KEYBOARD_TOOL_MAX_ROWS = 5
 
-    /** 辅助按键浮窗显示行数,越界值回落 KEYBOARD_TOOL_MIN_ROWS */
+    /** 辅助按键浮窗显示行数,有效 1..5,越界值回落 KEYBOARD_TOOL_MIN_ROWS */
     var keyboardToolRows: Int
         get() {
             val rows = appCtx.getPrefInt(PreferKey.keyboardToolRows, KEYBOARD_TOOL_MIN_ROWS)
