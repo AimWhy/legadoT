@@ -21,7 +21,10 @@ import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
@@ -34,7 +37,7 @@ import kotlinx.serialization.json.putJsonObject
 import java.time.Instant
 
 /**
- * MCP 8 工具注册:直调 app 内部(controller/DAO/Debug),不经 HTTP 回环,
+ * MCP 9 工具注册:直调 app 内部(controller/DAO/Debug),不经 HTTP 回环,
  * Web 服务关闭时全功能可用。description/返回文本与原 Node 薄代理一致。
  * Debug 是全局单例:debugMutex 串行化 MCP 侧调试,他端(调试页/校验)占用时直接报忙。
  */
@@ -345,6 +348,92 @@ object McpToolServer {
                     ?: return@addTool err("参数enabled必须为布尔值")
                 HttpLogController.setRecording("""{"enabled":$enabled}""").dataOrThrow()
                 ok("「记录HTTP日志」已${if (enabled) "开启" else "关闭"}")
+            } catch (e: Exception) {
+                err(e.localizedMessage ?: e.toString())
+            }
+        }
+
+        server.addTool(
+            name = "eval_js",
+            description = "在阅读T内真实的书源 JS 环境执行一段脚本,返回求值结果与脚本内 java.log 的输出。" +
+                "运行时绑定与书源一致:java/source/cookie/cache/baseUrl + CryptoJS 共享库。" +
+                "传 url 则绑定库内真源(java.ajax 按该源的 UA/Cookie/并发率发请求);" +
+                "不传则用空白源裸跑,适合纯引擎行为/加密算法探针。与 debug_source 共用调试通道,占用时报忙。",
+            inputSchema = ToolSchema(
+                properties = buildJsonObject {
+                    put("js", stringProp("要执行的 JS 脚本文本"))
+                    put("url", stringProp("书源 bookSourceUrl,缺省用空白源裸跑"))
+                    putJsonObject("timeoutSec") {
+                        put("type", "integer")
+                        put("description", "超时秒数,默认 60")
+                    }
+                },
+                required = listOf("js"),
+            ),
+        ) { request ->
+            try {
+                val js = request.arguments.str("js")
+                    ?: return@addTool err("参数js不能为空")
+                val url = request.arguments.str("url")
+                val timeoutSec = (request.arguments.int("timeoutSec") ?: 60).coerceIn(5, 600)
+                val source = if (url.isNullOrEmpty()) {
+                    BookSource()
+                } else {
+                    appDb.bookSourceDao.getBookSource(url)
+                        ?: return@addTool err("未找到源，请检查书源地址")
+                }
+                if (!debugMutex.tryLock()) {
+                    return@addTool err("调试通道占用中,稍后重试")
+                }
+                try {
+                    if (Debug.callback != null || Debug.isChecking) {
+                        return@addTool err("调试通道占用中,稍后重试")
+                    }
+                    val collector = McpDebugCollector()
+                    try {
+                        // cancelDebug(true) 摘的是全局 callback 槽,挂载后才可执行,busy 早退走外层只解锁
+                        Debug.callback = collector
+                        Debug.startSimpleDebug(source.getKey())
+                        val startMs = System.currentTimeMillis()
+                        val deferred = debugScope.async {
+                            val evalContext = currentCoroutineContext()
+                            runCatching { source.evalJS(js, evalContext) }
+                        }
+                        val outcome = withTimeoutOrNull(timeoutSec * 1000L) { deferred.await() }
+                        val elapsedMs = System.currentTimeMillis() - startMs
+                        if (outcome == null) {
+                            deferred.cancel()
+                        }
+                        val logs = collector.snapshot().trimEnd()
+                        val logSection = if (logs.isEmpty()) "" else "-- 日志 --\n$logs\n\n"
+                        when {
+                            outcome == null -> ok(
+                                McpFormat.truncate(
+                                    logSection + "[求值超时 ${timeoutSec}s,已发起取消,脚本将在下个检查点中止]"
+                                )
+                            )
+                            outcome.isSuccess -> ok(
+                                McpFormat.truncate(
+                                    logSection + "-- 结果 --\n" +
+                                        McpFormat.renderEvalResult(outcome.getOrNull()) +
+                                        "\n\n耗时 ${elapsedMs}ms"
+                                )
+                            )
+                            else -> {
+                                val e = outcome.exceptionOrNull()!!
+                                err(
+                                    McpFormat.truncate(
+                                        logSection + "-- 错误 --\n" + (e.localizedMessage ?: e.toString())
+                                    )
+                                )
+                            }
+                        }
+                    } finally {
+                        Debug.cancelDebug(true)
+                    }
+                } finally {
+                    debugMutex.unlock()
+                }
             } catch (e: Exception) {
                 err(e.localizedMessage ?: e.toString())
             }
