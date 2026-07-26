@@ -143,6 +143,8 @@ class KeyboardToolPop(
             return
         }
         rowCount = rows
+        // 切 LayoutManager 前清空 adapter 防止 FlexboxLayoutManager 遇到未 detach 的 child
+        binding.recyclerView.adapter = null
         if (rows <= AppConfig.KEYBOARD_TOOL_MIN_ROWS) {
             binding.recyclerView.layoutManager =
                 LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
@@ -154,6 +156,7 @@ class KeyboardToolPop(
             }
             height = measureRowsHeight(rows)
         }
+        binding.recyclerView.adapter = adapter
         measureContentView()
         if (isShowing) {
             update(width, contentView.measuredHeight)
