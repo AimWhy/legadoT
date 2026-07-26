@@ -12,11 +12,9 @@ import android.widget.PopupWindow
 import android.widget.TextView
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.flexbox.FlexDirection
-import com.google.android.flexbox.FlexWrap
-import com.google.android.flexbox.FlexboxLayoutManager
 import io.legado.app.R
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
@@ -123,7 +121,6 @@ class KeyboardToolPop(
     }
 
     private fun initRecyclerView() {
-        binding.recyclerView.adapter = adapter
         adapter.addHeaderView {
             ItemFilletTextBinding.inflate(context.layoutInflater, it, false).apply {
                 textView.text = helpChar
@@ -135,11 +132,15 @@ class KeyboardToolPop(
     }
 
     /**
-     * 装配显示行数。行数 1 走横向滚动;≥2 走 flexbox 换行并把高度锁成行数 × 行高,
+     * 装配显示行数。行数 1 走横向滚动;≥2 走网格横向滚动并把高度锁成行数 × 行高,
      * 超出行数的按键竖向滚动。
      */
     fun upRowCount(rows: Int = AppConfig.keyboardToolRows) {
         if (rowCount == rows) {
+            return
+        }
+        if (binding.recyclerView.isComputingLayout) {
+            binding.recyclerView.post { upRowCount(rows) }
             return
         }
         rowCount = rows
@@ -150,10 +151,8 @@ class KeyboardToolPop(
                 LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
             height = ViewGroup.LayoutParams.WRAP_CONTENT
         } else {
-            binding.recyclerView.layoutManager = FlexboxLayoutManager(context).apply {
-                flexDirection = FlexDirection.ROW
-                flexWrap = FlexWrap.WRAP
-            }
+            binding.recyclerView.layoutManager =
+                GridLayoutManager(context, rows, RecyclerView.HORIZONTAL, false)
             height = measureRowsHeight(rows)
         }
         binding.recyclerView.adapter = adapter

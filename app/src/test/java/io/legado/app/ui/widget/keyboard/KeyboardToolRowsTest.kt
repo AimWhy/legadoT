@@ -56,7 +56,7 @@ class KeyboardToolRowsTest {
 
         assertContains(pop, "fun upRowCount(")
         assertContains(pop, "LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)")
-        assertContains(pop, "FlexboxLayoutManager(context)")
+        assertContains(pop, "GridLayoutManager(context, rows, RecyclerView.HORIZONTAL, false)")
         assertContains(pop, "ViewGroup.LayoutParams.WRAP_CONTENT")
     }
 
@@ -69,6 +69,23 @@ class KeyboardToolRowsTest {
         assertContains(pop, "if (isShowing)")
         assertContains(pop, "update(width, contentView.measuredHeight)")
         assertContains(pop, "height = measureRowsHeight(rows)")
+    }
+
+    @Test
+    fun `row count changes are deferred while recycler view is computing layout`() {
+        val pop = readProjectFile("src/main/java/io/legado/app/ui/widget/keyboard/KeyboardToolPop.kt")
+
+        assertContains(pop, "binding.recyclerView.isComputingLayout")
+        assertContains(pop, "binding.recyclerView.post")
+    }
+
+    @Test
+    fun `keyboard adapter is attached only after header and layout manager setup`() {
+        val pop = readProjectFile("src/main/java/io/legado/app/ui/widget/keyboard/KeyboardToolPop.kt")
+
+        assertContains(pop, "adapter.addHeaderView")
+        assertContains(pop, "binding.recyclerView.adapter = null")
+        assertContains(pop, "binding.recyclerView.adapter = adapter")
     }
 
     @Test
