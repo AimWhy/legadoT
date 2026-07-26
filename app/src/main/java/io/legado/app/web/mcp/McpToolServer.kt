@@ -12,11 +12,19 @@ import io.legado.app.model.Debug
 import io.legado.app.model.HttpRecord
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonObject
+import io.modelcontextprotocol.kotlin.sdk.server.ClientConnection
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.Implementation
+import io.modelcontextprotocol.kotlin.sdk.types.LoggingLevel
+import io.modelcontextprotocol.kotlin.sdk.types.LoggingMessageNotification
+import io.modelcontextprotocol.kotlin.sdk.types.LoggingMessageNotificationParams
+import io.modelcontextprotocol.kotlin.sdk.types.ProgressNotification
+import io.modelcontextprotocol.kotlin.sdk.types.ProgressNotificationParams
 import io.modelcontextprotocol.kotlin.sdk.types.ReadResourceResult
+import io.modelcontextprotocol.kotlin.sdk.types.RequestId
 import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.TextResourceContents
@@ -25,7 +33,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
@@ -33,6 +44,7 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
@@ -61,6 +73,7 @@ object McpToolServer {
                 capabilities = ServerCapabilities(
                     tools = ServerCapabilities.Tools(listChanged = false),
                     resources = ServerCapabilities.Resources(),
+                    logging = buildJsonObject {},
                 ),
             ),
         )
@@ -123,6 +136,50 @@ object McpToolServer {
     private fun stringProp(desc: String) = buildJsonObject {
         put("type", "string")
         put("description", desc)
+    }
+
+    private fun progressTokenOf(request: CallToolRequest): RequestId? {
+        val prim = request.meta?.json?.get("progressToken") as? JsonPrimitive ?: return null
+        return if (prim.isString) {
+            RequestId.StringId(prim.content)
+        } else {
+            prim.content.toLongOrNull()?.let { RequestId.NumberId(it) }
+        }
+    }
+
+    // 通知是纯增强:单条 2s 上限,失败静默,不影响工具主流程
+    private suspend fun ClientConnection.sendProgressLine(
+        line: String,
+        progress: Int,
+        total: Int?,
+        progressToken: RequestId?,
+        logger: String,
+    ) {
+        withTimeoutOrNull(2000) {
+            runCatching {
+                sendLoggingMessage(
+                    LoggingMessageNotification(
+                        LoggingMessageNotificationParams(
+                            level = LoggingLevel.Info,
+                            data = JsonPrimitive(line),
+                            logger = logger,
+                        )
+                    )
+                )
+                if (progressToken != null) {
+                    notification(
+                        ProgressNotification(
+                            ProgressNotificationParams(
+                                progressToken = progressToken,
+                                progress = progress.toDouble(),
+                                total = total?.toDouble(),
+                                message = line,
+                            )
+                        )
+                    )
+                }
+            }
+        }
     }
 
     private fun registerTools(server: Server) {
@@ -197,8 +254,25 @@ object McpToolServer {
                     if (Debug.callback != null || Debug.isChecking) {
                         return@addTool err("调试通道占用中,稍后重试")
                     }
-                    val (log, timedOut) = McpDebugCollector()
-                        .collect(debugScope, source, key, timeoutSec * 1000L)
+                    val progressToken = progressTokenOf(request)
+                    val (log, timedOut) = coroutineScope {
+                        val lineChannel = Channel<String>(Channel.UNLIMITED)
+                        launch {
+                            var lineNo = 0
+                            for (line in lineChannel) {
+                                lineNo++
+                                sendProgressLine(
+                                    line, lineNo, null, progressToken, "legado.debug_source"
+                                )
+                            }
+                        }
+                        try {
+                            McpDebugCollector(onLine = { lineChannel.trySend(it) })
+                                .collect(debugScope, source, key, timeoutSec * 1000L)
+                        } finally {
+                            lineChannel.close()
+                        }
+                    }
                     val body = log.ifEmpty { "(调试无输出)" }
                     ok(
                         if (timedOut) {

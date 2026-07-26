@@ -11,7 +11,9 @@ import kotlinx.coroutines.withTimeoutOrNull
  * state -1/1000 是 Debug 的结束信号;10/20/30/40 是原始 HTML 帧,不入文本。
  * Debug 是全局单例:收集期间独占 callback 槽,collect 结束(含超时)后释放。
  */
-class McpDebugCollector : Debug.Callback {
+class McpDebugCollector(
+    private val onLine: ((String) -> Unit)? = null,
+) : Debug.Callback {
 
     private val notPrintState = arrayOf(10, 20, 30, 40)
     private val lines = StringBuilder()
@@ -20,6 +22,7 @@ class McpDebugCollector : Debug.Callback {
     override fun printLog(state: Int, msg: String) {
         if (state in notPrintState) return
         synchronized(lines) { lines.appendLine(msg) }
+        onLine?.invoke(msg)
         if (state == -1 || state == 1000) {
             finished.complete(Unit)
         }

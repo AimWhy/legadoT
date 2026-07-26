@@ -33,4 +33,15 @@ class McpDebugCollectorTest {
         assertFalse(c.awaitFinished(50))
         assertEquals("partial\n", c.snapshot())
     }
+
+    @Test
+    fun onLineReceivesPrintedLinesOnly() = runBlocking {
+        val received = mutableListOf<String>()
+        val c = McpDebugCollector(onLine = { received.add(it) })
+        c.printLog(1, "step1")
+        c.printLog(10, "raw html ignored")
+        c.printLog(1000, "done")
+        assertTrue(c.awaitFinished(1000))
+        assertEquals(listOf("step1", "done"), received)
+    }
 }
