@@ -1,6 +1,7 @@
 package io.legado.app.web.mcp
 
 import io.legado.app.data.entities.BookSource
+import org.htmlunit.corejs.javascript.Undefined
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -34,5 +35,46 @@ class McpFormatTest {
         val cut = McpFormat.truncate("abcdef", 5)
         assertTrue(cut.startsWith("abcde"))
         assertTrue(cut.contains("已截断,原文 6 字符"))
+    }
+
+    @Test
+    fun renderEvalResultScalars() {
+        assertEquals("abc", McpFormat.renderEvalResult("abc"))
+        assertEquals("null", McpFormat.renderEvalResult(null))
+        assertEquals("undefined", McpFormat.renderEvalResult(Undefined.instance))
+        assertEquals("true", McpFormat.renderEvalResult(true))
+        assertEquals("42", McpFormat.renderEvalResult(42.0))
+        assertEquals("1.5", McpFormat.renderEvalResult(1.5))
+    }
+
+    @Test
+    fun renderEvalResultJsonShape() {
+        val rendered = McpFormat.renderEvalResult(mapOf("a" to listOf(1.0, "x"), "b" to true))
+        assertEquals(
+            """
+            {
+              "a": [
+                1,
+                "x"
+              ],
+              "b": true
+            }
+            """.trimIndent(),
+            rendered
+        )
+    }
+
+    @Test
+    fun renderEvalResultLeafFallback() {
+        val rendered = McpFormat.renderEvalResult(Any())
+        assertTrue(rendered.endsWith("(Object)"))
+    }
+
+    @Test
+    fun renderEvalResultCyclicFallsBack() {
+        val m = HashMap<String, Any>()
+        m["self"] = m
+        val rendered = McpFormat.renderEvalResult(m)
+        assertTrue(rendered.endsWith("(HashMap)"))
     }
 }
