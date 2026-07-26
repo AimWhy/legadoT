@@ -143,6 +143,7 @@ object PreferKey {
     const val parallelExportBook = "parallelExportBook"
     const val progressBarBehavior = "progressBarBehavior"
     const val sourceEditMaxLine = "sourceEditMaxLine"
+    const val keyboardToolRows = "keyboardToolRows"
     const val ttsTimer = "ttsTimer"
     const val lastSleepTimer = "lastSleepTimer"
     const val lastSleepChapter = "lastSleepChapter"

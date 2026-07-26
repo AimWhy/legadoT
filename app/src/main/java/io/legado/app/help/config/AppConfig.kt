@@ -647,6 +647,23 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefInt(PreferKey.sourceEditMaxLine, value)
         }
 
+    const val KEYBOARD_TOOL_MIN_ROWS = 1
+    const val KEYBOARD_TOOL_MAX_ROWS = 5
+
+    /** 辅助按键浮窗显示行数,越界值回落 KEYBOARD_TOOL_MIN_ROWS */
+    var keyboardToolRows: Int
+        get() {
+            val rows = appCtx.getPrefInt(PreferKey.keyboardToolRows, KEYBOARD_TOOL_MIN_ROWS)
+            return if (rows in KEYBOARD_TOOL_MIN_ROWS..KEYBOARD_TOOL_MAX_ROWS) {
+                rows
+            } else {
+                KEYBOARD_TOOL_MIN_ROWS
+            }
+        }
+        set(value) {
+            appCtx.putPrefInt(PreferKey.keyboardToolRows, value)
+        }
+
     var audioPlayUseWakeLock: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.audioPlayWakeLock)
         set(value) {
