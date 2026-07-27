@@ -30,4 +30,25 @@ class ThemeSettingsRedesignTest {
         listOf("tv_paired_title", "card_swatch_day", "tv_swatch_day", "card_swatch_night", "tv_swatch_night")
             .forEach { id -> assertTrue("布局缺少 id: $id", layout.contains(id)) }
     }
+
+    @Test
+    fun `duo theme preview reads both day and night key sets directly`() {
+        val src =
+            File("src/main/java/io/legado/app/lib/prefs/DuoThemePreviewPreference.kt").readText()
+        assertTrue(
+            "DuoThemePreviewPreference 必须直接继承 androidx.preference.Preference",
+            src.contains("androidx.preference.Preference"),
+        )
+        assertTrue("必须设置 isSelectable = false", src.contains("isSelectable = false"))
+        // 双联语义:显式读日/夜两组键,不随当前模式解析
+        listOf("cPrimary", "cNPrimary", "cAccent", "cNAccent",
+            "cBackground", "cNBackground", "cBBackground", "cNBBackground")
+            .forEach { assertTrue("必须直读 PreferKey.$it", src.contains("PreferKey.$it")) }
+
+        val layout = File("src/main/res/layout/view_duo_theme_preview.xml").readText()
+        listOf(
+            "card_mock_day", "top_bar_day", "accent_day", "bottom_bar_day",
+            "card_mock_night", "top_bar_night", "accent_night", "bottom_bar_night",
+        ).forEach { id -> assertTrue("布局缺少 id: $id", layout.contains(id)) }
+    }
 }
