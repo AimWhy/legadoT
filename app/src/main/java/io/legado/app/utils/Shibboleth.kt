@@ -108,9 +108,14 @@ object Shibboleth {
         text: String,
         nowMillis: Long = System.currentTimeMillis(),
     ): ShibbolethParseResult {
+        // 识别锚定 #L: 标记本身,前缀词各分支可自定;无标记时按前缀定位未编码链接
+        val markerStart = text.indexOf(URL_MARKER)
         val prefixStart = text.indexOf(PREFIX)
-        if (prefixStart < 0) return ShibbolethParseResult.NotShibboleth
-        val urlStart = prefixStart + PREFIX.length
+        val urlStart = when {
+            markerStart >= 0 -> markerStart
+            prefixStart >= 0 -> prefixStart + PREFIX.length
+            else -> return ShibbolethParseResult.NotShibboleth
+        }
 
         val typeStart = text.indexOf(TYPE_MARKER, urlStart)
         val expiryStart = if (typeStart >= 0) text.indexOf(EXPIRY_MARKER, typeStart + 1) else -1
@@ -121,19 +126,30 @@ object Shibboleth {
             suffixStart <= expiryStart + EXPIRY_MARKER.length ||
             end < suffixStart + SUFFIX_MARKER.length
         ) {
-            return ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED)
+            // 分隔符链不全:带前缀视为残缺口令,裸 #L: 视为普通文本防误报
+            return if (prefixStart >= 0) {
+                ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED)
+            } else {
+                ShibbolethParseResult.NotShibboleth
+            }
         }
 
         val typeCode = text.substring(typeStart + TYPE_MARKER.length, expiryStart)
         val type = ShibbolethType.fromCode(typeCode)
             ?: return ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.UNKNOWN_TYPE)
         val expiryText = text.substring(expiryStart + EXPIRY_MARKER.length, suffixStart)
-        if (expiryText != "0" && (expiryText.length != 7 || expiryText.any { it !in '0'..'9' })) {
+        if (expiryText.any { it !in '0'..'9' }) {
             return ShibbolethParseResult.Invalid(ShibbolethParseResult.Reason.MALFORMED)
         }
-        val expiresAtMillis = if (expiryText == "0") 0 else expiryText.toLong() * 1_000_000L
+        // 7位=毫秒前7位截断约定,10/13位=秒/毫秒完整时间戳,其余宽度不强制有效期
+        val expiresAtMillis = when (expiryText.length) {
+            7 -> expiryText.toLong() * 1_000_000L
+            10 -> expiryText.toLong() * 1_000L
+            13 -> expiryText.toLong()
+            else -> 0L
+        }
 
-        var url = text.substring(urlStart, typeStart)
+        var url = text.substring(urlStart, typeStart).trim()
         if (url.startsWith(URL_MARKER)) {
             reverseMappings.forEach { (replacement, original) ->
                 url = url.replace(replacement, original)

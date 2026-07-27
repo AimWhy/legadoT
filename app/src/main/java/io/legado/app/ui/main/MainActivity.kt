@@ -27,7 +27,6 @@ import io.legado.app.databinding.ActivityMainBinding
 import io.legado.app.databinding.DialogEditTextBinding
 import io.legado.app.help.AppWebDav
 import io.legado.app.help.BottomBarSkinManager
-import io.legado.app.help.LifecycleHelp
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
@@ -104,6 +103,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         TabFragmentPageAdapter()
     }
     private var onUpBooksBadgeView: BadgeView? = null
+    private var pendingShibbolethCheck = false
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         upBottomMenu()
@@ -138,11 +138,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         lifecycleScope.launch {
             //隐私协议
             if (!privacyPolicy()) return@launch
-            if (savedInstanceState == null) {
-                binding.viewPagerMain.postDelayed(1500) {
-                    importShibbolethFromClipboard()
-                }
-            }
+            scheduleShibbolethImport()
             //版本更新
             upVersion()
             //设置本地密码
@@ -165,10 +161,33 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
 
     override fun onResume() {
         super.onResume()
-        if (LocalConfig.privacyPolicyOk && LifecycleHelp.activitySize() == 1) {
-            binding.viewPagerMain.postDelayed(500) {
-                importShibbolethFromClipboard()
-            }
+        if (LocalConfig.privacyPolicyOk) {
+            scheduleShibbolethImport()
+        }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus && pendingShibbolethCheck) {
+            consumeShibbolethImport()
+        }
+    }
+
+    /**
+     * Android 10+ 剪贴板仅焦点应用可读,识别挂起到获得窗口焦点后执行;
+     * 每次 onResume 至多读一次剪贴板
+     */
+    private fun scheduleShibbolethImport() {
+        pendingShibbolethCheck = true
+        if (binding.root.hasWindowFocus()) {
+            consumeShibbolethImport()
+        }
+    }
+
+    private fun consumeShibbolethImport() {
+        pendingShibbolethCheck = false
+        binding.root.postDelayed(200) {
+            importShibbolethFromClipboard()
         }
     }
 
@@ -181,8 +200,14 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
         val text = getClipText() ?: return
         when (val parsed = Shibboleth.parse(text)) {
             ShibbolethParseResult.NotShibboleth -> Unit
-            is ShibbolethParseResult.Invalid -> toastOnUi(R.string.shibboleth_invalid)
-            is ShibbolethParseResult.Expired -> toastOnUi(R.string.shibboleth_expired)
+            is ShibbolethParseResult.Invalid -> {
+                toastOnUi(R.string.shibboleth_invalid)
+                clearClip()
+            }
+            is ShibbolethParseResult.Expired -> {
+                toastOnUi(R.string.shibboleth_expired)
+                clearClip()
+            }
             is ShibbolethParseResult.Valid -> {
                 val url = parsed.token.url
                 val dialog = when (parsed.token.type) {

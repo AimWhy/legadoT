@@ -225,8 +225,8 @@ class ShibbolethTest {
     }
 
     @Test
-    fun `nonnumeric and invalid width expiry fields are malformed`() {
-        listOf("abc", "", "00", "123456", "12345678", "١٢٣٤٥٦٧").forEach { expiry ->
+    fun `nonnumeric expiry fields are malformed`() {
+        listOf("abc", "12a4567", "١٢٣٤٥٦٧", "").forEach { expiry ->
             val text = "复制口令到阅读导入#L:example电🛜1！sy©$expiry¥Sigma^"
 
             assertEquals(
@@ -234,6 +234,74 @@ class ShibbolethTest {
                 Shibboleth.parse(text),
             )
         }
+    }
+
+    @Test
+    fun `unconventional numeric expiry widths import as permanent`() {
+        listOf("00", "123456", "12345678").forEach { expiry ->
+            val text = "复制口令到阅读导入#L:example电🛜1！sy©$expiry¥Sigma^"
+
+            assertEquals(
+                ShibbolethParseResult.Valid(
+                    ShibbolethToken("https://example.com", ShibbolethType.BOOK_SOURCE, 0),
+                ),
+                Shibboleth.parse(text, fixedTime),
+            )
+        }
+    }
+
+    @Test
+    fun `full second and millisecond expiry widths normalize`() {
+        val expected = ShibbolethParseResult.Valid(
+            ShibbolethToken("https://example.com", ShibbolethType.BOOK_SOURCE, 1_800_000_000_000L),
+        )
+        listOf("1800000000000", "1800000000").forEach { expiry ->
+            val text = "复制口令到阅读导入#L:example电🛜1！sy©$expiry¥Sigma^"
+
+            assertEquals(expected, Shibboleth.parse(text, fixedTime))
+        }
+        assertEquals(
+            ShibbolethParseResult.Expired(1_500_000_000_000L),
+            Shibboleth.parse("复制口令到阅读导入#L:example电🛜1！sy©1500000000000¥Sigma^", fixedTime),
+        )
+    }
+
+    @Test
+    fun `decoration between prefix and marker still parses`() {
+        listOf("：", " ", "\n", "，口令是").forEach { junk ->
+            val text = "复制口令到阅读导入$junk#L:example电🛜1！sy©0¥Sigma^"
+
+            assertEquals(
+                ShibbolethParseResult.Valid(
+                    ShibbolethToken("https://example.com", ShibbolethType.BOOK_SOURCE, 0),
+                ),
+                Shibboleth.parse(text, fixedTime),
+            )
+        }
+    }
+
+    @Test
+    fun `sibling prefix variants and bare token body parse`() {
+        listOf(
+            "复制口令到阅读星空导入#L:example电🛜1！sy©0¥Sigma^",
+            "复制口令到阅读App导入#L:example电🛜1！sy©0¥Sigma^",
+            "#L:example电🛜1！sy©0¥Sigma^",
+        ).forEach { text ->
+            assertEquals(
+                ShibbolethParseResult.Valid(
+                    ShibbolethToken("https://example.com", ShibbolethType.BOOK_SOURCE, 0),
+                ),
+                Shibboleth.parse(text, fixedTime),
+            )
+        }
+    }
+
+    @Test
+    fun `bare marker without delimiter chain stays silent`() {
+        assertEquals(
+            ShibbolethParseResult.NotShibboleth,
+            Shibboleth.parse("代码片段里出现#L:标记的普通剪贴板文本"),
+        )
     }
 
     @Test
