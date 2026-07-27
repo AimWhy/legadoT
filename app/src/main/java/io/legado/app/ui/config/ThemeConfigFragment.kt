@@ -87,11 +87,16 @@ class ThemeConfigFragment : PreferenceFragment(),
     /**
      * 自定义配色二级页编辑非当前显示模式的色值时不触发 RECREATE,返回本页时预设排选中描边
      * 与英雄卡不会经重建自愈——onResume 补刷一次(notifyChanged 重绑,首次进入多刷无害)。
+     * 子页手动改色的钩子可能已静默把跟随开关写为 false(WallpaperSeed.abandonFollowIfActive),
+     * 同样无 RECREATE 可依赖,故一并重新同步开关勾选状态。
      */
     override fun onResume() {
         super.onResume()
         findPreference<PresetThemesPreference>("presetThemes")?.refresh()
         findPreference<ThemePreviewPreference>("themePreview")?.refresh()
+        findPreference<SwitchPreference>(PreferKey.wallpaperFollow)?.let {
+            it.isChecked = getPrefBoolean(PreferKey.wallpaperFollow)
+        }
     }
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, key: String?) {
