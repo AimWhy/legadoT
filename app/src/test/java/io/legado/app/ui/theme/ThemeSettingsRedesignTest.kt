@@ -51,4 +51,38 @@ class ThemeSettingsRedesignTest {
             "card_mock_night", "top_bar_night", "accent_night", "bottom_bar_night",
         ).forEach { id -> assertTrue("布局缺少 id: $id", layout.contains(id)) }
     }
+
+    @Test
+    fun `theme color sub page hosts duo preview paired rows bg images and save actions`() {
+        val xml = File("src/main/res/xml/pref_config_theme_color.xml").readText()
+        assertTrue(xml.contains("io.legado.app.lib.prefs.DuoThemePreviewPreference"))
+        assertTrue(xml.contains("io.legado.app.lib.prefs.PairedColorPreference"))
+        // 8 色键经 dayKey/nightKey 成对声明,一个不少
+        listOf(
+            "colorPrimary", "colorPrimaryNight", "colorAccent", "colorAccentNight",
+            "colorBackground", "colorBackgroundNight",
+            "colorBottomBackground", "colorBottomBackgroundNight",
+        ).forEach { key -> assertTrue("子页缺少色键 $key", xml.contains("\"$key\"")) }
+        // 背景图与存档迁入
+        listOf("backgroundImage", "backgroundImageNight", "saveDayTheme", "saveNightTheme")
+            .forEach { key -> assertTrue("子页缺少 key $key", xml.contains("\"$key\"")) }
+
+        val tag = File("src/main/java/io/legado/app/ui/config/ConfigTag.kt").readText()
+        assertTrue(tag.contains("THEME_COLOR_CONFIG"))
+        val activity = File("src/main/java/io/legado/app/ui/config/ConfigActivity.kt").readText()
+        assertTrue(activity.contains("ThemeColorConfigFragment"))
+
+        val fragment =
+            File("src/main/java/io/legado/app/ui/config/ThemeColorConfigFragment.kt").readText()
+        // 手调回落 + 双联刷新 + 当前模式判定三件套
+        assertTrue(fragment.contains("onManualColorChanged"))
+        assertTrue(fragment.contains("DuoThemePreviewPreference"))
+        assertTrue(fragment.contains("AppConfig.isNightTheme"))
+        // 背景图/存档逻辑迁入
+        listOf("selectBgAction", "setBgFromUri", "alertImageBlurring", "alertSaveTheme")
+            .forEach { fn -> assertTrue("子页 Fragment 缺少 $fn", fragment.contains(fn)) }
+        // 明暗校验迁入
+        assertTrue(fragment.contains("day_background_too_dark"))
+        assertTrue(fragment.contains("night_background_too_light"))
+    }
 }

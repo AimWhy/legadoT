@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <io.legado.app.lib.prefs.DuoThemePreviewPreference
+        android:key="duoThemePreview"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false" />
+
+    <io.legado.app.lib.prefs.PreferenceCategory
+        android:key="pairedColorCategory"
+        android:title="@string/theme_group_palette"
+        app:allowDividerAbove="false"
+        app:allowDividerBelow="false">
+
+        <io.legado.app.lib.prefs.PairedColorPreference
+            android:key="pairedPrimary"
+            android:title="@string/primary"
+            app:dayDefault="@color/md_theme_day_primary"
+            app:dayKey="colorPrimary"
+            app:nightDefault="@color/md_theme_night_primary"
+            app:nightKey="colorPrimaryNight" />
+
+        <io.legado.app.lib.prefs.PairedColorPreference
+            android:key="pairedAccent"
+            android:title="@string/accent"
+            app:dayDefault="@color/md_theme_day_accent"
+            app:dayKey="colorAccent"
+            app:nightDefault="@color/md_theme_night_accent"
+            app:nightKey="colorAccentNight" />
+
+        <io.legado.app.lib.prefs.PairedColorPreference
+            android:key="pairedBackground"
+            android:title="@string/background_color"
+            app:dayDefault="@color/md_theme_day_background"
+            app:dayKey="colorBackground"
+            app:nightDefault="@color/md_theme_night_background"
+            app:nightKey="colorBackgroundNight" />
+
+        <io.legado.app.lib.prefs.PairedColorPreference
+            android:key="pairedBottomBackground"
+            android:title="@string/navbar_color"
+            app:dayDefault="@color/md_theme_day_bottom_background"
+            app:dayKey="colorBottomBackground"
+            app:nightDefault="@color/md_theme_night_bottom_background"
+            app:nightKey="colorBottomBackgroundNight" />
+
+    </io.legado.app.lib.prefs.PreferenceCategory>
+
+    <io.legado.app.lib.prefs.PreferenceCategory
+        android:title="@string/background_image"
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="false">
+
+        <io.legado.app.lib.prefs.Preference
+            android:key="backgroundImage"
+            android:title="@string/bg_image_day" />
+
+        <io.legado.app.lib.prefs.Preference
+            android:key="backgroundImageNight"
+            android:title="@string/bg_image_night" />
+
+    </io.legado.app.lib.prefs.PreferenceCategory>
+
+    <io.legado.app.lib.prefs.PreferenceCategory
+        android:title="@string/theme_group_save"
+        app:allowDividerAbove="true"
+        app:allowDividerBelow="false">
+
+        <io.legado.app.lib.prefs.Preference
+            android:key="saveDayTheme"
+            android:summary="@string/save_day_theme_summary"
+            android:title="@string/save_day_theme" />
+
+        <io.legado.app.lib.prefs.Preference
+            android:key="saveNightTheme"
+            android:summary="@string/save_night_theme_summary"
+            android:title="@string/save_night_theme"
+            app:allowDividerAbove="false"
+            app:allowDividerBelow="false" />
+
+    </io.legado.app.lib.prefs.PreferenceCategory>
+
+</androidx.preference.PreferenceScreen>

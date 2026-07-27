@@ -113,14 +113,15 @@ class ThemeUxTest {
             "pref_config_theme 必须含壁纸自动更新子开关 key=wallpaperAutoUpdate",
             xml.contains("\"wallpaperAutoUpdate\""),
         )
-        // 红线:8 个 colorXxx key 逐字不动,仅位置迁移进新 category
+        // 红线:8 个 colorXxx key 逐字不动,自定义配色二级页承载(2026-07-27 重设计)
+        val subXml = File("src/main/res/xml/pref_config_theme_color.xml").readText()
         listOf(
             "colorPrimary", "colorAccent", "colorBackground", "colorBottomBackground",
             "colorPrimaryNight", "colorAccentNight", "colorBackgroundNight", "colorBottomBackgroundNight",
         ).forEach { key ->
             assertTrue(
-                "pref_config_theme 必须仍含 colorXxx key: $key",
-                xml.contains("\"$key\""),
+                "pref_config_theme_color 必须含 colorXxx key: $key",
+                subXml.contains("\"$key\""),
             )
         }
     }

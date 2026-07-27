@@ -701,6 +701,14 @@ Placeholders:
     <string name="wallpaper_follow_s">Derive theme colors from your wallpaper (Android 12+)</string>
     <string name="wallpaper_auto_update">Auto update on wallpaper change</string>
     <string name="wallpaper_auto_update_s">Re-derive colors automatically when the wallpaper changes</string>
+    <string name="theme_custom_color">Custom colors</string>
+    <string name="theme_custom_color_summary">Day/night colors, background image, save scheme</string>
+    <string name="theme_group_palette">Colors</string>
+    <string name="theme_group_save">Archive</string>
+    <string name="bg_image_day">Day background image</string>
+    <string name="bg_image_night">Night background image</string>
+    <string name="save_day_theme">Save day theme</string>
+    <string name="save_night_theme">Save night theme</string>
     <string name="wallpaper_no_color">Could not read wallpaper colors</string>
     <string name="color_picker_hex_invalid">Invalid hex color</string>
     <string name="color_picker_current">Current</string>
