@@ -34,6 +34,12 @@ object HighlightAnchor {
         return Anchor(hit, hit + bookText.length)
     }
 
+    /** 跳转落位点: 重锚后的起点; 无从重锚(原文已删/旧数据无原文)时沿用存量偏移 */
+    fun jumpPos(text: String, start: Int, bookText: String): Int {
+        if (bookText.isEmpty()) return start
+        return reanchor(text, start, start, bookText)?.start ?: start
+    }
+
     /** 取距 [target] 最近的一处出现; 前后等距时取靠前者 */
     private fun nearestOccurrence(text: String, pattern: String, target: Int): Int? {
         val before = text.lastIndexOf(pattern, target)

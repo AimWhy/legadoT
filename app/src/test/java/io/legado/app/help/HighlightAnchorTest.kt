@@ -71,4 +71,20 @@ class HighlightAnchorTest {
         val text = "主角拔剑出鞘"
         assertNull(HighlightAnchor.reanchor(text, 0, 2, "改成了别的字"))
     }
+
+    @Test
+    fun `jump lands on the re-anchored start after drift`() {
+        // 创建时"【广告】主角拔剑出鞘"存了起点 4, 净化删广告后跳转应落 0
+        assertEquals(0, HighlightAnchor.jumpPos("主角拔剑出鞘", 4, "主角"))
+    }
+
+    @Test
+    fun `jump falls back to the stored offset when bookText was purged`() {
+        assertEquals(4, HighlightAnchor.jumpPos("拔剑出鞘", 4, "主角"))
+    }
+
+    @Test
+    fun `jump with empty bookText uses the stored offset`() {
+        assertEquals(4, HighlightAnchor.jumpPos("主角拔剑出鞘", 4, ""))
+    }
 }

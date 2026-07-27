@@ -164,6 +164,22 @@ object ReadBook : CoroutineScope by MainScope() {
         }
     }
 
+    /**
+     * 标注跳转落位纠偏: 存量偏移因净化/替换漂移时, 以划线原文重锚当前位置。
+     * 在 openChapter 的 success 回调里调用, 此时整章排版已完成。
+     */
+    fun correctDurPosByAnchor(start: Int, bookText: String) {
+        if (bookText.isEmpty()) return
+        if (durChapterPos != start) return
+        val textChapter = curTextChapter ?: return
+        val pos = HighlightAnchor.jumpPos(chapterText(textChapter), start, bookText)
+        if (pos == start) return
+        durChapterPos = pos
+        callBack?.upContent()
+        curPageChanged()
+        saveRead(true)
+    }
+
     var highlightRules: List<HighlightRule> = emptyList()
         private set
 

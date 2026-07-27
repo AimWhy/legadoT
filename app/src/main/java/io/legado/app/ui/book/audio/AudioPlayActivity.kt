@@ -100,10 +100,10 @@ class AudioPlayActivity :
 
     private val tocActivityResult = registerForActivityResult(TocActivityResult()) {
         it?.let {
-            if (it.first != AudioPlay.book?.durChapterIndex
-                || it.second == 0
+            if (it.index != AudioPlay.book?.durChapterIndex
+                || it.chapterPos == 0
             ) {
-                AudioPlay.skipTo(it.first)
+                AudioPlay.skipTo(it.index)
             }
         }
     }

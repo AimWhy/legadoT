@@ -188,9 +188,13 @@ class ReadBookActivity : BaseReadBookActivity(),
     LayoutProgressListener {
 
     private val tocActivity =
-        registerForActivityResult(TocActivityResult()) {
-            it?.let {
-                viewModel.openChapter(it.first, it.second)
+        registerForActivityResult(TocActivityResult()) { result ->
+            result?.let {
+                viewModel.openChapter(it.index, it.chapterPos) {
+                    it.anchorText?.let { anchor ->
+                        ReadBook.correctDurPosByAnchor(it.chapterPos, anchor)
+                    }
+                }
             }
         }
     private val sourceEditActivity =

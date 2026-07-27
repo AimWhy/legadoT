@@ -91,6 +91,7 @@ class HighlightFragment : VMBaseFragment<TocViewModel>(R.layout.fragment_bookmar
             setResult(Activity.RESULT_OK, Intent().apply {
                 putExtra("index", highlight.chapterIndex)
                 putExtra("chapterPos", highlight.chapterPos)
+                putExtra("anchorText", highlight.bookText)
             })
             finish()
         }

@@ -116,7 +116,7 @@ class BookInfoActivity :
 
     private val tocActivityResult = registerForActivityResult(TocActivityResult()) {
         it?.let {
-            readFromChapter(it.first, it.second, it.third)
+            readFromChapter(it.index, it.chapterPos, it.chapterChanged)
         } ?: let {
             if (!viewModel.inBookshelf) {
                 viewModel.delBook()
