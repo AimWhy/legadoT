@@ -150,6 +150,10 @@ fun Activity.setLightStatusBar(isLightBar: Boolean) {
 fun Activity.setNavigationBarColorAuto(@ColorInt color: Int) {
     val isLightBor = ColorUtils.isColorLight(color)
     window.navigationBarColor = color
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        // 透明导航栏时华为等 ROM 会叠系统对比度灰罩,关闭之;图标明暗由下方 appearance 管理
+        window.isNavigationBarContrastEnforced = false
+    }
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         window.insetsController?.let {
             if (isLightBor) {
