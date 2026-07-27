@@ -1469,27 +1469,8 @@
               const rect = view.scrollDOM.getBoundingClientRect();
               return { coords, rect };
             },
-            write(_v, data) {
-              const lineLen = view.state.doc.lineAt(cursor).length;
-              if (!data || !data.coords) {
-                if (lineLen >= LONG_LINE_SCROLL_LIMIT) {
-                  requestAnimationFrame(() => {
-                    view.scrollDOM.scrollTop =
-                      view.scrollDOM.scrollHeight;
-                  });
-                } else {
-                  requestAnimationFrame(() => {
-                    view.dispatch({
-                      effects: EditorView.scrollIntoView(cursor, {
-                        y: "nearest",
-                      }),
-                    });
-                  });
-                }
-                return;
-              }
-              const { coords, rect } = data;
-              if (coords.top < rect.top || coords.bottom > rect.bottom) {
+            write(data) {
+              const scrollToCursor = () => {
                 requestAnimationFrame(() => {
                   view.dispatch({
                     effects: EditorView.scrollIntoView(cursor, {
@@ -1497,6 +1478,14 @@
                     }),
                   });
                 });
+              };
+              if (!data || !data.coords) {
+                scrollToCursor();
+                return;
+              }
+              const { coords, rect } = data;
+              if (coords.top < rect.top || coords.bottom > rect.bottom) {
+                scrollToCursor();
               }
             },
           });
@@ -1704,7 +1693,7 @@
             }
 
             if (t.indexOf("--cookie=") === 0) {
-              cookie = t.split("=", 2)[1] || "";
+              cookie = t.slice("--cookie=".length);
               continue;
             }
 
@@ -1759,12 +1748,11 @@
         function splitAnalyzeUrl(text) {
           const raw = String(text || "").trim();
           if (!raw) return { url: "", options: null };
-          const braceIdx = raw.indexOf("{");
-          if (braceIdx === -1) return { url: raw, options: null };
-          const commaIdx = raw.lastIndexOf(",", braceIdx);
-          if (commaIdx === -1) return { url: raw, options: null };
-          const url = raw.slice(0, commaIdx).trim();
-          const json = raw.slice(commaIdx + 1).trim();
+          // 切分语义与 App 端 AnalyzeUrl.paramPattern 一致:首个 ",{" 为界
+          const m = raw.match(/\s*,\s*(?=\{)/);
+          if (!m) return { url: raw, options: null };
+          const url = raw.slice(0, m.index).trim();
+          const json = raw.slice(m.index + m[0].length).trim();
           return { url, options: json };
         }
 
@@ -1971,7 +1959,7 @@
             if (!view || !view.contentDOM) return;
             if (view.hasFocus) return;
             const target = e.target instanceof Element ? e.target : null;
-            if (target && target.closest(".cm-gutters")) return;
+            if (target && target.closest(".cm-gutters, .cm-panels")) return;
             try {
               view.contentDOM.focus({ preventScroll: true });
             } catch (ex) {
@@ -2489,7 +2477,13 @@
           if (!pattern) { result.innerHTML = ""; return; }
           try {
             const re = new RegExp(pattern, buildRegexFlags());
-            const matches = [...sample.matchAll(re)];
+            let matches;
+            if (re.global) {
+              matches = [...sample.matchAll(re)];
+            } else {
+              const m = re.exec(sample);
+              matches = m ? [m] : [];
+            }
             if (!matches.length) {
               result.innerHTML = '<span class="regex-error">无匹配</span>';
               return;
