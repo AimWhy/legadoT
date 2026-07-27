@@ -85,4 +85,25 @@ class ThemeSettingsRedesignTest {
         assertTrue(fragment.contains("day_background_too_dark"))
         assertTrue(fragment.contains("night_background_too_light"))
     }
+
+    @Test
+    fun `hero preview embeds theme mode segmented group bound to themeMode pref`() {
+        val layout = File("src/main/res/layout/view_theme_preview.xml").readText()
+        assertTrue(
+            "英雄卡必须内嵌 MaterialButtonToggleGroup",
+            layout.contains("MaterialButtonToggleGroup"),
+        )
+        listOf("group_theme_mode", "btn_mode_system", "btn_mode_day", "btn_mode_night", "btn_mode_eink")
+            .forEach { id -> assertTrue("布局缺少 id: $id", layout.contains(id)) }
+        assertTrue("分段必须单选", layout.contains("singleSelection"))
+
+        val src =
+            File("src/main/java/io/legado/app/lib/prefs/ThemePreviewPreference.kt").readText()
+        assertTrue("必须绑定 PreferKey.themeMode", src.contains("PreferKey.themeMode"))
+        assertTrue("点选必须走 applyDayNight 生效链", src.contains("applyDayNight"))
+        assertTrue(
+            "文案必须复用 theme_mode 数组(与「我的」页选择器同源)",
+            src.contains("R.array.theme_mode"),
+        )
+    }
 }
