@@ -214,7 +214,7 @@
       background: var(--gutter-text);
       opacity: 0;
       transition: opacity 0.25s;
-      z-index: 30;
+      z-index: 24;
       will-change: transform;
       pointer-events: none;
     }
@@ -225,14 +225,15 @@
       opacity: 0.9;
       background: var(--accent);
     }
-    /* 拖拽热区:视觉细条不好按,热区放宽到 24px */
+    /* 拖拽热区:视觉细条不好按,热区放宽到 24px;
+       与滚动指示条同层且低于 .cm-panels(25),搜索面板区域点击归面板 */
     #scroll-indicator-hit {
       position: absolute;
       top: 0;
       right: 0;
       bottom: 0;
       width: 24px;
-      z-index: 29;
+      z-index: 24;
       touch-action: none;
       display: none;
     }
@@ -249,7 +250,7 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 4px;
-      padding: 6px 28px 6px 8px;
+      padding: 6px 44px 6px 8px;
       font-size: 12px;
       position: relative;
     }
@@ -270,9 +271,9 @@
     .cm-panel.cm-search [name="close"] {
       position: absolute;
       top: 4px;
-      right: 4px;
-      width: 26px;
-      height: 26px;
+      right: 8px;
+      width: 30px;
+      height: 30px;
       font-size: 18px;
       line-height: 1;
       color: var(--gutter-text) !important;
@@ -2318,6 +2319,15 @@
         });
 
         bindClick(dom.searchToggleBtn, () => {
+          // bundle 未导出 closeSearchPanel,复用面板自身关闭按钮的处理器
+          const panel = view.dom.querySelector(".cm-panel.cm-search");
+          if (panel) {
+            const close = panel.querySelector('[name="close"]');
+            if (close) {
+              close.click();
+              return;
+            }
+          }
           if (typeof openSearchPanel === "function") {
             openSearchPanel(view);
           }
