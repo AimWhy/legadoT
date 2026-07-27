@@ -11,6 +11,7 @@ import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogPhotoViewBinding
 import io.legado.app.help.book.BookHelp
+import io.legado.app.help.config.AppConfig
 import io.legado.app.help.glide.ImageLoader
 import io.legado.app.help.glide.OkHttpModelLoader
 import io.legado.app.model.BookCover
@@ -39,10 +40,22 @@ class PhotoDialog() : BaseDialogFragment(R.layout.dialog_photo_view) {
     override fun onStart() {
         super.onStart()
         setLayout(1f, ViewGroup.LayoutParams.MATCH_PARENT)
+        dialog?.window?.run {
+            setBackgroundDrawableResource(R.color.transparent)
+            val attr = attributes
+            // 半透背板由根布局 scrim 单点控制,dim 叠加会加深至约95%黑
+            attr.dimAmount = 0f
+            attributes = attr
+        }
     }
 
     @SuppressLint("CheckResult")
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
+        // 基类 onViewCreated 已统一刷主题背景色,此处覆写为沉浸暗色背板;墨水屏维持基类描边浅底形态
+        if (!AppConfig.isEInkMode) {
+            binding.root.setBackgroundResource(R.color.photo_viewer_scrim)
+        }
+        binding.photoView.setOnClickListener { dismiss() }
         val arguments = arguments ?: return
         val src = arguments.getString("src") ?: return
         ImageProvider.get(src)?.let {
