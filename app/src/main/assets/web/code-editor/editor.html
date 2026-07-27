@@ -1096,7 +1096,6 @@
         const themeComp = new Compartment();
         const fontComp = new Compartment();
         const indentComp = new Compartment();
-        const autoIndentComp = new Compartment();
         const deferredComp = new Compartment();
         const highlightComp = new Compartment();
         const mediaDark = window.matchMedia
@@ -1366,25 +1365,9 @@
           return exts;
         }
 
-        function makeAutoIndentExtensions(enableAutoIndent) {
-          const exts = [];
-          if (enableAutoIndent && typeof indentOnInput === "function") {
-            exts.push(indentOnInput());
-          }
-          return exts;
-        }
-
         function updateWrappedScriptMode(rawText) {
-          const nextMode = !!detectWrapper(rawText || "");
-          if (nextMode === isWrappedScriptMode) return;
-          isWrappedScriptMode = nextMode;
-          if (view) {
-            view.dispatch({
-              effects: autoIndentComp.reconfigure(
-                makeAutoIndentExtensions(!isWrappedScriptMode),
-              ),
-            });
-          }
+          // 供 insertNewlineClamped 长行分支判断是否按 JS 语义增补缩进
+          isWrappedScriptMode = !!detectWrapper(rawText || "");
         }
 
         function shouldIncreaseIndentAfterLine(textBeforeCursor) {
@@ -1425,13 +1408,14 @@
           const beforeCursorText = state.doc.sliceString(line.from, from);
           const afterCursorText = state.doc.sliceString(from, line.to);
           const trimmedLine = line.text.trim();
-          const isBlankLine = trimmedLine.length === 0;
+          // 包裹边界行(@js: 头/<js>/{{)在 JS 解析器眼里是 label/表达式续行,
+          // 语法缩进会多给一层;这些行回车走纯换行
           const isWrapperLine =
-            /^@js:\s*$/.test(trimmedLine) || /^<js>\s*$/i.test(trimmedLine);
+            /@js:\s*$/.test(trimmedLine) ||
+            /^<js>\s*$/i.test(trimmedLine) ||
+            /^\{\{\s*$/.test(trimmedLine);
           if (
-            !isWrappedScriptMode &&
             !isWrapperLine &&
-            !isBlankLine &&
             line.length < LONG_LINE_SCROLL_LIMIT &&
             typeof insertNewlineAndIndent === "function"
           ) {
@@ -1841,12 +1825,8 @@
           ) {
             exts.push(indentComp.of(indentUnit.of(" ".repeat(tabSize))));
           }
-          if (autoIndentComp) {
-            exts.push(
-              autoIndentComp.of(
-                makeAutoIndentExtensions(!isWrappedScriptMode),
-              ),
-            );
+          if (typeof indentOnInput === "function") {
+            exts.push(indentOnInput());
           }
           if (typeof javascript === "function") exts.push(javascript());
           if (typeof syntaxHighlighting === "function") {
