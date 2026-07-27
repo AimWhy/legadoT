@@ -665,6 +665,9 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="theme_custom_color_summary">日/夜四色、背景图片、保存主题方案</string>
     <string name="theme_group_palette">配色</string>
     <string name="theme_group_save">存档</string>
+    <string name="theme_group_color_scheme">配色方案</string>
+    <string name="theme_group_display">界面显示</string>
+    <string name="theme_group_elements">个性化元素</string>
     <string name="bg_image_day">日间背景图片</string>
     <string name="bg_image_night">夜间背景图片</string>
     <string name="save_day_theme">保存日间主题</string>

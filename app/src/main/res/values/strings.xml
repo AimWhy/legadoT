@@ -705,6 +705,9 @@ Placeholders:
     <string name="theme_custom_color_summary">Day/night colors, background image, save scheme</string>
     <string name="theme_group_palette">Colors</string>
     <string name="theme_group_save">Archive</string>
+    <string name="theme_group_color_scheme">Color scheme</string>
+    <string name="theme_group_display">Interface display</string>
+    <string name="theme_group_elements">Personalization</string>
     <string name="bg_image_day">Day background image</string>
     <string name="bg_image_night">Night background image</string>
     <string name="save_day_theme">Save day theme</string>

@@ -106,4 +106,32 @@ class ThemeSettingsRedesignTest {
             src.contains("R.array.theme_mode"),
         )
     }
+
+    @Test
+    fun `main theme page keeps browsing items in three groups and delegates deep color ops`() {
+        val xml = File("src/main/res/xml/pref_config_theme.xml").readText()
+        // 色项/背景图/存档全部下沉,主页不再承载
+        listOf("ColorPreference", "\"colorPrimary\"", "\"backgroundImage\"", "\"saveDayTheme\"", "dayThemeCategory")
+            .forEach { probe -> assertTrue("主页不得再含 $probe", !xml.contains(probe)) }
+        // 三分组 + 二级页入口
+        listOf("colorSchemeCategory", "displayCategory", "elementsCategory", "\"customColorConfig\"")
+            .forEach { probe -> assertTrue("主页缺少 $probe", xml.contains(probe)) }
+        // 高频项留主页:三沉浸开关+阴影+字号+个性化四件
+        listOf(
+            "transparentStatusBar", "transparentActionBar", "immNavigationBar",
+            "barElevation", "fontScale", "launcherIcon", "welcomeStyle",
+            "coverConfig", "bottomBarSkin", "themeList",
+        ).forEach { key -> assertTrue("主页缺少 key $key", xml.contains(key)) }
+
+        val fragment =
+            File("src/main/java/io/legado/app/ui/config/ThemeConfigFragment.kt").readText()
+        assertTrue("入口必须跳 THEME_COLOR_CONFIG", fragment.contains("THEME_COLOR_CONFIG"))
+        assertTrue("返回主页须补刷预设排(covers 无 RECREATE 的跨模式手调)", fragment.contains("onResume"))
+        // 深度配色逻辑已迁出
+        listOf("alertSaveTheme", "setBgFromUri", "selectBgAction", "MenuProvider")
+            .forEach { probe -> assertTrue("主页 Fragment 不得再含 $probe", !fragment.contains(probe)) }
+        // 日夜快切菜单退役(被分段上位)
+        assertTrue(!File("src/main/res/menu/theme_config.xml").exists())
+        assertTrue(!fragment.contains("R.menu.theme_config"))
+    }
 }
