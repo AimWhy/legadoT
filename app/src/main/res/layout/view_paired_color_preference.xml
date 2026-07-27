@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/space_l"
+    android:paddingTop="@dimen/space_xs"
+    android:paddingEnd="@dimen/space_l"
+    android:paddingBottom="@dimen/space_xs">
+
+    <TextView
+        android:id="@+id/tv_paired_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:textSize="@dimen/text_body_l"
+        app:skin_textColor="onSurface"
+        tools:text="主色调" />
+
+    <!-- 色块文字颜色按底色明暗在代码里现算,不走 skin 通道 -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_swatch_day"
+        android:layout_width="48dp"
+        android:layout_height="30dp"
+        app:cardCornerRadius="@dimen/radius_s"
+        app:cardElevation="0dp"
+        app:strokeWidth="1dp">
+
+        <TextView
+            android:id="@+id/tv_swatch_day"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/day"
+            android:textSize="@dimen/text_caption" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+    <Space
+        android:layout_width="@dimen/space_s"
+        android:layout_height="1dp" />
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_swatch_night"
+        android:layout_width="48dp"
+        android:layout_height="30dp"
+        app:cardCornerRadius="@dimen/radius_s"
+        app:cardElevation="0dp"
+        app:strokeWidth="1dp">
+
+        <TextView
+            android:id="@+id/tv_swatch_night"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/night"
+            android:textSize="@dimen/text_caption" />
+
+    </com.google.android.material.card.MaterialCardView>
+
+</LinearLayout>

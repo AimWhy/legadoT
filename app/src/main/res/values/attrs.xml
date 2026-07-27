@@ -192,6 +192,13 @@
         <attr name="cpv_showAlphaSlider" format="boolean" />
     </declare-styleable>
 
+    <declare-styleable name="PairedColorPreference">
+        <attr name="dayKey" format="string" />
+        <attr name="nightKey" format="string" />
+        <attr name="dayDefault" format="color|reference" />
+        <attr name="nightDefault" format="color|reference" />
+    </declare-styleable>
+
     <!--斜角标签-->
     <declare-styleable name="BevelLabelView">
         <!--背景颜色-->
