@@ -17,6 +17,7 @@ import androidx.appcompat.widget.AppCompatRadioButton
 import androidx.appcompat.widget.AppCompatSeekBar
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.LayoutInflaterCompat
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.materialswitch.MaterialSwitch
@@ -72,6 +73,7 @@ class SkinInflaterFactory(activity: AppCompatActivity) : LayoutInflater.Factory2
                 } else null)
                 ?: return null
             applyTypeDefaults(view)
+            applyButtonStyleTint(view, attrs)
             if (hasSkin) applySkinAttrs(view, ta)
             return view
         } finally {
@@ -162,6 +164,53 @@ class SkinInflaterFactory(activity: AppCompatActivity) : LayoutInflater.Factory2
         slider.applyAppTint(slider.context.accentColor, inactiveAlpha = 0.24f)
     }
 
+    /**
+     * M3 按钮 Text/Tonal 两档按 style 声明代码施色(弹窗模板 footer 按钮排等复用)。
+     * 这两档原生纯 ?attr 取色,而 DynamicColors 注入有厂商门槛(华为/荣耀等不在
+     * 白名单,attr 回落 XML 预生成默认色板),故从 AppColorScheme 直出;禁用态按
+     * M3 规范 onSurface 12%/38%。精确 javaClass 匹配,子类自治;Filled/Outlined
+     * 档各有属地施色(氛围页/阅读面板),不接管。
+     */
+    private fun applyButtonStyleTint(view: View, attrs: AttributeSet) {
+        if (view.javaClass != MaterialButton::class.java) return
+        view as MaterialButton
+        val scheme = AppColorScheme.current
+        val disabledStates = arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf())
+        when (attrs.styleAttribute) {
+            R.style.Widget_App_Button_Text -> {
+                val fg = ColorStateList(
+                    disabledStates,
+                    intArrayOf(ColorUtils.withAlpha(scheme.onSurface, 0.38f), scheme.primary)
+                )
+                view.setTextColor(fg)
+                view.iconTint = fg
+                view.rippleColor =
+                    ColorStateList.valueOf(ColorUtils.withAlpha(scheme.primary, 0.12f))
+            }
+
+            R.style.Widget_App_Button_Tonal -> {
+                view.backgroundTintList = ColorStateList(
+                    disabledStates,
+                    intArrayOf(
+                        ColorUtils.withAlpha(scheme.onSurface, 0.12f),
+                        scheme.secondaryContainer,
+                    )
+                )
+                val fg = ColorStateList(
+                    disabledStates,
+                    intArrayOf(
+                        ColorUtils.withAlpha(scheme.onSurface, 0.38f),
+                        scheme.onSecondaryContainer,
+                    )
+                )
+                view.setTextColor(fg)
+                view.iconTint = fg
+                view.rippleColor =
+                    ColorStateList.valueOf(ColorUtils.withAlpha(scheme.onSecondaryContainer, 0.12f))
+            }
+        }
+    }
+
     /** 规则 B:读 skin_* 角色声明施色(TypedArray 生命周期由调用方管理) */
     private fun applySkinAttrs(view: View, ta: android.content.res.TypedArray) {
         val scheme = AppColorScheme.current
@@ -209,9 +258,10 @@ class SkinInflaterFactory(activity: AppCompatActivity) : LayoutInflater.Factory2
             "android.widget.", "android.view.", "android.webkit.", "android.app.",
         )
 
-        /** AppCompat 不创建、但规则 A 需要实例的名字 */
+        /** AppCompat 不创建、但规则 A/按钮档施色需要实例的名字 */
         private val RULE_A_FALLBACK_NAMES = hashSetOf(
             "ProgressBar",
+            "com.google.android.material.button.MaterialButton",
             "com.google.android.material.materialswitch.MaterialSwitch",
             "com.google.android.material.checkbox.MaterialCheckBox",
             "com.google.android.material.radiobutton.MaterialRadioButton",
