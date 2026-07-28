@@ -21,6 +21,7 @@ import androidx.core.view.get
 import androidx.core.view.isGone
 import androidx.core.view.isVisible
 import androidx.core.view.size
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import io.legado.app.BuildConfig
 import io.legado.app.R
@@ -2462,6 +2463,18 @@ class ReadBookActivity : BaseReadBookActivity(),
         }
         observeEvent<Boolean>(EventBus.UP_SEEK_BAR) {
             readMenu.upSeekBar()
+        }
+        observeEvent<Boolean>(EventBus.REFRESH_BOOK_CONTENT) { //书源js函数触发刷新
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                refreshDurChapter()
+            }
+        }
+        observeEvent<Boolean>(EventBus.REFRESH_BOOK_TOC) { //书源js函数触发刷新
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                ReadBook.book?.let {
+                    loadChapterList(it)
+                }
+            }
         }
     }
 
