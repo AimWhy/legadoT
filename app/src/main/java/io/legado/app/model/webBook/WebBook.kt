@@ -325,7 +325,8 @@ object WebBook {
         }
         if (bookChapter.isVolume && bookChapter.url.startsWith(bookChapter.title)) {
             Debug.log(bookSource.bookSourceUrl, "⇒一级目录正文不解析规则")
-            return bookChapter.tag ?: ""
+            // 卷占位章正文恒为空串,排版层按空正文垂直居中卷名;tag(updateTime 规则结果)不作正文
+            return ""
         }
         return if (bookChapter.url == book.bookUrl && !book.tocHtml.isNullOrEmpty()) {
             BookContent.analyzeContent(

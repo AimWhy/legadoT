@@ -166,9 +166,9 @@ object JsSourceBook {
         needSave: Boolean = true,
     ): String {
         if (bookChapter.isVolume && bookChapter.url.startsWith(bookChapter.title)) {
-            // WebBook.getContentAwait(:310-313)同款:卷占位章不抓正文
+            // WebBook.getContentAwait 同款:卷占位章不抓正文,正文恒为空串保排版层卷名居中
             Debug.log(bookSource.bookSourceUrl, "⇒一级目录正文不解析")
-            return bookChapter.tag ?: ""
+            return ""
         }
         val engine = JsSourceEngine(bookSource, coroutineContext)
         val content = engine.callFunction(

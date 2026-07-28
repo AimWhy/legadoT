@@ -682,7 +682,7 @@ function getContent(chapter, book) {
 - **`getChapters` 每项**：`title`、`url` 必填，缺一丢弃；可选 `isVolume`、`isVip`、`isPay`、
   `tag`、`wordCount`、`resourceUrl`。相对 `url` 会按 `book.tocUrl` 自动补全成绝对地址。
   卷名行的约定：`isVolume: true` 且 `url` 与 `title` 写成相同字符串——命中这个约定的行点开
-  不会尝试抓正文（不会报错，直接展示 `tag` 或空文本）。
+  不会尝试抓正文（不会报错，正文页是居中显示卷名的分隔页）。
 - **`getContent` 返回值即最终正文**，阅读器按纯文本排版、正文内 `<img src>` 渲染为插图：
   拼纯文本（段落用 `\n` 分隔），或取正文节点的 HTML 用 `java.htmlFormat(html, chapter.url)`
   转段落文本——与声明式源的正文处理同款（保留 `<img>` 并补全相对地址）。
