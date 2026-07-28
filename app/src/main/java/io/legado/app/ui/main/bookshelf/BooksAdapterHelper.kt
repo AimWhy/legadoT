@@ -15,6 +15,7 @@ import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.cardBackgroundColor
 import io.legado.app.ui.widget.anima.RotateLoading
 import io.legado.app.ui.widget.text.BadgeView
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.gone
 import io.legado.app.utils.invisible
 import io.legado.app.utils.toTimeAgo
@@ -49,8 +50,9 @@ fun upBookBadge(
 
 /**
  * 封面/列表项阅读进度条更新（开关关闭或未读=null 时 gone,零视觉噪声）。
- * indicatorColor 走 accentColor 运行时着色——LinearProgressIndicator 不在 SkinInflaterFactory
- * 的规则 A 换肤表内,需与 hero 卡([BaseBookshelfFragment.refreshShelfHeader])同款施色单轨。
+ * indicatorColor/trackColor 均走 accentColor 运行时着色——LinearProgressIndicator 不在
+ * SkinInflaterFactory 的规则 A 换肤表内;track 若留给 ?attr 默认,在 DynamicColors
+ * 不注入的机型(华为/荣耀等厂商门槛)会回落 XML 预生成蓝色板,故随强调色 24% 直出。
  * @param percentView 列表款百分比文本,网格款不传(封面上不放文字)
  */
 private fun upReadProgress(
@@ -63,7 +65,9 @@ private fun upReadProgress(
         pbReadProgress.gone()
         percentView?.gone()
     } else {
-        pbReadProgress.setIndicatorColor(pbReadProgress.context.accentColor)
+        val accent = pbReadProgress.context.accentColor
+        pbReadProgress.setIndicatorColor(accent)
+        pbReadProgress.trackColor = ColorUtils.withAlpha(accent, 0.24f)
         pbReadProgress.visible()
         pbReadProgress.progress = (progress * 100).toInt()
         percentView?.let {
