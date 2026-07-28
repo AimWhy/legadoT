@@ -185,7 +185,6 @@
       flex: 1;
       display: flex;
       min-height: 0;
-      padding-bottom: env(safe-area-inset-bottom);
       overflow: hidden;
     }
 
@@ -194,6 +193,12 @@
       min-height: 0;
       min-width: 0;
       overflow: hidden;
+    }
+
+    /* 底部系统栏避让:宿主让 WebView 全出血到屏幕底,安全区高度经 setBottomInset 注入
+       --bottom-inset;垫进滚动内容与底部浮层,编辑器表面铺满屏幕,末行可滚到手势条上方 */
+    #editor .cm-content {
+      padding-bottom: calc(4px + var(--bottom-inset, 0px));
     }
 
     .cm-editor {
@@ -375,7 +380,7 @@
 
     #toast {
       position: absolute;
-      bottom: 20px;
+      bottom: calc(20px + var(--bottom-inset, 0px));
       left: 50%;
       transform: translateX(-50%);
       background: rgba(0, 0, 0, 0.8);
@@ -394,7 +399,7 @@
     }
 
     #syntax-status {
-      padding: 4px 10px;
+      padding: 4px 10px calc(4px + var(--bottom-inset, 0px));
       font-size: 12px;
       border-top: 1px solid var(--border);
       background: var(--toolbar-bg);
@@ -420,7 +425,7 @@
       position: absolute;
       left: 8px;
       right: 8px;
-      bottom: 8px;
+      bottom: calc(8px + var(--bottom-inset, 0px));
       max-height: 40%;
       display: none;
       flex-direction: column;
@@ -1030,6 +1035,7 @@
         let logLines = [];
         let isLogOpen = false;
         let lastAppliedPixelSize = 0;
+        let bottomInset = 0;
 
         function appendLog(level, msg) {
           const time = new Date()
@@ -1830,6 +1836,10 @@
             exts.push(indentOnInput());
           }
           if (typeof javascript === "function") exts.push(javascript());
+          if (EditorView && EditorView.scrollMargins) {
+            // 光标滚动定位把底部安全区计入边距,末行输入不落在手势条下
+            exts.push(EditorView.scrollMargins.of(() => ({ bottom: bottomInset })));
+          }
           if (typeof syntaxHighlighting === "function") {
             exts.push(highlightComp.of(makeHighlightExt()));
           }
@@ -2773,6 +2783,18 @@
           } catch (e) {
             appendLog("error", "应用主题注入失败: " + errMsg(e));
           }
+        };
+
+        /**
+         * Android 注入底部安全区高度(css px):宿主让 WebView 全出血延伸到屏幕底时传导航栏高度,
+         * 避让垫进滚动内容与底部浮层(--bottom-inset);固定边界宿主(弹窗)传 0 清除
+         */
+        window.setBottomInset = function (px) {
+          const v = Math.max(0, Math.round(Number(px) || 0));
+          if (v === bottomInset) return;
+          bottomInset = v;
+          document.documentElement.style.setProperty("--bottom-inset", v + "px");
+          if (view) view.requestMeasure();
         };
 
         window.setCodeFromAndroid = function (b64) {

@@ -3,6 +3,7 @@ package io.legado.app.ui.widget.dialog
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.MutableContextWrapper
+import android.content.res.Resources
 import android.graphics.Color
 import android.os.Handler
 import android.os.Looper
@@ -166,6 +167,18 @@ object CodeEditorWebViewPool {
             .put("dark", AppConfig.isNightTheme)
             .put("colors", colors)
         evaluateJavascript("window.setAppTheme && window.setAppTheme($payload);")
+    }
+
+    /**
+     * 把底部安全区高度注入编辑器(editor.html setBottomInset,物理 px 入参、内部换算 css px):
+     * 宿主让 WebView 全出血到屏幕底时传导航栏高度,页面在滚动内容里避让;
+     * 固定边界宿主(弹窗)传 0 清除池内残留值。
+     */
+    fun applyBottomInset(insetPx: Int) {
+        val density = appContext?.resources?.displayMetrics?.density
+            ?: Resources.getSystem().displayMetrics.density
+        val cssPx = (insetPx / density).toInt()
+        evaluateJavascript("window.setBottomInset && window.setBottomInset($cssPx);")
     }
 
     /** 解包 evaluateJavascript 的 JSON 编码返回值为原始字符串 */

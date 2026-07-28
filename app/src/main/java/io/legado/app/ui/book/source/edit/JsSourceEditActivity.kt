@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.util.Base64
 import android.view.Menu
 import android.view.MenuItem
+import androidx.core.view.ViewCompat
 import androidx.lifecycle.lifecycleScope
 import io.legado.app.R
 import io.legado.app.base.BaseActivity
@@ -65,14 +66,27 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>(),
     private var pendingInitialText: String? = null
     private var exitCheckPending = false
 
+    // 当前应注入编辑器页面的底部安全区高度(键盘弹出时为 0,见 insets 监听)
+    private var editorBottomInsetPx = 0
+
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         editorSessionKey = savedInstanceState?.getString("editorSessionKey")
             ?: "js:" + java.util.UUID.randomUUID().toString()
-        // 本页无 KeyboardToolPop 工具条兜底,与书源编辑器(imeHeight==0 时才用 navigationBarHeight)不同,
-        // 这里 IME 高度直接作为 padding,让输入区始终不被键盘遮挡
+        // 本页无 KeyboardToolPop 工具条兜底,IME 高度直接作为 padding,输入区始终不被键盘遮挡
         binding.flEditor.setOnApplyWindowInsetsListenerCompat { view, windowInsets ->
             val imeHeight = windowInsets.imeHeight
-            view.bottomPadding = if (imeHeight == 0) windowInsets.navigationBarHeight else imeHeight
+            if (fallbackMode) {
+                // 原生 CodeView 无页内避让通道,底部让出导航栏
+                view.bottomPadding =
+                    if (imeHeight == 0) windowInsets.navigationBarHeight else imeHeight
+            } else {
+                // WebView 全出血到屏幕底,导航栏高度注入页面在滚动内容里避让
+                // (editor.html setBottomInset),编辑器表面铺满屏幕
+                view.bottomPadding = if (imeHeight == 0) 0 else imeHeight
+                editorBottomInsetPx =
+                    if (imeHeight == 0) windowInsets.navigationBarHeight else 0
+                CodeEditorWebViewPool.applyBottomInset(editorBottomInsetPx)
+            }
             windowInsets
         }
         val sourceUrl = intent.getStringExtra("sourceUrl")
@@ -113,6 +127,8 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>(),
         if (isDestroyed) return
         editorReady = true
         CodeEditorWebViewPool.applyAppTheme()
+        // 池化页面可能残留其他会话的注入值,就绪即按本页当前 insets 重发
+        CodeEditorWebViewPool.applyBottomInset(editorBottomInsetPx)
         applyInitialTextIfReady()
     }
 
@@ -134,6 +150,8 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>(),
         binding.webViewContainer.gone()
         binding.codeView.addJsPattern()
         binding.codeView.visible()
+        // 让 insets 监听按回退分支重算底部 padding(CodeView 需让出导航栏)
+        ViewCompat.requestApplyInsets(binding.flEditor)
         applyInitialTextIfReady()
     }
 

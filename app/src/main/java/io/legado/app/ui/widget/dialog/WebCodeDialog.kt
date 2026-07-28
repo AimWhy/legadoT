@@ -185,6 +185,8 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
         bootFailed = false
         editorReady = true
         CodeEditorWebViewPool.applyAppTheme()
+        // 弹窗卡片边界不贴屏幕底,页内无需避让;清掉 JS 源页会话可能残留的注入值
+        CodeEditorWebViewPool.applyBottomInset(0)
         updateEditorUiState()
         sendInitialCodeToEditor()
     }
