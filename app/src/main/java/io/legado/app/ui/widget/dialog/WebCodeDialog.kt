@@ -1,28 +1,39 @@
 package io.legado.app.ui.widget.dialog
 
 import android.graphics.Color
-import android.graphics.drawable.ColorDrawable
+import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.fragment.app.FragmentManager
 import io.legado.app.R
 import io.legado.app.base.BaseDialogFragment
 import io.legado.app.databinding.DialogWebCodeViewBinding
 import io.legado.app.lib.dialogs.alert
+import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.primaryColor
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.applyTint
+import io.legado.app.utils.imeHeight
+import io.legado.app.utils.navigationBarHeight
 import io.legado.app.utils.setLayout
+import io.legado.app.utils.setOnApplyWindowInsetsListenerCompat
 import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
+import splitties.views.bottomPadding
+import splitties.views.topPadding
 
 class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
     CodeEditorWebViewPool.Client {
 
-    /** 全屏弹窗:大浮动形态,圆角+四周留边 */
-    override val dialogForm = DialogForm.FULL_SCREEN
+    /** 真全屏编辑器页:贴边盖满整屏、不透明页面背景,豁免浮动卡留边模板 */
+    override val dialogForm = DialogForm.SELF_MANAGED
 
     companion object {
         private const val DIALOG_TAG = "WebCodeDialog"
@@ -58,16 +69,43 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
     private var pendingClose = false
     private var confirmShown = false
 
+    // 当前应注入编辑器页面的底部安全区高度(键盘弹出时为 0,见 insets 监听)
+    private var editorBottomInsetPx = 0
+
     /** 内容会话键：随 requestId 稳定跨重建，旋转后据此跳过初始代码重发 */
     private val sessionKey: String?
         get() = arguments?.getString("requestId")?.let { "dlg:$it" }
 
     override fun onStart() {
         super.onStart()
-        dialog?.window?.apply {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
-            clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+        setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        dialog?.window?.run {
+            // 对话框默认窗底是带内边距的面板皮,透明化让页面视图铺满整个窗口
+            setBackgroundDrawableResource(R.color.transparent)
+            // 对话框窗口独立于 Activity,沉浸须自设:铺到系统栏后+透明栏色,
+            // 状态栏/导航栏避让由视图侧 insets 监听负责
+            WindowCompat.setDecorFitsSystemWindows(this, false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                // 浮动对话框的窗框默认自带 fitInsetsTypes=systemBars(),
+                // WindowManager 会把窗框缩到导航栏上方留缝;清零让窗框铺满整屏
+                val attr = attributes
+                attr.fitInsetsTypes = 0
+                attributes = attr
+            }
+            addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+            @Suppress("DEPRECATION")
+            statusBarColor = Color.TRANSPARENT
+            @Suppress("DEPRECATION")
+            navigationBarColor = Color.TRANSPARENT
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // 透明导航栏时华为等 ROM 会叠系统对比度灰罩,关闭之
+                isNavigationBarContrastEnforced = false
+            }
+            setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+            WindowInsetsControllerCompat(this, decorView).run {
+                isAppearanceLightStatusBars = ColorUtils.isColorLight(primaryColor)
+                isAppearanceLightNavigationBars = ColorUtils.isColorLight(backgroundColor)
+            }
         }
         dialog?.setOnKeyListener { _, keyCode, event ->
             if (keyCode == KeyEvent.KEYCODE_BACK && event.action == KeyEvent.ACTION_UP) {
@@ -80,6 +118,19 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {
+        // 窗口铺到系统栏后:工具栏自垫状态栏高度;编辑器键盘弹出用 padding 抬升,
+        // 导航栏高度注入页内避让(与 JsSourceEditActivity 同一套通道)
+        binding.toolBar.setOnApplyWindowInsetsListenerCompat { v, windowInsets ->
+            v.topPadding = windowInsets.getInsets(WindowInsetsCompat.Type.statusBars()).top
+            windowInsets
+        }
+        binding.flEditor.setOnApplyWindowInsetsListenerCompat { v, windowInsets ->
+            val imeHeight = windowInsets.imeHeight
+            v.bottomPadding = if (imeHeight == 0) 0 else imeHeight
+            editorBottomInsetPx = if (imeHeight == 0) windowInsets.navigationBarHeight else 0
+            CodeEditorWebViewPool.applyBottomInset(editorBottomInsetPx)
+            windowInsets
+        }
         arguments?.getString("title")?.let {
             binding.toolBar.title = it
         }
@@ -185,8 +236,8 @@ class WebCodeDialog() : BaseDialogFragment(R.layout.dialog_web_code_view),
         bootFailed = false
         editorReady = true
         CodeEditorWebViewPool.applyAppTheme()
-        // 弹窗卡片边界不贴屏幕底,页内无需避让;清掉 JS 源页会话可能残留的注入值
-        CodeEditorWebViewPool.applyBottomInset(0)
+        // 池化页面可能残留其他会话的注入值,就绪即按本窗当前 insets 重发
+        CodeEditorWebViewPool.applyBottomInset(editorBottomInsetPx)
         updateEditorUiState()
         sendInitialCodeToEditor()
     }
