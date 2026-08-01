@@ -39,7 +39,7 @@ object AppLog {
             }
     }
 
-    private const val MAX_SIZE = 300
+    const val MAX_SIZE = 300
     private val idGenerator = AtomicLong(0)
     private val mLogs = arrayListOf<Entry>()
 
@@ -141,7 +141,8 @@ object AppLog {
             val stackTrace = Thread.currentThread().stackTrace
             Log.e(stackTrace.getOrNull(4)?.className ?: "AppLog", message, throwable)
         }
-        // 同步块内发送:发布顺序即 id 顺序,主线程 handler 队列 FIFO 保序
+        // 同步块内发送;后台线程 post 走主线程队列,主线程 post 同步分发,
+        // 极端交错下非严格 id 序,消费侧以 id 单调守卫兜底
         postEvent(EventBus.APP_LOG_ENTRY, entry)
     }
 }

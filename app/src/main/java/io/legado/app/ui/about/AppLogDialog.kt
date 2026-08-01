@@ -215,6 +215,10 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
         adapter.addItems(0, listOf(entry))
         if (atTop) {
             binding.recyclerView.scrollToPosition(0)
+            // 与 AppLog 容量同步截尾,面板长开时列表不无限增长
+            if (adapter.getActualItemCount() > AppLog.MAX_SIZE) {
+                adapter.removeItem(adapter.getActualItemCount() - 1)
+            }
         }
         upEmptyView()
     }
@@ -304,8 +308,8 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
         if (text.length <= MAX_SHARE_TEXT) {
             requireContext().share(text, getString(R.string.log))
         } else {
-            // 超长文本走缓存文件分享,规避 Intent 载荷上限
-            val file = File(requireContext().cacheDir, "applog_${System.currentTimeMillis()}.txt")
+            // 超长文本走缓存文件分享,规避 Intent 载荷上限;固定文件名覆写,避免历次导出积累
+            val file = File(requireContext().cacheDir, "applog.txt")
             file.writeText(text)
             requireContext().share(file, "text/plain")
         }
