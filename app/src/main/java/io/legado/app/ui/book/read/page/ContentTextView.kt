@@ -218,10 +218,13 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
         y: Float,
         select: (textPos: TextPos) -> Unit,
     ) {
-        touch(x, y) { _, textPos, _, _, column ->
+        touch(x, y) { relativeOffset, textPos, textPage, textLine, column ->
             when (column) {
                 is ImageColumn -> callBack.onImageLongPress(x, y, column.src)
                 is TextColumn -> {
+                    if (AppConfig.highlightActionByLongPress &&
+                        dispatchHighlightAction(relativeOffset, textPos, textPage, textLine, column)
+                    ) return@touch
                     if (!selectAble) return@touch
                     column.selected = true
                     select(textPos)
@@ -260,19 +263,10 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
                 }
 
                 is TextColumn -> {
-                    if (column.highlightStyle != null) {
-                        val top = textLine.lineTop + relativeOffset + callBack.headerHeight
-                        val highlight = highlightAt(textPos, textPage)
-                        if (highlight != null) {
-                            callBack.onHighlightClick(highlight, column.start, top)
-                            handled = true
-                        } else {
-                            val rule = ruleMatchAt(textPos, textPage)
-                            if (rule != null) {
-                                callBack.onHighlightRuleClick(rule, column.start, top)
-                                handled = true
-                            }
-                        }
+                    if (!AppConfig.highlightActionByLongPress &&
+                        dispatchHighlightAction(relativeOffset, textPos, textPage, textLine, column)
+                    ) {
+                        handled = true
                     }
                 }
             }
@@ -763,6 +757,32 @@ class ContentTextView(context: Context, attrs: AttributeSet?) : View(context, at
             chapterName = chapter.title,
             bookText = getSelectedText()
         ).apply { applyStyle(style) }
+    }
+
+    /**
+     * 解析按点处的高亮/规则并弹操作浮条,手动划线优先于规则命中
+     * @return true=命中并已派发
+     */
+    private fun dispatchHighlightAction(
+        relativeOffset: Float,
+        textPos: TextPos,
+        textPage: TextPage,
+        textLine: TextLine,
+        column: TextColumn,
+    ): Boolean {
+        if (column.highlightStyle == null) return false
+        val top = textLine.lineTop + relativeOffset + callBack.headerHeight
+        val highlight = highlightAt(textPos, textPage)
+        if (highlight != null) {
+            callBack.onHighlightClick(highlight, column.start, top)
+            return true
+        }
+        val rule = ruleMatchAt(textPos, textPage)
+        if (rule != null) {
+            callBack.onHighlightRuleClick(rule, column.start, top)
+            return true
+        }
+        return false
     }
 
     private fun highlightAt(textPos: TextPos, page: TextPage): BookHighlight? {

@@ -1288,6 +1288,8 @@ class ReadBookActivity : BaseReadBookActivity(),
     override fun pageChanged() {
         pageChanged = true
         binding.readView.onPageChange()
+        highlightActionMenu?.dismiss()
+        highlightRulePopup?.dismiss()
         handler.post {
             upSeekBarProgress()
         }
