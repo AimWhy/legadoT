@@ -1,10 +1,13 @@
 package io.legado.app.model.jsSource
 
+import io.legado.app.R
 import io.legado.app.data.entities.Book
 import io.legado.app.data.entities.BookChapter
 import io.legado.app.data.entities.BookSource
 import io.legado.app.data.entities.SearchBook
+import io.legado.app.exception.ContentEmptyException
 import io.legado.app.exception.NoStackTraceException
+import io.legado.app.exception.TocEmptyException
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.addType
 import io.legado.app.help.book.isWebFile
@@ -13,6 +16,7 @@ import io.legado.app.help.source.getBookType
 import io.legado.app.model.Debug
 import io.legado.app.model.webBook.BookChapterList
 import kotlinx.coroutines.ensureActive
+import splitties.init.appCtx
 import kotlin.coroutines.coroutineContext
 
 /**
@@ -132,7 +136,8 @@ object JsSourceBook {
             Debug.log(bookSource.bookSourceUrl, "┌获取目录列表")
             Debug.log(bookSource.bookSourceUrl, "└列表大小:${chapters.size}")
             if (chapters.isEmpty()) {
-                throw NoStackTraceException("JS源目录为空")
+                // 声明式同款异常型与文案:CheckSource 按 TocEmptyException 归"目录失效"
+                throw TocEmptyException(appCtx.getString(R.string.chapter_list_empty))
             }
             // 声明式同款 book 回写(totalChapterNum 等):目录页/书架进度/更新检查都读这些字段
             BookChapterList.updateBookTocInfo(book, chapters)
@@ -174,9 +179,10 @@ object JsSourceBook {
         val content = engine.callFunction(
             "getContent",
             listOf("chapter" to bookChapter, "book" to book, "nextChapterUrl" to nextChapterUrl),
-        )
-        if (content.isNullOrBlank()) {
-            throw NoStackTraceException("JS源正文为空")
+        ).orEmpty()
+        // BookContent 同款空判:卷章空正文放行;异常型与文案对齐声明式,CheckSource 按类型归"正文失效"
+        if (!bookChapter.isVolume && content.isBlank()) {
+            throw ContentEmptyException("内容为空")
         }
         Debug.log(bookSource.bookSourceUrl, "≡函数执行成功:getContent")
         Debug.log(bookSource.bookSourceUrl, content, state = 40)
