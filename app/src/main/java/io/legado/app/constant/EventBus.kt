@@ -44,4 +44,5 @@ object EventBus {
     const val REFRESH_BOOK_TOC = "refreshBookToc"
     const val REFRESH_BOOK_CONTENT = "refreshBookContent"
     const val BOTTOM_BAR_SKIN = "bottomBarSkin"
+    const val APP_LOG_ENTRY = "appLogEntry"
 }

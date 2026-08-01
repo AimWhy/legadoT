@@ -15,14 +15,13 @@ import io.legado.app.constant.AppLog
 import io.legado.app.databinding.DialogRecyclerViewBinding
 import io.legado.app.databinding.ItemAppLogBinding
 import io.legado.app.model.HttpLogger
-import io.legado.app.model.HttpRecord
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.utils.LogUtils
 import io.legado.app.utils.setLayout
 import io.legado.app.utils.showDialogFragment
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import splitties.views.onClick
-import java.util.*
+import java.util.Date
 
 class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
     Toolbar.OnMenuItemClickListener {
@@ -60,7 +59,7 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
     }
 
     inner class LogAdapter(context: Context) :
-        RecyclerAdapter<Triple<Long, String, Throwable?>, ItemAppLogBinding>(context) {
+        RecyclerAdapter<AppLog.Entry, ItemAppLogBinding>(context) {
 
         override fun getViewBinding(parent: ViewGroup): ItemAppLogBinding {
             return ItemAppLogBinding.inflate(inflater, parent, false)
@@ -69,26 +68,27 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_recycler_view),
         override fun convert(
             holder: ItemViewHolder,
             binding: ItemAppLogBinding,
-            item: Triple<Long, String, Throwable?>,
+            item: AppLog.Entry,
             payloads: MutableList<Any>
         ) {
-            binding.textTime.text = LogUtils.logTimeFormat.format(Date(item.first))
-            binding.textMessage.text = item.second
+            binding.textTime.text = LogUtils.logTimeFormat.format(Date(item.time))
+            binding.textMessage.text = item.tag?.let { "[$it] ${item.message}" } ?: item.message
         }
 
         override fun registerListener(holder: ItemViewHolder, binding: ItemAppLogBinding) {
             binding.root.onClick {
                 getItem(holder.layoutPosition)?.let { item ->
-                    val logId = HttpRecord.parseIdFromLog(item.second)
-                    if (logId != null) {
-                        // HTTP 日志：显示完整请求详情
-                        val detail = HttpLogger.getById(logId)?.fullDetail
-                            ?: item.second
-                        showDialogFragment(TextDialog("HTTP", detail))
-                    } else {
-                        // 普通日志：显示 stacktrace
-                        item.third?.let {
-                            showDialogFragment(TextDialog("Log", it.stackTraceToString()))
+                    when {
+                        item.httpId != null -> {
+                            val detail = HttpLogger.getById(item.httpId)?.fullDetail
+                                ?: item.message
+                            showDialogFragment(TextDialog("HTTP", detail))
+                        }
+
+                        item.throwable != null -> {
+                            showDialogFragment(
+                                TextDialog("Log", item.throwable.stackTraceToString())
+                            )
                         }
                     }
                 }

@@ -51,19 +51,4 @@ data class HttpRecord(
                 appendLine(error)
             }
         }
-
-    companion object {
-        /** 日志前缀，AppLogDialog 据此识别 HTTP 日志条目 */
-        const val LOG_PREFIX = "\uD83C\uDF10"
-
-        /** 从日志消息中解析记录 ID（格式：🌐 [#123] ...） */
-        fun parseIdFromLog(message: String): Long? {
-            val start = message.indexOf("[#")
-            if (start < 0) return null
-            val numStart = start + 2
-            val end = message.indexOf(']', numStart)
-            if (end < 0) return null
-            return message.substring(numStart, end).toLongOrNull()
-        }
-    }
 }

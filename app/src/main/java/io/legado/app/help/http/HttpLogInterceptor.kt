@@ -55,7 +55,7 @@ object HttpLogInterceptor : Interceptor {
                 error = error
             )
             HttpLogger.add(record)
-            AppLog.put("${HttpRecord.LOG_PREFIX} ${record.summary}")
+            AppLog.put(record.summary, httpId = recordId, error = true)
             throw e
         }
 
@@ -86,7 +86,7 @@ object HttpLogInterceptor : Interceptor {
             error = null
         )
         HttpLogger.add(record)
-        AppLog.put("${HttpRecord.LOG_PREFIX} ${record.summary}")
+        AppLog.put(record.summary, httpId = recordId, error = response.code >= 400)
 
         return response
     }

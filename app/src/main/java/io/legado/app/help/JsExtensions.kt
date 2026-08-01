@@ -990,10 +990,11 @@ interface JsExtensions : JsEncodeUtils {
      */
     fun log(msg: Any?): Any? {
         rhinoContextOrNull?.ensureActive()
-        getSource()?.let {
+        val source = getSource()
+        source?.let {
             Debug.log(it.getKey(), msg.toString())
         } ?: Debug.log(msg.toString())
-        AppLog.putDebug("${getSource()?.getTag() ?: "源"}调试输出: $msg")
+        AppLog.putDebug(msg.toString(), tag = source?.getTag() ?: "源")
         return msg
     }
 
