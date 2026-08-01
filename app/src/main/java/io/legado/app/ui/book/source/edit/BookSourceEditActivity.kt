@@ -123,17 +123,27 @@ class BookSourceEditActivity :
         // JS 单文件源重定向须在窗口上屏前完成:onCreate 内 finish 的 Activity 不渲染,
         // 转场直达 JS 编辑器;若留到 initData 异步回调再判定,本页 JSON 规则编辑 UI 会先
         // 闪现一帧再二次转场。存在性判定走 hasJsSource 主键查询(不拉 mainJs 全文),
-        // 主线程同步(allowMainThreadQueries)。super.finish 绕过覆写版 finish 的
-        // 未保存比对(UI 未初始化,比对无意义且可能误弹确认)。
+        // 主线程同步(allowMainThreadQueries)。
         intent.getStringExtra("sourceUrl")?.let { url ->
             if (appDb.bookSourceDao.hasJsSource(url)) {
-                startActivity<JsSourceEditActivity> {
-                    putExtra("sourceUrl", url)
-                }
-                super.finish()
+                redirectToJsEditor(url)
             }
         }
         super.onCreate(savedInstanceState)
+    }
+
+    /**
+     * 转场直达 JS 编辑器。正文/听书/详情/换源弹窗以 for-result 方式发起编辑并凭
+     * RESULT_OK 重载书源,FLAG_ACTIVITY_FORWARD_RESULT 把本页的回执目标转让给
+     * JS 编辑器,其结果(RESULT_OK + origin)直达原调用方。super.finish 绕过覆写版
+     * finish 的未保存比对(本页 UI 未初始化,比对无意义且可能误弹确认)。
+     */
+    private fun redirectToJsEditor(url: String) {
+        startActivity(Intent(this, JsSourceEditActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT)
+            putExtra("sourceUrl", url)
+        })
+        super.finish()
     }
 
     override fun onActivityCreated(savedInstanceState: Bundle?) {
@@ -145,10 +155,7 @@ class BookSourceEditActivity :
             val source = viewModel.bookSource
             if (source != null && source.isJsSource()) {
                 // 回退网:正常流程由 onCreate 重定向拦截,此分支兜底判定口径差异的极端源
-                startActivity<JsSourceEditActivity> {
-                    putExtra("sourceUrl", source.bookSourceUrl)
-                }
-                super.finish()
+                redirectToJsEditor(source.bookSourceUrl)
                 return@initData
             }
             upSourceView(viewModel.bookSource)
@@ -173,14 +180,22 @@ class BookSourceEditActivity :
         return super.onMenuOpened(featureId, menu)
     }
 
+    /** 保存并记结果:落库即回传 RESULT_OK + 最新 origin,调试/登录/搜索等静默保存后
+     * 直接退出的路径,for-result 调用方同样感知库内变更 */
+    private fun saveSource(onSuccess: (BookSource) -> Unit) {
+        viewModel.save(getSource()) {
+            setResult(RESULT_OK, Intent().putExtra("origin", it.bookSourceUrl))
+            onSuccess(it)
+        }
+    }
+
     override fun onCompatOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.menu_save -> viewModel.save(getSource()) {
-                setResult(RESULT_OK, Intent().putExtra("origin", it.bookSourceUrl))
+            R.id.menu_save -> saveSource {
                 finish()
             }
 
-            R.id.menu_debug_source -> viewModel.save(getSource()) { source ->
+            R.id.menu_debug_source -> saveSource { source ->
                 startActivity<BookSourceDebugActivity> {
                     putExtra("key", source.bookSourceUrl)
                 }
@@ -200,7 +215,7 @@ class BookSourceEditActivity :
 
             R.id.menu_log -> showDialogFragment<AppLogDialog>()
             R.id.menu_help -> showHelp("ruleHelp")
-            R.id.menu_login -> viewModel.save(getSource()) { source ->
+            R.id.menu_login -> saveSource { source ->
                 startActivity<SourceLoginActivity> {
                     putExtra("type", "bookSource")
                     putExtra("key", source.bookSourceUrl)
@@ -208,7 +223,7 @@ class BookSourceEditActivity :
             }
 
             R.id.menu_set_source_variable -> setSourceVariable()
-            R.id.menu_search -> viewModel.save(getSource()) { source ->
+            R.id.menu_search -> saveSource { source ->
                 startActivity<SearchActivity> {
                     putExtra("searchScope", SearchScope(source).toString())
                 }

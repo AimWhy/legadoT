@@ -226,8 +226,7 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>(),
     override fun onCompatOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
             R.id.menu_save -> saveSource {
-                // 与声明式编辑器同款:保存即回传 origin 并退出(基线已刷新,不触发未保存确认)
-                setResult(RESULT_OK, Intent().putExtra("origin", it.bookSourceUrl))
+                // 基线已随保存刷新,finish 不触发未保存确认
                 finish()
             }
             // 调试跑库内版本,先静默落库再进调试页
@@ -347,6 +346,9 @@ class JsSourceEditActivity : BaseActivity<ActivityJsSourceEditBinding>(),
                         setEditorText(savedText)
                     }
                     baselineText = savedText
+                    // 落库即记结果:调试/登录等静默保存后直接退出的路径,
+                    // for-result 调用方同样凭 RESULT_OK + 最新 origin 感知库内变更
+                    setResult(RESULT_OK, Intent().putExtra("origin", it.bookSourceUrl))
                     onSuccess?.invoke(it)
                 }.onFailure {
                     toastOnUi(it.localizedMessage)
