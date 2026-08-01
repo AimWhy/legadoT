@@ -28,6 +28,7 @@ import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.DialogAppLogBinding
 import io.legado.app.databinding.ItemAppLogBinding
 import io.legado.app.help.config.AppConfig
+import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.AppColorScheme
 import io.legado.app.model.HttpLogger
 import io.legado.app.ui.widget.dialog.TextDialog
@@ -39,12 +40,15 @@ import io.legado.app.utils.observeEvent
 import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setRoundBackground
+import io.legado.app.utils.share
 import io.legado.app.utils.showDialogFragment
+import io.legado.app.utils.toastOnUi
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
 import splitties.views.bottomPadding
 import splitties.views.onClick
 import splitties.views.onLongClick
+import java.io.File
 import java.util.Date
 
 /**
@@ -66,6 +70,7 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
         private const val FILTER_HTTP = 2
         private const val FILTER_SOURCE = 3
         private const val KEY_FILTER = "filter"
+        private const val MAX_SHARE_TEXT = 64_000
     }
 
     override fun onStart() {
@@ -129,6 +134,7 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
         setTitle(R.string.log)
         setTitleTextColor(AppColorScheme.current.onSurface)
         inflateMenu(R.menu.app_log)
+        menu.findItem(R.id.menu_record_log)?.isChecked = AppConfig.recordLog
         overflowIcon?.setTint(AppColorScheme.current.onSurfaceVariant)
         setOnMenuItemClickListener(this@AppLogDialog)
     }
@@ -217,6 +223,7 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
         // recordLog 是缓存 var,直赋立即生效;落盘必须另走偏好写入
         AppConfig.recordLog = value
         putPrefBoolean(PreferKey.recordLog, value)
+        binding.toolBar.menu.findItem(R.id.menu_record_log)?.isChecked = value
         upEmptyView()
     }
 
@@ -247,11 +254,18 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
 
     override fun onMenuItemClick(item: MenuItem?): Boolean {
         when (item?.itemId) {
-            R.id.menu_clear -> {
-                AppLog.clear()
-                HttpLogger.clear()
-                refreshItems()
+            R.id.menu_clear -> alert(R.string.clear, R.string.clear_log_confirm) {
+                okButton {
+                    AppLog.clear()
+                    HttpLogger.clear()
+                    refreshItems()
+                }
+                noButton()
             }
+
+            R.id.menu_export -> exportLogs()
+
+            R.id.menu_record_log -> setRecordLog(!AppConfig.recordLog)
         }
         return true
     }
@@ -279,6 +293,22 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
             append(entry.message)
             entry.throwable?.let { append("\n\n").append(it.stackTraceToString()) }
         })
+    }
+
+    private fun exportLogs() {
+        val text = AppLog.exportText(AppLog.logs)
+        if (text.isBlank()) {
+            toastOnUi(R.string.no_log)
+            return
+        }
+        if (text.length <= MAX_SHARE_TEXT) {
+            requireContext().share(text, getString(R.string.log))
+        } else {
+            // 超长文本走缓存文件分享,规避 Intent 载荷上限
+            val file = File(requireContext().cacheDir, "applog_${System.currentTimeMillis()}.txt")
+            file.writeText(text)
+            requireContext().share(file, "text/plain")
+        }
     }
 
     inner class LogAdapter(context: Context) :

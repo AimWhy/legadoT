@@ -906,6 +906,7 @@ Placeholders:
     <string name="record_http_log_s">Record HTTP request/response overview in the app log</string>
     <string name="log">Log</string>
     <string name="no_log">No logs</string>
+    <string name="clear_log_confirm">Clear all logs? HTTP request records will also be cleared.</string>
     <string name="log_filter_source">Source</string>
     <string name="source_log_record_hint">Record log is disabled, source debug output will not be recorded</string>
     <string name="chinese_converter">Simplified conversion</string>
