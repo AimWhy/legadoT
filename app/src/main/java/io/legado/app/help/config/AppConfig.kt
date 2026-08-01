@@ -466,6 +466,9 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefBoolean(PreferKey.previewImageByClick, value)
         }
 
+    val highlightActionByLongPress: Boolean
+        get() = appCtx.getPrefString(PreferKey.highlightActionTrigger, "longPress") != "click"
+
     var preDownloadNum
         get() = appCtx.getPrefInt(PreferKey.preDownloadNum, 10)
         set(value) {

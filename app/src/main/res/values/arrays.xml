@@ -185,4 +185,14 @@
 		<item>Customize</item>
 	</string-array>
 
+	<string-array name="highlight_action_trigger_title">
+		<item>@string/highlight_action_trigger_click</item>
+		<item>@string/highlight_action_trigger_long_press</item>
+	</string-array>
+
+	<string-array name="highlight_action_trigger_value">
+		<item>click</item>
+		<item>longPress</item>
+	</string-array>
+
 </resources>
