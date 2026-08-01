@@ -62,6 +62,11 @@
     <string name="layout_grid4">网格四列</string>
     <string name="layout_grid5">网格五列</string>
     <string name="layout_grid6">网格六列</string>
+    <string name="shelf_view_list">列表</string>
+    <string name="shelf_view_col3">3列</string>
+    <string name="shelf_view_col4">4列</string>
+    <string name="shelf_view_col5">5列</string>
+    <string name="shelf_view_col6">6列</string>
     <string name="bookshelf_layout">书架布局</string>
     <string name="view">视图</string>
     <string name="book_library">书城</string>

@@ -63,6 +63,11 @@
     <string name="layout_grid4">Grid-4</string>
     <string name="layout_grid5">Grid-5</string>
     <string name="layout_grid6">Grid-6</string>
+    <string name="shelf_view_list">List</string>
+    <string name="shelf_view_col3">3 col</string>
+    <string name="shelf_view_col4">4 col</string>
+    <string name="shelf_view_col5">5 col</string>
+    <string name="shelf_view_col6">6 col</string>
     <string name="bookshelf_layout">Layout</string>
     <string name="view">View</string>
     <string name="book_library">Library</string>
