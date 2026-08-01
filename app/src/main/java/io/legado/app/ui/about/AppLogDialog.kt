@@ -1,7 +1,11 @@
 package io.legado.app.ui.about
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
@@ -19,6 +23,8 @@ import io.legado.app.base.BaseDialogFragment
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
 import io.legado.app.constant.AppLog
+import io.legado.app.constant.EventBus
+import io.legado.app.constant.PreferKey
 import io.legado.app.databinding.DialogAppLogBinding
 import io.legado.app.databinding.ItemAppLogBinding
 import io.legado.app.help.config.AppConfig
@@ -27,7 +33,10 @@ import io.legado.app.model.HttpLogger
 import io.legado.app.ui.widget.dialog.TextDialog
 import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.LogUtils
+import io.legado.app.utils.dpToPx
 import io.legado.app.utils.gone
+import io.legado.app.utils.observeEvent
+import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setRoundBackground
 import io.legado.app.utils.showDialogFragment
@@ -49,6 +58,15 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
 
     private val binding by viewBinding(DialogAppLogBinding::bind)
     private val adapter by lazy { LogAdapter(requireContext()) }
+    private var filter = FILTER_ALL
+
+    companion object {
+        private const val FILTER_ALL = 0
+        private const val FILTER_ERROR = 1
+        private const val FILTER_HTTP = 2
+        private const val FILTER_SOURCE = 3
+        private const val KEY_FILTER = "filter"
+    }
 
     override fun onStart() {
         super.onStart()
@@ -99,6 +117,11 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
         initToolbar()
         binding.recyclerView.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerView.adapter = adapter
+        filter = savedInstanceState?.getInt(KEY_FILTER) ?: FILTER_ALL
+        initFilterChips()
+        binding.btnEnableRecord.onClick { setRecordLog(true) }
+        // 先注册观察后取快照,配 id 单调守卫,交叠期不重不漏
+        observeEvent<AppLog.Entry>(EventBus.APP_LOG_ENTRY) { onNewEntry(it) }
         refreshItems()
     }
 
@@ -110,13 +133,116 @@ class AppLogDialog : BaseDialogFragment(R.layout.dialog_app_log),
         setOnMenuItemClickListener(this@AppLogDialog)
     }
 
+    private val filterChips
+        get() = binding.run { listOf(tvFilterAll, tvFilterError, tvFilterHttp, tvFilterSource) }
+
+    private fun initFilterChips() {
+        filterChips.forEachIndexed { i, chip ->
+            chip.onClick {
+                if (filter == i) return@onClick
+                filter = i
+                renderFilterChips()
+                refreshItems()
+            }
+        }
+        renderFilterChips()
+    }
+
+    private fun renderFilterChips() {
+        filterChips.forEachIndexed { i, chip ->
+            chip.background = chipBackground(selected = i == filter)
+            chip.setTextColor(contentColor(selected = i == filter))
+            chip.typeface = if (i == filter) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+        }
+    }
+
+    private fun contentColor(selected: Boolean): Int {
+        val scheme = AppColorScheme.current
+        return when {
+            selected && AppConfig.isEInkMode -> Color.WHITE
+            selected -> scheme.onPrimaryContainer
+            else -> scheme.onSurface
+        }
+    }
+
+    /** chip 背景:默认 outline 描边,选中 primaryContainer 底;eink 选中反色。带按压 ripple */
+    private fun chipBackground(selected: Boolean): RippleDrawable {
+        val scheme = AppColorScheme.current
+        val radius = resources.getDimension(R.dimen.radius_m)
+        val content = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radius
+            when {
+                selected && AppConfig.isEInkMode -> setColor(Color.BLACK)
+                selected -> {
+                    setColor(scheme.primaryContainer)
+                    setStroke(1.dpToPx(), scheme.primary)
+                }
+                else -> {
+                    setColor(Color.TRANSPARENT)
+                    setStroke(1.dpToPx(), scheme.outline)
+                }
+            }
+        }
+        val mask = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = radius
+            setColor(Color.WHITE)
+        }
+        return RippleDrawable(ColorStateList.valueOf(scheme.outlineVariant), content, mask)
+    }
+
+    private fun passFilter(entry: AppLog.Entry): Boolean = when (filter) {
+        FILTER_ERROR -> entry.isError
+        FILTER_HTTP -> entry.isHttp
+        FILTER_SOURCE -> entry.isSource
+        else -> true
+    }
+
+    private fun onNewEntry(entry: AppLog.Entry) {
+        // id 单调守卫:快照/事件交叠期的迟到重复事件直接丢弃
+        val topId = adapter.getItem(0)?.id ?: 0L
+        if (entry.id <= topId) return
+        if (!passFilter(entry)) return
+        val layoutManager = binding.recyclerView.layoutManager as LinearLayoutManager
+        val atTop = layoutManager.findFirstCompletelyVisibleItemPosition() <= 0
+        adapter.addItems(0, listOf(entry))
+        if (atTop) {
+            binding.recyclerView.scrollToPosition(0)
+        }
+        upEmptyView()
+    }
+
+    private fun setRecordLog(value: Boolean) {
+        // recordLog 是缓存 var,直赋立即生效;落盘必须另走偏好写入
+        AppConfig.recordLog = value
+        putPrefBoolean(PreferKey.recordLog, value)
+        upEmptyView()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_FILTER, filter)
+    }
+
     private fun refreshItems() {
-        adapter.setItems(AppLog.logs)
+        adapter.setItems(AppLog.logs.filter { passFilter(it) })
         upEmptyView()
     }
 
     private fun upEmptyView() {
-        if (adapter.isEmpty()) binding.llEmpty.visible() else binding.llEmpty.gone()
+        if (!adapter.isEmpty()) {
+            binding.llEmpty.gone()
+            return
+        }
+        binding.llEmpty.visible()
+        if (filter == FILTER_SOURCE && !AppConfig.recordLog) {
+            binding.tvEmptyMsg.setText(R.string.source_log_record_hint)
+            binding.btnEnableRecord.visible()
+        } else {
+            binding.tvEmptyMsg.setText(R.string.no_log)
+            binding.btnEnableRecord.gone()
+        }
     }
 
     override fun onMenuItemClick(item: MenuItem?): Boolean {

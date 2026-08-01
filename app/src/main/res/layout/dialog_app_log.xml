@@ -14,6 +14,56 @@
         app:popupTheme="@style/AppTheme.PopupOverlay"
         app:titleTextAppearance="@style/ToolbarTitle" />
 
+    <LinearLayout
+        android:id="@+id/ll_filter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/space_l"
+        android:paddingBottom="@dimen/space_s">
+
+        <TextView
+            android:id="@+id/tv_filter_all"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:text="@string/all"
+            android:textSize="@dimen/text_caption" />
+
+        <TextView
+            android:id="@+id/tv_filter_error"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:text="@string/error"
+            android:textSize="@dimen/text_caption" />
+
+        <TextView
+            android:id="@+id/tv_filter_http"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:text="HTTP"
+            android:textSize="@dimen/text_caption"
+            tools:ignore="HardcodedText"
+            xmlns:tools="http://schemas.android.com/tools" />
+
+        <TextView
+            android:id="@+id/tv_filter_source"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="6dp"
+            android:text="@string/log_filter_source"
+            android:textSize="@dimen/text_caption" />
+    </LinearLayout>
+
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
