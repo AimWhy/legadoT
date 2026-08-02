@@ -34,6 +34,7 @@ import io.legado.app.constant.NotificationId
 import io.legado.app.constant.PreferKey
 import io.legado.app.constant.Status
 import io.legado.app.data.appDb
+import io.legado.app.data.entities.RoleCast
 import io.legado.app.help.MediaHelp
 import io.legado.app.help.book.BookHelp
 import io.legado.app.help.book.ContentProcessor
@@ -46,6 +47,8 @@ import io.legado.app.lib.permission.PermissionsCompat
 import io.legado.app.model.CacheBook
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
+import io.legado.app.model.readaloud.RoleCastManager
+import io.legado.app.model.readaloud.SpeechScript
 import io.legado.app.receiver.MediaButtonReceiver
 import io.legado.app.ui.book.read.ReadBookActivity
 import io.legado.app.ui.book.read.page.entities.TextChapter
@@ -182,6 +185,11 @@ abstract class BaseReadAloudService : BaseService(),
     }
     internal var contentList = emptyList<String>()
     internal var nowSpeak: Int = 0
+    /** 段内片段游标, 与 nowSpeak 一起构成朗读位置 */
+    internal var nowSegment: Int = 0
+    internal var speechScript: SpeechScript? = null
+    /** 旁白 casting 的缓存, 由 [prepareSpeechScript] 在 IO 上下文写入 */
+    private var speechNarratorCast: RoleCast? = null
     internal var readAloudNumber: Int = 0
     internal var textChapter: TextChapter? = null
     internal var pageIndex = 0
@@ -323,6 +331,8 @@ abstract class BaseReadAloudService : BaseService(),
                 }
             }
             nowSpeak = textChapter.getParagraphNum(readAloudNumber + 1, readAloudByPage) - 1
+            nowSegment = 0
+            resetSpeechScript()
             if (!readAloudByPage && startPos == 0 && !toLast) {
                 pos = page.chapterPosition -
                         textChapter.paragraphs[nowSpeak].chapterPosition
@@ -331,6 +341,7 @@ abstract class BaseReadAloudService : BaseService(),
                 toLast = false
                 readAloudNumber = textChapter.getLastParagraphPosition()
                 nowSpeak = contentList.lastIndex
+                nowSegment = 0
                 if (page.paragraphs.size == 1) {
                     pos = page.chapterPosition -
                             textChapter.paragraphs[nowSpeak].chapterPosition
@@ -401,6 +412,41 @@ abstract class BaseReadAloudService : BaseService(),
         postEvent(EventBus.TTS_PROGRESS, progress)
     }
 
+    /**
+     * 未标注或标注失败时退化为每段一个旁白片段。
+     * 播放回调线程直接调用, 只读 [speechNarratorCast] 缓存, 不触库。
+     */
+    fun currentScript(): SpeechScript {
+        speechScript?.let { return it }
+        val fallback = speechNarratorCast ?: RoleCast(roleName = RoleCast.NARRATOR)
+        return SpeechScript.narratorOnly(contentList, fallback).also { speechScript = it }
+    }
+
+    /**
+     * 在 IO 上下文备好旁白 casting 并建好脚本, 之后 [currentScript] 只走缓存。
+     * 解析出 casting 时按它重建脚本, 覆盖掉播放回调路径可能用占位 casting 建成的那份。
+     */
+    internal suspend fun prepareSpeechScript() {
+        if (speechNarratorCast == null) {
+            val book = ReadBook.book
+            val cast = if (book == null) {
+                RoleCast(roleName = RoleCast.NARRATOR)
+            } else {
+                RoleCastManager.narratorCast(book.bookUrl)
+            }
+            speechNarratorCast = cast
+            speechScript = SpeechScript.narratorOnly(contentList, cast)
+            return
+        }
+        currentScript()
+    }
+
+    /** 章节或朗读列表变更后, 脚本与 casting 缓存一并作废 */
+    private fun resetSpeechScript() {
+        speechScript = null
+        speechNarratorCast = null
+    }
+
     private fun prevP() {
         if (nowSpeak > 0) {
             playStop()
@@ -409,6 +455,7 @@ abstract class BaseReadAloudService : BaseService(),
                 readAloudNumber -= contentList[nowSpeak].length + 1 + paragraphStartPos
                 paragraphStartPos = 0
             } while (contentList[nowSpeak].matches(AppPattern.notReadAloudRegex))
+            nowSegment = 0
             textChapter?.let {
                 if (readAloudByPage) {
                     val paragraphs = it.getParagraphs(true)
@@ -433,6 +480,7 @@ abstract class BaseReadAloudService : BaseService(),
             readAloudNumber += contentList[nowSpeak].length.plus(1) - paragraphStartPos
             paragraphStartPos = 0
             nowSpeak++
+            nowSegment = 0
             textChapter?.let {
                 if (readAloudByPage) {
                     val paragraphs = it.getParagraphs(true)
@@ -847,6 +895,8 @@ abstract class BaseReadAloudService : BaseService(),
             pageIndex = 0
             readAloudNumber = 0
             nowSpeak = 0
+            nowSegment = 0
+            resetSpeechScript()
             paragraphStartPos = 0
             contentList = nextTextChapter.getNeedReadAloud(0, readAloudByPage, 0)
                 .split("\n")
