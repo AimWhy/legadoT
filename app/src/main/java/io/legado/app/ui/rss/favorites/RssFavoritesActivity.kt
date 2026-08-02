@@ -17,6 +17,9 @@ import io.legado.app.data.appDb
 import io.legado.app.databinding.ActivityRssFavoritesBinding
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.tabTextColors
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.gone
 import io.legado.app.utils.viewbindingdelegate.viewBinding
 import io.legado.app.utils.visible
@@ -75,6 +78,9 @@ class RssFavoritesActivity : BaseActivity<ActivityRssFavoritesBinding>() {
             tab.text = groupList[position]
         }.attach()
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
+        // tab 栏透明透出页面背景,文字明暗按页面背景判定
+        val tabColors = tabTextColors(ColorUtils.isColorLight(backgroundColor))
+        binding.tabLayout.setTabTextColors(tabColors.unselected, tabColors.selected)
     }
 
     override fun onCompatCreateOptionsMenu(menu: Menu): Boolean {

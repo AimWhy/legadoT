@@ -32,6 +32,7 @@ import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
 import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
+import io.legado.app.lib.theme.tabTextColors
 import io.legado.app.ui.book.search.SearchActivity
 import io.legado.app.ui.book.search.SearchScope
 import io.legado.app.ui.about.AppLogDialog
@@ -45,6 +46,7 @@ import io.legado.app.ui.widget.dialog.VariableDialog
 import io.legado.app.ui.widget.keyboard.KeyboardToolPop
 import io.legado.app.ui.widget.recycler.NoChildScrollLinearLayoutManager
 import io.legado.app.ui.widget.text.EditEntity
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.imeHeight
 import io.legado.app.utils.isContentScheme
@@ -288,6 +290,8 @@ class BookSourceEditActivity :
             binding.tabLayout.setBackgroundColor(backgroundColor)
         }
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
+        val tabColors = tabTextColors(ColorUtils.isColorLight(backgroundColor))
+        binding.tabLayout.setTabTextColors(tabColors.unselected, tabColors.selected)
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabReselected(tab: TabLayout.Tab?) {
 

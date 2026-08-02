@@ -14,6 +14,8 @@ import io.legado.app.base.VMBaseActivity
 import io.legado.app.databinding.ActivityRssArtivlesBinding
 import io.legado.app.help.source.sortUrls
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.backgroundColor
+import io.legado.app.lib.theme.tabTextColors
 import io.legado.app.ui.login.SourceLoginActivity
 import io.legado.app.ui.rss.source.edit.RssSourceEditActivity
 import io.legado.app.ui.widget.dialog.VariableDialog
@@ -47,6 +49,9 @@ class RssSortActivity : VMBaseActivity<ActivityRssArtivlesBinding, RssSortViewMo
             tab.text = sortList[position].first
         }.attach()
         binding.tabLayout.setSelectedTabIndicatorColor(accentColor)
+        // tab 栏透明透出页面背景,文字明暗按页面背景判定
+        val tabColors = tabTextColors(ColorUtils.isColorLight(backgroundColor))
+        binding.tabLayout.setTabTextColors(tabColors.unselected, tabColors.selected)
         viewModel.titleLiveData.observe(this) {
             binding.titleBar.title = it
         }
