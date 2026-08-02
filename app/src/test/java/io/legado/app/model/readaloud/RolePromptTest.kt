@@ -1,5 +1,6 @@
 package io.legado.app.model.readaloud
 
+import io.legado.app.data.entities.TtsVoice
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -88,5 +89,58 @@ class RolePromptTest {
         assertEquals(listOf(Segment(0, 0, 2, "乙"), Segment(1, 0, 2, "甲")), merged.segments)
         assertEquals(listOf("林风", "苏眉"), merged.roles.map { it.name })
         assertEquals("先出现的画像胜出", "male", merged.roles[0].gender)
+    }
+
+    @Test
+    fun `markdown fenced replies parse like the bare json`() {
+        val bare = """{"roles":[{"name":"林风","gender":"male","age":"young"}],""" +
+            """"segments":[{"p":0,"s":0,"e":6,"r":"旁白"}]}"""
+        val expected = RolePrompt.parse(bare, 0..0)!!
+        assertEquals(expected, RolePrompt.parse("```json\n$bare\n```", 0..0))
+        assertEquals(expected, RolePrompt.parse("```\n$bare\n```", 0..0))
+        assertEquals(expected, RolePrompt.parse("  ```json\n$bare\n```  \n", 0..0))
+    }
+
+    @Test
+    fun `role gender and age are normalized at the parse boundary`() {
+        val json = """{"roles":[{"name":"林风","gender":"Male","age":" Young "}]}"""
+        val role = RolePrompt.parse(json, 0..0)!!.roles.single()
+        assertEquals(TtsVoice.GENDER_MALE, role.gender)
+        assertEquals("young", role.age)
+    }
+
+    @Test
+    fun `values outside the fixed sets normalize to unknown`() {
+        val json = """{"roles":[{"name":"林风","gender":"robot","age":"ancient"},{"name":"苏眉"}]}"""
+        val roles = RolePrompt.parse(json, 0..0)!!.roles
+        assertEquals(TtsVoice.GENDER_UNKNOWN, roles[0].gender)
+        assertEquals(TtsVoice.AGE_UNKNOWN, roles[0].age)
+        assertEquals("缺字段与非法值同归 unknown", TtsVoice.GENDER_UNKNOWN, roles[1].gender)
+        assertEquals(TtsVoice.AGE_UNKNOWN, roles[1].age)
+    }
+
+    @Test
+    fun `the prompt enumerates exactly the values the code accepts`() {
+        assertTrue(RolePrompt.DEFAULT_SYSTEM.contains(TtsVoice.GENDER_MALE))
+        assertTrue(RolePrompt.DEFAULT_SYSTEM.contains(TtsVoice.GENDER_FEMALE))
+        assertTrue(RolePrompt.DEFAULT_SYSTEM.contains(TtsVoice.GENDER_UNKNOWN))
+        assertTrue(RolePrompt.DEFAULT_SYSTEM.contains(TtsVoice.AGE_UNKNOWN))
+        // prompt 里罗列的每个取值都必须被归一化原样接受, 否则模型照着答也会落 unknown
+        listedValues("gender 取 ").forEach {
+            assertEquals("prompt 列的 gender 值 $it 不在代码取值域", it, TtsVoice.normalizeGender(it))
+        }
+        listedValues("age 取 ").forEach {
+            assertEquals("prompt 列的 age 值 $it 不在代码取值域", it, TtsVoice.normalizeAge(it))
+        }
+    }
+
+    /** 取 DEFAULT_SYSTEM 中 "<prefix>a|b|c" 形式的取值枚举 */
+    private fun listedValues(prefix: String): List<String> {
+        val from = RolePrompt.DEFAULT_SYSTEM.indexOf(prefix)
+        assertTrue("DEFAULT_SYSTEM 缺少 $prefix", from >= 0)
+        val tail = RolePrompt.DEFAULT_SYSTEM.substring(from + prefix.length)
+        val values = tail.takeWhile { it.isLetter() || it == '|' }.split('|')
+        assertTrue("$prefix 后没有枚举出取值", values.size > 1)
+        return values
     }
 }

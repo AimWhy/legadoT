@@ -81,5 +81,13 @@ data class TtsVoice(
             val value = raw?.trim()?.lowercase() ?: return fallback
             return if (value in allowed) value else fallback
         }
+
+        /**
+         * 音色与角色画像按 gender/age 直接比较匹配, 两侧都经此归一化,
+         * 取值域的唯一定义点在这里
+         */
+        fun normalizeGender(raw: String?): String = normalizeEnum(raw, genders, GENDER_UNKNOWN)
+
+        fun normalizeAge(raw: String?): String = normalizeEnum(raw, ages, AGE_UNKNOWN)
     }
 }

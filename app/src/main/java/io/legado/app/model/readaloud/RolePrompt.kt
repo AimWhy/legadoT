@@ -1,6 +1,7 @@
 package io.legado.app.model.readaloud
 
 import io.legado.app.data.entities.RoleCast
+import io.legado.app.data.entities.TtsVoice
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonObject
 
@@ -52,15 +53,35 @@ gender 取 male|female|unknown，age 取 child|young|middle|old|unknown"""
 
     /** @return null 表示响应不是可解析的 JSON; 范围外的 p 一律丢弃 */
     fun parse(json: String, range: IntRange): RoleScript? {
-        val dto = GSON.fromJsonObject<ResponseDto>(json).getOrNull() ?: return null
+        val dto = GSON.fromJsonObject<ResponseDto>(stripFence(json)).getOrNull() ?: return null
         val segments = dto.segments.orEmpty().filterNotNull()
             .filter { it.p in range }
             .map { Segment(it.p, it.s, it.e, it.r.orEmpty().trim()) }
         val roles = dto.roles.orEmpty().filterNotNull().mapNotNull { role ->
             val name = role.name?.trim()
-            if (name.isNullOrEmpty()) null else RoleProfile(name, role.gender, role.age)
+            if (name.isNullOrEmpty()) null else RoleProfile(
+                name,
+                TtsVoice.normalizeGender(role.gender),
+                TtsVoice.normalizeAge(role.age)
+            )
         }
         return RoleScript(segments, roles)
+    }
+
+    /**
+     * 去掉 markdown 代码围栏。AiClient 已请求 response_format=json_object,
+     * 本地与代理的 OpenAI 兼容端点常忽略它并把 JSON 包进 ```json 块里。
+     * 只认「首行是围栏起始行」这一种形态, 其余原样返回交给 GSON
+     */
+    private fun stripFence(raw: String): String {
+        val text = raw.trim()
+        if (!text.startsWith("```")) return text
+        val firstBreak = text.indexOf('\n')
+        if (firstBreak < 0) return text
+        // ``` 与换行之间只允许语言标记, 出现空白说明首行是内容而非围栏
+        val lang = text.substring(3, firstBreak).trim()
+        if (lang.any { it.isWhitespace() }) return text
+        return text.substring(firstBreak + 1).trimEnd().removeSuffix("```").trim()
     }
 
     /** 同名角色以先出现的画像为准 */
