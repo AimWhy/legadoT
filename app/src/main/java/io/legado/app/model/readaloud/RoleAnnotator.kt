@@ -36,7 +36,7 @@ object RoleAnnotator {
      *
      * @return 名字与 [rolesFrom] 一致, 按片段出现序
      */
-    fun rolesIn(segments: List<Segment>, profiles: List<RoleProfile>): List<RoleProfile> {
+    internal fun rolesIn(segments: List<Segment>, profiles: List<RoleProfile>): List<RoleProfile> {
         val known = profiles.associateBy { it.name }
         return rolesFrom(segments).map { known[it.name] ?: it }
     }
@@ -48,9 +48,10 @@ object RoleAnnotator {
         paragraphs: List<String>
     ): RoleScript? {
         if (paragraphs.isEmpty()) return null
-        if (!AppConfig.multiRoleReadAloud || !AiClient.isConfigured()) return null
+        if (!AppConfig.multiRoleReadAloud) return null
         val md5 = contentMd5(paragraphs)
         readCache(bookUrl, chapterIndex, md5, paragraphs)?.let { return it }
+        if (!AiClient.isConfigured()) return null
         val system = AppConfig.aiRolePrompt.ifBlank { RolePrompt.DEFAULT_SYSTEM }
         val known = LinkedHashSet<String>()
         val parts = ArrayList<RoleScript>()
@@ -113,7 +114,9 @@ object RoleAnnotator {
         if (raw.isEmpty()) return null
         // md5 相符只保证段落文本一致, segmentsJson 仍可能被外部改写; sanitize 对自身输出幂等
         val segments = SpeechScript.sanitize(paragraphs, raw)
-        return RoleScript(segments, rolesFrom(segments))
+        val roles = rolesFrom(segments)
+        if (roles.isEmpty()) return null
+        return RoleScript(segments, roles)
     }
 
     /** 写失败不影响本次标注结果, 只是下次仍要重新标注 */
