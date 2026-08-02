@@ -1,0 +1,23 @@
+package io.legado.app.data.dao
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import io.legado.app.data.entities.RoleCast
+
+@Dao
+interface RoleCastDao {
+
+    @Query("select * from roleCasts where bookUrl = :bookUrl")
+    fun getByBook(bookUrl: String): List<RoleCast>
+
+    @Query("select * from roleCasts where bookUrl = :bookUrl and roleName = :roleName")
+    fun get(bookUrl: String, roleName: String): RoleCast?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insert(vararg roleCast: RoleCast)
+
+    @Query("delete from roleCasts where bookUrl = :bookUrl")
+    fun deleteByBook(bookUrl: String)
+}

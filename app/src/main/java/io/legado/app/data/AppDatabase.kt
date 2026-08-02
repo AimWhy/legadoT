@@ -17,6 +17,7 @@ import io.legado.app.data.dao.BookSourceDao
 import io.legado.app.data.dao.BookHighlightDao
 import io.legado.app.data.dao.BookmarkDao
 import io.legado.app.data.dao.CacheDao
+import io.legado.app.data.dao.ChapterRoleScriptDao
 import io.legado.app.data.dao.CookieDao
 import io.legado.app.data.dao.DictRuleDao
 import io.legado.app.data.dao.ExploreContainerDao
@@ -25,6 +26,7 @@ import io.legado.app.data.dao.HttpTTSDao
 import io.legado.app.data.dao.KeyboardAssistsDao
 import io.legado.app.data.dao.ReadRecordDao
 import io.legado.app.data.dao.ReplaceRuleDao
+import io.legado.app.data.dao.RoleCastDao
 import io.legado.app.data.dao.RssArticleDao
 import io.legado.app.data.dao.RssReadRecordDao
 import io.legado.app.data.dao.RssSourceDao
@@ -43,6 +45,7 @@ import io.legado.app.data.entities.BookSourcePart
 import io.legado.app.data.entities.BookHighlight
 import io.legado.app.data.entities.Bookmark
 import io.legado.app.data.entities.Cache
+import io.legado.app.data.entities.ChapterRoleScript
 import io.legado.app.data.entities.Cookie
 import io.legado.app.data.entities.DictRule
 import io.legado.app.data.entities.ExploreContainer
@@ -51,6 +54,7 @@ import io.legado.app.data.entities.HttpTTS
 import io.legado.app.data.entities.KeyboardAssist
 import io.legado.app.data.entities.ReadRecord
 import io.legado.app.data.entities.ReplaceRule
+import io.legado.app.data.entities.RoleCast
 import io.legado.app.data.entities.RssArticle
 import io.legado.app.data.entities.RssReadRecord
 import io.legado.app.data.entities.RssSource
@@ -78,7 +82,7 @@ val appDb by lazy {
 }
 
 @Database(
-    version = 87,
+    version = 88,
     exportSchema = true,
     entities = [Book::class, BookGroup::class, BookSource::class, BookChapter::class,
         ReplaceRule::class, SearchBook::class, SearchKeyword::class, Cookie::class,
@@ -86,7 +90,7 @@ val appDb by lazy {
         RssStar::class, TxtTocRule::class, ReadRecord::class, HttpTTS::class, Cache::class,
         RuleSub::class, DictRule::class, KeyboardAssist::class, Server::class,
         AutoTaskRule::class, BookHighlight::class, HighlightRule::class,
-        ExploreContainer::class],
+        ExploreContainer::class, RoleCast::class, ChapterRoleScript::class],
     views = [BookSourcePart::class],
     autoMigrations = [
         AutoMigration(from = 43, to = 44),
@@ -131,6 +135,7 @@ val appDb by lazy {
         AutoMigration(from = 84, to = 85),
         AutoMigration(from = 85, to = 86),
         AutoMigration(from = 86, to = 87),
+        AutoMigration(from = 87, to = 88),
     ]
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -160,6 +165,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val bookHighlightDao: BookHighlightDao
     abstract val highlightRuleDao: HighlightRuleDao
     abstract val exploreContainerDao: ExploreContainerDao
+    abstract val roleCastDao: RoleCastDao
+    abstract val chapterRoleScriptDao: ChapterRoleScriptDao
 
     companion object {
 

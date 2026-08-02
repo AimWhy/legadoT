@@ -30,6 +30,8 @@ data class HttpTTS(
     var loginCheckJs: String? = null,
     @ColumnInfo(defaultValue = "0")
     var pauseDuration: Int = 0,
+    /** 音色清单 JSON 数组, 见 TtsVoice; 为空表示该引擎只有单音色 */
+    var voices: String? = null,
     @ColumnInfo(defaultValue = "0")
     var lastUpdateTime: Long = System.currentTimeMillis()
 ) : BaseSource {
@@ -59,6 +61,7 @@ data class HttpTTS(
                     header = doc.readString("$.header"),
                     loginCheckJs = doc.readString("$.loginCheckJs"),
                     pauseDuration = doc.read<Int>("$.pauseDuration") ?: 0,
+                    voices = doc.readString("$.voices"),
                     lastUpdateTime = doc.readLong("$.lastUpdateTime") ?: System.currentTimeMillis()
                 )
             }
