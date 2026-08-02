@@ -514,6 +514,37 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     val streamReadAloudAudio get() = appCtx.getPrefBoolean(PreferKey.streamReadAloudAudio, false)
 
+    var aiBaseUrl: String
+        get() = appCtx.getPrefString(PreferKey.aiBaseUrl).orEmpty()
+        set(value) {
+            appCtx.putPrefString(PreferKey.aiBaseUrl, value)
+        }
+
+    var aiApiKey: String
+        get() = appCtx.getPrefString(PreferKey.aiApiKey).orEmpty()
+        set(value) {
+            appCtx.putPrefString(PreferKey.aiApiKey, value)
+        }
+
+    var aiModel: String
+        get() = appCtx.getPrefString(PreferKey.aiModel).orEmpty()
+        set(value) {
+            appCtx.putPrefString(PreferKey.aiModel, value)
+        }
+
+    /** 留空时用 RolePrompt.DEFAULT_SYSTEM */
+    var aiRolePrompt: String
+        get() = appCtx.getPrefString(PreferKey.aiRolePrompt).orEmpty()
+        set(value) {
+            appCtx.putPrefString(PreferKey.aiRolePrompt, value)
+        }
+
+    var multiRoleReadAloud: Boolean
+        get() = appCtx.getPrefBoolean(PreferKey.multiRoleReadAloud, false)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.multiRoleReadAloud, value)
+        }
+
     /** 停止设置弹窗最近一次选择的模式;通知栏定时钮空闲起步时按此模式 */
     var sleepTimerPreferChapter: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.sleepTimerPreferChapter, false)
