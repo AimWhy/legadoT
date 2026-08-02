@@ -39,6 +39,25 @@ object RoleCastManager {
         )
     }
 
+    /**
+     * 按 [profiles] 顺序依次取音, 每次取中即在内部计数上累加,
+     * 因此同一批里画像相同的角色会被推到不同音色上。[usage] 只读, 作为累加起点
+     *
+     * @return 每个画像与其取到的音色, 候选池为空时音色为 null
+     */
+    internal fun assign(
+        profiles: List<RoleProfile>,
+        candidates: List<VoiceRef>,
+        usage: Map<String, Int>
+    ): List<Pair<RoleProfile, VoiceRef?>> {
+        val counted = HashMap(usage)
+        return profiles.map { profile ->
+            val picked = pickVoice(profile, candidates, counted)
+            picked?.let { counted[it.key] = (counted[it.key] ?: 0) + 1 }
+            profile to picked
+        }
+    }
+
     /** 条件为空或筛完为空时保持原集合, 保证永不因画像不匹配而配不到音 */
     private fun narrow(
         candidates: List<VoiceRef>,
@@ -51,7 +70,7 @@ object RoleCastManager {
         return hit.ifEmpty { candidates }
     }
 
-    /** 只有列出音色的引擎进入候选; 单音色引擎的角色走旁白引擎 */
+    /** 所有引擎的音色展平成一个候选池; voices 为空的引擎不贡献条目 */
     suspend fun availableVoices(): List<VoiceRef> = withContext(IO) {
         appDb.httpTTSDao.all.flatMap { tts ->
             TtsVoice.parseList(tts.voices).map { VoiceRef(tts.id, it) }
@@ -77,7 +96,7 @@ object RoleCastManager {
     /** 为尚无 casting 的角色自动配音色; 已有记录一律保留, 只把出场章号推到最新 */
     suspend fun ensureCast(bookUrl: String, roles: List<RoleProfile>, chapterIndex: Int) {
         if (roles.isEmpty()) return
-        val existing = castOf(bookUrl).toMutableMap()
+        val existing = castOf(bookUrl)
         val candidates = availableVoices()
         val narratorEngineId = narratorCast(bookUrl).ttsEngineId
         val usage = HashMap<String, Int>()
@@ -88,6 +107,7 @@ object RoleCastManager {
             }
         }
         val toWrite = ArrayList<RoleCast>()
+        val pending = ArrayList<RoleProfile>()
         roles.forEach { profile ->
             val current = existing[profile.name]
             if (current != null) {
@@ -97,21 +117,22 @@ object RoleCastManager {
                 }
                 return@forEach
             }
-            val picked = pickVoice(profile, candidates, usage)
-            val cast = RoleCast(
-                bookUrl = bookUrl,
-                roleName = profile.name,
-                ttsEngineId = picked?.engineId ?: narratorEngineId,
-                voice = picked?.voice?.id,
-                gender = profile.gender,
-                ageGroup = profile.age,
-                isManual = false,
-                lastSeenChapter = chapterIndex
+            // 同名角色在一批里只配一次, 与已落库角色被跳过的口径一致
+            if (pending.none { it.name == profile.name }) pending.add(profile)
+        }
+        assign(pending, candidates, usage).forEach { (profile, picked) ->
+            toWrite.add(
+                RoleCast(
+                    bookUrl = bookUrl,
+                    roleName = profile.name,
+                    ttsEngineId = picked?.engineId ?: narratorEngineId,
+                    voice = picked?.voice?.id,
+                    gender = profile.gender,
+                    ageGroup = profile.age,
+                    isManual = false,
+                    lastSeenChapter = chapterIndex
+                )
             )
-            // 占用计数即时累加, 同一批里画像相同的角色因此拿到不同音色
-            picked?.let { usage[it.key] = (usage[it.key] ?: 0) + 1 }
-            existing[profile.name] = cast
-            toWrite.add(cast)
         }
         if (toWrite.isNotEmpty()) {
             withContext(IO) { appDb.roleCastDao.insert(*toWrite.toTypedArray()) }

@@ -48,10 +48,18 @@ class RoleCastManagerTest {
     }
 
     @Test
-    fun `ties break deterministically by key`() {
-        val a = RoleCastManager.pickVoice(RoleProfile("甲", "male", "unknown"), pool, emptyMap())
-        val b = RoleCastManager.pickVoice(RoleProfile("乙", "male", "unknown"), pool, emptyMap())
-        assertEquals(a, b)
+    fun `ties break by key rather than by pool order`() {
+        // 两者同为 male 且都未被占用, 差别只在 key; 列表顺序与 key 顺序相反
+        val listedFirst = VoiceRef(2, TtsVoice("a1", "甲音", "male", "unknown"))
+        val lowestKey = VoiceRef(1, TtsVoice("z9", "乙音", "male", "unknown"))
+        assertEquals(
+            lowestKey,
+            RoleCastManager.pickVoice(
+                RoleProfile("甲", "male", "unknown"),
+                listOf(listedFirst, lowestKey),
+                emptyMap()
+            )
+        )
     }
 
     @Test
@@ -65,5 +73,69 @@ class RoleCastManagerTest {
             maleYoung,
             RoleCastManager.pickVoice(RoleProfile("甲", null, null), pool, emptyMap())
         )
+    }
+
+    @Test
+    fun `the unknown gender token keeps the whole pool instead of selecting unknown voices`() {
+        // 音色侧同样存在 unknown 这一取值, 画像写 unknown 时表示无偏好而非只要 unknown 音色
+        val unknownVoice = VoiceRef(2, TtsVoice("u1", "无名", "unknown", "unknown"))
+        assertEquals(
+            maleYoung,
+            RoleCastManager.pickVoice(
+                RoleProfile("甲", "unknown", null),
+                listOf(maleYoung, unknownVoice),
+                emptyMap()
+            )
+        )
+    }
+
+    @Test
+    fun `two identical profiles draw different voices`() {
+        val twins = listOf(RoleProfile("甲", "male", "unknown"), RoleProfile("乙", "male", "unknown"))
+        val drawn = RoleCastManager.assign(twins, pool, emptyMap()).map { it.second }
+        assertEquals(listOf(maleYoung, maleOld), drawn)
+    }
+
+    @Test
+    fun `a third identical profile wraps back to the least used voice`() {
+        val triplets = List(3) { RoleProfile("角色$it", "male", "unknown") }
+        val drawn = RoleCastManager.assign(triplets, listOf(maleYoung, maleOld), emptyMap())
+            .map { it.second }
+        assertEquals(listOf(maleYoung, maleOld, maleYoung), drawn)
+    }
+
+    @Test
+    fun `seeded usage pushes the first assignment off the pre used voice`() {
+        val drawn = RoleCastManager.assign(
+            listOf(RoleProfile("甲", "male", "unknown")),
+            pool,
+            mapOf(maleYoung.key to 1)
+        )
+        assertEquals(listOf(maleOld), drawn.map { it.second })
+    }
+
+    @Test
+    fun `an empty candidate pool assigns null to every profile`() {
+        val profiles = listOf(RoleProfile("甲", "male", "young"), RoleProfile("乙", "female", "old"))
+        val drawn = RoleCastManager.assign(profiles, emptyList(), emptyMap())
+        assertEquals(profiles, drawn.map { it.first })
+        assertEquals(listOf(null, null), drawn.map { it.second })
+    }
+
+    @Test
+    fun `assign is reproducible for identical inputs`() {
+        val profiles = List(4) { RoleProfile("角色$it", "male", "unknown") }
+        val usage = mapOf(maleOld.key to 1)
+        assertEquals(
+            RoleCastManager.assign(profiles, pool, usage),
+            RoleCastManager.assign(profiles, pool, usage)
+        )
+    }
+
+    @Test
+    fun `assign leaves the seed usage map untouched`() {
+        val usage = mapOf(maleYoung.key to 1)
+        RoleCastManager.assign(List(3) { RoleProfile("角色$it", "male", "unknown") }, pool, usage)
+        assertEquals(mapOf(maleYoung.key to 1), usage)
     }
 }
