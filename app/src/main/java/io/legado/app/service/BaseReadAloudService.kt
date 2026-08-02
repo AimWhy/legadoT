@@ -460,6 +460,9 @@ abstract class BaseReadAloudService : BaseService(),
         if (contentList !== paragraphs) return
         speechScript = script
         speechNarratorCast = cast
+        // 「从这里朗读」的 paragraphStartPos 可落在段中, 起播片段取覆盖它的那个。
+        // 纯旁白脚本每段恰好一个片段, segmentIndexAt 恒得 0, 游标保持 newReadAloud 置的初值。
+        nowSegment = script.segmentIndexAt(nowSpeak, paragraphStartPos)
     }
 
     /**

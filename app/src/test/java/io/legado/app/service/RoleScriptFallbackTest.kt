@@ -77,12 +77,55 @@ class RoleScriptFallbackTest {
         val streamAt = preDownload.indexOf("getSpeakStream(")
         assertTrue("缺下一章预取", buildAt >= 0)
         assertTrue("音频先于标注下载, 起播时缓存会全落空", streamAt > buildAt)
-        // 段落表须与起播时的 contentList 同源, 否则内容 md5 对不上, 标注缓存永不命中
+        assertTrue("落盘预取段落表另起一路", preDownload.contains("nextChapterPrefetch()"))
+    }
+
+    /** 流式不落音频文件, 预取只做标注, 否则每章起播都要现等一次 LLM 往返 */
+    @Test
+    fun `stream mode prefetches the next chapter annotation without downloading audio`() {
+        val stream = http.substringAfter("private fun downloadAndPlayAudiosStream()")
+            .substringBefore("\n    }")
+        assertTrue("流式未挂预取", stream.contains("onComplete = { preAnnotateNextChapter() }"))
+        val preAnnotate = http.substringAfter("private suspend fun preAnnotateNextChapter()")
+            .substringBefore("\n    }")
+        assertTrue("流式预取未走只标注入口", preAnnotate.contains("RoleAnnotator.prefetch("))
+        assertTrue("流式预取拉了音频流", !preAnnotate.contains("getSpeakStream("))
+        assertTrue("流式预取落了音频文件", !preAnnotate.contains("createSpeakFile("))
+        assertTrue("流式预取段落表另起一路", preAnnotate.contains("nextChapterPrefetch()"))
+    }
+
+    /** 两条预取路径共用一份段落表取法; 差一个字符即换一个内容 md5, 标注与音频缓存一起落空 */
+    @Test
+    fun `both prefetch paths derive the paragraph list the way playback does`() {
+        val derive = http.substringAfter("private fun nextChapterPrefetch()")
+            .substringBefore("\n    }")
         assertTrue(
             "预取段落表与起播段落表不同源",
-            preDownload.contains("getNeedReadAloud(0, readAloudByPage, 0)")
+            derive.contains("getNeedReadAloud(0, readAloudByPage, 0)")
         )
-        assertTrue("排版未完成时页表不全", preDownload.contains("!nextChapter.isCompleted"))
+        assertTrue("预取分词与起播不一致", derive.contains(".split(\"\\n\")"))
+        assertTrue("预取分词与起播不一致", derive.contains("filter { it.isNotEmpty() }"))
+        assertTrue("排版未完成时页表不全", derive.contains("!nextChapter.isCompleted"))
+        assertTrue(
+            "起播段落表取法已分叉",
+            base.contains("getNeedReadAloud(0, readAloudByPage, 0)")
+        )
+    }
+
+    /** 「从这里朗读」的 paragraphStartPos 可落在段中, 起播片段须取覆盖它的那个 */
+    @Test
+    fun `the start segment is resolved from the mid paragraph start position`() {
+        assertTrue(
+            "起播片段游标仍是硬置",
+            prepareScript.contains("nowSegment = script.segmentIndexAt(nowSpeak, paragraphStartPos)")
+        )
+        val commitAt = prepareScript.indexOf("speechScript = script")
+        val resolveAt = prepareScript.indexOf("segmentIndexAt")
+        assertTrue("片段表就绪前解析不出游标", resolveAt > commitAt)
+        // 解析只挂在挂起入口上, 播放回调路径不参与
+        val currentScript = base.substringAfter("fun currentScript(): SpeechScript")
+            .substringBefore("\n    }")
+        assertTrue("回调路径不得解析片段游标", !currentScript.contains("segmentIndexAt"))
     }
 
     @Test

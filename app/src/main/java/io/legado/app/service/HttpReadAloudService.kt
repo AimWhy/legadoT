@@ -35,6 +35,7 @@ import io.legado.app.help.exoplayer.InputStreamDataSource
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
 import io.legado.app.model.analyzeRule.AnalyzeUrl
+import io.legado.app.model.readaloud.RoleAnnotator
 import io.legado.app.ui.book.read.page.entities.TextChapter
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.MD5Utils
@@ -195,18 +196,42 @@ class HttpReadAloudService : BaseReadAloudService(),
         }
     }
 
+    /** 下一章预取的输入: 章节与其整章朗读段落表 */
+    private data class NextChapterPrefetch(
+        val chapter: TextChapter,
+        val paragraphs: List<String>
+    )
+
+    /**
+     * 两条预取路径共用的段落表取法, 与起播时 [contentList] 的赋值逐字相同:
+     * 标注的内容 md5 与音频缓存键都按这份段落表算, 差一个字符即全部落空。
+     * 排版未完成时 [TextChapter.pages] 仍在增长, 页表不全会截断段落表, 此时不预取。
+     */
+    private fun nextChapterPrefetch(): NextChapterPrefetch? {
+        val nextChapter = ReadBook.nextTextChapter ?: return null
+        if (!nextChapter.isCompleted) return null
+        val paragraphs = nextChapter.getNeedReadAloud(0, readAloudByPage, 0)
+            .split("\n")
+            .filter { it.isNotEmpty() }
+        if (paragraphs.isEmpty()) return null
+        return NextChapterPrefetch(nextChapter, paragraphs)
+    }
+
+    /**
+     * 流式不落音频文件, 预取只做标注: 下一章起播时 [RoleAnnotator] 命中缓存, 起播前不再等 LLM 往返。
+     */
+    private suspend fun preAnnotateNextChapter() {
+        val book = ReadBook.book ?: return
+        val (nextChapter, paragraphs) = nextChapterPrefetch() ?: return
+        RoleAnnotator.prefetch(book.bookUrl, nextChapter.chapter.index, paragraphs)
+    }
+
     /**
      * 本章音频已全部入队后才走到这里, 下一章的标注与音频都在同一个下载协程上预取。
      * 换章时 [play] 先取消下载协程, 未完成的预取随之作废。
      */
     private suspend fun preDownloadAudios() {
-        val nextChapter = ReadBook.nextTextChapter ?: return
-        // 排版未完成时页表不全, 段落表与起播时的 contentList 对不上, 标注与音频缓存都会落空
-        if (!nextChapter.isCompleted) return
-        val paragraphs = nextChapter.getNeedReadAloud(0, readAloudByPage, 0)
-            .split("\n")
-            .filter { it.isNotEmpty() }
-        if (paragraphs.isEmpty()) return
+        val (nextChapter, paragraphs) = nextChapterPrefetch() ?: return
         // 先标注整章, 音频按下一章的真 casting 预下载, 缓存键与起播时的播放路径一致
         val fallback = currentScript().fallbackCast()
         val script = buildScriptFor(nextChapter.chapter.index, paragraphs, fallback)
@@ -235,7 +260,9 @@ class HttpReadAloudService : BaseReadAloudService(),
     }
 
     private fun downloadAndPlayAudiosStream() {
-        startDownloadAndQueue { sessionId, slice ->
+        startDownloadAndQueue(
+            onComplete = { preAnnotateNextChapter() }
+        ) { sessionId, slice ->
             val httpTts = ttsOf(slice.cast.ttsEngineId)
             val speakText = slice.text.replace(AppPattern.notReadAloudRegex, "")
             if (speakText.isEmpty()) {
@@ -570,7 +597,9 @@ class HttpReadAloudService : BaseReadAloudService(),
         playIndexJob?.cancel()
         val textChapter = textChapter ?: return
         val seg = currentScript().segmentsOf(nowSpeak).getOrNull(nowSegment) ?: return
-        val segStart = seg.s
+        // readAloudNumber 已含 paragraphStartPos, 片段起点扣掉落在它之前的那段偏移, 读数才落在真实起点上。
+        // 段首起播(paragraphStartPos 为 0)取值为 seg.s; 纯旁白脚本 seg.s 恒为 0, 钳位后取值恒为 0。
+        val segStart = seg.s - paragraphStartPos.coerceIn(0, seg.s)
         val speakTextLength = seg.e - seg.s
         playIndexJob = lifecycleScope.launch {
             upTtsProgress(readAloudNumber + segStart + 1)
