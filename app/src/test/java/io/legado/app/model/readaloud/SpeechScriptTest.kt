@@ -3,6 +3,7 @@ package io.legado.app.model.readaloud
 import io.legado.app.data.entities.RoleCast
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SpeechScriptTest {
@@ -15,15 +16,19 @@ class SpeechScriptTest {
         var index = 0
         paragraphs.forEachIndexed { p, text ->
             var cursor = 0
+            var count = 0
             while (index < segments.size && segments[index].p == p) {
                 val seg = segments[index]
                 assertEquals("段 $p 片段不相接", cursor, seg.s)
                 cursor = seg.e
                 index++
+                count++
             }
+            // 空段落的覆盖判定退化为 0 == 0, 片段数单独查
+            assertTrue("段 $p 没有片段", count > 0)
             assertEquals("段 $p 未被完整覆盖", text.length, cursor)
         }
-        assertEquals("有多余片段", segments.size, index)
+        assertEquals("有多余片段", index, segments.size)
     }
 
     @Test
@@ -34,6 +39,20 @@ class SpeechScriptTest {
         assertEquals(2, segments.size)
         assertEquals(RoleCast.NARRATOR, segments[0].role)
         assertEquals(Segment(1, 0, 5, RoleCast.NARRATOR), segments[1])
+    }
+
+    @Test
+    fun `an empty paragraph keeps a zero length narrator segment`() {
+        val paragraphs = listOf("", "abc")
+        val segments = SpeechScript.sanitize(paragraphs, emptyList())
+        assertWellFormed(paragraphs, segments)
+        assertEquals(
+            listOf(
+                Segment(0, 0, 0, RoleCast.NARRATOR),
+                Segment(1, 0, 3, RoleCast.NARRATOR)
+            ),
+            segments
+        )
     }
 
     @Test

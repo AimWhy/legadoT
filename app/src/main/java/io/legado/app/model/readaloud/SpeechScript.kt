@@ -4,6 +4,8 @@ import io.legado.app.data.entities.RoleCast
 
 /**
  * 段落 + 片段 + casting 合成的可播放序列。纯数据, 无 IO。
+ *
+ * segments 取 [SpeechScript.sanitize] 的输出, 由它保证有序、首尾相接、每段都有片段。
  */
 class SpeechScript(
     private val paragraphs: List<String>,
@@ -42,7 +44,7 @@ class SpeechScript(
 
         /**
          * 校验并修复 LLM 返回的片段。任一段落不满足「有序、首尾相接、完整覆盖、非空、角色名非空」
-         * 即整段归旁白。
+         * 即整段归旁白。空段落产出一个零长旁白片段, 使每个段落下标都持有片段。
          *
          * @return 按 (p, s) 有序, 每个段落下标恰好被其片段完整覆盖
          */
