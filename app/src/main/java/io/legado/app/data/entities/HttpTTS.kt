@@ -50,6 +50,7 @@ data class HttpTTS(
         fun fromJsonDoc(doc: DocumentContext): Result<HttpTTS> {
             return kotlin.runCatching {
                 val loginUi = doc.read<Any>("$.loginUi")
+                val voices = doc.read<Any>("$.voices")
                 HttpTTS(
                     id = doc.readLong("$.id") ?: System.currentTimeMillis(),
                     name = doc.readString("$.name")!!,
@@ -61,7 +62,7 @@ data class HttpTTS(
                     header = doc.readString("$.header"),
                     loginCheckJs = doc.readString("$.loginCheckJs"),
                     pauseDuration = doc.read<Int>("$.pauseDuration") ?: 0,
-                    voices = doc.readString("$.voices"),
+                    voices = if (voices is List<*>) GSON.toJson(voices) else voices?.toString(),
                     lastUpdateTime = doc.readLong("$.lastUpdateTime") ?: System.currentTimeMillis()
                 )
             }

@@ -40,6 +40,7 @@ class DatabaseV88WiringTest {
     fun `httpTts carries a voices column that survives import`() {
         val src = readSource("data/entities/HttpTTS.kt")
         assertTrue("HttpTTS 缺 voices 字段", src.contains("var voices: String?"))
-        assertTrue("导入未读取 voices", src.contains("""doc.readString("${'$'}.voices")"""))
+        // 读取形态由 HttpTtsVoicesImportTest 以真实导入覆盖, 这里只守住导入路径仍取 $.voices
+        assertTrue("导入未读取 voices", src.contains("""("${'$'}.voices")"""))
     }
 }
