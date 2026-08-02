@@ -46,4 +46,47 @@ class TtsVoiceTest {
         )
         assertEquals(TtsVoice("zh-CN-XiaoxiaoNeural", "晓晓", "female", "young"), list[0])
     }
+
+    @Test
+    fun `explicit null name falls back to id`() {
+        val list = TtsVoice.parseList("""[{"id":"a","name":null}]""")
+        assertEquals(1, list.size)
+        assertEquals("a", list[0].name)
+    }
+
+    @Test
+    fun `explicit null id is dropped`() {
+        assertTrue(TtsVoice.parseList("""[{"id":null}]""").isEmpty())
+        assertTrue(TtsVoice.parseList("""[{"id":null,"name":"乙"}]""").isEmpty())
+    }
+
+    @Test
+    fun `explicit null gender and age fall back to unknown`() {
+        val list = TtsVoice.parseList("""[{"id":"a","gender":null,"age":null}]""")
+        assertEquals(TtsVoice.GENDER_UNKNOWN, list[0].gender)
+        assertEquals(TtsVoice.AGE_UNKNOWN, list[0].age)
+    }
+
+    @Test
+    fun `gender and age accept mixed case and surrounding blanks`() {
+        val list = TtsVoice.parseList(
+            """[{"id":"a","gender":"Female","age":"Young"},{"id":"b","gender":" female ","age":"  MIDDLE  "}]"""
+        )
+        assertEquals(TtsVoice.GENDER_FEMALE, list[0].gender)
+        assertEquals("young", list[0].age)
+        assertEquals(TtsVoice.GENDER_FEMALE, list[1].gender)
+        assertEquals("middle", list[1].age)
+    }
+
+    @Test
+    fun `unrecognized value stays unknown after normalization`() {
+        val list = TtsVoice.parseList("""[{"id":"a","gender":"ROBOT","age":" ancient "}]""")
+        assertEquals(TtsVoice.GENDER_UNKNOWN, list[0].gender)
+        assertEquals(TtsVoice.AGE_UNKNOWN, list[0].age)
+    }
+
+    @Test
+    fun `whitespace only id is dropped`() {
+        assertTrue(TtsVoice.parseList("""[{"id":"   ","name":"甲"}]""").isEmpty())
+    }
 }
