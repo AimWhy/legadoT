@@ -32,6 +32,9 @@ class SpeechScript(
 
     fun castOf(seg: Segment): RoleCast = cast[seg.role] ?: fallback
 
+    /** 未知角色所用的 casting, 即旁白 */
+    fun fallbackCast(): RoleCast = fallback
+
     /** 覆盖 posInParagraph 的片段下标; 越界钳到末片段, 无片段返回 0 */
     fun segmentIndexAt(paragraphIndex: Int, posInParagraph: Int): Int {
         val segs = segmentsOf(paragraphIndex)

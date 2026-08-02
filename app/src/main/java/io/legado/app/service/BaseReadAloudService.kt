@@ -61,10 +61,13 @@ import io.legado.app.utils.observeEvent
 import io.legado.app.utils.observeSharedPreferences
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.toastOnUi
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import splitties.init.appCtx
@@ -416,7 +419,7 @@ abstract class BaseReadAloudService : BaseService(),
      * 未标注或标注失败时退化为每段一个旁白片段。
      * 播放回调线程直接调用, 只读 [speechNarratorCast] 缓存, 不触库。
      */
-    fun currentScript(): SpeechScript {
+    internal fun currentScript(): SpeechScript {
         speechScript?.let { return it }
         val fallback = speechNarratorCast ?: RoleCast(roleName = RoleCast.NARRATOR)
         return SpeechScript.narratorOnly(contentList, fallback).also { speechScript = it }
@@ -428,17 +431,26 @@ abstract class BaseReadAloudService : BaseService(),
      */
     internal suspend fun prepareSpeechScript() {
         if (speechNarratorCast == null) {
-            val book = ReadBook.book
-            val cast = if (book == null) {
-                RoleCast(roleName = RoleCast.NARRATOR)
-            } else {
-                RoleCastManager.narratorCast(book.bookUrl)
-            }
+            val cast = resolveNarratorCast()
             speechNarratorCast = cast
             speechScript = SpeechScript.narratorOnly(contentList, cast)
             return
         }
         currentScript()
+    }
+
+    /** 取库失败退化为占位 casting, 朗读照常起播; 取消照旧向上传播 */
+    private suspend fun resolveNarratorCast(): RoleCast {
+        val book = ReadBook.book ?: return RoleCast(roleName = RoleCast.NARRATOR)
+        return try {
+            RoleCastManager.narratorCast(book.bookUrl)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            AppLog.put("旁白配音读取失败\n${e.localizedMessage}", e)
+            RoleCast(roleName = RoleCast.NARRATOR)
+        }
     }
 
     /** 章节或朗读列表变更后, 脚本与 casting 缓存一并作废 */
@@ -896,11 +908,11 @@ abstract class BaseReadAloudService : BaseService(),
             readAloudNumber = 0
             nowSpeak = 0
             nowSegment = 0
-            resetSpeechScript()
             paragraphStartPos = 0
             contentList = nextTextChapter.getNeedReadAloud(0, readAloudByPage, 0)
                 .split("\n")
                 .filter { it.isNotEmpty() }
+            resetSpeechScript()
             contentList.isNotEmpty()
         }.onSuccess(Main) { canContinue ->
             if (canContinue) {

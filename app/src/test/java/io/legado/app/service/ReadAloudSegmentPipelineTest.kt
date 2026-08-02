@@ -47,8 +47,42 @@ class ReadAloudSegmentPipelineTest {
     }
 
     @Test
+    fun `updateNextPos resets the segment cursor when it advances the paragraph`() {
+        val body = http.substringAfter("private fun updateNextPos()").substringBefore("\n    }")
+        val resetAt = body.indexOf("nowSegment = 0")
+        val nextParaAt = body.indexOf("nowSpeak++")
+        val nextChapterAt = body.indexOf("nextChapter(auto = true)")
+        assertTrue("缺段落推进时的片段游标归零", resetAt >= 0)
+        // 归零必须先于两条出段路径, 否则下一段会从上一段的片段下标起播
+        assertTrue("换段前未归零片段游标", resetAt < nextParaAt)
+        assertTrue("换章前未归零片段游标", resetAt < nextChapterAt)
+    }
+
+    @Test
+    fun `the pause item is enqueued only when the slice is not the chapter last`() {
+        val paths = listOf(
+            "落盘" to http.substringAfter("private fun downloadAndPlayAudios()")
+                .substringBefore("\n    }"),
+            "流式" to http.substringAfter("private fun downloadAndPlayAudiosStream()")
+                .substringBefore("\n    }")
+        )
+        paths.forEach { (name, body) ->
+            assertTrue("$name 路径缺停顿项", body.contains("createPauseMediaItem("))
+            assertTrue("$name 路径在本章末片段后仍接停顿", body.contains("pauseMs > 0 && !slice.isLast"))
+        }
+        assertTrue(
+            "isLast 须同时看段落与片段",
+            http.contains("isLast = para == contentList.lastIndex && segIndex == segs.lastIndex")
+        )
+    }
+
+    @Test
     fun `media ids are segment scoped while pause items stay two part`() {
-        assertTrue("mediaId 未扩到片段", http.contains("\"\$sessionId:\$para:\$segIndex\""))
+        assertTrue(
+            "入队载荷须走值对象, 相邻的 para 与 segIndex 位置参数可被静默调换",
+            http.contains("enqueueBlock: suspend (sessionId: Long, slice: SpeechSlice) -> Unit")
+        )
+        assertTrue("mediaId 未扩到片段", http.contains("\"\$sessionId:\${slice.para}:\${slice.segIndex}\""))
         assertTrue("停顿项 id 变了会打断既有判定", http.contains("\"\$sessionId:-1\""))
     }
 

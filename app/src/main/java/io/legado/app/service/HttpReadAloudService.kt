@@ -35,7 +35,6 @@ import io.legado.app.help.exoplayer.InputStreamDataSource
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
 import io.legado.app.model.analyzeRule.AnalyzeUrl
-import io.legado.app.model.readaloud.Segment
 import io.legado.app.model.readaloud.SpeechScript
 import io.legado.app.ui.book.read.page.entities.TextChapter
 import io.legado.app.utils.FileUtils
@@ -165,15 +164,15 @@ class HttpReadAloudService : BaseReadAloudService(),
     private fun downloadAndPlayAudios() {
         startDownloadAndQueue(
             onComplete = { preDownloadAudios() }
-        ) { sessionId, cast, para, segIndex, isLast, text ->
-            val httpTts = ttsOf(cast.ttsEngineId)
-            val fileName = md5SpeakFileName(text, cast)
-            val speakText = text.replace(AppPattern.notReadAloudRegex, "")
+        ) { sessionId, slice ->
+            val httpTts = ttsOf(slice.cast.ttsEngineId)
+            val fileName = md5SpeakFileName(slice.text, slice.cast)
+            val speakText = slice.text.replace(AppPattern.notReadAloudRegex, "")
             if (speakText.isEmpty()) {
-                AppLog.put("阅读段落内容为空，使用无声音频代替。\n朗读文本：$text")
+                AppLog.put("阅读段落内容为空，使用无声音频代替。\n朗读文本：${slice.text}")
                 createSilentSound(fileName)
             } else if (!hasSpeakFile(fileName)) {
-                val inputStream = getSpeakStream(httpTts, speakText, cast.voice)
+                val inputStream = getSpeakStream(httpTts, speakText, slice.cast.voice)
                 if (inputStream != null) {
                     createSpeakFile(fileName, inputStream)
                 } else {
@@ -183,10 +182,10 @@ class HttpReadAloudService : BaseReadAloudService(),
             val file = getSpeakFileAsMd5(fileName)
             enqueueMediaItem(
                 sessionId,
-                createQueueMediaItem(Uri.fromFile(file), para, segIndex, sessionId)
+                createQueueMediaItem(Uri.fromFile(file), slice, sessionId)
             )
             val pauseMs = httpTts.pauseDuration
-            if (pauseMs > 0 && !isLast) {
+            if (pauseMs > 0 && !slice.isLast) {
                 val pauseName = "pause_$pauseMs"
                 if (!hasSpeakFile(pauseName)) {
                     createPauseFile(pauseName, pauseMs)
@@ -205,7 +204,7 @@ class HttpReadAloudService : BaseReadAloudService(),
             .take(10)
             .toList()
         if (paragraphs.isEmpty()) return
-        val fallback = currentScript().castOf(Segment(0, 0, 0, RoleCast.NARRATOR))
+        val fallback = currentScript().fallbackCast()
         val script = SpeechScript.narratorOnly(paragraphs, fallback)
         paragraphs.forEachIndexed { index, _ ->
             currentCoroutineContext().ensureActive()
@@ -230,21 +229,21 @@ class HttpReadAloudService : BaseReadAloudService(),
     }
 
     private fun downloadAndPlayAudiosStream() {
-        startDownloadAndQueue { sessionId, cast, para, segIndex, isLast, text ->
-            val httpTts = ttsOf(cast.ttsEngineId)
-            val speakText = text.replace(AppPattern.notReadAloudRegex, "")
+        startDownloadAndQueue { sessionId, slice ->
+            val httpTts = ttsOf(slice.cast.ttsEngineId)
+            val speakText = slice.text.replace(AppPattern.notReadAloudRegex, "")
             if (speakText.isEmpty()) {
                 AppLog.put("阅读段落内容为空，使用无声音频代替。\n朗读文本：$speakText")
             }
-            val fileName = md5SpeakFileName(text, cast)
-            val dataSourceFactory = createDataSourceFactory(httpTts, speakText, cast.voice)
+            val fileName = md5SpeakFileName(slice.text, slice.cast)
+            val dataSourceFactory = createDataSourceFactory(httpTts, speakText, slice.cast.voice)
             val mediaSource = DefaultMediaSourceFactory(this)
                 .setDataSourceFactory(dataSourceFactory)
                 .setLoadErrorHandlingPolicy(loadErrorHandlingPolicy)
-                .createMediaSource(createQueueMediaItem(fileName.toUri(), para, segIndex, sessionId))
+                .createMediaSource(createQueueMediaItem(fileName.toUri(), slice, sessionId))
             enqueueMediaSource(sessionId, mediaSource)
             val pauseMs = httpTts.pauseDuration
-            if (pauseMs > 0 && !isLast) {
+            if (pauseMs > 0 && !slice.isLast) {
                 val pauseDataSourceFactory = DataSource.Factory {
                     InputStreamDataSource {
                         java.io.ByteArrayInputStream(generateSilentWavBytes(pauseMs))
@@ -259,12 +258,25 @@ class HttpReadAloudService : BaseReadAloudService(),
         }
     }
 
+    /**
+     * 一个待入队片段的全部载荷。
+     *
+     * @param para 片段所在段落在 [contentList] 中的下标
+     * @param segIndex 片段在该段落片段表中的下标
+     * @param isLast 本章最后一个片段, 其后不再接停顿项
+     * @param text 已按起播偏移截断的待朗读文本
+     */
+    private data class SpeechSlice(
+        val cast: RoleCast,
+        val para: Int,
+        val segIndex: Int,
+        val isLast: Boolean,
+        val text: String
+    )
+
     private fun startDownloadAndQueue(
         onComplete: suspend () -> Unit = {},
-        enqueueBlock: suspend (
-            sessionId: Long, cast: RoleCast, para: Int, segIndex: Int,
-            isLastSegment: Boolean, text: String
-        ) -> Unit
+        enqueueBlock: suspend (sessionId: Long, slice: SpeechSlice) -> Unit
     ) {
         downloadTask?.cancel()
         exoPlayer.clearMediaItems()
@@ -292,12 +304,15 @@ class HttpReadAloudService : BaseReadAloudService(),
                         } else {
                             0
                         }
-                        val isLast = para == contentList.lastIndex && segIndex == segs.lastIndex
+                        val slice = SpeechSlice(
+                            cast = script.castOf(seg),
+                            para = para,
+                            segIndex = segIndex,
+                            isLast = para == contentList.lastIndex && segIndex == segs.lastIndex,
+                            text = script.textOf(seg, offset)
+                        )
                         try {
-                            enqueueBlock(
-                                sessionId, script.castOf(seg), para, segIndex,
-                                isLast, script.textOf(seg, offset)
-                            )
+                            enqueueBlock(sessionId, slice)
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
@@ -440,7 +455,10 @@ class HttpReadAloudService : BaseReadAloudService(),
                 )
     }
 
-    /** engineId 为 0(未指定)或库中查无此条时用当前朗读引擎 */
+    /**
+     * engineId 为 0(未指定)或库中查无此条时用当前朗读引擎。
+     * 同步查库并写 [ttsCache], 全部调用路径都在 [downloadTaskActiveLock] 内的 IO 上下文上, 串行独占。
+     */
     private fun ttsOf(engineId: Long): HttpTTS {
         val cached = when {
             engineId <= 0L -> null
@@ -701,10 +719,10 @@ class HttpReadAloudService : BaseReadAloudService(),
         return servicePendingIntent<HttpReadAloudService>(actionStr)
     }
 
-    private fun createQueueMediaItem(uri: Uri, para: Int, segIndex: Int, sessionId: Long): MediaItem {
+    private fun createQueueMediaItem(uri: Uri, slice: SpeechSlice, sessionId: Long): MediaItem {
         return MediaItem.Builder()
             .setUri(uri)
-            .setMediaId("$sessionId:$para:$segIndex")
+            .setMediaId("$sessionId:${slice.para}:${slice.segIndex}")
             .build()
     }
 

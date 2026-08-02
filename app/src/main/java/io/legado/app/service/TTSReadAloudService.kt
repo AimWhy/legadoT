@@ -244,6 +244,7 @@ class TTSReadAloudService : BaseReadAloudService(), TextToSpeech.OnInitListener 
                 readAloudNumber += contentList[nowSpeak].length + 1 - paragraphStartPos
                 paragraphStartPos = 0
                 nowSpeak++
+                nowSegment = 0
                 if (nowSpeak >= contentList.size) {
                     nextChapter(auto = true)
                     return
