@@ -85,6 +85,7 @@ class AnalyzeUrl(
     private val extraParams: Map<String, String>? = null,
     private val speakText: String? = null,
     private val speakSpeed: Int? = null,
+    private val speakVoice: String? = null,
     private var baseUrl: String = "",
     private val source: BaseSource? = null,
     private val ruleData: RuleDataInterface? = null,
@@ -379,6 +380,7 @@ class AnalyzeUrl(
             bindings["key"] = key
             bindings["speakText"] = speakText
             bindings["speakSpeed"] = speakSpeed
+            bindings["speakVoice"] = speakVoice
             bindings["book"] = ruleData as? Book
             bindings["source"] = source
             bindings["result"] = result
