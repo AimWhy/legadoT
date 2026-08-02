@@ -89,4 +89,35 @@ class TtsVoiceTest {
     fun `whitespace only id is dropped`() {
         assertTrue(TtsVoice.parseList("""[{"id":"   ","name":"甲"}]""").isEmpty())
     }
+
+    @Test
+    fun `well formed array whose entries all lack id yields an empty list`() {
+        assertTrue(TtsVoice.parseList("""[{"name":"晓晓"},{"name":"云希"}]""").isEmpty())
+    }
+
+    @Test
+    fun `dropping every entry does not throw`() {
+        assertTrue(TtsVoice.parseList("""[{"id":"  "},{"id":null},{"gender":"female"}]""").isEmpty())
+    }
+
+    @Test
+    fun `id and name are trimmed`() {
+        val list = TtsVoice.parseList("""[{"id":" a ","name":" 甲 "}]""")
+        assertEquals(1, list.size)
+        assertEquals("a", list[0].id)
+        assertEquals("甲", list[0].name)
+    }
+
+    @Test
+    fun `name falls back to the trimmed id`() {
+        val list = TtsVoice.parseList("""[{"id":" a "}]""")
+        assertEquals("a", list[0].name)
+    }
+
+    @Test
+    fun `blank name falls back to the trimmed id`() {
+        val list = TtsVoice.parseList("""[{"id":" a ","name":"   "}]""")
+        assertEquals("a", list[0].id)
+        assertEquals("a", list[0].name)
+    }
 }

@@ -38,23 +38,36 @@ data class TtsVoice(
         fun parseList(json: String?): List<TtsVoice> {
             if (json.isNullOrBlank()) return emptyList()
             val parsed = GSON.fromJsonArray<VoiceDto>(json)
-                .onFailure { logParseFailure(it) }
+                .onFailure { logQuietly("音色列表解析出错", it) }
                 .getOrNull() ?: return emptyList()
-            return parsed.mapNotNull { it.toVoice() }
+            val voices = parsed.mapNotNull { it.toVoice() }
+            if (voices.isEmpty() && parsed.isNotEmpty()) {
+                logQuietly("音色列表 ${parsed.size} 个条目均缺少有效 id, 已全部丢弃")
+            }
+            return voices
         }
 
-        /** 空表既表示单音色也表示解析失败, 记一笔日志把后者暴露出来; 日志属旁路副作用, 其失败不参与返回契约 */
-        private fun logParseFailure(e: Throwable) {
-            runCatching { AppLog.put("音色列表解析出错", e) }
+        /**
+         * 空表既表示单音色, 也表示解析失败或条目全被丢弃, 记一笔日志把后两者暴露出来, 两处文案各异以便在日志面板区分。
+         * 日志属旁路副作用, 其失败不参与"绝不抛出"的返回契约; 只截 [Exception], [Error] 照常向上传递
+         */
+        private fun logQuietly(message: String, e: Throwable? = null) {
+            try {
+                AppLog.put(message, e)
+            } catch (_: Exception) {
+            }
         }
 
-        /** id 是音色的身份键, 缺失时返回 null 由调用侧丢弃该条目 */
+        /**
+         * id 是音色的身份键, 缺失时返回 null 由调用侧丢弃该条目。
+         * id/name 存去除首尾空白后的值, 与枚举归一化的 trim 对齐, 空白不进下游以 id 为键的映射
+         */
         private fun VoiceDto.toVoice(): TtsVoice? {
-            val voiceId = id.orEmpty()
+            val voiceId = id?.trim().orEmpty()
             if (voiceId.isBlank()) return null
             return TtsVoice(
                 id = voiceId,
-                name = name.orEmpty().ifBlank { voiceId },
+                name = name?.trim().orEmpty().ifBlank { voiceId },
                 gender = normalizeEnum(gender, genders, GENDER_UNKNOWN),
                 age = normalizeEnum(age, ages, AGE_UNKNOWN)
             )
