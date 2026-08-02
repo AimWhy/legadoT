@@ -510,6 +510,8 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
 
     val updateToVariant get() = appCtx.getPrefString(PreferKey.updateToVariant, "default_version")
 
+    val autoCheckUpdate get() = appCtx.getPrefBoolean(PreferKey.autoCheckUpdate, true)
+
     val streamReadAloudAudio get() = appCtx.getPrefBoolean(PreferKey.streamReadAloudAudio, false)
 
     /** 停止设置弹窗最近一次选择的模式;通知栏定时钮空闲起步时按此模式 */

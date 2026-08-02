@@ -37,6 +37,25 @@ by appCtx.getSharedPreferences("local", Context.MODE_PRIVATE) {
             putLong("lastBackup", value)
         }
 
+    var lastUpdateCheckTime: Long
+        get() = getLong("lastUpdateCheckTime", 0)
+        set(value) {
+            putLong("lastUpdateCheckTime", value)
+        }
+
+    /**
+     * 自动检查更新忽略的版本号,该版本不再弹窗;手动检查不受影响
+     */
+    var ignoreUpdateVersion: String?
+        get() = getString("ignoreUpdateVersion", null)
+        set(value) {
+            if (value != null) {
+                putString("ignoreUpdateVersion", value)
+            } else {
+                remove("ignoreUpdateVersion")
+            }
+        }
+
     var privacyPolicyOk: Boolean
         get() = getBoolean("privacyPolicyOk")
         set(value) {

@@ -20,6 +20,7 @@ import io.legado.app.BuildConfig
 import io.legado.app.R
 import io.legado.app.base.VMBaseActivity
 import io.legado.app.constant.AppConst.appInfo
+import io.legado.app.constant.AppLog
 import io.legado.app.constant.EventBus
 import io.legado.app.constant.PreferKey
 import io.legado.app.data.entities.Book
@@ -32,11 +33,13 @@ import io.legado.app.help.config.AppConfig
 import io.legado.app.help.config.LocalConfig
 import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.help.storage.Backup
+import io.legado.app.help.update.AppUpdate
 import io.legado.app.lib.dialogs.alert
 import io.legado.app.lib.theme.elevation
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.service.BaseReadAloudService
 import io.legado.app.ui.about.CrashLogsDialog
+import io.legado.app.ui.about.UpdateDialog
 import io.legado.app.ui.association.ImportBookSourceDialog
 import io.legado.app.ui.association.ImportDictRuleDialog
 import io.legado.app.ui.association.ImportHttpTtsDialog
@@ -92,6 +95,7 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
     private var pagePosition = 0
     private var bottomMenuCount = 4
     private val EXIT_INTERVAL = 2000L
+    private val UPDATE_CHECK_INTERVAL = 24 * 60 * 60 * 1000L
     private val realPositions = arrayOf(idBookshelf, idExplore, idRss, idMy)
     private val menuIdToSlot = linkedMapOf(
         R.id.menu_bookshelf to "bookshelf",
@@ -146,6 +150,8 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             notifyAppCrash()
             //备份同步
             backupSync()
+            //自动检查APP更新
+            checkAppUpdate()
             //自动更新书籍
             val isAutoRefreshedBook = savedInstanceState?.getBoolean("isAutoRefreshedBook") ?: false
             if (AppConfig.autoRefreshBook && !isAutoRefreshedBook) {
@@ -324,6 +330,27 @@ class MainActivity : VMBaseActivity<ActivityMainBinding, MainViewModel>(),
             showDialogFragment(dialog)
         } else {
             block.resume(null)
+        }
+    }
+
+    /**
+     * 自动检查APP新版本,24小时最多一次;失败与已忽略版本均静默
+     */
+    private fun checkAppUpdate() {
+        if (BuildConfig.DEBUG || !AppConfig.autoCheckUpdate) return
+        if (System.currentTimeMillis() - LocalConfig.lastUpdateCheckTime < UPDATE_CHECK_INTERVAL) {
+            return
+        }
+        LocalConfig.lastUpdateCheckTime = System.currentTimeMillis()
+        AppUpdate.gitHubUpdate?.run {
+            check(lifecycleScope)
+                .onSuccess {
+                    if (it.tagName == LocalConfig.ignoreUpdateVersion) return@onSuccess
+                    if (supportFragmentManager.isStateSaved) return@onSuccess
+                    showDialogFragment(UpdateDialog(it))
+                }.onError {
+                    AppLog.put("自动检查更新: ${it.localizedMessage}")
+                }
         }
     }
 

@@ -106,7 +106,11 @@ object UpdateManifestSelector {
                 tagName = versionName,
                 updateLog = manifest.updateLog,
                 downloadUrl = artifact.url,
-                fileName = artifact.fileName.ifBlank { "legado_$versionName.apk" }
+                fileName = artifact.fileName.ifBlank { "legado_$versionName.apk" },
+                size = artifact.size,
+                publishedAt = manifest.publishedAt,
+                pageUrl = manifest.pageUrl,
+                backupDownloadUrl = artifact.githubUrl?.takeIf { it.isNotBlank() && it != artifact.url }
             )
         )
     }
