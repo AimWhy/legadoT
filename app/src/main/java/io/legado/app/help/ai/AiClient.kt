@@ -8,6 +8,8 @@ import io.legado.app.help.http.postJson
 import io.legado.app.utils.GSON
 import io.legado.app.utils.jsonPath
 import io.legado.app.utils.readString
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 
 /**
  * OpenAI 兼容的 chat completions 调用。只负责协议, 不认识角色与朗读。
@@ -48,17 +50,23 @@ object AiClient {
             )
         )
         val response = okHttpClient.newCallStrResponse {
-            url(endpointOf(AppConfig.aiBaseUrl))
+            try {
+                url(endpointOf(AppConfig.aiBaseUrl))
+            } catch (e: IllegalArgumentException) {
+                throw NoStackTraceException("AI 服务地址异常: ${AppConfig.aiBaseUrl}")
+            }
             AppConfig.aiApiKey.takeIf { it.isNotBlank() }?.let {
                 addHeader("Authorization", "Bearer $it")
             }
             postJson(body)
         }
         val text = response.body ?: throw NoStackTraceException("AI 服务无响应体")
-        return extractContent(text) ?: throw NoStackTraceException("AI 服务返回异常: $text")
+        return extractContent(text) ?: throw NoStackTraceException("AI 服务返回异常: ${text.take(200)}")
     }
 
     suspend fun testConnection(): Result<String> = kotlin.runCatching {
         chatJson("You reply with JSON only.", """回复 {"ok":true}""")
+    }.onFailure {
+        coroutineContext.ensureActive()
     }
 }

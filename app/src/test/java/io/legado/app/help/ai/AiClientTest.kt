@@ -36,4 +36,19 @@ class AiClientTest {
         assertNull(AiClient.extractContent("""{"choices":[]}"""))
         assertNull(AiClient.extractContent("not json at all"))
     }
+
+    @Test
+    fun `null content yields null`() {
+        assertNull(AiClient.extractContent("""{"choices":[{"message":{"role":"assistant","content":null}}]}"""))
+    }
+
+    @Test
+    fun `choices as non-array object yields null`() {
+        assertNull(AiClient.extractContent("""{"choices":{"not":"an array"}}"""))
+    }
+
+    @Test
+    fun `content as array of parts yields null`() {
+        assertNull(AiClient.extractContent("""{"choices":[{"message":{"content":[{"type":"text","text":"hi"}]}}]}"""))
+    }
 }
