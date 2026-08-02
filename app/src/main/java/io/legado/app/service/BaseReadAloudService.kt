@@ -47,6 +47,7 @@ import io.legado.app.lib.permission.PermissionsCompat
 import io.legado.app.model.CacheBook
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
+import io.legado.app.model.readaloud.RoleAnnotator
 import io.legado.app.model.readaloud.RoleCastManager
 import io.legado.app.model.readaloud.SpeechScript
 import io.legado.app.receiver.MediaButtonReceiver
@@ -193,6 +194,9 @@ abstract class BaseReadAloudService : BaseService(),
     internal var speechScript: SpeechScript? = null
     /** 旁白 casting 的缓存, 由 [prepareSpeechScript] 在 IO 上下文写入 */
     private var speechNarratorCast: RoleCast? = null
+    /** 角色分析期间的通知副标题状态位, 下载协程写、通知协程读 */
+    @Volatile
+    private var analyzingRoles = false
     internal var readAloudNumber: Int = 0
     internal var textChapter: TextChapter? = null
     internal var pageIndex = 0
@@ -267,6 +271,7 @@ abstract class BaseReadAloudService : BaseService(),
         restoreReadAloudFollow()
         updateReadAloudChapterIndex(-1)
         readAloudChapterStart = -1
+        analyzingRoles = false
         if (useWakeLock) {
             wakeLock.release()
             wifiLock?.release()
@@ -415,6 +420,13 @@ abstract class BaseReadAloudService : BaseService(),
         postEvent(EventBus.TTS_PROGRESS, progress)
     }
 
+    /** 分析期通知副标题改显角色分析中, 状态不变时不重发通知 */
+    private fun upAnalyzingRoles(analyzing: Boolean) {
+        if (analyzingRoles == analyzing) return
+        analyzingRoles = analyzing
+        upReadAloudNotification()
+    }
+
     /**
      * 未标注或标注失败时退化为每段一个旁白片段。
      * 播放回调线程直接调用, 只读 [speechNarratorCast] 缓存, 不触库。
@@ -426,17 +438,63 @@ abstract class BaseReadAloudService : BaseService(),
     }
 
     /**
-     * 在 IO 上下文备好旁白 casting 并建好脚本, 之后 [currentScript] 只走缓存。
-     * 解析出 casting 时按它重建脚本, 覆盖掉播放回调路径可能用占位 casting 建成的那份。
+     * 脚本就绪的唯一挂起入口: 在 IO 上下文备好旁白 casting 与角色标注, 之后 [currentScript] 只走缓存。
+     * 标注前先落纯旁白脚本, 覆盖掉播放回调路径可能用占位 casting 建成的那份,
+     * 分析期间回调线程取到的也是可播序列。
      */
     internal suspend fun prepareSpeechScript() {
-        if (speechNarratorCast == null) {
-            val cast = resolveNarratorCast()
-            speechNarratorCast = cast
-            speechScript = SpeechScript.narratorOnly(contentList, cast)
+        if (speechNarratorCast != null) {
+            currentScript()
             return
         }
-        currentScript()
+        val cast = resolveNarratorCast()
+        val paragraphs = contentList
+        speechScript = SpeechScript.narratorOnly(paragraphs, cast)
+        upAnalyzingRoles(AppConfig.multiRoleReadAloud)
+        val script = try {
+            buildScriptFor(textChapter?.chapter?.index ?: -1, paragraphs, cast)
+        } finally {
+            upAnalyzingRoles(false)
+        }
+        // 标注跨越换章时 contentList 已换新, 旧段落表建出的脚本作废, 留给新一轮重建
+        if (contentList !== paragraphs) return
+        speechScript = script
+        speechNarratorCast = cast
+    }
+
+    /**
+     * 四道降级: 无书 / 开关关闭 / 章号未知 / 标注失败, 一律退化为每段一个旁白片段。
+     * casting 取库抛错走同一条退化路径, 朗读不因标注链路中断; 取消照旧向上传播。
+     *
+     * @param fallback 未知角色所用的 casting, 即旁白
+     */
+    internal suspend fun buildScriptFor(
+        chapterIndex: Int,
+        paragraphs: List<String>,
+        fallback: RoleCast
+    ): SpeechScript {
+        val narratorOnly = SpeechScript.narratorOnly(paragraphs, fallback)
+        val book = ReadBook.book
+        if (book == null || !AppConfig.multiRoleReadAloud || chapterIndex < 0) {
+            return narratorOnly
+        }
+        return try {
+            val annotated = RoleAnnotator.annotate(book.bookUrl, chapterIndex, paragraphs)
+                ?: return narratorOnly
+            RoleCastManager.ensureCast(book.bookUrl, annotated.roles, chapterIndex)
+            SpeechScript(
+                paragraphs = paragraphs,
+                segments = annotated.segments,
+                cast = RoleCastManager.castOf(book.bookUrl),
+                fallback = fallback
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            AppLog.put("角色脚本构建失败\n${e.localizedMessage}", e)
+            narratorOnly
+        }
     }
 
     /** 取库失败退化为占位 casting, 朗读照常起播; 取消照旧向上传播 */
@@ -763,7 +821,11 @@ abstract class BaseReadAloudService : BaseService(),
             else -> getString(R.string.read_aloud_t)
         }
         nTitle += ": ${ReadBook.book?.name}"
-        var nSubtitle = ReadBook.curTextChapter?.title
+        var nSubtitle = if (analyzingRoles) {
+            getString(R.string.role_analyzing)
+        } else {
+            ReadBook.curTextChapter?.title
+        }
         if (nSubtitle.isNullOrBlank())
             nSubtitle = getString(R.string.read_aloud_s)
         val builder = NotificationCompat

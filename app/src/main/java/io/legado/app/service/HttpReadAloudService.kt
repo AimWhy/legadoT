@@ -35,7 +35,6 @@ import io.legado.app.help.exoplayer.InputStreamDataSource
 import io.legado.app.model.ReadAloud
 import io.legado.app.model.ReadBook
 import io.legado.app.model.analyzeRule.AnalyzeUrl
-import io.legado.app.model.readaloud.SpeechScript
 import io.legado.app.ui.book.read.page.entities.TextChapter
 import io.legado.app.utils.FileUtils
 import io.legado.app.utils.MD5Utils
@@ -196,32 +195,39 @@ class HttpReadAloudService : BaseReadAloudService(),
         }
     }
 
+    /**
+     * 本章音频已全部入队后才走到这里, 下一章的标注与音频都在同一个下载协程上预取。
+     * 换章时 [play] 先取消下载协程, 未完成的预取随之作废。
+     */
     private suspend fun preDownloadAudios() {
-        val textChapter = ReadBook.nextTextChapter ?: return
-        val paragraphs = textChapter.getNeedReadAloud(0, readAloudByPage, 0, 1)
-            .splitToSequence("\n")
+        val nextChapter = ReadBook.nextTextChapter ?: return
+        // 排版未完成时页表不全, 段落表与起播时的 contentList 对不上, 标注与音频缓存都会落空
+        if (!nextChapter.isCompleted) return
+        val paragraphs = nextChapter.getNeedReadAloud(0, readAloudByPage, 0)
+            .split("\n")
             .filter { it.isNotEmpty() }
-            .take(10)
-            .toList()
         if (paragraphs.isEmpty()) return
+        // 先标注整章, 音频按下一章的真 casting 预下载, 缓存键与起播时的播放路径一致
         val fallback = currentScript().fallbackCast()
-        val script = SpeechScript.narratorOnly(paragraphs, fallback)
-        paragraphs.forEachIndexed { index, _ ->
-            currentCoroutineContext().ensureActive()
-            val seg = script.segmentsOf(index).firstOrNull() ?: return@forEachIndexed
-            val cast = script.castOf(seg)
-            val content = script.textOf(seg)
-            val fileName = md5SpeakFileName(content, cast, textChapter)
-            val speakText = content.replace(AppPattern.notReadAloudRegex, "")
-            if (speakText.isEmpty()) {
-                createSilentSound(fileName)
-            } else if (!hasSpeakFile(fileName)) {
-                runCatching {
-                    val inputStream = getSpeakStream(ttsOf(cast.ttsEngineId), speakText, cast.voice)
-                    if (inputStream != null) {
-                        createSpeakFile(fileName, inputStream)
-                    } else {
-                        createSilentSound(fileName)
+        val script = buildScriptFor(nextChapter.chapter.index, paragraphs, fallback)
+        for (para in paragraphs.indices.take(10)) {
+            for (seg in script.segmentsOf(para)) {
+                currentCoroutineContext().ensureActive()
+                val cast = script.castOf(seg)
+                val content = script.textOf(seg)
+                val fileName = md5SpeakFileName(content, cast, nextChapter)
+                val speakText = content.replace(AppPattern.notReadAloudRegex, "")
+                if (speakText.isEmpty()) {
+                    createSilentSound(fileName)
+                } else if (!hasSpeakFile(fileName)) {
+                    runCatching {
+                        val inputStream =
+                            getSpeakStream(ttsOf(cast.ttsEngineId), speakText, cast.voice)
+                        if (inputStream != null) {
+                            createSpeakFile(fileName, inputStream)
+                        } else {
+                            createSilentSound(fileName)
+                        }
                     }
                 }
             }
