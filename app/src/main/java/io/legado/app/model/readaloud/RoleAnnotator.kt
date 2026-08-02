@@ -10,8 +10,10 @@ import io.legado.app.utils.GSON
 import io.legado.app.utils.MD5Utils
 import io.legado.app.utils.fromJsonArray
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
 
 /**
  * 章节角色标注。命中缓存直接返回, 未命中调 LLM 并落缓存。
@@ -28,6 +30,17 @@ object RoleAnnotator {
         .distinct()
         .map { RoleProfile(it) }
 
+    /**
+     * 片段里实际发声的角色, 画像取 profiles 的同名项。
+     * 净化会把不合法的段落整段还原为旁白, 该段落的角色可能因此不再出现在片段中。
+     *
+     * @return 名字与 [rolesFrom] 一致, 按片段出现序
+     */
+    fun rolesIn(segments: List<Segment>, profiles: List<RoleProfile>): List<RoleProfile> {
+        val known = profiles.associateBy { it.name }
+        return rolesFrom(segments).map { known[it.name] ?: it }
+    }
+
     /** @return null 表示无法标注, 调用方降级为纯旁白 */
     suspend fun annotate(
         bookUrl: String,
@@ -35,16 +48,16 @@ object RoleAnnotator {
         paragraphs: List<String>
     ): RoleScript? {
         if (paragraphs.isEmpty()) return null
-        val md5 = contentMd5(paragraphs)
-        readCache(bookUrl, chapterIndex, md5)?.let { return it }
         if (!AppConfig.multiRoleReadAloud || !AiClient.isConfigured()) return null
+        val md5 = contentMd5(paragraphs)
+        readCache(bookUrl, chapterIndex, md5, paragraphs)?.let { return it }
         val system = AppConfig.aiRolePrompt.ifBlank { RolePrompt.DEFAULT_SYSTEM }
         val known = LinkedHashSet<String>()
         val parts = ArrayList<RoleScript>()
         for (range in RolePrompt.chunks(paragraphs.size)) {
             currentCoroutineContext().ensureActive()
-            val userPrompt = RolePrompt.buildUser(paragraphs, range, known)
             val part = try {
+                val userPrompt = RolePrompt.buildUser(paragraphs, range, known)
                 RolePrompt.parse(AiClient.chatJson(system, userPrompt), range)
             } catch (e: CancellationException) {
                 throw e
@@ -59,8 +72,10 @@ object RoleAnnotator {
         }
         val merged = RolePrompt.merge(parts)
         val segments = SpeechScript.sanitize(paragraphs, merged.segments)
-        writeCache(bookUrl, chapterIndex, md5, segments)
-        return RoleScript(segments, merged.roles.ifEmpty { rolesFrom(segments) })
+        val roles = rolesIn(segments, merged.roles)
+        // 全旁白说明本次标注没有产出, 不落缓存, 留给下次重试
+        if (roles.isNotEmpty()) writeCache(bookUrl, chapterIndex, md5, segments)
+        return RoleScript(segments, roles)
     }
 
     /** 预取, 任何失败都吞掉 */
@@ -75,29 +90,55 @@ object RoleAnnotator {
         }
     }
 
-    private fun readCache(bookUrl: String, chapterIndex: Int, md5: String): RoleScript? {
-        val cached = appDb.chapterRoleScriptDao.get(bookUrl, chapterIndex) ?: return null
+    /** DB 失败一律当缓存未命中, 走重新标注 */
+    private suspend fun readCache(
+        bookUrl: String,
+        chapterIndex: Int,
+        md5: String,
+        paragraphs: List<String>
+    ): RoleScript? {
+        val cached = try {
+            withContext(IO) { appDb.chapterRoleScriptDao.get(bookUrl, chapterIndex) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            AppLog.put("角色标注缓存读取失败\n${e.localizedMessage}", e)
+            null
+        } ?: return null
         if (cached.contentMd5 != md5) return null
-        val segments = GSON.fromJsonArray<Segment>(cached.segmentsJson).getOrNull()
+        val raw = GSON.fromJsonArray<Segment>(cached.segmentsJson).getOrNull()
             ?.filterNotNull()
             ?: return null
-        if (segments.isEmpty()) return null
+        if (raw.isEmpty()) return null
+        // md5 相符只保证段落文本一致, segmentsJson 仍可能被外部改写; sanitize 对自身输出幂等
+        val segments = SpeechScript.sanitize(paragraphs, raw)
         return RoleScript(segments, rolesFrom(segments))
     }
 
-    private fun writeCache(
+    /** 写失败不影响本次标注结果, 只是下次仍要重新标注 */
+    private suspend fun writeCache(
         bookUrl: String,
         chapterIndex: Int,
         md5: String,
         segments: List<Segment>
     ) {
-        appDb.chapterRoleScriptDao.insert(
-            ChapterRoleScript(
-                bookUrl = bookUrl,
-                chapterIndex = chapterIndex,
-                contentMd5 = md5,
-                segmentsJson = GSON.toJson(segments)
-            )
-        )
+        try {
+            withContext(IO) {
+                appDb.chapterRoleScriptDao.insert(
+                    ChapterRoleScript(
+                        bookUrl = bookUrl,
+                        chapterIndex = chapterIndex,
+                        contentMd5 = md5,
+                        segmentsJson = GSON.toJson(segments)
+                    )
+                )
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
+            AppLog.put("角色标注缓存写入失败\n${e.localizedMessage}", e)
+        }
     }
 }

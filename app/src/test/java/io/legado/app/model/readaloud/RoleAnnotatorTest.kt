@@ -21,7 +21,8 @@ class RoleAnnotatorTest {
             Segment(0, 0, 2, RoleCast.NARRATOR),
             Segment(0, 2, 4, "林风"),
             Segment(1, 0, 2, "林风"),
-            Segment(1, 2, 4, "苏眉")
+            Segment(1, 2, 4, "苏眉"),
+            Segment(2, 0, 2, "   ")
         )
         assertEquals(listOf("林风", "苏眉"), RoleAnnotator.rolesFrom(segments).map { it.name })
     }
@@ -30,5 +31,35 @@ class RoleAnnotatorTest {
     fun `a narrator only chapter recovers no roles`() {
         val segments = listOf(Segment(0, 0, 2, RoleCast.NARRATOR))
         assertEquals(emptyList<RoleProfile>(), RoleAnnotator.rolesFrom(segments))
+    }
+
+    @Test
+    fun `roles absent from the sanitized segments are dropped`() {
+        val segments = listOf(
+            Segment(0, 0, 2, RoleCast.NARRATOR),
+            Segment(1, 0, 2, "林风")
+        )
+        val profiles = listOf(
+            RoleProfile("林风", "male", "young"),
+            RoleProfile("苏眉", "female", "young")
+        )
+        assertEquals(
+            "净化把苏眉的段落还原成旁白后, 她不该留在角色表里",
+            listOf(RoleProfile("林风", "male", "young")),
+            RoleAnnotator.rolesIn(segments, profiles)
+        )
+    }
+
+    @Test
+    fun `a role speaking without a profile keeps its bare name`() {
+        val segments = listOf(Segment(0, 0, 2, "苏眉"))
+        assertEquals(listOf(RoleProfile("苏眉")), RoleAnnotator.rolesIn(segments, emptyList()))
+    }
+
+    @Test
+    fun `a narrator only script yields no roles to cast`() {
+        val segments = listOf(Segment(0, 0, 2, RoleCast.NARRATOR))
+        val profiles = listOf(RoleProfile("林风", "male", "young"))
+        assertEquals(emptyList<RoleProfile>(), RoleAnnotator.rolesIn(segments, profiles))
     }
 }
