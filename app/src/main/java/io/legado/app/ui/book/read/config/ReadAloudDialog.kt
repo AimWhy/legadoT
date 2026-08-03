@@ -94,6 +94,8 @@ class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
             ivEngine.setColorFilter(textColor)
             tvEngineName.setTextColor(textColor)
             ivEngineArrow.setColorFilter(textColor)
+            ivRoleCast.setColorFilter(textColor)
+            tvRoleCast.setTextColor(textColor)
         }
         initData()
         initEvent()
@@ -118,6 +120,9 @@ class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
         }
         llEngine.setOnClickListener {
             SpeakEngineDialog().show(childFragmentManager, "speakEngineDialog")
+        }
+        llRoleCast.setOnClickListener {
+            RoleCastDialog().show(childFragmentManager, "roleCastDialog")
         }
         tvPre.setOnClickListener { ReadAloud.prevChapter(requireContext()) }
         tvNext.setOnClickListener { ReadAloud.nextChapter(requireContext()) }

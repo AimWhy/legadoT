@@ -1534,4 +1534,10 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="ai_role_prompt">自定义提示词（留空用内置）</string>
     <string name="ai_test_connection">测试连接</string>
     <string name="ai_test_ok">连接正常</string>
+    <string name="role_cast">角色音色</string>
+    <string name="role_cast_empty">尚未识别到角色，朗读一章后再来</string>
+    <string name="role_cast_reset">全部重置为自动</string>
+    <string name="role_cast_auto">自动</string>
+    <string name="role_cast_seen">第 %1$d 章出场</string>
+    <string name="role_preview_toast">功能待实现</string>
 </resources>

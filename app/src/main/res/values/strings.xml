@@ -1610,4 +1610,10 @@ Placeholders:
     <string name="ai_role_prompt">Custom prompt (leave blank for built-in)</string>
     <string name="ai_test_connection">Test Connection</string>
     <string name="ai_test_ok">Connection OK</string>
+    <string name="role_cast">Role Voices</string>
+    <string name="role_cast_empty">No roles identified yet, try reading a chapter first</string>
+    <string name="role_cast_reset">Reset all to auto</string>
+    <string name="role_cast_auto">Auto</string>
+    <string name="role_cast_seen">Chapter %1$d</string>
+    <string name="role_preview_toast">Preview not yet available</string>
 </resources>
