@@ -43,9 +43,9 @@ class AiConfigDialog : BaseDialogFragment(R.layout.dialog_ai_config, true) {
         }
     }
 
-    override fun onDestroy() {
+    override fun onDestroyView() {
         save()
-        super.onDestroy()
+        super.onDestroyView()
     }
 
     private fun save() = binding.run {
