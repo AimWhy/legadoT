@@ -63,6 +63,7 @@ class RoleCastDialog : BaseDialogFragment(R.layout.dialog_role_cast),
             val pool = withContext(IO) {
                 RoleCastManager.availableVoices()
             }
+            if (!isAdded || view == null) return@launch
             voices = pool
             adapter.updateVoices(pool)
             adapter.setItems(casts)
