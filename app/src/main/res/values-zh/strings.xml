@@ -1525,4 +1525,13 @@ Cron 使用 5 个字段：**分 时 日 月 周**
     <string name="bottom_bar_skin_import">导入图集</string>
     <string name="bottom_bar_skin_invalid">无效的图集文件</string>
     <string name="bottom_bar_skin_delete_confirm">删除该图集?</string>
+    <string name="multi_role_read_aloud">多角色朗读</string>
+    <string name="multi_role_read_aloud_summary">按角色切换音色，需配置 AI 服务与带音色清单的在线引擎</string>
+    <string name="ai_service">AI 服务</string>
+    <string name="ai_base_url">接口地址</string>
+    <string name="ai_api_key">API Key</string>
+    <string name="ai_model">模型</string>
+    <string name="ai_role_prompt">自定义提示词（留空用内置）</string>
+    <string name="ai_test_connection">测试连接</string>
+    <string name="ai_test_ok">连接正常</string>
 </resources>

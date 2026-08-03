@@ -1601,4 +1601,13 @@ Placeholders:
     <string name="bottom_bar_skin_import">Import Skin</string>
     <string name="bottom_bar_skin_invalid">Invalid skin file</string>
     <string name="bottom_bar_skin_delete_confirm">Delete this skin?</string>
+    <string name="multi_role_read_aloud">Multi-role Read Aloud</string>
+    <string name="multi_role_read_aloud_summary">Switch voices by role; requires AI service and an online engine with a voice list</string>
+    <string name="ai_service">AI Service</string>
+    <string name="ai_base_url">Base URL</string>
+    <string name="ai_api_key">API Key</string>
+    <string name="ai_model">Model</string>
+    <string name="ai_role_prompt">Custom prompt (leave blank for built-in)</string>
+    <string name="ai_test_connection">Test Connection</string>
+    <string name="ai_test_ok">Connection OK</string>
 </resources>

@@ -21,6 +21,7 @@ import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.lib.theme.primaryColor
 import io.legado.app.model.ReadAloud
 import io.legado.app.service.BaseReadAloudService
+import io.legado.app.utils.StringUtils
 import io.legado.app.utils.postEvent
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.setLayout
@@ -77,6 +78,9 @@ class ReadAloudConfigDialog : BasePrefDialogFragment() {
             findPreference<SwitchPreference>(PreferKey.pauseReadAloudWhilePhoneCalls)?.let {
                 it.isEnabled = AppConfig.ignoreAudioFocus
             }
+            findPreference<SwitchPreference>(PreferKey.multiRoleReadAloud)?.let {
+                it.isEnabled = StringUtils.isNumeric(ReadAloud.ttsEngine ?: "")
+            }
         }
 
         override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -98,6 +102,7 @@ class ReadAloudConfigDialog : BasePrefDialogFragment() {
             when (preference.key) {
                 PreferKey.ttsEngine -> showDialogFragment(SpeakEngineDialog())
                 "sysTtsConfig" -> IntentHelp.openTTSSetting()
+                "aiService" -> AiConfigDialog().show(childFragmentManager, "aiConfigDialog")
             }
             return super.onPreferenceTreeClick(preference)
         }
