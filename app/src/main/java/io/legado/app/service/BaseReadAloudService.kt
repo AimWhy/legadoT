@@ -191,8 +191,10 @@ abstract class BaseReadAloudService : BaseService(),
     internal var nowSpeak: Int = 0
     /** 段内片段游标, 与 nowSpeak 一起构成朗读位置 */
     internal var nowSegment: Int = 0
+    @Volatile
     internal var speechScript: SpeechScript? = null
     /** 旁白 casting 的缓存, 由 [prepareSpeechScript] 在 IO 上下文写入 */
+    @Volatile
     private var speechNarratorCast: RoleCast? = null
     /** 角色分析期间的通知副标题状态位, 下载协程写、通知协程读 */
     @Volatile

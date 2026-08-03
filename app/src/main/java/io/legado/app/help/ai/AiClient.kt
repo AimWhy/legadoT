@@ -41,7 +41,7 @@ object AiClient {
         val body = GSON.toJson(
             mapOf(
                 "model" to AppConfig.aiModel,
-                "temperature" to 0,
+                "temperature" to 0.0,
                 "response_format" to mapOf("type" to "json_object"),
                 "messages" to listOf(
                     mapOf("role" to "system", "content" to systemPrompt),
