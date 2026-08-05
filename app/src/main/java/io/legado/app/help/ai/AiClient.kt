@@ -3,13 +3,16 @@ package io.legado.app.help.ai
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.http.newCallStrResponse
+import io.legado.app.help.http.NoHttpLog
 import io.legado.app.help.http.okHttpClient
 import io.legado.app.help.http.postJson
 import io.legado.app.utils.GSON
 import io.legado.app.utils.jsonPath
 import io.legado.app.utils.readString
-import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.ensureActive
+import java.util.concurrent.TimeUnit
+import kotlin.coroutines.coroutineContext
+import okhttp3.OkHttpClient
 
 /**
  * OpenAI 兼容的 chat completions 调用。只负责协议, 不认识角色与朗读。
@@ -38,9 +41,26 @@ object AiClient {
         if (!isConfigured()) {
             throw NoStackTraceException("AI 服务未配置")
         }
+        return chatJson(
+            baseUrl = AppConfig.aiBaseUrl,
+            apiKey = AppConfig.aiApiKey,
+            model = AppConfig.aiModel,
+            systemPrompt = systemPrompt,
+            userPrompt = userPrompt
+        )
+    }
+
+    internal suspend fun chatJson(
+        baseUrl: String,
+        apiKey: String,
+        model: String,
+        systemPrompt: String,
+        userPrompt: String,
+        client: OkHttpClient = okHttpClient
+    ): String {
         val body = GSON.toJson(
             mapOf(
-                "model" to AppConfig.aiModel,
+                "model" to model,
                 "temperature" to 0.0,
                 "response_format" to mapOf("type" to "json_object"),
                 "messages" to listOf(
@@ -49,19 +69,24 @@ object AiClient {
                 )
             )
         )
-        val response = okHttpClient.newCallStrResponse {
-            try {
-                url(endpointOf(AppConfig.aiBaseUrl))
-            } catch (e: IllegalArgumentException) {
-                throw NoStackTraceException("AI 服务地址异常: ${AppConfig.aiBaseUrl}")
+        val response = client.newBuilder()
+            .callTimeout(300, TimeUnit.SECONDS)
+            .readTimeout(300, TimeUnit.SECONDS)
+            .build().newCallStrResponse {
+                tag(NoHttpLog::class.java, NoHttpLog)
+                try {
+                    url(endpointOf(baseUrl))
+                } catch (e: IllegalArgumentException) {
+                    throw NoStackTraceException("AI 服务地址异常: $baseUrl")
+                }
+                apiKey.takeIf { it.isNotBlank() }?.let {
+                    addHeader("Authorization", "Bearer $it")
+                }
+                postJson(body)
             }
-            AppConfig.aiApiKey.takeIf { it.isNotBlank() }?.let {
-                addHeader("Authorization", "Bearer $it")
-            }
-            postJson(body)
-        }
         val text = response.body ?: throw NoStackTraceException("AI 服务无响应体")
-        return extractContent(text) ?: throw NoStackTraceException("AI 服务返回异常: ${text.take(200)}")
+        return extractContent(text)
+            ?: throw NoStackTraceException("AI 服务返回异常: ${text.take(200)}")
     }
 
     suspend fun testConnection(): Result<String> = kotlin.runCatching {

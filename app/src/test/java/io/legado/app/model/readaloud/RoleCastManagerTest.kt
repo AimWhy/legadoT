@@ -138,4 +138,47 @@ class RoleCastManagerTest {
         RoleCastManager.assign(List(3) { RoleProfile("角色$it", "male", "unknown") }, pool, usage)
         assertEquals(mapOf(maleYoung.key to 1), usage)
     }
+
+    @Test
+    fun `an engine default voice has a stable candidate identity`() {
+        val defaultVoice = VoiceRef(7, null, "默认引擎")
+        assertEquals("7:", defaultVoice.key)
+        assertEquals(
+            defaultVoice,
+            RoleCastManager.pickVoice(
+                RoleProfile("甲", "female", "young"),
+                listOf(defaultVoice),
+                emptyMap()
+            )
+        )
+    }
+
+    @Test
+    fun `aliases canonicalize both segments and profiles`() {
+        val script = RoleScript(
+            segments = listOf(
+                Segment(0, 0, 2, "林公子"),
+                Segment(0, 2, 4, "林风")
+            ),
+            roles = listOf(
+                RoleProfile("林公子", "male", "young"),
+                RoleProfile("林风", "male", "middle")
+            )
+        )
+        val canonical = RoleCastManager.canonicalize(script, mapOf("林公子" to "林风"))
+        assertEquals(listOf("林风", "林风"), canonical.segments.map { it.role })
+        assertEquals(listOf(RoleProfile("林风", "male", "middle")), canonical.roles)
+    }
+
+    @Test
+    fun `an alias cycle leaves the original role unchanged`() {
+        val script = RoleScript(
+            segments = listOf(Segment(0, 0, 2, "甲")),
+            roles = listOf(RoleProfile("甲"))
+        )
+        assertEquals(
+            script,
+            RoleCastManager.canonicalize(script, mapOf("甲" to "乙", "乙" to "甲"))
+        )
+    }
 }

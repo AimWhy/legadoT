@@ -47,6 +47,28 @@ data class TtsVoice(
             return voices
         }
 
+        /** Editor validation is strict; import/playback parsing remains tolerant through [parseList]. */
+        fun validateList(json: String?): Result<List<TtsVoice>> = kotlin.runCatching {
+            if (json.isNullOrBlank()) return@runCatching emptyList()
+            val parsed = GSON.fromJsonArray<VoiceDto>(json).getOrThrow()
+            val ids = HashSet<String>()
+            parsed.mapIndexed { index, dto ->
+                val id = dto.id?.trim().orEmpty()
+                require(id.isNotBlank()) { "第 ${index + 1} 个音色缺少 id" }
+                require(ids.add(id)) { "音色 id 重复: $id" }
+                validateEnum(dto.gender, genders, "gender", index)
+                validateEnum(dto.age, ages, "age", index)
+                requireNotNull(dto.toVoice())
+            }
+        }
+
+        private fun validateEnum(raw: String?, allowed: Set<String>, field: String, index: Int) {
+            if (raw.isNullOrBlank()) return
+            require(raw.trim().lowercase() in allowed) {
+                "第 ${index + 1} 个音色的 $field 值无效: $raw"
+            }
+        }
+
         /**
          * 空表既表示单音色, 也表示解析失败或条目全被丢弃, 记一笔日志把后两者暴露出来, 两处文案各异以便在日志面板区分。
          * 日志属旁路副作用, 其失败不参与"绝不抛出"的返回契约; 只截 [Exception], [Error] 照常向上传递

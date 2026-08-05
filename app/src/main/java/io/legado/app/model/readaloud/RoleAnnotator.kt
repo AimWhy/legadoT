@@ -23,6 +23,16 @@ object RoleAnnotator {
     fun contentMd5(paragraphs: List<String>): String =
         MD5Utils.md5Encode(paragraphs.joinToString("\n"))
 
+    fun annotationKey(paragraphs: List<String>, model: String, systemPrompt: String): String =
+        MD5Utils.md5Encode(
+            listOf(
+                RolePrompt.ANNOTATION_PROTOCOL_VERSION,
+                model,
+                systemPrompt,
+                paragraphs.joinToString("\n")
+            ).joinToString("\u0000")
+        )
+
     /** 缓存只存片段, 角色名由片段反推; 画像留给 roleCasts 的既有记录 */
     fun rolesFrom(segments: List<Segment>): List<RoleProfile> = segments
         .map { it.role }
@@ -49,13 +59,15 @@ object RoleAnnotator {
     ): RoleScript? {
         if (paragraphs.isEmpty()) return null
         if (!AppConfig.multiRoleReadAloud) return null
+        val system = RolePrompt.effectiveSystem(AppConfig.aiRolePrompt)
         val md5 = contentMd5(paragraphs)
-        readCache(bookUrl, chapterIndex, md5, paragraphs)?.let { return it }
+        val annotationKey = annotationKey(paragraphs, AppConfig.aiModel, system)
+        readCache(bookUrl, chapterIndex, md5, annotationKey, paragraphs)?.let { return it }
+        if (!AppConfig.aiRoleConsent) return null
         if (!AiClient.isConfigured()) return null
-        val system = AppConfig.aiRolePrompt.ifBlank { RolePrompt.DEFAULT_SYSTEM }
         val known = LinkedHashSet<String>()
         val parts = ArrayList<RoleScript>()
-        for (range in RolePrompt.chunks(paragraphs.size)) {
+        for (range in RolePrompt.chunks(paragraphs)) {
             currentCoroutineContext().ensureActive()
             val part = try {
                 val userPrompt = RolePrompt.buildUser(paragraphs, range, known)
@@ -75,7 +87,9 @@ object RoleAnnotator {
         val segments = SpeechScript.sanitize(paragraphs, merged.segments)
         val roles = rolesIn(segments, merged.roles)
         // 全旁白说明本次标注没有产出, 不落缓存, 留给下次重试
-        if (roles.isNotEmpty()) writeCache(bookUrl, chapterIndex, md5, segments)
+        if (roles.isNotEmpty()) {
+            writeCache(bookUrl, chapterIndex, md5, annotationKey, roles, segments)
+        }
         return RoleScript(segments, roles)
     }
 
@@ -96,6 +110,7 @@ object RoleAnnotator {
         bookUrl: String,
         chapterIndex: Int,
         md5: String,
+        annotationKey: String,
         paragraphs: List<String>
     ): RoleScript? {
         val cached = try {
@@ -107,14 +122,17 @@ object RoleAnnotator {
             AppLog.put("角色标注缓存读取失败\n${e.localizedMessage}", e)
             null
         } ?: return null
-        if (cached.contentMd5 != md5) return null
+        if (cached.contentMd5 != md5 || cached.annotationKey != annotationKey) return null
         val raw = GSON.fromJsonArray<Segment>(cached.segmentsJson).getOrNull()
             ?.filterNotNull()
             ?: return null
         if (raw.isEmpty()) return null
         // md5 相符只保证段落文本一致, segmentsJson 仍可能被外部改写; sanitize 对自身输出幂等
         val segments = SpeechScript.sanitize(paragraphs, raw)
-        val roles = rolesFrom(segments)
+        val roles = GSON.fromJsonArray<RoleProfile>(cached.profilesJson).getOrNull()
+            ?.filterNotNull()
+            ?.let { rolesIn(segments, it) }
+            ?: return null
         if (roles.isEmpty()) return null
         return RoleScript(segments, roles)
     }
@@ -124,6 +142,8 @@ object RoleAnnotator {
         bookUrl: String,
         chapterIndex: Int,
         md5: String,
+        annotationKey: String,
+        profiles: List<RoleProfile>,
         segments: List<Segment>
     ) {
         try {
@@ -133,7 +153,9 @@ object RoleAnnotator {
                         bookUrl = bookUrl,
                         chapterIndex = chapterIndex,
                         contentMd5 = md5,
-                        segmentsJson = GSON.toJson(segments)
+                        segmentsJson = GSON.toJson(segments),
+                        annotationKey = annotationKey,
+                        profilesJson = GSON.toJson(profiles)
                     )
                 )
             }

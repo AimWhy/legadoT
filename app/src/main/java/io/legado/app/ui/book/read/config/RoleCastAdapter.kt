@@ -1,6 +1,7 @@
 package io.legado.app.ui.book.read.config
 
 import android.content.Context
+import android.view.View
 import android.view.ViewGroup
 import io.legado.app.base.adapter.ItemViewHolder
 import io.legado.app.base.adapter.RecyclerAdapter
@@ -18,6 +19,7 @@ class RoleCastAdapter(
     interface CallBack {
         fun onPickVoice(cast: RoleCast)
         fun onPreview(cast: RoleCast)
+        fun onMerge(cast: RoleCast)
     }
 
     fun updateVoices(newVoices: List<VoiceRef>) {
@@ -36,6 +38,7 @@ class RoleCastAdapter(
         tvRoleName.text = item.roleName
         tvRoleDesc.text = buildDesc(item)
         tvRoleVoice.text = voiceLabelOf(item)
+        ivMerge.visibility = if (item.roleName == RoleCast.NARRATOR) View.GONE else View.VISIBLE
     }
 
     override fun registerListener(holder: ItemViewHolder, binding: ItemRoleCastBinding) {
@@ -45,12 +48,25 @@ class RoleCastAdapter(
         binding.ivPreview.setOnClickListener {
             getItemByLayoutPosition(holder.layoutPosition)?.let { callBack.onPreview(it) }
         }
+        binding.ivMerge.setOnClickListener {
+            getItemByLayoutPosition(holder.layoutPosition)?.let { callBack.onMerge(it) }
+        }
     }
 
     private fun voiceLabelOf(cast: RoleCast): String {
-        val voiceId = cast.voice ?: return context.getString(io.legado.app.R.string.role_cast_auto)
-        return voices.firstOrNull { it.engineId == cast.ttsEngineId && it.voice.id == voiceId }
-            ?.voice?.name ?: voiceId
+        val match = voices.firstOrNull {
+            it.engineId == cast.ttsEngineId && it.voice?.id == cast.voice
+        }
+        if (match != null) {
+            return "${match.engineName} · ${match.voice?.name ?: context.getString(io.legado.app.R.string.role_cast_default_voice)}"
+        }
+        if (cast.ttsEngineId > 0L) {
+            return context.getString(
+                io.legado.app.R.string.role_cast_unavailable,
+                cast.voice ?: cast.ttsEngineId.toString()
+            )
+        }
+        return cast.voice ?: context.getString(io.legado.app.R.string.role_cast_auto)
     }
 
     private fun buildDesc(cast: RoleCast): String {

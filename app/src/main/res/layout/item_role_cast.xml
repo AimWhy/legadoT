@@ -48,6 +48,17 @@
         tools:text="Yunxi" />
 
     <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/iv_merge"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="@dimen/space_s"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/role_merge"
+        android:src="@drawable/ic_link_24dp"
+        app:skin_tint="onSurface"
+        app:tint="@color/primaryText" />
+
+    <androidx.appcompat.widget.AppCompatImageView
         android:id="@+id/iv_preview"
         android:layout_width="24dp"
         android:layout_height="24dp"

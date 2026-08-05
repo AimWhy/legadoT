@@ -17,4 +17,10 @@ interface ChapterRoleScriptDao {
 
     @Query("delete from chapterRoleScripts where bookUrl = :bookUrl")
     fun deleteByBook(bookUrl: String)
+
+    @Query("delete from chapterRoleScripts where bookUrl = :bookUrl and chapterIndex = :chapterIndex")
+    fun delete(bookUrl: String, chapterIndex: Int)
+
+    @Query("delete from chapterRoleScripts where bookUrl not in (select bookUrl from books)")
+    fun deleteOrphans()
 }

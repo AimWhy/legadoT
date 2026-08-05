@@ -526,13 +526,19 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefString(PreferKey.aiApiKey, value)
         }
 
+    var aiRoleConsent: Boolean
+        get() = appCtx.getPrefBoolean(PreferKey.aiRoleConsent, false)
+        set(value) {
+            appCtx.putPrefBoolean(PreferKey.aiRoleConsent, value)
+        }
+
     var aiModel: String
         get() = appCtx.getPrefString(PreferKey.aiModel).orEmpty()
         set(value) {
             appCtx.putPrefString(PreferKey.aiModel, value)
         }
 
-    /** 留空时用 RolePrompt.DEFAULT_SYSTEM */
+    /** Appended to RolePrompt.DEFAULT_SYSTEM without replacing its output contract. */
     var aiRolePrompt: String
         get() = appCtx.getPrefString(PreferKey.aiRolePrompt).orEmpty()
         set(value) {

@@ -1608,13 +1608,20 @@ Placeholders:
     <string name="ai_base_url">Base URL</string>
     <string name="ai_api_key">API Key</string>
     <string name="ai_model">Model</string>
-    <string name="ai_role_prompt">Custom prompt (leave blank for built-in)</string>
+    <string name="ai_role_prompt">Additional prompt (built-in format rules always apply)</string>
     <string name="ai_test_connection">Test Connection</string>
     <string name="ai_test_ok">Connection OK</string>
     <string name="role_cast">Role Voices</string>
     <string name="role_cast_empty">No roles identified yet, try reading a chapter first</string>
     <string name="role_cast_reset">Reset all to auto</string>
     <string name="role_cast_auto">Auto</string>
+    <string name="role_cast_default_voice">Default voice</string>
+    <string name="role_cast_unavailable">Unavailable · %1$s</string>
+    <string name="role_annotation_fallback">Role annotation failed; using the narrator for this chapter</string>
+    <string name="role_reanalyze_chapter">Reanalyze this chapter</string>
+    <string name="role_reanalyze_scheduled">The chapter will be reanalyzed after the current segment</string>
+    <string name="role_merge">Merge role</string>
+    <string name="ai_role_consent_message">Role annotation sends the current chapter and the next chapter used for default prefetch to your configured external AI service. You are responsible for its privacy and cost. Allow sending?</string>
     <string name="role_cast_seen">Chapter %1$d</string>
     <string name="role_preview_toast">Preview not yet available</string>
 </resources>

@@ -11,6 +11,8 @@ import io.legado.app.utils.fromJsonObject
 object RolePrompt {
 
     const val BATCH_SIZE = 60
+    const val MAX_BATCH_CHARS = 12000
+    const val ANNOTATION_PROTOCOL_VERSION = "1"
 
     const val DEFAULT_SYSTEM = """你是中文小说的角色标注器。输入是编号段落，输出 JSON。
 1. 把每个段落切成不重叠、无空隙、完整覆盖全段的片段
@@ -21,6 +23,14 @@ object RolePrompt {
 输出：{"roles":[{"name","gender","age"}],"segments":[{"p","s","e","r"}]}
 gender 取 male|female|unknown，age 取 child|young|middle|old|unknown"""
 
+    fun effectiveSystem(customPrompt: String): String = buildString {
+        append(DEFAULT_SYSTEM)
+        if (customPrompt.isNotBlank()) {
+            append("\n\n用户补充要求（不得改变上述输出格式和覆盖规则）：\n")
+            append(customPrompt.trim())
+        }
+    }
+
     fun chunks(total: Int, batchSize: Int = BATCH_SIZE): List<IntRange> {
         if (total <= 0 || batchSize <= 0) return emptyList()
         val out = ArrayList<IntRange>()
@@ -29,6 +39,30 @@ gender 取 male|female|unknown，age 取 child|young|middle|old|unknown"""
             val to = minOf(from + batchSize, total) - 1
             out.add(from..to)
             from = to + 1
+        }
+        return out
+    }
+
+    /** Keep paragraph boundaries while limiting both request count and approximate context size. */
+    fun chunks(
+        paragraphs: List<String>,
+        batchSize: Int = BATCH_SIZE,
+        maxChars: Int = MAX_BATCH_CHARS
+    ): List<IntRange> {
+        if (paragraphs.isEmpty() || batchSize <= 0 || maxChars <= 0) return emptyList()
+        val out = ArrayList<IntRange>()
+        var from = 0
+        while (from < paragraphs.size) {
+            var to = from
+            var chars = 0
+            while (to < paragraphs.size && to - from < batchSize) {
+                val next = paragraphs[to].length
+                if (to > from && chars + next > maxChars) break
+                chars += next
+                to++
+            }
+            out.add(from until to)
+            from = to
         }
         return out
     }

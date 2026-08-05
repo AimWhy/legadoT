@@ -101,6 +101,7 @@ class HttpReadAloudService : BaseReadAloudService(),
     private val ttsCache = HashMap<Long, HttpTTS?>()
     @Volatile
     private var playbackSessionId: Long = 0L
+    private var rebuildAfterCurrentSegment = false
 
     override fun onCreate() {
         super.onCreate()
@@ -143,6 +144,16 @@ class HttpReadAloudService : BaseReadAloudService(),
         exoPlayer.stop()
         exoPlayer.clearMediaItems()
         playIndexJob?.cancel()
+    }
+
+    override fun onRoleCastChanged() {
+        if (exoPlayer.currentMediaItem == null) {
+            resetSpeechScript()
+            ttsCache.clear()
+            if (!pause) play()
+        } else {
+            rebuildAfterCurrentSegment = true
+        }
     }
 
     private fun updateNextPos() {
@@ -665,6 +676,11 @@ class HttpReadAloudService : BaseReadAloudService(),
                     return
                 }
                 playErrorNo = 0
+                if (rebuildAfterCurrentSegment) {
+                    rebuildAfterCurrentSegment = false
+                    resetSpeechScript()
+                    ttsCache.clear()
+                }
                 updateNextPos()
                 exoPlayer.stop()
                 exoPlayer.clearMediaItems()
@@ -691,6 +707,14 @@ class HttpReadAloudService : BaseReadAloudService(),
             playErrorNo = 0
         }
         trimPlayedMediaItems()
+        if (rebuildAfterCurrentSegment && reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
+            rebuildAfterCurrentSegment = false
+            updateNextPos()
+            resetSpeechScript()
+            ttsCache.clear()
+            if (!pause && nowSpeak < contentList.size) play()
+            return
+        }
         if (mediaItem?.mediaId?.endsWith(":-1") == true) {
             return
         }

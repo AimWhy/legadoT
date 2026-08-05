@@ -20,7 +20,7 @@ class DatabaseV88WiringTest {
     @Test
     fun `database is at version 88 with an auto migration from 87`() {
         val src = readSource("data/AppDatabase.kt")
-        assertTrue("版本号未升到 88", src.contains("version = 88"))
+        assertTrue("版本号未升到 90", src.contains("version = 90"))
         assertTrue("缺 87→88 自动迁移", src.contains("AutoMigration(from = 87, to = 88)"))
     }
 
@@ -29,11 +29,13 @@ class DatabaseV88WiringTest {
         val src = readSource("data/AppDatabase.kt")
         assertTrue("RoleCast 未注册进 entities", src.contains("RoleCast::class"))
         assertTrue("ChapterRoleScript 未注册进 entities", src.contains("ChapterRoleScript::class"))
+        assertTrue("RoleAlias 未注册进 entities", src.contains("RoleAlias::class"))
         assertTrue("缺 roleCastDao", src.contains("abstract val roleCastDao: RoleCastDao"))
         assertTrue(
             "缺 chapterRoleScriptDao",
             src.contains("abstract val chapterRoleScriptDao: ChapterRoleScriptDao")
         )
+        assertTrue("缺 roleAliasDao", src.contains("abstract val roleAliasDao: RoleAliasDao"))
     }
 
     @Test

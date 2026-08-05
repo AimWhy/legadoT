@@ -60,7 +60,9 @@ object BackupConfig {
         PreferKey.bitmapCacheSize,
         PreferKey.webServiceWakeLock,
         PreferKey.readAloudWakeLock,
-        PreferKey.audioPlayWakeLock
+        PreferKey.audioPlayWakeLock,
+        PreferKey.aiApiKey,
+        PreferKey.aiRoleConsent
     )
 
     //阅读配置

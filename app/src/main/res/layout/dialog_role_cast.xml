@@ -32,6 +32,15 @@
             android:overScrollMode="ifContentScrolls" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_reanalyze"
+            style="@style/Widget.App.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/space_l"
+            android:layout_marginBottom="@dimen/space_s"
+            android:text="@string/role_reanalyze_chapter" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_reset"
             style="@style/Widget.App.Button.Outlined"
             android:layout_width="match_parent"

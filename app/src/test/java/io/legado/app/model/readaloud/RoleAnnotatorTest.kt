@@ -16,6 +16,16 @@ class RoleAnnotatorTest {
     }
 
     @Test
+    fun `annotation key tracks model prompt protocol and content`() {
+        val paragraphs = listOf("第一段", "第二段")
+        val key = RoleAnnotator.annotationKey(paragraphs, "model-a", "prompt-a")
+        assertEquals(key, RoleAnnotator.annotationKey(paragraphs, "model-a", "prompt-a"))
+        assertNotEquals(key, RoleAnnotator.annotationKey(paragraphs, "model-b", "prompt-a"))
+        assertNotEquals(key, RoleAnnotator.annotationKey(paragraphs, "model-a", "prompt-b"))
+        assertNotEquals(key, RoleAnnotator.annotationKey(listOf("第一段"), "model-a", "prompt-a"))
+    }
+
+    @Test
     fun `roles are recovered from segments without the narrator`() {
         val segments = listOf(
             Segment(0, 0, 2, RoleCast.NARRATOR),

@@ -9,12 +9,14 @@ import okhttp3.Response
 import okio.Buffer
 import java.io.IOException
 
+object NoHttpLog
+
 object HttpLogInterceptor : Interceptor {
 
     private const val MAX_BODY_SIZE = 4096L
 
     override fun intercept(chain: Interceptor.Chain): Response {
-        if (!AppConfig.recordHttpLog) {
+        if (!AppConfig.recordHttpLog || chain.request().tag(NoHttpLog::class.java) != null) {
             return chain.proceed(chain.request())
         }
 
@@ -33,7 +35,7 @@ object HttpLogInterceptor : Interceptor {
         }
 
         // 格式化请求头
-        val requestHeaders = request.headers.joinToString("\n") { "${it.first}: ${it.second}" }
+        val requestHeaders = formatHeaders(request.headers)
 
         var error: String? = null
         val response: Response
@@ -70,7 +72,7 @@ object HttpLogInterceptor : Interceptor {
             ""
         }
 
-        val responseHeaders = response.headers.joinToString("\n") { "${it.first}: ${it.second}" }
+        val responseHeaders = formatHeaders(response.headers)
 
         val record = HttpRecord(
             id = recordId,
@@ -89,5 +91,16 @@ object HttpLogInterceptor : Interceptor {
         AppLog.put(record.summary, httpId = recordId, error = response.code >= 400)
 
         return response
+    }
+
+    internal fun formatHeaders(headers: okhttp3.Headers): String = headers.joinToString("\n") {
+        val value = if (it.first.equals("Authorization", true) ||
+            it.first.equals("Proxy-Authorization", true)
+        ) {
+            "[REDACTED]"
+        } else {
+            it.second
+        }
+        "${it.first}: $value"
     }
 }

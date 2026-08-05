@@ -1,6 +1,7 @@
 package io.legado.app.model.readaloud
 
 import io.legado.app.data.appDb
+import io.legado.app.data.entities.RoleAlias
 import io.legado.app.data.entities.RoleCast
 import io.legado.app.data.entities.TtsVoice
 import io.legado.app.model.ReadAloud
@@ -8,12 +9,16 @@ import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.withContext
 
 /** 一个引擎下的一个音色。音色 id 只在引擎内唯一, 跨引擎的身份靠 [key] */
-data class VoiceRef(val engineId: Long, val voice: TtsVoice) {
+data class VoiceRef(
+    val engineId: Long,
+    val voice: TtsVoice?,
+    val engineName: String = ""
+) {
 
-    val key: String get() = key(engineId, voice.id)
+    val key: String get() = key(engineId, voice?.id)
 
     companion object {
-        fun key(engineId: Long, voiceId: String): String = "$engineId:$voiceId"
+        fun key(engineId: Long, voiceId: String?): String = "$engineId:${voiceId.orEmpty()}"
     }
 }
 
@@ -21,6 +26,48 @@ data class VoiceRef(val engineId: Long, val voice: TtsVoice) {
  * 角色到音色的分配。自动打底, 已落库的条目一律保留。
  */
 object RoleCastManager {
+
+    internal fun canonicalize(script: RoleScript, aliases: Map<String, String>): RoleScript {
+        if (aliases.isEmpty()) return script
+        val segments = script.segments.map { segment ->
+            segment.copy(role = canonicalName(segment.role, aliases))
+        }
+        val profiles = LinkedHashMap<String, RoleProfile>()
+        script.roles.forEach { profile ->
+            val canonical = canonicalName(profile.name, aliases)
+            val mapped = profile.copy(name = canonical)
+            if (profiles[canonical] == null || profile.name == canonical) {
+                profiles[canonical] = mapped
+            }
+        }
+        return RoleScript(segments, RoleAnnotator.rolesIn(segments, profiles.values.toList()))
+    }
+
+    private fun canonicalName(name: String, aliases: Map<String, String>): String {
+        var current = name
+        val visited = HashSet<String>()
+        while (visited.add(current)) {
+            current = aliases[current] ?: return current
+        }
+        return name
+    }
+
+    suspend fun canonicalize(bookUrl: String, script: RoleScript): RoleScript = withContext(IO) {
+        val aliases = appDb.roleAliasDao.getByBook(bookUrl)
+            .associate { it.aliasName to it.canonicalName }
+        canonicalize(script, aliases)
+    }
+
+    suspend fun mergeRole(bookUrl: String, aliasName: String, canonicalName: String) = withContext(IO) {
+        val alias = aliasName.trim()
+        val existingAliases = appDb.roleAliasDao.getByBook(bookUrl)
+            .associate { it.aliasName to it.canonicalName }
+        val canonical = canonicalName(canonicalName.trim(), existingAliases)
+        require(alias.isNotBlank() && canonical.isNotBlank() && alias != canonical)
+        appDb.roleAliasDao.redirect(bookUrl, alias, canonical)
+        appDb.roleAliasDao.insert(RoleAlias(bookUrl, alias, canonical))
+        appDb.roleCastDao.delete(bookUrl, alias)
+    }
 
     /**
      * @param usage 音色 [VoiceRef.key] 到本书已占用次数, 用于避免多个角色撞同一个声音
@@ -32,8 +79,12 @@ object RoleCastManager {
         usage: Map<String, Int>
     ): VoiceRef? {
         if (candidates.isEmpty()) return null
-        val byGender = narrow(candidates, profile.gender, TtsVoice.GENDER_UNKNOWN) { it.voice.gender }
-        val byAge = narrow(byGender, profile.age, TtsVoice.AGE_UNKNOWN) { it.voice.age }
+        val byGender = narrow(candidates, profile.gender, TtsVoice.GENDER_UNKNOWN) {
+            it.voice?.gender ?: TtsVoice.GENDER_UNKNOWN
+        }
+        val byAge = narrow(byGender, profile.age, TtsVoice.AGE_UNKNOWN) {
+            it.voice?.age ?: TtsVoice.AGE_UNKNOWN
+        }
         return byAge.minWithOrNull(
             compareBy({ usage[it.key] ?: 0 }, { it.key })
         )
@@ -70,15 +121,23 @@ object RoleCastManager {
         return hit.ifEmpty { candidates }
     }
 
-    /** 所有引擎的音色展平成一个候选池; voices 为空的引擎不贡献条目 */
+    /** All engines contribute candidates; an engine without a list contributes its default voice. */
     suspend fun availableVoices(): List<VoiceRef> = withContext(IO) {
         appDb.httpTTSDao.all.flatMap { tts ->
-            TtsVoice.parseList(tts.voices).map { VoiceRef(tts.id, it) }
+            val voices = TtsVoice.parseList(tts.voices)
+            if (voices.isEmpty()) {
+                listOf(VoiceRef(tts.id, null, tts.name))
+            } else {
+                voices.map { VoiceRef(tts.id, it, tts.name) }
+            }
         }
     }
 
     suspend fun castOf(bookUrl: String): Map<String, RoleCast> = withContext(IO) {
-        appDb.roleCastDao.getByBook(bookUrl).associateBy { it.roleName }
+        val engines = appDb.httpTTSDao.all.associateBy { it.id }
+        val currentEngineId = ReadAloud.ttsEngine?.toLongOrNull() ?: 0L
+        appDb.roleCastDao.getByBook(bookUrl)
+            .associate { it.roleName to playableCast(it, engines, currentEngineId) }
     }
 
     /**
@@ -86,17 +145,43 @@ object RoleCastManager {
      * 与 [RoleCast.ttsEngineId] 默认值一致, 取流侧解析不到该 id 会退回当前引擎
      */
     suspend fun narratorCast(bookUrl: String): RoleCast = withContext(IO) {
-        appDb.roleCastDao.get(bookUrl, RoleCast.NARRATOR) ?: RoleCast(
+        val currentEngineId = ReadAloud.ttsEngine?.toLongOrNull() ?: 0L
+        val existing = appDb.roleCastDao.get(bookUrl, RoleCast.NARRATOR)
+        if (existing != null) {
+            if (!existing.isManual && existing.ttsEngineId != currentEngineId) {
+                existing.ttsEngineId = currentEngineId
+                existing.voice = null
+                appDb.roleCastDao.insert(existing)
+            }
+            val engines = appDb.httpTTSDao.all.associateBy { it.id }
+            return@withContext playableCast(existing, engines, currentEngineId)
+        }
+        RoleCast(
             bookUrl = bookUrl,
             roleName = RoleCast.NARRATOR,
-            ttsEngineId = ReadAloud.ttsEngine?.toLongOrNull() ?: 0L
-        )
+            ttsEngineId = currentEngineId
+        ).also { appDb.roleCastDao.insert(it) }
+    }
+
+    /** Invalid persisted bindings remain untouched for UI repair, while playback gets a safe fallback. */
+    private fun playableCast(
+        cast: RoleCast,
+        engines: Map<Long, io.legado.app.data.entities.HttpTTS>,
+        currentEngineId: Long
+    ): RoleCast {
+        val engine = engines[cast.ttsEngineId]
+            ?: return cast.copy(ttsEngineId = currentEngineId, voice = null)
+        val voice = cast.voice ?: return cast
+        val voiceExists = TtsVoice.parseList(engine.voices).any { it.id == voice }
+        return if (voiceExists) cast else cast.copy(voice = null)
     }
 
     /** 为尚无 casting 的角色自动配音色; 已有记录一律保留, 只把出场章号推到最新 */
     suspend fun ensureCast(bookUrl: String, roles: List<RoleProfile>, chapterIndex: Int) {
         if (roles.isEmpty()) return
-        val existing = castOf(bookUrl)
+        val existing = withContext(IO) {
+            appDb.roleCastDao.getByBook(bookUrl).associateBy { it.roleName }
+        }
         val candidates = availableVoices()
         val narratorEngineId = narratorCast(bookUrl).ttsEngineId
         val usage = HashMap<String, Int>()
@@ -111,10 +196,17 @@ object RoleCastManager {
         roles.forEach { profile ->
             val current = existing[profile.name]
             if (current != null) {
+                var changed = false
                 if (current.lastSeenChapter < chapterIndex) {
                     current.lastSeenChapter = chapterIndex
-                    toWrite.add(current)
+                    changed = true
                 }
+                if (current.gender != profile.gender || current.ageGroup != profile.age) {
+                    current.gender = profile.gender
+                    current.ageGroup = profile.age
+                    changed = true
+                }
+                if (changed) toWrite.add(current)
                 return@forEach
             }
             // 同名角色在一批里只配一次, 与已落库角色被跳过的口径一致

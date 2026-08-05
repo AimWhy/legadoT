@@ -20,4 +20,10 @@ interface RoleCastDao {
 
     @Query("delete from roleCasts where bookUrl = :bookUrl")
     fun deleteByBook(bookUrl: String)
+
+    @Query("delete from roleCasts where bookUrl = :bookUrl and roleName = :roleName")
+    fun delete(bookUrl: String, roleName: String)
+
+    @Query("delete from roleCasts where bookUrl not in (select bookUrl from books)")
+    fun deleteOrphans()
 }

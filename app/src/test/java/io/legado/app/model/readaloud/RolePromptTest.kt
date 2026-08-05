@@ -9,6 +9,18 @@ import org.junit.Test
 class RolePromptTest {
 
     @Test
+    fun `chunks respect an approximate character budget without splitting paragraphs`() {
+        assertEquals(
+            listOf(0..1, 2..2),
+            RolePrompt.chunks(listOf("1234", "5678", "90"), batchSize = 60, maxChars = 8)
+        )
+        assertEquals(
+            listOf(0..0),
+            RolePrompt.chunks(listOf("a very long paragraph"), maxChars = 3)
+        )
+    }
+
+    @Test
     fun `chunks cover every paragraph exactly once`() {
         assertEquals(emptyList<IntRange>(), RolePrompt.chunks(0))
         assertEquals(listOf(0..59), RolePrompt.chunks(60))

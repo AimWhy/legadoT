@@ -264,6 +264,9 @@ class MainViewModel(application: Application) : BaseViewModel(application) {
     private fun deleteNotShelfBook() {
         execute {
             appDb.bookDao.deleteNotShelfBook()
+            appDb.roleCastDao.deleteOrphans()
+            appDb.chapterRoleScriptDao.deleteOrphans()
+            appDb.roleAliasDao.deleteOrphans()
         }
     }
 

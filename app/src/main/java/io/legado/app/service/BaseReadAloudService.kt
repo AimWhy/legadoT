@@ -258,6 +258,9 @@ abstract class BaseReadAloudService : BaseService(),
             val startPos = it.getInt("startPos")
             newReadAloud(play, pageIndex, startPos)
         }
+        observeEvent<String>(EventBus.ROLE_CAST_CHANGED) { bookUrl ->
+            if (ReadBook.book?.bookUrl == bookUrl) onRoleCastChanged()
+        }
         observeSharedPreferences { _, key ->
             when (key) {
                 PreferKey.ignoreAudioFocus,
@@ -454,7 +457,12 @@ abstract class BaseReadAloudService : BaseService(),
         speechScript = SpeechScript.narratorOnly(paragraphs, cast)
         upAnalyzingRoles(AppConfig.multiRoleReadAloud)
         val script = try {
-            buildScriptFor(textChapter?.chapter?.index ?: -1, paragraphs, cast)
+            buildScriptFor(
+                textChapter?.chapter?.index ?: -1,
+                paragraphs,
+                cast,
+                notifyFailure = true
+            )
         } finally {
             upAnalyzingRoles(false)
         }
@@ -476,7 +484,8 @@ abstract class BaseReadAloudService : BaseService(),
     internal suspend fun buildScriptFor(
         chapterIndex: Int,
         paragraphs: List<String>,
-        fallback: RoleCast
+        fallback: RoleCast,
+        notifyFailure: Boolean = false
     ): SpeechScript {
         val narratorOnly = SpeechScript.narratorOnly(paragraphs, fallback)
         val book = ReadBook.book
@@ -485,11 +494,14 @@ abstract class BaseReadAloudService : BaseService(),
         }
         return try {
             val annotated = RoleAnnotator.annotate(book.bookUrl, chapterIndex, paragraphs)
-                ?: return narratorOnly
-            RoleCastManager.ensureCast(book.bookUrl, annotated.roles, chapterIndex)
+                ?: return narratorOnly.also {
+                    if (notifyFailure) toastOnUi(R.string.role_annotation_fallback)
+                }
+            val canonical = RoleCastManager.canonicalize(book.bookUrl, annotated)
+            RoleCastManager.ensureCast(book.bookUrl, canonical.roles, chapterIndex)
             SpeechScript(
                 paragraphs = paragraphs,
-                segments = annotated.segments,
+                segments = canonical.segments,
                 cast = RoleCastManager.castOf(book.bookUrl),
                 fallback = fallback
             )
@@ -498,6 +510,7 @@ abstract class BaseReadAloudService : BaseService(),
         } catch (e: Exception) {
             currentCoroutineContext().ensureActive()
             AppLog.put("角色脚本构建失败\n${e.localizedMessage}", e)
+            if (notifyFailure) toastOnUi(R.string.role_annotation_fallback)
             narratorOnly
         }
     }
@@ -517,9 +530,13 @@ abstract class BaseReadAloudService : BaseService(),
     }
 
     /** 章节或朗读列表变更后, 脚本与 casting 缓存一并作废 */
-    private fun resetSpeechScript() {
+    internal fun resetSpeechScript() {
         speechScript = null
         speechNarratorCast = null
+    }
+
+    internal open fun onRoleCastChanged() {
+        resetSpeechScript()
     }
 
     private fun prevP() {

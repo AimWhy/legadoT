@@ -120,4 +120,20 @@ class TtsVoiceTest {
         assertEquals("a", list[0].id)
         assertEquals("a", list[0].name)
     }
+
+    @Test
+    fun `strict validation rejects duplicate ids and invalid enums`() {
+        assertTrue(TtsVoice.validateList("""[{"id":"a"},{"id":"a"}]""").isFailure)
+        assertTrue(TtsVoice.validateList("""[{"id":"a","gender":"robot"}]""").isFailure)
+        assertTrue(TtsVoice.validateList("""[{"id":"a","age":"ancient"}]""").isFailure)
+    }
+
+    @Test
+    fun `strict validation accepts an empty list and normalized values`() {
+        assertTrue(TtsVoice.validateList(null).isSuccess)
+        assertEquals(
+            listOf(TtsVoice("a", "a", "female", "young")),
+            TtsVoice.validateList("""[{"id":"a","gender":"Female","age":"Young"}]""").getOrThrow()
+        )
+    }
 }

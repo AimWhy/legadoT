@@ -177,6 +177,7 @@ object PreferKey {
     const val streamReadAloudAudio = "streamReadAloudAudio"
     const val aiBaseUrl = "aiBaseUrl"
     const val aiApiKey = "aiApiKey"
+    const val aiRoleConsent = "aiRoleConsent"
     const val aiModel = "aiModel"
     const val aiRolePrompt = "aiRolePrompt"
     const val multiRoleReadAloud = "multiRoleReadAloud"

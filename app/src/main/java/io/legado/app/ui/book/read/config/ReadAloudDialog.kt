@@ -255,6 +255,11 @@ class ReadAloudDialog : BaseDialogFragment(R.layout.dialog_read_aloud),
 
     private fun upEngineName() {
         binding.tvEngineName.text = ReadAloud.getEngineName(requireContext())
+        binding.llRoleCast.visibility = if (StringUtils.isNumeric(ReadAloud.ttsEngine ?: "")) {
+            View.VISIBLE
+        } else {
+            View.GONE
+        }
     }
 
     override fun upSpeakEngineSummary() {
