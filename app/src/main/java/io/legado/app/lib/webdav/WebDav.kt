@@ -2,7 +2,6 @@ package io.legado.app.lib.webdav
 
 import android.annotation.SuppressLint
 import android.net.Uri
-import cn.hutool.core.net.URLDecoder
 import io.legado.app.constant.AppLog
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.http.newCallResponse
@@ -11,6 +10,7 @@ import io.legado.app.help.http.text
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.model.analyzeRule.CustomUrl
 import io.legado.app.utils.NetworkUtils
+import io.legado.app.utils.EncoderUtils
 import io.legado.app.utils.findNS
 import io.legado.app.utils.findNSPrefix
 import io.legado.app.utils.printOnDebug
@@ -188,7 +188,7 @@ open class WebDav(
         for (element in elements) {
             //依然是优化支持 caddy 自建的 WebDav ，其目录后缀都为“/”, 所以删除“/”的判定，不然无法获取该目录项
             val href = element.findNS("href", ns)[0].text()
-            val hrefDecode = URLDecoder.decodeForPath(href, Charsets.UTF_8)
+            val hrefDecode = EncoderUtils.percentDecode(href, Charsets.UTF_8)
             val fileName = hrefDecode.removeSuffix("/").substringAfterLast("/")
             val webDavFile: WebDav
             try {
@@ -198,7 +198,7 @@ open class WebDav(
                 val displayName = element
                     .findNS("displayname", ns)
                     .firstOrNull()?.text()?.takeIf { it.isNotEmpty() }
-                    ?.let { URLDecoder.decodeForPath(it, Charsets.UTF_8) } ?: fileName
+                    ?.let { EncoderUtils.percentDecode(it, Charsets.UTF_8) } ?: fileName
                 val contentType = element
                     .findNS("getcontenttype", ns)
                     .firstOrNull()?.text().orEmpty()

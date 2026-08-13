@@ -61,3 +61,7 @@ _Avoid_: 所有 WebView, 网页登录页, 代码编辑器
 **登录开关**:
 登录界面中表示开启或关闭选择的二态字段；未指定状态时为关闭，其值是否成为已保存凭据由登录动作决定。
 _Avoid_: 切换按钮, 自动保存开关
+
+**原生加密实现**:
+A project-owned compatibility layer for book-source cryptography that delegates cryptographic operations to Android/JDK platform APIs without third-party cryptography dependencies. It preserves the book-source-facing encryption, decryption, digest, HMAC, encoding, and signing contracts rather than any former library inheritance hierarchy.
+_Avoid_: 第三方加密工具类, 自研密码算法

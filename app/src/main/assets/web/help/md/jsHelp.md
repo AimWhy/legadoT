@@ -342,8 +342,7 @@ deleteFile(path: String)
 
 > 规则中可直接使用 `CryptoJS`（如 `CryptoJS.MD5(...)`），也可按下方方法使用 `java.*` 加解密函数。
 
-> 提供在JavaScript环境中快捷调用crypto算法的函数，由[hutool-crypto](https://www.hutool.cn/docs/#/crypto/概述)实现  
-> 由于兼容性问题，hutool-crypto当前版本为5.8.22
+> 提供在 JavaScript 环境中快捷调用加解密算法的函数，底层使用 Android/JDK 原生加密能力。
 
 > 注意：如果输入的参数不是Utf8String 可先调用`java.hexDecodeToByteArray java.base64DecodeToByteArray`转成ByteArray
 

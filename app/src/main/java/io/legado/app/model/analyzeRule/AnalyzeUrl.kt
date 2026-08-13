@@ -4,9 +4,6 @@ import android.annotation.SuppressLint
 import android.util.Base64
 import androidx.annotation.Keep
 import androidx.media3.common.MediaItem
-import cn.hutool.core.codec.PercentCodec
-import cn.hutool.core.net.RFC3986
-import cn.hutool.core.util.HexUtil
 import com.bumptech.glide.load.model.GlideUrl
 import com.script.buildScriptBindings
 import com.script.rhino.RhinoScriptEngine
@@ -318,7 +315,7 @@ class AnalyzeUrl(
             if (NetworkUtils.encodedQuery(params)) {
                 return params
             }
-            return queryEncoder.encode(params, charset)
+            return EncoderUtils.percentEncode(params, charset, querySafeCharacters)
         }
         val len = params.length
         val sb = StringBuilder()
@@ -433,7 +430,7 @@ class AnalyzeUrl(
         useWebView: Boolean = true,
     ): StrResponse {
         if (type != null) {
-            return StrResponse(url, HexUtil.encodeHexStr(getByteArrayAwait()))
+            return StrResponse(url, EncoderUtils.hexEncode(getByteArrayAwait()))
         }
         concurrentRateLimiter.withLimit {
             setCookie()
@@ -721,8 +718,8 @@ class AnalyzeUrl(
     companion object {
         val paramPattern: Pattern = Pattern.compile("\\s*,\\s*(?=\\{)")
         private val pagePattern = Pattern.compile("<(.*?)>")
-        private val queryEncoder =
-            RFC3986.UNRESERVED.orNew(PercentCodec.of("!$%&()*+,/:;=?@[\\]^`{|}"))
+        private const val querySafeCharacters =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~!$%&()*+,/:;=?@[\\]^`{|}"
 
         fun AnalyzeUrl.getMediaItem(): MediaItem {
             setCookie()

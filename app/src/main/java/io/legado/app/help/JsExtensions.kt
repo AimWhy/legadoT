@@ -4,8 +4,6 @@ import android.webkit.WebSettings
 import androidx.annotation.Keep
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
-import cn.hutool.core.codec.Base64
-import cn.hutool.core.util.HexUtil
 import com.script.rhino.rhinoContext
 import com.script.rhino.rhinoContextOrNull
 import io.legado.app.constant.AppConst
@@ -15,6 +13,9 @@ import io.legado.app.constant.AppPattern
 import io.legado.app.data.entities.BaseSource
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.config.AppConfig
+import io.legado.app.help.crypto.base64ToByteArray
+import io.legado.app.help.crypto.hexToByteArray
+import io.legado.app.help.crypto.toHexString
 import io.legado.app.help.http.BackstageWebView
 import io.legado.app.help.http.CookieManager.cookieJarHeader
 import io.legado.app.help.http.CookieStore
@@ -374,7 +375,7 @@ interface JsExtensions : JsEncodeUtils {
         )
         val file = File(path)
         file.createFileReplace()
-        HexUtil.decodeHex(content).let {
+        content.hexToByteArray().let {
             if (it.isNotEmpty()) {
                 file.writeBytes(it)
             }
@@ -492,11 +493,11 @@ interface JsExtensions : JsEncodeUtils {
      * js实现base64解码,不能删
      */
     fun base64Decode(str: String?): String {
-        return Base64.decodeStr(str)
+        return String(str.orEmpty().base64ToByteArray())
     }
 
     fun base64Decode(str: String?, charset: String): String {
-        return Base64.decodeStr(str, charset(charset))
+        return String(str.orEmpty().base64ToByteArray(), charset(charset))
     }
 
     fun base64Decode(str: String, flags: Int): String {
@@ -527,17 +528,17 @@ interface JsExtensions : JsEncodeUtils {
 
     /* HexString 解码为字节数组 */
     fun hexDecodeToByteArray(hex: String): ByteArray? {
-        return HexUtil.decodeHex(hex)
+        return hex.hexToByteArray()
     }
 
     /* hexString 解码为utf8String*/
     fun hexDecodeToString(hex: String): String? {
-        return HexUtil.decodeHexStr(hex)
+        return String(hex.hexToByteArray(), Charsets.UTF_8)
     }
 
     /* utf8 编码为hexString */
     fun hexEncodeToString(utf8: String): String? {
-        return HexUtil.encodeHexStr(utf8)
+        return utf8.toByteArray().toHexString()
     }
 
     /**
@@ -775,7 +776,7 @@ interface JsExtensions : JsEncodeUtils {
         val bytes = if (url.isAbsUrl()) {
             AnalyzeUrl(url, source = getSource(), coroutineContext = context).getByteArray()
         } else {
-            HexUtil.decodeHex(url)
+            url.hexToByteArray()
         }
         val bos = ByteArrayOutputStream()
         ZipInputStream(ByteArrayInputStream(bytes)).use { zis ->
@@ -803,7 +804,7 @@ interface JsExtensions : JsEncodeUtils {
         val bytes = if (url.isAbsUrl()) {
             AnalyzeUrl(url, source = getSource(), coroutineContext = context).getByteArray()
         } else {
-            HexUtil.decodeHex(url)
+            url.hexToByteArray()
         }
 
         return ByteArrayInputStream(bytes).use {
@@ -821,7 +822,7 @@ interface JsExtensions : JsEncodeUtils {
         val bytes = if (url.isAbsUrl()) {
             AnalyzeUrl(url, source = getSource(), coroutineContext = context).getByteArray()
         } else {
-            HexUtil.decodeHex(url)
+            url.hexToByteArray()
         }
 
         return ByteArrayInputStream(bytes).use {

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
-import cn.hutool.core.lang.Validator
 import io.legado.app.constant.AppLog
 import okhttp3.internal.publicsuffix.PublicSuffixDatabase
 import splitties.systemservices.connectivityManager
@@ -275,17 +274,43 @@ object NetworkUtils {
      * @return True if the input parameter is a valid IPv4 address.
      */
     fun isIPv4Address(input: String?): Boolean {
-        return input != null && input.isNotEmpty()
-                && input[0] in '1'..'9'
-                && input.count { it == '.' } == 3
-                && Validator.isIpv4(input)
+        if (input.isNullOrEmpty() || input[0] !in '1'..'9') return false
+        val parts = input.split('.')
+        return parts.size == 4 && parts.all { part ->
+            part.isNotEmpty() && part.all(Char::isDigit) && part.toIntOrNull() in 0..255
+        }
     }
 
     /**
      * Check if valid IPV6 address.
      */
     fun isIPv6Address(input: String?): Boolean {
-        return input != null && input.contains(":") && Validator.isIpv6(input)
+        if (input.isNullOrEmpty() || !input.contains(':') || input.any(Char::isWhitespace)) return false
+        if (input.contains('%') || input.startsWith('[') || input.endsWith(']')) return false
+        if (input.contains('/') || input.indexOf("::") != input.lastIndexOf("::")) return false
+
+        val compressed = input.contains("::")
+        val left = input.substringBefore("::", input).split(':').filter(String::isNotEmpty)
+        val right = if (compressed) input.substringAfter("::").split(':').filter(String::isNotEmpty) else emptyList()
+        val parts = left + right
+        var groups = 0
+        parts.forEachIndexed { index, part ->
+            if (part.contains('.')) {
+                if (index != parts.lastIndex || !isEmbeddedIPv4(part)) return false
+                groups += 2
+            } else {
+                if (part.length !in 1..4 || !part.all(::isDigit16Char)) return false
+                groups++
+            }
+        }
+        return if (compressed) groups < 8 else groups == 8
+    }
+
+    private fun isEmbeddedIPv4(input: String): Boolean {
+        val parts = input.split('.')
+        return parts.size == 4 && parts.all { part ->
+            part.isNotEmpty() && part.all(Char::isDigit) && part.toIntOrNull() in 0..255
+        }
     }
 
     /**

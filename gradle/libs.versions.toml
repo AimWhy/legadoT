@@ -39,10 +39,6 @@ collection = "1.5.0"
 
 zxingLite = "3.3.0"
 
-#不要更新版本
-#noinspection NewerVersionAvailable
-hutool = "5.8.22"
-
 #noinspection NewerVersionAvailable
 protobufJavalite = "4.26.1"
 
@@ -105,8 +101,6 @@ fragment-ktx = { module = "androidx.fragment:fragment-ktx", version.ref = "fragm
 fragment-testing = { module = "androidx.fragment:fragment-testing", version.ref = "fragment" }
 
 androidx-junit = { module = "androidx.test.ext:junit", version = "1.2.1" }
-
-hutool-crypto = { module = "cn.hutool:hutool-crypto", version.ref = "hutool" }
 
 libarchive = { module = "me.zhanghai.android.libarchive:library", version.ref = "libarchive" }
 lifecycle-common-java8 = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "lifecycle" }
