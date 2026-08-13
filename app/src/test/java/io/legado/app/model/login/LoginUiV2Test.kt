@@ -1,5 +1,6 @@
 package io.legado.app.model.login
 
+import io.legado.app.data.entities.rule.RowUi
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -27,17 +28,20 @@ class LoginUiV2Test {
                 {"key":"phone","name":"手机号","type":"text","hint":"11位","value":"138"},
                 {"name":"说明","type":"label"},
                 {"key":"line","name":"线路","type":"select","options":["电信","联通"],"value":"电信"},
+                {"key":"remember","name":"记住登录","type":"toggle","value":"true"},
                 {"name":"发码","type":"button","action":"sendCode","countdown":60}
             ]}"""
         )
-        assertEquals(4, rows!!.size)
+        assertEquals(5, rows!!.size)
         assertEquals("phone", rows[0].key)
         assertEquals("11位", rows[0].hint)
         assertEquals("138", rows[0].value)
         assertEquals("label", rows[1].type)
         assertEquals(listOf("电信", "联通"), rows[2].options)
         assertEquals("电信", rows[2].value)
-        assertEquals(60, rows[3].countdown)
+        assertEquals(RowUi.Type.toggle, rows[3].type)
+        assertEquals("true", rows[3].value)
+        assertEquals(60, rows[4].countdown)
     }
 
     @Test
@@ -80,5 +84,14 @@ class LoginUiV2Test {
         assertEquals("typed", LoginUiV2.resolveFieldValue(null, "typed", "stored"))
         assertEquals("stored", LoginUiV2.resolveFieldValue(null, null, "stored"))
         assertNull(LoginUiV2.resolveFieldValue(null, null, null))
+    }
+
+    @Test
+    fun toggleValuePrecedenceAndDefault() {
+        assertEquals("true", LoginUiV2.resolveToggleValue("true", "false", "false"))
+        assertEquals("false", LoginUiV2.resolveToggleValue("false", "true", "true"))
+        assertEquals("true", LoginUiV2.resolveToggleValue(null, "true", "false"))
+        assertEquals("true", LoginUiV2.resolveToggleValue(null, null, "true"))
+        assertEquals("false", LoginUiV2.resolveToggleValue(null, null, null))
     }
 }

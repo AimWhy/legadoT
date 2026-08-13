@@ -457,7 +457,8 @@ class AnalyzeUrl(
                             javaScript = webJs ?: jsStr,
                             sourceRegex = sourceRegex,
                             headerMap = headerMap,
-                            delayTime = webViewDelayTime
+                            delayTime = webViewDelayTime,
+                            source = source,
                         ).getStrResponse()
                     }
 
@@ -467,7 +468,8 @@ class AnalyzeUrl(
                         javaScript = webJs ?: jsStr,
                         sourceRegex = sourceRegex,
                         headerMap = headerMap,
-                        delayTime = webViewDelayTime
+                        delayTime = webViewDelayTime,
+                        source = source,
                     ).getStrResponse()
                 }
             } else {

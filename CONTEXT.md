@@ -43,3 +43,21 @@ _Avoid_: AI 引擎, 系统 TTS
 **音色候选**:
 An assignable voice identified by an HTTP reading engine and an optional engine-specific voice identifier. A missing voice identifier denotes that engine's default voice.
 _Avoid_: TTS 引擎, 角色画像
+
+## 书源脚本
+
+**全局缓存**:
+所有书源脚本与其打开的网页会话共享的应用级持久化键值空间；键不按书源隔离，因此同名键指向同一份数据。
+_Avoid_: 书源缓存, 会话缓存
+
+**书源网页会话**:
+由书源脚本打开、继承当前书源权限的受信任网页交互环境；页面及其嵌入内容可访问全局缓存、书源数据和当前书源的登录凭据。
+_Avoid_: 沙箱网页, 普通外部网页
+
+**书源内容网页**:
+携带明确当前书源、用于获取或呈现书源内容的网页环境；它可以成为书源网页会话，但网页登录和应用内部网页不属于此类。
+_Avoid_: 所有 WebView, 网页登录页, 代码编辑器
+
+**登录开关**:
+登录界面中表示开启或关闭选择的二态字段；未指定状态时为关闭，其值是否成为已保存凭据由登录动作决定。
+_Avoid_: 切换按钮, 自动保存开关

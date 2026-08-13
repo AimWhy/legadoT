@@ -45,6 +45,7 @@ import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.http.okHttpClient
 import io.legado.app.help.http.text
+import io.legado.app.help.webView.SourceWebBridge
 import io.legado.app.model.analyzeRule.AnalyzeUrl
 import io.legado.app.utils.GSON
 import io.legado.app.utils.applyCompatibilitySettings
@@ -133,7 +134,6 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
     private var originOrientation: Int? = null
     private var jsInjected = false
     private var currentConfig: Config? = null
-    private val basicJsName = "java"
 
     override fun onStart() {
         super.onStart()
@@ -432,7 +432,42 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
     private fun initWebView(url: String, html: String, headerMap: Map<String, String>) {
         currentWebView.webChromeClient = CustomWebChromeClient()
         currentWebView.webViewClient = CustomWebViewClient()
-        currentWebView.addJavascriptInterface(JSInterface(this, source), basicJsName)
+        source?.let { webSource ->
+            SourceWebBridge.install(
+                currentWebView,
+                webSource,
+                activity as? AppCompatActivity,
+                object : SourceWebBridge.Callback {
+                override fun upConfig(config: String) {
+                    kotlin.runCatching { GSON.fromJsonObject<Config>(config).getOrThrow() }
+                        .onSuccess { next ->
+                            currentConfig = next
+                            activity?.runOnUiThread { setConfig(next) }
+                        }
+                        .onFailure { AppLog.put("showBrowser config err", it) }
+                }
+
+                override fun lockOrientation(orientation: String) {
+                    if (!isFullScreen || dialog?.isShowing != true) return
+                    activity?.runOnUiThread {
+                        activity?.requestedOrientation = when (orientation) {
+                            "portrait", "portrait-primary" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                            "portrait-secondary" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                            "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                            "landscape-primary" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                            "landscape-secondary" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                            "any", "unspecified", "unlock" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                        }
+                    }
+                }
+
+                override fun close() {
+                    activity?.runOnUiThread { dismiss() }
+                }
+                }
+            )
+        }
         currentWebView.applyCompatibilitySettings(url, headerMap)
         currentWebView.settings.apply {
             javaScriptEnabled = true
@@ -537,6 +572,7 @@ class BottomWebViewDialog() : BottomSheetDialogFragment(R.layout.dialog_web_view
     override fun onDestroyView() {
         customWebViewCallback?.onCustomViewHidden()
         originOrientation?.let { activity?.requestedOrientation = it }
+        SourceWebBridge.uninstall(currentWebView)
         kotlin.runCatching { currentWebView.destroy() }
         super.onDestroyView()
     }

@@ -37,6 +37,7 @@ import io.legado.app.databinding.ActivityRssReadBinding
 import io.legado.app.help.config.AppConfig
 import android.webkit.CookieManager
 import io.legado.app.help.http.CookieStore
+import io.legado.app.help.webView.SourceWebBridge
 import io.legado.app.lib.dialogs.SelectItem
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.lib.theme.accentColor
@@ -293,6 +294,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     private fun initLiveData() {
         viewModel.contentLiveData.observe(this) { content ->
             viewModel.rssArticle?.let {
+                ensureSourceWebBridge()
                 upJavaScriptEnable()
                 val url = NetworkUtils.getAbsoluteURL(it.origin, it.link)
                 val html = viewModel.clHtml(content)
@@ -307,10 +309,35 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
             }
         }
         viewModel.urlLiveData.observe(this) {
+            ensureSourceWebBridge()
             upJavaScriptEnable()
             binding.webView.applyCompatibilitySettings(it.url, it.headerMap)
             binding.webView.loadUrl(it.url, it.headerMap.toWebViewRequestHeaders())
         }
+    }
+
+    private fun ensureSourceWebBridge() {
+        val source = viewModel.rssSource ?: return
+        SourceWebBridge.install(
+            binding.webView,
+            source,
+            this,
+            object : SourceWebBridge.Callback {
+                override fun lockOrientation(orientation: String) {
+                    requestedOrientation = when (orientation) {
+                        "portrait", "portrait-primary" -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                        "portrait-secondary" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+                        "landscape" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                        "landscape-primary" -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                        "landscape-secondary" -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                        "any", "unspecified", "unlock" -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
+                        else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                    }
+                }
+
+                override fun close() = finish()
+            }
+        )
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -365,6 +392,7 @@ class ReadRssActivity : VMBaseActivity<ActivityRssReadBinding, ReadRssViewModel>
     }
 
     override fun onDestroy() {
+        SourceWebBridge.uninstall(binding.webView)
         super.onDestroy()
         binding.webView.destroy()
     }

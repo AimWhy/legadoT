@@ -184,7 +184,8 @@ interface JsExtensions : JsEncodeUtils {
                 html = html,
                 javaScript = js,
                 headerMap = getSource()?.getHeaderMap(true),
-                tag = getSource()?.getKey()
+                tag = getSource()?.getKey(),
+                source = getSource(),
             ).getStrResponse().body
         }
     }
@@ -203,7 +204,8 @@ interface JsExtensions : JsEncodeUtils {
                 javaScript = js,
                 headerMap = getSource()?.getHeaderMap(true),
                 tag = getSource()?.getKey(),
-                sourceRegex = sourceRegex
+                sourceRegex = sourceRegex,
+                source = getSource(),
             ).getStrResponse().body
         }
     }
@@ -227,7 +229,8 @@ interface JsExtensions : JsEncodeUtils {
                 javaScript = js,
                 headerMap = getSource()?.getHeaderMap(true),
                 tag = getSource()?.getKey(),
-                overrideUrlRegex = overrideUrlRegex
+                overrideUrlRegex = overrideUrlRegex,
+                source = getSource(),
             ).getStrResponse().body
         }
     }

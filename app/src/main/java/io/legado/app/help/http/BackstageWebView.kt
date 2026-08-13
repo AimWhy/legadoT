@@ -15,9 +15,11 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import io.legado.app.constant.AppConst
+import io.legado.app.data.entities.BaseSource
 import io.legado.app.exception.NoStackTraceException
 import io.legado.app.help.config.AppConfig
 import io.legado.app.help.coroutine.Coroutine
+import io.legado.app.help.webView.SourceWebBridge
 import io.legado.app.model.Debug
 import io.legado.app.utils.applyCompatibilitySettings
 import io.legado.app.utils.toWebViewRequestHeaders
@@ -48,6 +50,7 @@ class BackstageWebView(
     private val overrideUrlRegex: String? = null,
     private val javaScript: String? = null,
     private val delayTime: Long = 0,
+    private val source: BaseSource? = null,
 ) {
 
     private val mHandler = Handler(Looper.getMainLooper())
@@ -119,6 +122,7 @@ class BackstageWebView(
         settings.blockNetworkImage = true
         settings.mixedContentMode = WebSettings.MIXED_CONTENT_ALWAYS_ALLOW
         webView.applyCompatibilitySettings(url, headerMap)
+        source?.let { SourceWebBridge.install(webView, it) }
         if (!tag.isNullOrBlank()) {
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
@@ -138,6 +142,7 @@ class BackstageWebView(
     }
 
     private fun destroy() {
+        mWebView?.let { SourceWebBridge.uninstall(it) }
         mWebView?.destroy()
         mWebView = null
     }

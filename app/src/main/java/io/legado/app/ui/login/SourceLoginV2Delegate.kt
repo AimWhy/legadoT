@@ -3,9 +3,11 @@ package io.legado.app.ui.login
 import android.os.CountDownTimer
 import android.text.InputType
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.TextView
 import androidx.core.view.setPadding
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputLayout
 import com.script.rhino.runScriptWithContext
 import io.legado.app.constant.AppLog
@@ -15,6 +17,7 @@ import io.legado.app.databinding.DialogLoginBinding
 import io.legado.app.databinding.ItemFilletTextBinding
 import io.legado.app.databinding.ItemLoginFieldBinding
 import io.legado.app.databinding.ItemLoginLabelBinding
+import io.legado.app.databinding.ItemLoginToggleBinding
 import io.legado.app.lib.dialogs.selector
 import io.legado.app.model.login.LoginUiV2
 import io.legado.app.utils.GSON
@@ -45,6 +48,10 @@ class SourceLoginV2Delegate(
     /** key → 输入行;会话输入保留、错误定位、表单收集都按 key */
     private val fieldViews = linkedMapOf<String, ItemLoginFieldBinding>()
 
+    /** key → 开关行;表单值固定为字符串 true/false */
+    private val toggleViews = linkedMapOf<String, MaterialSwitch>()
+    private val toggleActionViews = hashSetOf<MaterialSwitch>()
+
     /** action 名 → 按钮与其显示名(倒计时寻址与文案恢复) */
     private val buttonViews = hashMapOf<String, TextView>()
     private val buttonLabels = hashMapOf<String, String>()
@@ -61,6 +68,8 @@ class SourceLoginV2Delegate(
     }
 
     fun destroy() {
+        renderJob?.cancel()
+        actionJob?.cancel()
         countdownTimers.values.forEach { it.cancel() }
         countdownTimers.clear()
     }
@@ -95,6 +104,8 @@ class SourceLoginV2Delegate(
     private fun showRenderError() {
         binding.flexbox.removeAllViews()
         fieldViews.clear()
+        toggleViews.clear()
+        toggleActionViews.clear()
         buttonViews.clear()
         ItemLoginLabelBinding.inflate(inflater, binding.root, false).let {
             binding.flexbox.addView(it.root)
@@ -109,6 +120,8 @@ class SourceLoginV2Delegate(
     ) {
         binding.flexbox.removeAllViews()
         fieldViews.clear()
+        toggleViews.clear()
+        toggleActionViews.clear()
         buttonViews.clear()
         buttonLabels.clear()
         rows.forEach { row ->
@@ -117,6 +130,7 @@ class SourceLoginV2Delegate(
                 RowUi.Type.password -> addField(row, sessionInput, stored, password = true)
                 RowUi.Type.label -> addLabel(row)
                 RowUi.Type.select -> addSelect(row, sessionInput, stored)
+                RowUi.Type.toggle -> addToggle(row, sessionInput, stored)
                 RowUi.Type.button -> addButton(row)
             }
         }
@@ -203,11 +217,40 @@ class SourceLoginV2Delegate(
         }
     }
 
+    private fun addToggle(
+        row: RowUi,
+        sessionInput: Map<String, String>,
+        stored: Map<String, String>?,
+    ) {
+        ItemLoginToggleBinding.inflate(inflater, binding.root, false).let {
+            binding.flexbox.addView(it.root)
+            it.toggle.text = row.name
+            val key = row.key
+            it.toggle.isChecked = LoginUiV2.resolveToggleValue(
+                row.value,
+                key?.let(sessionInput::get),
+                key?.let { stored?.get(it) },
+            ) == "true"
+            if (key != null) {
+                toggleViews[key] = it.toggle
+            }
+            row.action?.let { action ->
+                toggleActionViews.add(it.toggle)
+                it.toggle.setOnCheckedChangeListener { _, _ ->
+                    dispatch(action, countdownSec = null, actionView = it.toggle)
+                }
+            }
+        }
+    }
+
     /** 表单 = 全部有 key 行的当前值;必须在主线程调用(读视图) */
     private fun collectForm(): Map<String, String> {
         val form = hashMapOf<String, String>()
         fieldViews.forEach { (key, field) ->
             form[key] = field.editText.text?.toString() ?: ""
+        }
+        toggleViews.forEach { (key, toggle) ->
+            form[key] = toggle.isChecked.toString()
         }
         return form
     }
@@ -227,48 +270,53 @@ class SourceLoginV2Delegate(
         }
     }
 
-    private fun dispatch(action: String, countdownSec: Int?) {
+    private fun dispatch(action: String, countdownSec: Int?, actionView: View? = null) {
         if (actionJob?.isActive == true) return
         if (countdownLeft.getOrDefault(action, 0) > 0) return
         clearErrors()
         val formJson = GSON.toJson(collectForm())
-        val button = buttonViews[action]
-        button?.isEnabled = false
-        button?.alpha = 0.5f
+        val control = actionView ?: buttonViews[action]
+        toggleActionViews.forEach { it.isEnabled = false }
+        control?.isEnabled = false
+        control?.alpha = 0.5f
         actionJob = scope.launch {
-            val result = withContext(IO) {
-                kotlin.runCatching {
-                    runScriptWithContext {
-                        source.evalLoginActionV2(action, stateJson, formJson)
+            try {
+                val result = withContext(IO) {
+                    kotlin.runCatching {
+                        runScriptWithContext {
+                            source.evalLoginActionV2(action, stateJson, formJson)
+                        }
+                    }.onFailure { e ->
+                        ensureActive()
+                        AppLog.put("登录UI v2 动作 $action 出错", e)
+                        fragment.context?.toastOnUi("动作出错\n${e.localizedMessage}")
                     }
-                }.onFailure { e ->
-                    ensureActive()
-                    AppLog.put("登录UI v2 动作 $action 出错", e)
-                    fragment.context?.toastOnUi("动作出错\n${e.localizedMessage}")
                 }
-            }
-            ensureActive()
-            button?.isEnabled = true
-            button?.alpha = 1f
-            if (result.isFailure) return@launch
-            val cmd = LoginUiV2.parseActionResult(result.getOrNull())
-            cmd.unknownKeys.forEach {
-                AppLog.put("登录UI v2 动作 $action 返回未知命令 $it,已忽略")
-            }
-            cmd.error?.let { applyErrors(it) }
-            cmd.loginJson?.let { info ->
-                withContext(IO) { source.putLoginInfo(info) }
-            }
-            if (cmd.error == null && countdownSec != null && countdownSec > 0) {
-                startCountdown(action, countdownSec)
-            }
-            if (cmd.close) {
-                fragment.dismissAllowingStateLoss()
-                return@launch
-            }
-            cmd.stateJson?.let {
-                stateJson = it
-                render()
+                ensureActive()
+                if (result.isFailure) return@launch
+                val cmd = LoginUiV2.parseActionResult(result.getOrNull())
+                cmd.unknownKeys.forEach {
+                    AppLog.put("登录UI v2 动作 $action 返回未知命令 $it,已忽略")
+                }
+                cmd.error?.let { applyErrors(it) }
+                cmd.loginJson?.let { info ->
+                    withContext(IO) { source.putLoginInfo(info) }
+                }
+                if (cmd.error == null && countdownSec != null && countdownSec > 0) {
+                    startCountdown(action, countdownSec)
+                }
+                if (cmd.close) {
+                    fragment.dismissAllowingStateLoss()
+                    return@launch
+                }
+                cmd.stateJson?.let {
+                    stateJson = it
+                    render()
+                }
+            } finally {
+                toggleActionViews.forEach { it.isEnabled = true }
+                control?.isEnabled = true
+                control?.alpha = 1f
             }
         }
     }

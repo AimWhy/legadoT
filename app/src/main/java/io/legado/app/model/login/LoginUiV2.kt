@@ -62,4 +62,9 @@ object LoginUiV2 {
     fun resolveFieldValue(renderValue: String?, sessionInput: String?, stored: String?): String? {
         return renderValue ?: sessionInput ?: stored
     }
+
+    /** 开关仍以字符串跨表单边界传递,缺省及非 true 值均关闭 */
+    fun resolveToggleValue(renderValue: String?, sessionInput: String?, stored: String?): String {
+        return (resolveFieldValue(renderValue, sessionInput, stored) == "true").toString()
+    }
 }
