@@ -8,28 +8,29 @@ class BookInfoIntroCollapseTest {
 
     @Test
     fun `metadata precedes a four line introduction in both orientations`() {
-        val portrait = readProjectFile("src/main/res/layout/item_book_info_header.xml")
+        val header = readProjectFile("src/main/res/layout/item_book_info_header.xml")
+        val portrait = readProjectFile("src/main/res/layout/activity_book_info.xml")
         val landscape = readProjectFile("src/main/res/layout-land/activity_book_info.xml")
 
-        listOf(portrait, landscape).forEach { xml ->
-            val metadata = xml.indexOf("@layout/view_book_info_manage_rows")
-            val divider = xml.indexOf("@+id/v_intro_divider")
-            val intro = xml.indexOf("@+id/tv_intro")
-            val action = xml.indexOf("@+id/tv_intro_expand")
-            val actionElement = xml.substring(xml.lastIndexOf('<', action), xml.indexOf("/>", action))
+        val metadata = header.indexOf("@layout/view_book_info_manage_rows")
+        val divider = header.indexOf("@+id/v_intro_divider")
+        val intro = header.indexOf("@+id/tv_intro")
+        val action = header.indexOf("@+id/tv_intro_expand")
+        val actionElement = header.substring(header.lastIndexOf('<', action), header.indexOf("/>", action))
 
-            assertTrue("metadata must be before the intro divider", metadata in 0..<divider)
-            assertTrue("divider must be before introduction", divider in 0..<intro)
-            assertTrue("introduction must be before its action", intro in 0..<action)
-            assertTrue("intro action must not declare a background", !actionElement.contains("android:background="))
-            assertTrue(xml.contains("android:maxLines=\"4\""))
-            assertTrue(xml.contains("android:ellipsize=\"end\""))
-            assertTrue(actionElement.contains("android:visibility=\"gone\""))
-            // 内联展开:按钮悬浮在折叠文本第 4 行行尾(FrameLayout overlay),渐隐底在代码侧铺设
-            assertTrue(
-                "action overlays the last collapsed line",
-                actionElement.contains("android:layout_gravity=\"bottom|end\"")
-            )
+        assertTrue("metadata must be before the intro divider", metadata in 0..<divider)
+        assertTrue("divider must be before introduction", divider in 0..<intro)
+        assertTrue("introduction must be before its action", intro in 0..<action)
+        assertTrue("intro action must not declare a background", !actionElement.contains("android:background="))
+        assertTrue(header.contains("android:maxLines=\"4\""))
+        assertTrue(header.contains("android:ellipsize=\"end\""))
+        assertTrue(actionElement.contains("android:visibility=\"gone\""))
+        assertTrue(
+            "action overlays the last collapsed line",
+            actionElement.contains("android:layout_gravity=\"bottom|end\"")
+        )
+        listOf(portrait, landscape).forEach { xml ->
+            assertTrue("$xml must use the shared recycler view", xml.contains("@+id/recycler_view"))
         }
 
         val defaultStrings = readProjectFile("src/main/res/values/strings.xml")

@@ -213,11 +213,13 @@ object RhinoScriptEngine {
      * GSON 反射不认识这些内部惰性类型('u'+page 这类拼接产生 ConsString,嵌套在
      * NativeArray/NativeObject 属性里会被反射成 {left,right,length,isFlat} 内部字段),
      * 必须走引擎自身序列化才能拿到值本身而非内部实现细节。
-     * 取不到顶层作用域,或 stringify 执行失败(如循环引用),返回 null 交调用方自行回退。
+     * 取不到顶层作用域返回 null 交调用方自行回退。执行失败时按调用方要求返回 null
+     * 或抛出原始异常。
      */
     fun stringifyScriptable(
         value: Scriptable,
         coroutineContext: CoroutineContext? = null,
+        throwOnFailure: Boolean = false,
     ): String? {
         val topScope = value.parentScope?.let { ScriptableObject.getTopLevelScope(it) }
             ?: return null
@@ -230,6 +232,7 @@ object RhinoScriptEngine {
             val raw = try {
                 NativeJSON.stringify(cx, topScope, value, null, null)
             } catch (e: Exception) {
+                if (throwOnFailure) throw e
                 return null
             }
             return unwrapReturnValue(raw) as? String

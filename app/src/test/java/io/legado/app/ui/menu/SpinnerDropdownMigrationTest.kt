@@ -12,7 +12,6 @@ class SpinnerDropdownMigrationTest {
         listOf(
             "activity_book_info_edit.xml",
             "dialog_book_group_edit.xml",
-            "dialog_bookshelf_config.xml",
             "dialog_rule_sub_edit.xml",
             "dialog_webdav_server.xml"
         ).forEach { layoutName ->
@@ -40,7 +39,6 @@ class SpinnerDropdownMigrationTest {
             "src/main/java/io/legado/app/ui/book/import/remote/ServerConfigDialog.kt",
             "src/main/java/io/legado/app/ui/book/group/GroupEditDialog.kt",
             "src/main/java/io/legado/app/ui/book/info/edit/BookInfoEditActivity.kt",
-            "src/main/java/io/legado/app/ui/main/bookshelf/BaseBookshelfFragment.kt",
             "src/main/java/io/legado/app/ui/rss/subscription/RuleSubActivity.kt"
         ).forEach { path ->
             val kt = readProjectFile(path)

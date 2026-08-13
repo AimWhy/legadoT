@@ -96,7 +96,7 @@ class JsSourceEngine(
 
         /**
          * JS 返回值归一化(spec §2-5):String 原样;null/Undefined→null;
-         * NativeObject/NativeArray 等 Scriptable 改走 JS 引擎自身 JSON.stringify(回退方案,见下);
+         * NativeObject/NativeArray 等 Scriptable 改走 JS 引擎自身 JSON.stringify;
          * 其余包装对象走 GSON——BaseSource.loginUi 先例。
          * [coroutineContext] 可选,转发给 stringifyScriptable 用于在 stringify 执行期间
          * (JS 侧自定义 toJSON/getter 可能耗时)传递协程取消信号。
@@ -108,8 +108,15 @@ class JsSourceEngine(
                 value == null || value is Undefined -> null
                 value is String -> value
                 value is CharSequence -> value.toString()
-                value is Scriptable ->
-                    RhinoScriptEngine.stringifyScriptable(value, coroutineContext) ?: GSON.toJson(value)
+                value is Scriptable -> try {
+                    RhinoScriptEngine.stringifyScriptable(
+                        value,
+                        coroutineContext,
+                        throwOnFailure = true,
+                    ) ?: GSON.toJson(value)
+                } catch (e: Exception) {
+                    throw NoStackTraceException("JS返回值 JSON.stringify 失败: ${e.message}")
+                }
 
                 else -> GSON.toJson(value)
             }

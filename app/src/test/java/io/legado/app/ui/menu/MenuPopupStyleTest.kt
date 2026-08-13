@@ -60,8 +60,7 @@ class MenuPopupStyleTest {
         assertContains(extensionKt, "fun PopupWindow.applyMd3PopupStyle()")
         assertContains(extensionKt, "setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))")
         assertContains(extensionKt, "elevation = 8f.dpToPx()")
-        assertContains(extensionKt, "contentView?.background = ContextCompat.getDrawable")
-        assertContains(extensionKt, "R.drawable.bg_popup_menu")
+        assertContains(extensionKt, "contentView?.let { it.background = it.context.popupBackground }")
 
         listOf(
             "src/main/java/io/legado/app/ui/widget/PopupAction.kt",
@@ -78,7 +77,7 @@ class MenuPopupStyleTest {
             "src/main/java/io/legado/app/ui/widget/text/AutoCompleteTextView.kt"
         )
 
-        assertContains(autoCompleteTextViewKt, "setDropDownBackgroundResource(R.drawable.bg_popup_menu)")
+        assertContains(autoCompleteTextViewKt, "setDropDownBackgroundDrawable(context.popupBackground)")
         assertContains(autoCompleteTextViewKt, "dropDownVerticalOffset = 4.dpToPx()")
         assertContains(autoCompleteTextViewKt, "dropDownHorizontalOffset = 0")
     }
@@ -94,11 +93,10 @@ class MenuPopupStyleTest {
     }
 
     @Test
-    fun `shared popup style preserves existing xml background`() {
+    fun `shared popup style applies runtime theme background`() {
         val extensionKt = readProjectFile("src/main/java/io/legado/app/utils/PopupWindowExtensions.kt")
 
-        assertContains(extensionKt, "if (contentView?.background == null)")
-        assertContains(extensionKt, "contentView?.background = ContextCompat.getDrawable")
+        assertContains(extensionKt, "contentView?.let { it.background = it.context.popupBackground }")
     }
 
     private fun assertContains(text: String, expected: String) {

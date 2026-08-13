@@ -29,8 +29,8 @@ class N5LongtailTest {
     @Test
     fun `motion tokens annotated and chapter adapter offset fixed`() {
         val motion = File("src/main/java/io/legado/app/help/motion/MotionTokens.kt").readText()
-        org.junit.Assert.assertTrue("Spring.attr 应加 @AttrRes", motion.contains("@AttrRes"))
-        org.junit.Assert.assertTrue("Spring.defStyle 应加 @StyleRes", motion.contains("@StyleRes"))
+        org.junit.Assert.assertTrue("Spring.attr 应加 @param:AttrRes", motion.contains("@param:AttrRes"))
+        org.junit.Assert.assertTrue("Spring.defStyle 应加 @param:StyleRes", motion.contains("@param:StyleRes"))
         val toc = File("src/main/java/io/legado/app/ui/book/toc/ChapterListAdapter.kt").readText()
         assertFalse("upDisplayTitles 不应裸用 notifyItemChanged(i, true)",
             toc.contains("notifyItemChanged(i, true)"))

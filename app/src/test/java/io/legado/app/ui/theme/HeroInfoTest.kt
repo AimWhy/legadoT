@@ -88,7 +88,7 @@ class HeroInfoTest {
         assertTrue(!land.contains("ArcView") && !land.contains("#50000000"))
         assertTrue(listOf(
             "@+id/iv_cover", "@+id/tv_name", "@+id/tv_author", "@+id/tool_bar",
-            "@+id/refresh_layout", "@+id/fl_action", "@+id/tv_intro",
+            "@+id/refresh_layout", "@+id/fl_action", "@+id/recycler_view",
         ).all { land.contains(it) })
     }
 
@@ -104,13 +104,10 @@ class HeroInfoTest {
      * portrait 侧已在 toc-listify 批次退役预览容器,改用 RecyclerView 承载完整目录(见下方哨兵)。
      */
     @Test
-    fun `toc preview section sits after intro with shared id across layouts`() {
+    fun `land layout uses the shared full chapter list`() {
         val land = File("src/main/res/layout-land/activity_book_info.xml").readText()
-        assertTrue("land 必须含 ll_toc_preview", land.contains("@+id/ll_toc_preview"))
-        assertTrue(
-            "预览区必须锁定在简介之后(区位锁定)",
-            land.indexOf("@+id/ll_toc_preview") > land.indexOf("@+id/tv_intro")
-        )
+        assertTrue("land 必须使用共享 RecyclerView", land.contains("@+id/recycler_view"))
+        assertTrue("旧横屏预览区应退役", !land.contains("@+id/ll_toc_preview"))
         val activitySrc =
             File("src/main/java/io/legado/app/ui/book/info/BookInfoActivity.kt").readText()
         assertTrue("点章直读必须复用 readFromChapter", activitySrc.contains("readFromChapter"))
@@ -146,6 +143,6 @@ class HeroInfoTest {
         assertTrue(src.contains("tocReversed"))
         assertTrue(src.contains("TocListItem.Chapter"))
         assertTrue("点章直读必须复用 readFromChapter", src.contains("readFromChapter"))
-        assertTrue("land 分治路径不可被顶替", src.contains("upTocPreview"))
+        assertTrue("land 不应保留旧的分治预览路径", !src.contains("upTocPreview"))
     }
 }

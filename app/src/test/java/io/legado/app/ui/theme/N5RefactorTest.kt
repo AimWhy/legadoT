@@ -65,10 +65,9 @@ class N5RefactorTest {
         // C5a:land 与头卡的管理三行块(书源/最新/分组)已抽为共享 include,不再各自逐字重复。
         val landSrc = File("src/main/res/layout-land/activity_book_info.xml").readText()
         val headerSrc = File("src/main/res/layout/item_book_info_header.xml").readText()
-        assertTrue("land 应 include 共享管理行布局",
-            landSrc.contains("layout=\"@layout/view_book_info_manage_rows\""))
         assertTrue("头卡应 include 共享管理行布局",
             headerSrc.contains("layout=\"@layout/view_book_info_manage_rows\""))
+        assertTrue("land 应通过共享 RecyclerView 使用头卡", landSrc.contains("@+id/recycler_view"))
         val shared = File("src/main/res/layout/view_book_info_manage_rows.xml").readText()
         // id 全部保留,BookInfoActivity 才能继续 binding 访问
         listOf("tv_origin", "tv_change_source", "tv_lasted", "tv_group", "tv_change_group").forEach {
