@@ -51,11 +51,10 @@ class BookshelfFragment1() : BaseBookshelfFragment(R.layout.fragment_bookshelf1)
     override val books: List<Book>
         get() = findBooksFragment(groupId)?.getBooks() ?: emptyList()
 
-    /**
-     * FragmentStateAdapter 固定用 "f" + itemId 建 tag,此处 itemId 即 groupId
-     */
+    /** FragmentStateAdapter 固定用 "f" + itemId 建 tag。 */
     private fun findBooksFragment(groupId: Long): BooksFragment? {
-        return childFragmentManager.findFragmentByTag("f$groupId") as? BooksFragment
+        val itemId = groupId + GROUP_ITEM_ID_OFFSET
+        return childFragmentManager.findFragmentByTag("f$itemId") as? BooksFragment
     }
 
     override fun onFragmentCreated(view: View, savedInstanceState: Bundle?) {

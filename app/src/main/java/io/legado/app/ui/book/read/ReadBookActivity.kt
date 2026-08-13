@@ -1728,7 +1728,8 @@ class ReadBookActivity : BaseReadBookActivity(),
     }
 
     override fun onReviewClick(paragraphNum: Int, count: Int) {
-        if (paragraphNum <= 0) return
+        // -1 identifies the chapter title; 0 is the only invalid paragraph id.
+        if (paragraphNum == 0) return
         if (count <= 0) {
             toastOnUi("暂无段评")
             return
