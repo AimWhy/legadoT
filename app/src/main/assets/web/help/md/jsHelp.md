@@ -799,9 +799,12 @@ function loginAction(action, state, form) {
 | label    | `name`                                        | 只读提示文字                                                               |
 | select   | `key`、`name`、`options`（字符串数组）        | 点击弹单选框，值为选中的选项字符串                                         |
 | button   | `name`、`action` 必填，可选 `countdown`（秒） | 点击派发 action；倒计时在动作返回无 `error` 时启动并禁用按钮，跨重渲染存活 |
+| toggle   | `key`、`name` 必填，可选 `value`、`action`    | 开关；值与 `value` 均为字符串 `"true"`/`"false"`（非布尔），缺省 `"false"`；有 `action` 时切换即派发，无 `key` 不进表单 |
 
 - **表单与回填**：有 `key` 的行进表单，`form` = `{key: 当前值}`。回填优先级：行的 `value` >
   本次弹窗已输入 > 已存登录信息同 key 值；`value: ""` 强制清空。
+- **toggle 特别说明**：值与 `value` 都是字符串 `"true"`/`"false"`，比较用 `form.xxx === "true"`，
+  `=== true` 恒假；缺省 `"false"`；不写 `key` 只显示不进表单；不自动持久化，仍由 `login` 命令决定。
 - **命令对象**（只执行下表四键，其余键忽略；返回空 = 纯副作用动作；抛异常 toast 提示并记日志）：
 
 | 键                       | 行为                                                                           |
