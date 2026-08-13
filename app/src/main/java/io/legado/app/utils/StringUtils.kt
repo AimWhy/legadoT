@@ -3,6 +3,7 @@ package io.legado.app.utils
 import android.annotation.SuppressLint
 import android.text.TextUtils.isEmpty
 import android.util.Base64
+import org.apache.commons.lang3.StringUtils as CommonsStringUtils
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -290,11 +291,7 @@ object StringUtils {
      * 重复字符串
      */
     fun repeat(str: String, n: Int): String {
-        val stringBuilder = StringBuilder()
-        for (i in 0 until n) {
-            stringBuilder.append(str)
-        }
-        return stringBuilder.toString()
+        return CommonsStringUtils.repeat(str, n)
     }
 
     /**

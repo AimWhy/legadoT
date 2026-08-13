@@ -3,6 +3,8 @@ package io.legado.app.utils
 import android.os.Environment
 import android.webkit.MimeTypeMap
 import androidx.annotation.IntDef
+import org.apache.commons.io.IOUtils
+import org.apache.commons.io.FileUtils as CommonsFileUtils
 import splitties.init.appCtx
 import java.io.*
 import java.nio.charset.Charset
@@ -27,7 +29,8 @@ object FileUtils {
         val file = File(filePath)
         //如果文件夹不存在，就创建它
         if (!file.exists()) {
-            file.mkdirs()
+            runCatching { CommonsFileUtils.forceMkdir(file) }
+                .onFailure { it.printOnDebug() }
         }
         return file
     }
@@ -130,14 +133,7 @@ object FileUtils {
     }
 
     fun closeSilently(c: Closeable?) {
-        if (c == null) {
-            return
-        }
-        try {
-            c.close()
-        } catch (ignored: IOException) {
-        }
-
+        IOUtils.closeQuietly(c)
     }
 
     /**
@@ -362,19 +358,9 @@ object FileUtils {
     fun copy(src: File, tar: File): Boolean {
         try {
             if (src.isFile) {
-                val inputStream = FileInputStream(src)
-                val outputStream = FileOutputStream(tar)
-                inputStream.use {
-                    outputStream.use {
-                        inputStream.copyTo(outputStream)
-                        outputStream.flush()
-                    }
-                }
+                CommonsFileUtils.copyFile(src, tar, false)
             } else if (src.isDirectory) {
-                tar.mkdirs()
-                src.listFiles()?.forEach { file ->
-                    copy(file.absoluteFile, File(tar.absoluteFile, file.name))
-                }
+                CommonsFileUtils.copyDirectory(src, tar, false)
             }
             return true
         } catch (e: Exception) {
@@ -431,26 +417,10 @@ object FileUtils {
      * 读取文件内容, 失败将返回空串
      */
     fun readBytes(filepath: String): ByteArray? {
-        var fis: FileInputStream? = null
         try {
-            fis = FileInputStream(filepath)
-            val outputStream = ByteArrayOutputStream()
-            val buffer = ByteArray(1024)
-            while (true) {
-                val len = fis.read(buffer, 0, buffer.size)
-                if (len == -1) {
-                    break
-                } else {
-                    outputStream.write(buffer, 0, len)
-                }
-            }
-            val data = outputStream.toByteArray()
-            outputStream.close()
-            return data
+            return CommonsFileUtils.readFileToByteArray(File(filepath))
         } catch (e: IOException) {
             return null
-        } finally {
-            closeSilently(fis)
         }
     }
 
@@ -472,19 +442,11 @@ object FileUtils {
      */
     fun writeBytes(filepath: String, data: ByteArray): Boolean {
         val file = File(filepath)
-        var fos: FileOutputStream? = null
         return try {
-            if (!file.exists()) {
-                file.parentFile?.mkdirs()
-                file.createNewFile()
-            }
-            fos = FileOutputStream(filepath)
-            fos.write(data)
+            CommonsFileUtils.writeByteArrayToFile(file, data)
             true
         } catch (e: IOException) {
             false
-        } finally {
-            closeSilently(fos)
         }
     }
 
@@ -501,16 +463,7 @@ object FileUtils {
      */
     fun writeInputStream(file: File, data: InputStream): Boolean {
         return try {
-            if (!file.exists()) {
-                file.parentFile?.mkdirs()
-                file.createNewFile()
-            }
-            data.use {
-                FileOutputStream(file).use { fos ->
-                    data.copyTo(fos)
-                    fos.flush()
-                }
-            }
+            CommonsFileUtils.copyInputStreamToFile(data, file)
             true
         } catch (e: IOException) {
             false
