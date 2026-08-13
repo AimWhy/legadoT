@@ -45,6 +45,9 @@ class SourceLoginV2Delegate(
     private var renderJob: Job? = null
     private var actionJob: Job? = null
 
+    /** 仅首次渲染显示底部加载动画,避免每次按钮重渲染都闪一下导致弹窗尺寸抖动 */
+    private var firstRender = true
+
     /** key → 输入行;会话输入保留、错误定位、表单收集都按 key */
     private val fieldViews = linkedMapOf<String, ItemLoginFieldBinding>()
 
@@ -77,7 +80,9 @@ class SourceLoginV2Delegate(
     private fun render() {
         renderJob?.cancel()
         renderJob = scope.launch {
-            binding.rotateLoading.visible()
+            val showLoading = firstRender
+            firstRender = false
+            if (showLoading) binding.rotateLoading.visible()
             val sessionInput = collectForm()
             val result = withContext(IO) {
                 kotlin.runCatching {
@@ -91,7 +96,7 @@ class SourceLoginV2Delegate(
                 }.getOrNull()
             }
             ensureActive()
-            binding.rotateLoading.gone()
+            if (showLoading) binding.rotateLoading.gone()
             val rows = result?.first
             if (rows == null) {
                 showRenderError()
