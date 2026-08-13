@@ -6,7 +6,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.withContext
 import org.htmlunit.corejs.javascript.Context
 import org.htmlunit.corejs.javascript.ContinuationPending
-import org.htmlunit.corejs.javascript.JavaScriptException
 import org.htmlunit.corejs.javascript.RhinoException
 import org.htmlunit.corejs.javascript.Script
 import org.htmlunit.corejs.javascript.Undefined
@@ -15,7 +14,9 @@ import java.io.IOException
 import kotlin.coroutines.CoroutineContext
 
 internal class RhinoCompiledScript(
-    private val script: Script
+    private val script: Script,
+    private val source: String,
+    private val sourceName: String,
 ) : CompiledScript() {
 
     override fun eval(scope: VarScope, coroutineContext: CoroutineContext?): Any? {
@@ -32,15 +33,7 @@ internal class RhinoCompiledScript(
             val ret = script.exec(cx, scope, Undefined.SCRIPTABLE_UNDEFINED)
             result = RhinoScriptEngine.unwrapReturnValue(ret)
         } catch (re: RhinoException) {
-            val line = if (re.lineNumber() == 0) -1 else re.lineNumber()
-            val msg: String = if (re is JavaScriptException) {
-                re.value.toString()
-            } else {
-                re.toString()
-            }
-            val se = ScriptException(msg, re.sourceName(), line)
-            se.initCause(re)
-            throw se
+            throw RhinoScriptEngine.createScriptException(re, source, sourceName)
         } finally {
             cx.coroutineContext = previousCoroutineContext
             cx.allowScriptRun = false
@@ -77,15 +70,7 @@ internal class RhinoCompiledScript(
                     }
                 }
             } catch (re: RhinoException) {
-                val line = if (re.lineNumber() == 0) -1 else re.lineNumber()
-                val msg: String = if (re is JavaScriptException) {
-                    re.value.toString()
-                } else {
-                    re.toString()
-                }
-                val se = ScriptException(msg, re.sourceName(), line)
-                se.initCause(re)
-                throw se
+                throw RhinoScriptEngine.createScriptException(re, source, sourceName)
             } catch (var14: IOException) {
                 throw ScriptException(var14)
             } finally {

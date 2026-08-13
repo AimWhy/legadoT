@@ -1,6 +1,7 @@
 package io.legado.app
 
 import com.script.ScriptBindings
+import com.script.ScriptException
 import com.script.rhino.RhinoScriptEngine
 import io.legado.app.data.entities.BookChapter
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +81,28 @@ class JsTest {
     fun testReturnNull() {
         val result = RhinoScriptEngine.eval("null")
         Assert.assertEquals(null, result)
+    }
+
+    @Test
+    fun compiledScriptErrorShowsNestedFailureSource() {
+        val source = """
+            function inner() {
+                var value = null
+                return value.missing()
+            }
+            function outer() {
+                return inner()
+            }
+        """.trimIndent()
+        val scope = RhinoScriptEngine.getRuntimeScope(ScriptBindings())
+        RhinoScriptEngine.compile(source).eval(scope)
+
+        val error = Assert.assertThrows(ScriptException::class.java) {
+            RhinoScriptEngine.compile("outer()").eval(scope)
+        }
+
+        Assert.assertTrue(error.message, error.message.contains("return value.missing()"))
+        Assert.assertEquals(3, error.lineNumber)
     }
 
     @Test

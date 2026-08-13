@@ -1,5 +1,6 @@
 package com.script.rhino
 
+import androidx.collection.LruCache
 import com.script.CompiledScript
 import com.script.ScriptBindings
 import com.script.ScriptException
@@ -23,6 +24,7 @@ import org.htmlunit.corejs.javascript.Wrapper
 import java.io.IOException
 import java.io.Reader
 import java.io.StringReader
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
 
 /**
@@ -32,7 +34,8 @@ import kotlin.coroutines.CoroutineContext
  */
 object RhinoScriptEngine {
 
-    private const val SOURCE_NAME = "<Unknown source>"
+    private val sourceId = AtomicLong()
+    private val sourceCache = LruCache<String, String>(256)
 
     fun eval(js: String, bindingsConfig: ScriptBindings.() -> Unit = {}): Any? {
         val bindings = ScriptBindings()
@@ -60,6 +63,7 @@ object RhinoScriptEngine {
      */
     @Throws(ScriptException::class)
     private fun evalWithSource(js: String, scope: VarScope, coroutineContext: CoroutineContext?): Any? {
+        val sourceName = registerSource(js)
         val cx = Context.enter() as RhinoContext
         val previousCoroutineContext = cx.coroutineContext
         if (coroutineContext != null && coroutineContext[Job] != null) {
@@ -70,19 +74,9 @@ object RhinoScriptEngine {
         val ret: Any?
         try {
             cx.checkRecursive()
-            ret = cx.evaluateString(scope, js, SOURCE_NAME, 1, null)
+            ret = cx.evaluateString(scope, js, sourceName, 1, null)
         } catch (re: RhinoException) {
-            val line = if (re.lineNumber() == 0) -1 else re.lineNumber()
-            val baseMsg: String = if (re is JavaScriptException) {
-                re.value.toString()
-            } else {
-                re.toString()
-            }
-            // 提取出错行和上下文
-            val enhancedMsg = buildEnhancedErrorMessage(baseMsg, js, line, re.columnNumber())
-            val se = ScriptException(enhancedMsg, re.sourceName(), line)
-            se.initCause(re)
-            throw se
+            throw createScriptException(re, js, sourceName)
         } catch (var14: IOException) {
             throw ScriptException(var14)
         } finally {
@@ -114,6 +108,7 @@ object RhinoScriptEngine {
     suspend fun evalSuspend(reader: Reader, scope: VarScope): Any? {
         // 先读取全部内容以便在异常时显示源码上下文
         val source = reader.readText()
+        val sourceName = registerSource(source)
         val cx = Context.enter() as RhinoContext
         Context.exit()
         var ret: Any?
@@ -122,7 +117,7 @@ object RhinoScriptEngine {
             cx.recursiveCount++
             try {
                 cx.checkRecursive()
-                val script = cx.compileString(source, SOURCE_NAME, 1, null)
+                val script = cx.compileString(source, sourceName, 1, null)
                 try {
                     ret = cx.executeScriptWithContinuations(script, scope)
                 } catch (e: ContinuationPending) {
@@ -141,16 +136,7 @@ object RhinoScriptEngine {
                     }
                 }
             } catch (re: RhinoException) {
-                val line = if (re.lineNumber() == 0) -1 else re.lineNumber()
-                val baseMsg: String = if (re is JavaScriptException) {
-                    re.value.toString()
-                } else {
-                    re.toString()
-                }
-                val enhancedMsg = buildEnhancedErrorMessage(baseMsg, source, line, re.columnNumber())
-                val se = ScriptException(enhancedMsg, re.sourceName(), line)
-                se.initCause(re)
-                throw se
+                throw createScriptException(re, source, sourceName)
             } catch (var14: IOException) {
                 throw ScriptException(var14)
             } finally {
@@ -184,17 +170,54 @@ object RhinoScriptEngine {
 
     @Throws(ScriptException::class)
     fun compile(script: Reader): CompiledScript {
+        val source = try {
+            script.readText()
+        } catch (e: IOException) {
+            throw ScriptException(e)
+        }
+        val sourceName = registerSource(source)
         val cx = Context.enter()
         val ret: RhinoCompiledScript
         try {
-            val scr = cx.compileReader(script, SOURCE_NAME, 1, null)
-            ret = RhinoCompiledScript(scr)
+            val scr = cx.compileString(source, sourceName, 1, null)
+            ret = RhinoCompiledScript(scr, source, sourceName)
+        } catch (re: RhinoException) {
+            throw createScriptException(re, source, sourceName)
         } catch (var9: Exception) {
             throw ScriptException(var9)
         } finally {
             Context.exit()
         }
         return ret
+    }
+
+    private fun registerSource(source: String): String {
+        val sourceName = "<script-${sourceId.incrementAndGet()}>"
+        sourceCache.put(sourceName, source)
+        return sourceName
+    }
+
+    internal fun createScriptException(
+        exception: RhinoException,
+        fallbackSource: String,
+        fallbackSourceName: String,
+    ): ScriptException {
+        val line = exception.lineNumber().takeIf { it > 0 } ?: -1
+        val column = exception.columnNumber().takeIf { it > 0 } ?: -1
+        val sourceName = exception.sourceName()
+        val source = sourceCache[sourceName]
+            ?: fallbackSource.takeIf { sourceName == fallbackSourceName }
+        val baseMessage = if (exception is JavaScriptException) {
+            exception.value.toString()
+        } else {
+            exception.toString()
+        }
+        val message = source?.let {
+            buildEnhancedErrorMessage(baseMessage, it, line, column)
+        } ?: baseMessage
+        return ScriptException(message, sourceName, line, column).also {
+            it.initCause(exception)
+        }
     }
 
     fun unwrapReturnValue(result: Any?): Any? {
