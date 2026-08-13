@@ -24,6 +24,7 @@ import io.legado.app.help.config.AppConfig
 import io.legado.app.help.glide.ImageLoader
 import io.legado.app.help.glide.OkHttpModelLoader
 import io.legado.app.lib.theme.accentColor
+import io.legado.app.lib.theme.backgroundColor
 import io.legado.app.model.BookCover
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.textHeight
@@ -68,6 +69,7 @@ class CoverImageView @JvmOverloads constructor(
     }
 
     init {
+        setBackgroundColor(context.backgroundColor)
         val a = context.obtainStyledAttributes(attrs, R.styleable.CoverImageView)
         cornerRadius = a.getDimension(
             R.styleable.CoverImageView_coverCornerRadius, 12f.dpToPx()
