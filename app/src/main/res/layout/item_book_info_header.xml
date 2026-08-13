@@ -85,6 +85,7 @@
             android:ellipsize="end"
             android:focusable="true"
             android:maxLines="4"
+            android:lineSpacingExtra="2dp"
             android:textIsSelectable="true"
             android:textSize="@dimen/text_body"
             app:skin_textColor="onSurfaceVariant"
