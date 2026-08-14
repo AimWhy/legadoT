@@ -55,6 +55,7 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
     private lateinit var loginUiField: CodeField
     private lateinit var loginCheckJsField: CodeField
     private lateinit var headersField: CodeField
+    private lateinit var jsLibField: CodeField
 
     private data class HttpTtsDraft(
         val name: String,
@@ -65,6 +66,8 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
         val loginUi: String,
         val loginCheckJs: String,
         val header: String,
+        val jsLib: String,
+        val enabledCookieJar: Boolean,
         val pauseDuration: String,
         val voices: String
     )
@@ -102,6 +105,7 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
         loginUiField.textInputLayout.hint = getString(R.string.login_ui)
         loginCheckJsField.textInputLayout.hint = getString(R.string.login_check_js)
         headersField.textInputLayout.hint = getString(R.string.source_http_header)
+        jsLibField.textInputLayout.hint = "jsLib"
 
         urlField.codeView.run {
             addLegadoPattern()
@@ -115,6 +119,7 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
         }
         loginUiField.codeView.addJsonPattern()
         loginCheckJsField.codeView.addJsPattern()
+        jsLibField.codeView.addJsPattern()
         headersField.codeView.run {
             addLegadoPattern()
             addJsonPattern()
@@ -146,6 +151,8 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
         loginUiField.codeView.setText(httpTTS.loginUi)
         loginCheckJsField.codeView.setText(httpTTS.loginCheckJs)
         headersField.codeView.setText(httpTTS.header)
+        jsLibField.codeView.setText(httpTTS.jsLib)
+        binding.cbIsEnableCookie.isChecked = httpTTS.enabledCookieJar == true
         binding.tvPauseDuration.setText(httpTTS.pauseDuration.takeIf { it > 0 }?.toString().orEmpty())
         binding.tvVoices.setText(httpTTS.voices)
     }
@@ -205,6 +212,8 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
             loginUi = loginUiField.codeView.text?.toString(),
             loginCheckJs = loginCheckJsField.codeView.text?.toString(),
             header = headersField.codeView.text?.toString(),
+            jsLib = jsLibField.codeView.text?.toString()?.takeIf { it.isNotBlank() },
+            enabledCookieJar = binding.cbIsEnableCookie.isChecked,
             pauseDuration = binding.tvPauseDuration.text?.toString()?.toIntOrNull() ?: 0,
             voices = binding.tvVoices.text?.toString()?.trim()?.takeIf { it.isNotBlank() }
         )
@@ -227,6 +236,8 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
             loginUi = loginUiField.codeView.text?.toString().orEmpty(),
             loginCheckJs = loginCheckJsField.codeView.text?.toString().orEmpty(),
             header = headersField.codeView.text?.toString().orEmpty(),
+            jsLib = jsLibField.codeView.text?.toString().orEmpty(),
+            enabledCookieJar = binding.cbIsEnableCookie.isChecked,
             pauseDuration = binding.tvPauseDuration.text?.toString().orEmpty(),
             voices = binding.tvVoices.text?.toString().orEmpty()
         )
@@ -305,6 +316,7 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
             headersField.btnWebEdit,
             getString(R.string.source_http_header)
         )
+        bindWebEditor(jsLibField.codeView, jsLibField.btnWebEdit, "jsLib")
     }
 
     private fun initCodeFields() {
@@ -315,6 +327,7 @@ class HttpTtsEditDialog() : BaseDialogFragment(R.layout.dialog_http_tts_edit, tr
         loginUiField = resolveCodeField(R.id.field_login_ui)
         loginCheckJsField = resolveCodeField(R.id.field_login_check_js)
         headersField = resolveCodeField(R.id.field_headers)
+        jsLibField = resolveCodeField(R.id.field_js_lib)
     }
 
     private fun resolveCodeField(rootId: Int): CodeField {

@@ -60,6 +60,8 @@ data class HttpTTS(
                     loginUrl = doc.readString("$.loginUrl"),
                     loginUi = if (loginUi is List<*>) GSON.toJson(loginUi) else loginUi?.toString(),
                     header = doc.readString("$.header"),
+                    jsLib = doc.readString("$.jsLib"),
+                    enabledCookieJar = doc.read<Boolean>("$.enabledCookieJar"),
                     loginCheckJs = doc.readString("$.loginCheckJs"),
                     pauseDuration = doc.read<Int>("$.pauseDuration") ?: 0,
                     voices = if (voices is List<*>) GSON.toJson(voices) else voices?.toString(),

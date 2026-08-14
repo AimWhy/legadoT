@@ -131,6 +131,28 @@
                     android:layout_marginTop="@dimen/space_m"
                     layout="@layout/view_code_edit_field" />
 
+                <include
+                    android:id="@+id/field_js_lib"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_m"
+                    layout="@layout/view_code_edit_field" />
+
+                <com.google.android.flexbox.FlexboxLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_s"
+                    app:flexWrap="wrap">
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/cb_is_enable_cookie"
+                        style="@style/Widget.App.Chip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checkable="true"
+                        android:text="@string/auto_save_cookie" />
+                </com.google.android.flexbox.FlexboxLayout>
+
             </LinearLayout>
 
         </androidx.core.widget.NestedScrollView>
