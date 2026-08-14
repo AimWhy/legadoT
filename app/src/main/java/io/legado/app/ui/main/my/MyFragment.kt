@@ -105,20 +105,12 @@ class MyFragment() : BaseFragment(R.layout.fragment_my_config), MainFragmentInte
             }
             findPreference<SwitchPreference>(PreferKey.mcpService)?.let {
                 it.isChecked = McpService.isRun
-                it.summary = if (McpService.isRun) {
-                    McpService.hostAddress
-                } else {
-                    getString(R.string.mcp_service_desc)
-                }
+                it.summary = mcpServiceSummary()
             }
             observeEventSticky<String>(EventBus.MCP_SERVICE) {
                 findPreference<SwitchPreference>(PreferKey.mcpService)?.let {
                     it.isChecked = McpService.isRun
-                    it.summary = if (McpService.isRun) {
-                        McpService.hostAddress
-                    } else {
-                        getString(R.string.mcp_service_desc)
-                    }
+                    it.summary = mcpServiceSummary()
                 }
             }
             findPreference<NameListPreference>(PreferKey.themeMode)?.let {
@@ -203,6 +195,14 @@ class MyFragment() : BaseFragment(R.layout.fragment_my_config), MainFragmentInte
             return super.onPreferenceTreeClick(preference)
         }
 
+        private fun mcpServiceSummary(): String {
+            if (!McpService.isRun) {
+                return getString(R.string.mcp_service_desc)
+            }
+            val token = McpService.ensureToken()
+            val masked = if (token.length > 8) token.take(8) + "…" else token
+            return McpService.hostAddress + "\n" + getString(R.string.mcp_token_hint, masked)
+        }
 
     }
 }

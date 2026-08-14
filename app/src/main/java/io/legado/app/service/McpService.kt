@@ -119,6 +119,10 @@ class McpService : BaseService() {
         when (intent?.action) {
             IntentAction.stop -> stopSelf()
             "copyHostAddress" -> sendToClip(hostAddress)
+            "copyToken" -> {
+                sendToClip(ensureToken())
+                toastOnUi(R.string.copy_complete)
+            }
             else -> upMcpServer()
         }
         return super.onStartCommand(intent, flags, startId)
@@ -140,7 +144,11 @@ class McpService : BaseService() {
         if (addressList.any()) {
             val port = getPort()
             try {
+                val tokenGenerated = AppConfig.mcpToken.isEmpty()
                 ensureToken()
+                if (tokenGenerated) {
+                    toastOnUi(R.string.mcp_token_generated)
+                }
                 engine = embeddedServer(CIO, port = port, host = "0.0.0.0") {
                     // Bearer token 鉴权:手机绑定 0.0.0.0 供局域网直连,必须有最小防护
                     intercept(ApplicationCallPipeline.Call) {
@@ -201,6 +209,11 @@ class McpService : BaseService() {
             .setContentIntent(
                 servicePendingIntent<McpService>("copyHostAddress")
             )
+        builder.addAction(
+            R.drawable.ic_copy,
+            getString(R.string.mcp_token_copy_action),
+            servicePendingIntent<McpService>("copyToken")
+        )
         builder.addAction(
             R.drawable.ic_stop_black_24dp,
             getString(R.string.cancel),
