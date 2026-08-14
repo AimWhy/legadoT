@@ -1,0 +1,3 @@
+[submodule "legado-source-skill"]
+	path = legado-source-skill
+	url = https://github.com/skybbk1001/legado-source-skill.git
