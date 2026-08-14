@@ -147,7 +147,8 @@ object CodeEditorWebViewPool {
     }
 
     /**
-     * 把应用主题注入编辑器（editor.html setAppTheme）：日夜 + AppColorScheme 调色。
+     * 把应用主题注入编辑器（editor.html setAppTheme）：日夜 + AppColorScheme 调色 +
+     * 系统字号缩放(editor.html "字号:自动" 据此换算)。
      * 幂等，ready 后调用即可；auto（跟随应用）模式立即生效。
      */
     fun applyAppTheme() {
@@ -163,9 +164,11 @@ object CodeEditorWebViewPool {
             .put("activeLine", hex(scheme.surfaceContainerLow))
             .put("accent", hex(scheme.primary))
             .put("selection", hex(scheme.primaryContainer))
+        val fontScale = appContext?.resources?.configuration?.fontScale ?: 1f
         val payload = JSONObject()
             .put("dark", AppConfig.isNightTheme)
             .put("colors", colors)
+            .put("fontScale", fontScale.toDouble())
         evaluateJavascript("window.setAppTheme && window.setAppTheme($payload);")
     }
 
