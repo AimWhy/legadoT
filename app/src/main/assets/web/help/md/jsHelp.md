@@ -1,7 +1,7 @@
 # js变量和函数
 
-> 阅读使用[htmlunit-core-js](https://github.com/HtmlUnit/htmlunit-core-js) 作为JavaScript引擎以便于[调用Java类和方法](https://m.jb51.net/article/92138.htm)，查看[ECMAScript兼容性表格](https://mozilla.github.io/rhino/compat/engines.html)
-> [Rhino运行时](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/ScriptRuntime.java)懒加载导入的Java类和方法
+> 阅读使用 htmlunit-core-js 作为 JavaScript 引擎，以便[调用Java类和方法](https://m.jb51.net/article/92138.htm)，查看[ECMAScript兼容性表格](https://mozilla.github.io/rhino/compat/engines.html)
+> [Rhino运行时](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/ScriptRuntime.java)懒加载导入 Java 类和方法
 
 | 构造函数     | 函数                      | 对象                    | 调用类                                                                                                                                                              | 简要说明                     |
 | ------------ | ------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
@@ -9,18 +9,18 @@
 |              | getClass                  | Packages java javax ... | [NativeJavaTopPackage](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/NativeJavaTopPackage.java) | 默认导入JavaScript中的Java类 |
 | JavaAdapter  |                           |                         | [JavaAdapter](https://github.com/HtmlUnit/htmlunit-core-js/blob/master/src/repackaged-rhino/java/org/htmlunit/corejs/javascript/JavaAdapter.java)                   | 继承Java类                   |
 
-> 注意`java`变量指向已经被阅读修改，如果想要调用`java.*`下的包，请使用`Packages.java.*`
+> 注意 `java` 变量的指向已被阅读修改，如需调用 `java.*` 下的包，请使用 `Packages.java.*`
 
-> 在书源规则中使用`@js` `<js>` `{{}}`可使用JavaScript调用阅读部分内置的类和方法
+> 在书源规则中使用 `@js`/`<js>`/`{{}}` 时，可调用阅读内置的部分 Java 类和方法
 
-> 注意为了安全，阅读会屏蔽部分java类调用，见[RhinoClassShutter](https://github.com/gedoor/legado/blob/master/modules/rhino/src/main/java/com/script/rhino/RhinoClassShutter.kt)
+> 注意：为了安全，阅读会屏蔽部分 Java 类调用，见[RhinoClassShutter](https://github.com/gedoor/legado/blob/master/modules/rhino/src/main/java/com/script/rhino/RhinoClassShutter.kt)
 
-> 不同的书源规则中支持的调用的Java类和方法可能有所不同
+> 不同书源规则中可调用的 Java 类和方法可能不同
 
 | 变量名         | 调用类                                                                                                                 |
 | -------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | java           | 当前类                                                                                                                 |
-| baseUrl        | 当前url,String                                                                                                         |
+| baseUrl        | 当前 url（String）                                                                                                     |
 | result         | 上一步的结果                                                                                                           |
 | book           | [书籍类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/Book.kt)           |
 | rssArticle     | [Article类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/RssArticle.kt)  |
@@ -28,18 +28,17 @@
 | source         | [基础书源类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/data/entities/BaseSource.kt) |
 | cookie         | [cookie操作类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/http/CookieStore.kt)  |
 | cache          | [缓存操作类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/CacheManager.kt)        |
-| title          | 章节当前标题 String                                                                                                    |
+| title          | 当前章节标题（String）                                                                                                 |
 | src            | 请求返回的源码                                                                                                         |
-| nextChapterUrl | 下一章节url                                                                                                            |
+| nextChapterUrl | 下一章节 url                                                                                                           |
 
-## 当前类对象的可使用的部分方法
+## 当前类对象可使用的部分方法
 
 ### [RssJsExtensions](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/ui/rss/read/RssJsExtensions.kt)
 
-> 只能在订阅源`shouldOverrideUrlLoading`规则中使用  
-> 订阅添加跳转url拦截, js, 返回true拦截,js变量url,可以通过js打开url  
-> url跳转拦截规则不能执行耗时操作
-> 例子https://github.com/gedoor/legado/discussions/3259
+> 只能在订阅源 `shouldOverrideUrlLoading` 规则中使用：绑定 `url` 变量，`js` 返回 `true` 拦截跳转，可通过 js 打开 url  
+> 该规则不能执行耗时操作  
+> 例子：https://github.com/gedoor/legado/discussions/3259
 
 - 调用阅读搜索
 
@@ -64,25 +63,27 @@ java.open(name: String, url?: String, title?: String, origin?: String)
 java.open("login")                                  // 当前源登录页
 java.open("rss", "https://example.com/a/1", "文章") // 打开文章
 java.open("search", null, "关键词")                 // 按关键词搜书
-java.open("explore", exploreUrl, "分类名", 书源url)  // 打开发现结果页
+java.open("explore", exploreUrl, "分类名", source.getKey()) // 打开发现结果页, 指定书源url
 ```
 
 ### [AnalyzeUrl](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeUrl.kt) 部分函数
 
-> js中通过java.调用,只在`登录检查JS`规则中有效
+> js 中通过 java. 调用，只在 `登录检查JS` 规则中有效
 
 ```js
 initUrl() //重新解析url,可以用于登录检测js登录后重新解析url重新访问
 getHeaderMap().putAll(source.getHeaderMap(true)) //重新设置登录头
-getStrResponse( jsStr: String? = null, sourceRegex: String? = null) //返回访问结果,文本类型,书源内部重新登录后可调用此方法重新返回结果
-getResponse(): Response //返回访问结果,网络朗读引擎采用的是这个,调用登录后在调用这方法可以重新访问,参考阿里云登录检测
+getStrResponse(jsStr: String? = null, sourceRegex: String? = null)
+// 返回访问结果(文本类型),书源内部重新登录后可调用此方法重新返回结果
+getResponse(): Response
+// 返回访问结果;网络朗读引擎采用这个,调用登录后再调用此方法可以重新访问,参考阿里云登录检测
 ```
 
 ### [AnalyzeRule](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/model/analyzeRule/AnalyzeRule.kt) 部分函数
 
 - 获取文本/文本列表
-  > `mContent` 待解析源代码，默认为当前页面  
-  > `isUrl` 链接标识，默认为`false`
+
+  `mContent`：待解析内容，默认为当前页面；`isUrl`：内容是否为链接，默认为 `false`
 
 ```js
 java.getString(ruleStr: String?, mContent: Any? = null, isUrl: Boolean = false)
@@ -92,12 +93,12 @@ java.getStringList(ruleStr: String?, mContent: Any? = null, isUrl: Boolean = fal
 - 设置解析内容
 
 ```js
-java.setContent(content: Any?, baseUrl: String? = null):
+java.setContent(content: Any?, baseUrl: String? = null)
 ```
 
 - 获取Element/Element列表
 
-> 如果要改变解析源代码，请先使用`java.setContent`
+  如果要改变解析源代码，请先使用`java.setContent`
 
 ```js
 java.getElement(ruleStr: String)
@@ -106,7 +107,7 @@ java.getElements(ruleStr: String)
 
 - 重新搜索书籍/重新获取目录url
 
-> 只能在刷新目录之前使用,有些书源书籍地址和目录url会变
+  只能在刷新目录之前使用,有些书源书籍地址和目录url会变
 
 ```js
 java.reGetBook();
@@ -122,8 +123,8 @@ java.put(key, value);
 
 - 并发合并(single-flight)
 
-> 同一 name 并发时只有一个线程跑 action,其余等它完成后跳过、自行读结果;action 失败由下个线程重试,等待超 timeoutMs(默认 15000)抛异常。
-> jsLib 里的函数如需调用java/source等对象需绑定this: fn.bind(this)。
+  同一 name 并发时只有一个线程跑 action，其余等它完成后跳过、自行读结果；action 失败由下个线程重试；等待超过 timeoutMs（默认 15000）抛异常。
+  jsLib 里的函数如需调用 java/source 等对象需绑定 this：fn.bind(this)。
 
 ```js
 java.singleFlight(name: String, action: Function, timeoutMs: Long = 15000)
@@ -131,7 +132,7 @@ java.singleFlight(name: String, action: Function, timeoutMs: Long = 15000)
 
 - 互斥锁(串行化)
 
-> 同一 name 并发时逐个排队、每个都执行(与 single-flight 跳过相反),把整段读-改-写包进 action 避免并发丢失更新;超时与 this 绑定规则同 single-flight。
+  同一 name 并发时逐个排队、每个都执行（与 single-flight 跳过相反），把整段读-改-写包进 action 避免并发丢失更新；超时与 this 绑定规则同 single-flight。
 
 ```js
 java.lock(name: String, action: Function, timeoutMs: Long = 15000)
@@ -139,13 +140,13 @@ java.lock(name: String, action: Function, timeoutMs: Long = 15000)
 
 - 轮询计数器
 
-> 进程内原子自增计数器,返回非负序号,同 name 跨线程/执行共享;重启归零。
+  进程内原子自增计数器，返回非负序号，同 name 跨线程/执行共享；重启归零。
 
 ```js
 java.tick(name: String): Int
 ```
 
-### [js扩展类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/JsExtensions.kt) 部分函数
+### [js 扩展类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/JsExtensions.kt) 部分函数
 
 - 链接解析[JsURL](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/utils/JsURL.kt)
 
@@ -177,25 +178,25 @@ java.get(url: String, headerJson: String?): Connection.Response
 java.head(url: String, headerMap: Map<String, String>): Connection.Response
 java.head(url: String, headerJson: String?): Connection.Response
 
-* 使用webView访问网络
-* @param html 直接用webView载入的html, 如果html为空直接访问url
-* @param url html内如果有相对路径的资源不传入url访问不了
-* @param js 用来取返回值的js语句, 没有就返回整个源代码
-* @return 返回js获取的内容
+// 使用webView访问网络
+// @param html 直接用webView载入的html, 如果html为空直接访问url
+// @param url html内如果有相对路径的资源不传入url访问不了
+// @param js 用来取返回值的js语句, 没有就返回整个源代码
+// @return 返回js获取的内容
 java.webView(html: String?, url: String?, js: String?): String?
 
-* 使用webView获取跳转url
+// 使用webView获取跳转url
 java.webViewGetOverrideUrl(html: String?, url: String?, js: String?, overrideUrlRegex: String): String?
 
-* 使用webView获取资源url
+// 使用webView获取资源url
 java.webViewGetSource(html: String?, url: String?, js: String?, sourceRegex: String): String?
 
-* 使用内置浏览器打开链接，可用于获取验证码 手动验证网站防爬
-* @param url 要打开的链接
-* @param title 浏览器的标题
+// 使用内置浏览器打开链接，可用于获取验证码 手动验证网站防爬
+// @param url 要打开的链接
+// @param title 浏览器的标题
 java.startBrowser(url: String, title: String)
 
-* 使用内置浏览器打开链接，并等待网页结果 .body()获取网页内容
+// 使用内置浏览器打开链接，并等待网页结果 .body()获取网页内容
 java.startBrowserAwait(url: String, title: String, refetchAfterSuccess: Boolean? = true): StrResponse
 ```
 
@@ -219,7 +220,7 @@ java.longToast(msg: Any?)
 java.toast(msg: Any?)
 ```
 
-- 从网络(由java.cacheFile实现)、本地读取JavaScript文件，导入上下文请手动`eval(String(...))`
+- 从网络（由 java.cacheFile 实现）或本地读取 JavaScript 文件；读取后不自动执行，需手动 `eval(String(...))` 导入上下文
 
 ```js
 java.importScript(url);
@@ -231,16 +232,16 @@ java.importScript(absolutePath);
 - 缓存网络文件
 
 ```js
-获取;
+// 获取（缓存网络文件，返回文件路径）
 java.cacheFile(url);
 java.cacheFile(url, saveTime);
-执行内容;
+// 执行内容
 eval(String(java.cacheFile(url)));
-使缓存失效;
+// 使缓存失效
 cache.delete(java.md5Encode16(url));
 ```
 
-- 获取网络压缩文件里面指定路径的数据 \*可替换Zip Rar 7Z
+- 获取网络压缩文件内指定路径的数据（* 可替换为 Zip/Rar/7Z）
 
 ```js
 java.get*StringContent(url: String, path: String): String
@@ -259,7 +260,8 @@ java.encodeURI(str: String, enc: String)
 ```
 
 - base64
-  > flags参数可省略，默认Base64.NO_WRAP，查看[flags参数说明](https://blog.csdn.net/zcmain/article/details/97051870)
+
+  flags参数可省略，默认Base64.NO_WRAP，查看[flags参数说明](https://blog.csdn.net/zcmain/article/details/97051870)
 
 ```js
 java.base64Decode(str: String)
@@ -320,22 +322,23 @@ java.htmlFormat(str: String): String
 ```
 
 - 文件
-  > 所有对于文件的读写删操作都是相对路径,只能操作阅读缓存/android/data/{package}/cache/内的文件
+
+  所有对于文件的读写删操作都是相对路径,只能操作阅读缓存/android/data/{package}/cache/内的文件
 
 ```js
 //文件下载 url用于生成文件名，返回文件路径
-downloadFile(url: String): String
+java.downloadFile(url: String): String
 //文件解压,zipPath为压缩文件路径，返回解压路径
-unArchiveFile(zipPath: String): String
-unzipFile(zipPath: String): String
-unrarFile(zipPath: String): String
-un7zFile(zipPath: String): String
+java.unArchiveFile(zipPath: String): String
+java.unzipFile(zipPath: String): String
+java.unrarFile(zipPath: String): String
+java.un7zFile(zipPath: String): String
 //文件夹内所有文件读取
-getTxtInFolder(unzipPath: String): String
+java.getTxtInFolder(unzipPath: String): String
 //读取文本文件
-readTxtFile(path: String): String
+java.readTxtFile(path: String): String
 //删除文件
-deleteFile(path: String)
+java.deleteFile(path: String)
 ```
 
 ### [js加解密类](https://github.com/gedoor/legado/blob/master/app/src/main/java/io/legado/app/help/JsEncodeUtils.kt) 部分函数
@@ -344,10 +347,11 @@ deleteFile(path: String)
 
 > 提供在 JavaScript 环境中快捷调用加解密算法的函数，底层使用 Android/JDK 原生加密能力。
 
-> 注意：如果输入的参数不是Utf8String 可先调用`java.hexDecodeToByteArray java.base64DecodeToByteArray`转成ByteArray
+> 注意：参数不是 UTF-8 字符串时，可先调用 `java.hexDecodeToByteArray`/`java.base64DecodeToByteArray` 转成 ByteArray
 
 - 对称加密
-  > 输入参数key iv 支持ByteArray|**Utf8String**
+
+  输入参数key iv 支持ByteArray|**Utf8String**
 
 ```js
 // 创建Cipher
@@ -367,7 +371,8 @@ cipher.encryptHex(data);
 ```
 
 - 非对称加密
-  > 输入参数 key支持ByteArray|**Utf8String**
+
+  输入参数 key支持ByteArray|**Utf8String**
 
 ```js
 //创建cipher
@@ -382,21 +387,17 @@ java
 
 ```js
 //解密为ByteArray String
-cipher.decrypt(data,  usePublicKey: Boolean? = true
-)
-cipher.decryptStr(data, usePublicKey: Boolean? = true
-)
+cipher.decrypt(data, usePublicKey: Boolean? = true)
+cipher.decryptStr(data, usePublicKey: Boolean? = true)
 //加密为ByteArray Base64字符 HEX字符
-cipher.encrypt(data,  usePublicKey: Boolean? = true
-)
-cipher.encryptBase64(data,  usePublicKey: Boolean? = true
-)
-cipher.encryptHex(data,  usePublicKey: Boolean? = true
-)
+cipher.encrypt(data, usePublicKey: Boolean? = true)
+cipher.encryptBase64(data, usePublicKey: Boolean? = true)
+cipher.encryptHex(data, usePublicKey: Boolean? = true)
 ```
 
 - 签名
-  > 输入参数 key 支持ByteArray|**Utf8String**
+
+  输入参数 key 支持ByteArray|**Utf8String**
 
 ```js
 //创建Sign
@@ -418,9 +419,9 @@ sign.signHex(data);
 - 摘要
 
 ```js
-java.digestHex(data: String, algorithm: String,): String?
+java.digestHex(data: String, algorithm: String): String?
 
-java.digestBase64Str(data: String, algorithm: String,): String?
+java.digestBase64Str(data: String, algorithm: String): String?
 ```
 
 - md5
@@ -521,7 +522,8 @@ source.removeLoginHeader()
 ```
 
 - 用户登录信息操作
-  > 使用`登录UI`规则，并成功登录，阅读自动加密保存登录UI规则中除type为button的信息
+
+  使用`登录UI`规则成功登录后，阅读自动加密保存除 type 为 button 外的字段
 
 ```js
 login函数获取登录信息
@@ -793,24 +795,27 @@ function loginAction(action, state, form) {
 
 | type     | 字段                                          | 说明                                                                       |
 | -------- | --------------------------------------------- | -------------------------------------------------------------------------- |
-| text     | `key`、`name` 必填，可选 `hint`/`value`       | 输入框；`name` 是浮动标签，`hint` 是占位提示                               |
+| text     | `name` 必填；数据字段还需 `key`；可选 `hint`/`value` | 输入框；`name` 是浮动标签，`hint` 是占位提示                            |
 | password | 同 text                                       | 密码框，带明文切换                                                         |
 | label    | `name`                                        | 只读提示文字                                                               |
-| select   | `key`、`name`、`options`（字符串数组）        | 点击弹单选框，值为选中的选项字符串                                         |
+| select   | `name`、`options`；数据字段还需 `key`         | 点击弹单选框，值为选中的选项字符串                                         |
 | button   | `name`、`action` 必填，可选 `countdown`（秒） | 点击派发 action；倒计时在动作返回无 `error` 时启动并禁用按钮，跨重渲染存活 |
-| toggle   | `key`、`name` 必填，可选 `value`、`action`    | 开关；值与 `value` 均为字符串 `"true"`/`"false"`（非布尔），缺省 `"false"`；有 `action` 时切换即派发，无 `key` 不进表单 |
+| toggle   | `name` 必填；数据字段还需 `key`；可选 `value`、`action` | 开关；值与 `value` 均为字符串 `"true"`/`"false"`（非布尔），缺省 `"false"`；有 `action` 时切换即派发 |
 
-- **表单与回填**：有 `key` 的行进表单，`form` = `{key: 当前值}`。回填优先级：行的 `value` >
-  本次弹窗已输入 > 已存登录信息同 key 值；`value: ""` 强制清空。
+- **key、表单与回填**：`key` 是稳定且唯一的数据身份。只有当前页面中带 `key` 的
+  `text`/`password`/`select`/`toggle` 行进入 `form`，即 `{key: 当前值}`；不带 `key` 只显示。
+  切到二级页面后，已消失的一级字段不在下一次 action 的 `form` 中，跨步骤所需值应由一级 action
+  放入 `state`。回填优先级：行的 `value` > 本次弹窗已输入 > 已存登录信息同 key 值；
+  `value: ""` 强制清空，固定 `value` 也会覆盖已存值。
 - **toggle 特别说明**：值与 `value` 都是字符串 `"true"`/`"false"`，比较用 `form.xxx === "true"`，
   `=== true` 恒假；缺省 `"false"`；不写 `key` 只显示不进表单；不自动持久化，仍由 `login` 命令决定。
 - **命令对象**（只执行下表四键，其余键忽略；返回空 = 纯副作用动作；抛异常 toast 提示并记日志）：
 
 | 键                       | 行为                                                                           |
 | ------------------------ | ------------------------------------------------------------------------------ |
-| `state`（对象）          | 替换状态并重新渲染，唯一重渲染途径                                             |
+| `state`（对象）          | 整体替换状态并重新渲染，唯一重渲染途径                                         |
 | `error`（`{key: 消息}`） | key 匹配输入行显示字段红字，不匹配（如表单级 `_form`）toast 弹出               |
-| `login`（对象）          | AES 持久化为登录信息（与 `source.getLoginInfo()` 同存储），重开弹窗按 key 回填 |
+| `login`（对象）          | 整体覆盖 AES 登录信息（与 `source.getLoginInfo()` 同存储），重开弹窗按 key 回填 |
 | `close: true`            | 关闭弹窗；与 `state` 同时返回时只关窗                                          |
 
 - **登录头**：`login` 命令只存登录信息；后续请求要携带的认证头在动作里用
