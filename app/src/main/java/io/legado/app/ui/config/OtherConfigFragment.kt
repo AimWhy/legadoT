@@ -36,8 +36,10 @@ import io.legado.app.utils.putPrefBoolean
 import io.legado.app.utils.putPrefString
 import io.legado.app.utils.removePref
 import io.legado.app.utils.restart
+import io.legado.app.utils.sendToClip
 import io.legado.app.utils.setEdgeEffectColor
 import io.legado.app.utils.showDialogFragment
+import io.legado.app.utils.toastOnUi
 import splitties.init.appCtx
 
 /**
@@ -66,6 +68,10 @@ class OtherConfigFragment : PreferenceFragment(),
         upPreferenceSummary(PreferKey.threadCount, AppConfig.threadCount.toString())
         upPreferenceSummary(PreferKey.webPort, AppConfig.webPort.toString())
         upPreferenceSummary(PreferKey.mcpPort, AppConfig.mcpPort.toString())
+        upPreferenceSummary(
+            PreferKey.mcpToken,
+            getString(R.string.mcp_token_summary, maskToken(McpService.ensureToken()))
+        )
         AppConfig.defaultBookTreeUri?.let {
             upPreferenceSummary(PreferKey.defaultBookTreeUri, it)
         }
@@ -130,6 +136,21 @@ class OtherConfigFragment : PreferenceFragment(),
                 .show {
                     AppConfig.mcpPort = it
                 }
+
+            PreferKey.mcpToken -> {
+                val token = McpService.ensureToken()
+                appCtx.sendToClip(token)
+                toastOnUi(getString(R.string.mcp_token_copied))
+            }
+
+            "mcpTokenRegenerate" -> {
+                McpService.regenerateToken()
+                upPreferenceSummary(
+                    PreferKey.mcpToken,
+                    getString(R.string.mcp_token_summary, maskToken(AppConfig.mcpToken))
+                )
+                toastOnUi(getString(R.string.mcp_token_regenerated))
+            }
 
             PreferKey.cleanCache -> clearCache()
             PreferKey.uploadRule -> showDialogFragment<DirectLinkUploadConfig>()
@@ -323,6 +344,9 @@ class OtherConfigFragment : PreferenceFragment(),
     private fun isProcessTextEnabled(): Boolean {
         return packageManager.getComponentEnabledSetting(componentName) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED
     }
+
+    private fun maskToken(token: String): String =
+        if (token.length > 8) token.take(8) + "…" else token
 
     private fun setProcessTextEnable(enable: Boolean) {
         if (enable) {

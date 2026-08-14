@@ -389,6 +389,12 @@ object AppConfig : SharedPreferences.OnSharedPreferenceChangeListener {
             appCtx.putPrefInt(PreferKey.mcpPort, value)
         }
 
+    var mcpToken: String
+        get() = appCtx.getPrefString(PreferKey.mcpToken).orEmpty()
+        set(value) {
+            appCtx.putPrefString(PreferKey.mcpToken, value)
+        }
+
     var tocUiUseReplace: Boolean
         get() = appCtx.getPrefBoolean(PreferKey.tocUiUseReplace)
         set(value) {

@@ -177,6 +177,14 @@
             android:title="@string/mcp_port_title" />
 
         <io.legado.app.lib.prefs.Preference
+            android:key="mcpToken"
+            android:title="@string/mcp_token_title" />
+
+        <io.legado.app.lib.prefs.Preference
+            android:key="mcpTokenRegenerate"
+            android:title="@string/mcp_token_regenerate_title" />
+
+        <io.legado.app.lib.prefs.Preference
             android:key="cleanCache"
             android:summary="@string/clear_cache_summary"
             android:title="@string/clear_cache" />

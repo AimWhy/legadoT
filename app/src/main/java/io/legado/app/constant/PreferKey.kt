@@ -56,6 +56,7 @@ object PreferKey {
     const val webService = "webService"
     const val mcpService = "mcpService"
     const val mcpPort = "mcpPort"
+    const val mcpToken = "mcpToken"
     const val autoTaskService = "autoTaskService"
     const val webDavUrl = "web_dav_url"
     const val webDavAccount = "web_dav_account"
