@@ -67,8 +67,12 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
     private var markwon: Markwon? = null
     private var fullContent: String = ""
     private var sections: List<HelpSections.Section> = emptyList()
+    /** 目录扁平项:depth 0=父节, 1=子节 */
+    private var tocEntries: List<TocEntry> = emptyList()
     private var selectedSection = 0
     private var renderJob: Job? = null
+
+    private data class TocEntry(val depth: Int, val section: HelpSections.Section)
 
     override fun onStart() {
         super.onStart()
@@ -157,6 +161,12 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
     private fun setupToc() {
         sections = HelpSections.parse(fullContent)
         if (sections.isEmpty()) return
+        tocEntries = buildList {
+            sections.forEach { section ->
+                add(TocEntry(0, section))
+                section.children.forEach { child -> add(TocEntry(1, child)) }
+            }
+        }
         binding.tocList.layoutManager = LinearLayoutManager(requireContext())
         binding.tocList.adapter = TocAdapter()
         binding.toolBar.menu.findItem(R.id.menu_help_toc)?.isVisible = true
@@ -171,16 +181,29 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
             VH(ItemHelpTocBinding.inflate(layoutInflater, parent, false))
 
-        override fun getItemCount() = sections.size + 1
+        override fun getItemCount() = tocEntries.size + 1
 
         override fun onBindViewHolder(holder: VH, position: Int) {
             val scheme = AppColorScheme.current
             val selected = position == selectedSection
             holder.itemBinding.root.text =
-                if (position == 0) getString(R.string.all) else sections[position - 1].title
+                if (position == 0) getString(R.string.all) else tocEntries[position - 1].section.title
             holder.itemBinding.root.setTextColor(if (selected) scheme.primary else scheme.onSurface)
             holder.itemBinding.root.typeface =
-                if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
+                if (selected || position != 0 && tocEntries[position - 1].depth == 0) {
+                    Typeface.DEFAULT_BOLD
+                } else {
+                    Typeface.DEFAULT
+                }
+            // 子节缩进 + 小字号,与父节区分层级
+            val child = position != 0 && tocEntries[position - 1].depth == 1
+            holder.itemBinding.root.setPaddingRelative(
+                if (child) 44.dp else 20.dp,
+                12.dp,
+                20.dp,
+                12.dp
+            )
+            holder.itemBinding.root.textSize = if (child) 13f else 15f
             holder.itemBinding.root.setOnClickListener {
                 val pos = holder.bindingAdapterPosition
                 if (pos != RecyclerView.NO_POSITION && pos != selectedSection) {
@@ -188,11 +211,14 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
                     selectedSection = pos
                     notifyItemChanged(old)
                     notifyItemChanged(pos)
-                    renderMd(if (pos == 0) fullContent else sections[pos - 1].text)
+                    renderMd(if (pos == 0) fullContent else tocEntries[pos - 1].section.text)
                 }
                 binding.drawerLayout.closeDrawers()
             }
         }
     }
+
+    private val Int.dp: Int
+        get() = (this * resources.displayMetrics.density + 0.5f).toInt()
 
 }
