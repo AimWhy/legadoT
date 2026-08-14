@@ -155,6 +155,8 @@
     <string name="update_toc_started">已开始更新 %1$d 本书的目录</string>
     <string name="auto_task_notify_title">任务通知</string>
     <string name="auto_task_notify_content">%1$s</string>
+    <string name="help_search_prev">上一个匹配</string>
+    <string name="help_search_next">下一个匹配</string>
     <string name="auto_task_help_title">定时任务帮助</string>
     <string name="auto_task_help_content"><![CDATA[# Cron 格式
 

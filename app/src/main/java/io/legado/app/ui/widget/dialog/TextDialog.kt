@@ -3,10 +3,15 @@ package io.legado.app.ui.widget.dialog
 import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
+import android.text.Spannable
+import android.text.Spanned
+import android.text.style.BackgroundColorSpan
 import android.view.View
 import android.view.ViewGroup
 import android.view.textclassifier.TextClassifier
 import androidx.core.view.GravityCompat
+import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,7 +22,9 @@ import io.legado.app.databinding.DialogTextViewBinding
 import io.legado.app.databinding.ItemHelpTocBinding
 import io.legado.app.help.HelpSections
 import io.legado.app.help.IntentData
+import io.legado.app.help.findTextRanges
 import io.legado.app.lib.theme.AppColorScheme
+import io.legado.app.utils.ColorUtils
 import io.legado.app.utils.applyTint
 import io.legado.app.utils.setHtml
 import io.legado.app.utils.setLayout
@@ -72,6 +79,12 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
     private var selectedSection = 0
     private var renderJob: Job? = null
 
+    // 文档内搜索状态
+    private var searchQuery = ""
+    private var searchRanges: List<IntRange> = emptyList()
+    private var searchIndex = -1
+    private val searchSpans = mutableListOf<Any>()
+
     private data class TocEntry(val depth: Int, val section: HelpSections.Section)
 
     override fun onStart() {
@@ -85,6 +98,13 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
         binding.toolBar.menu.applyTint(requireContext())
         binding.toolBar.setOnMenuItemClickListener {
             when (it.itemId) {
+                R.id.menu_search -> {
+                    binding.searchBar.isVisible = !binding.searchBar.isVisible
+                    if (binding.searchBar.isVisible) {
+                        binding.searchInput.requestFocus()
+                        binding.searchInput.setSelection(binding.searchInput.text?.length ?: 0)
+                    }
+                }
                 R.id.menu_help_toc -> binding.drawerLayout.openDrawer(GravityCompat.END)
                 R.id.menu_close -> dismissAllowingStateLoss()
             }
@@ -125,6 +145,12 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
             }
             time = it.getLong("time", 0L)
         }
+        binding.searchInput.doAfterTextChanged { text ->
+            onSearchQueryChanged(text?.toString().orEmpty())
+        }
+        binding.btnSearchPrev.setOnClickListener { moveToMatch(searchIndex - 1) }
+        binding.btnSearchNext.setOnClickListener { moveToMatch(searchIndex + 1) }
+
         if (time > 0) {
             binding.badgeView.setBadgeCount((time / 1000).toInt())
             lifecycleScope.launch {
@@ -147,13 +173,14 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
         }
     }
 
-    private fun renderMd(md: String) {
+    private fun renderMd(md: String, onDone: (() -> Unit)? = null) {
         val mw = markwon ?: return
         renderJob?.cancel()
         renderJob = viewLifecycleOwner.lifecycleScope.launch {
             val parsed = withContext(IO) { mw.toMarkdown(md) }
             mw.setParsedMarkdown(binding.textView, parsed)
             binding.textView.scrollTo(0, 0)
+            onDone?.invoke()
         }
     }
 
@@ -171,6 +198,80 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
         binding.tocList.adapter = TocAdapter()
         binding.toolBar.menu.findItem(R.id.menu_help_toc)?.isVisible = true
         binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED)
+    }
+
+    // ── 文档内搜索 ──
+
+    /** 搜索始终作用于整篇文档:查询变化时若在单节视图,先切回「全部」再高亮 */
+    private fun onSearchQueryChanged(query: String) {
+        searchQuery = query
+        if (query.isBlank()) {
+            searchIndex = -1
+            searchRanges = emptyList()
+            clearSearchSpans()
+            binding.searchCount.text = ""
+            return
+        }
+        if (selectedSection != 0) {
+            selectedSection = 0
+            binding.tocList.adapter?.notifyDataSetChanged()
+            renderMd(fullContent) { applySearchHighlight(query) }
+        } else {
+            applySearchHighlight(query)
+        }
+    }
+
+    private fun applySearchHighlight(query: String, keepIndex: Boolean = false) {
+        val text = binding.textView.text ?: return
+        searchRanges = findTextRanges(text.toString(), query)
+        if (searchRanges.isEmpty()) {
+            searchIndex = -1
+            clearSearchSpans()
+            binding.searchCount.text = "0/0"
+            return
+        }
+        if (!keepIndex || searchIndex !in searchRanges.indices) {
+            searchIndex = 0
+        }
+        repaintSpans()
+        scrollToCurrentMatch()
+    }
+
+    private fun moveToMatch(index: Int) {
+        if (searchRanges.isEmpty()) return
+        searchIndex = ((index % searchRanges.size) + searchRanges.size) % searchRanges.size
+        repaintSpans()
+        scrollToCurrentMatch()
+    }
+
+    private fun repaintSpans() {
+        val text = binding.textView.text as? Spannable ?: return
+        clearSearchSpans()
+        val scheme = AppColorScheme.current
+        val normal = ColorUtils.adjustAlpha(scheme.primary, 0.25f)
+        val current = ColorUtils.adjustAlpha(scheme.primary, 0.50f)
+        searchRanges.forEachIndexed { i, range ->
+            val span = BackgroundColorSpan(if (i == searchIndex) current else normal)
+            text.setSpan(span, range.first, range.last + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            searchSpans.add(span)
+        }
+        binding.searchCount.text = "${searchIndex + 1}/${searchRanges.size}"
+    }
+
+    private fun clearSearchSpans() {
+        val text = binding.textView.text as? Spannable ?: return
+        searchSpans.forEach { text.removeSpan(it) }
+        searchSpans.clear()
+    }
+
+    private fun scrollToCurrentMatch() {
+        if (searchIndex !in searchRanges.indices) return
+        binding.textView.post {
+            val layout = binding.textView.layout ?: return@post
+            val line = layout.getLineForOffset(searchRanges[searchIndex].first)
+            val y = (layout.getLineTop(line) - binding.textView.totalPaddingTop).coerceAtLeast(0)
+            binding.textView.scrollTo(0, y)
+        }
     }
 
     private inner class TocAdapter : RecyclerView.Adapter<TocAdapter.VH>() {
@@ -211,7 +312,9 @@ class TextDialog() : BaseDialogFragment(R.layout.dialog_text_view) {
                     selectedSection = pos
                     notifyItemChanged(old)
                     notifyItemChanged(pos)
-                    renderMd(if (pos == 0) fullContent else tocEntries[pos - 1].section.text)
+                    renderMd(if (pos == 0) fullContent else tocEntries[pos - 1].section.text) {
+                        if (searchQuery.isNotBlank()) applySearchHighlight(searchQuery, keepIndex = true)
+                    }
                 }
                 binding.drawerLayout.closeDrawers()
             }

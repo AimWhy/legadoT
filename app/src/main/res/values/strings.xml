@@ -156,6 +156,8 @@
     <string name="update_toc_started">Started updating chapters of %1$d books</string>
     <string name="auto_task_notify_title">Task notification</string>
     <string name="auto_task_notify_content">%1$s</string>
+    <string name="help_search_prev">Previous match</string>
+    <string name="help_search_next">Next match</string>
     <string name="auto_task_help_title">Auto task help</string>
     <string name="auto_task_help_content"><![CDATA[
 # Cron format
