@@ -17,9 +17,21 @@ open class SymmetricCryptoAndroid(
 
     private val transformation = if (algorithm.contains('/')) algorithm else "$algorithm/ECB/PKCS5Padding"
     private val keyAlgorithm = algorithm.substringBefore('/')
-    private val secretKey = key?.let { SecretKeySpec(it, keyAlgorithm) }
+    private val secretKey = key?.let { SecretKeySpec(normalizedKey(it), keyAlgorithm) }
         ?: KeyGenerator.getInstance(keyAlgorithm).generateKey()
     private var iv: ByteArray? = null
+
+    /**
+     * hutool 兼容: 旧实现经 KeyUtil.generateDESKey → DESKeySpec/DESedeKeySpec,
+     * 对超长密钥静默截断(DES 取前 8 字节、DESede 取前 24 字节)。
+     * 书源站点常见 16 字节密钥用于 DES, 必须沿用该语义, 否则 BC/SunJCE
+     * 会以 "DES key too long - should be 8 bytes" 拒绝。
+     */
+    private fun normalizedKey(key: ByteArray): ByteArray = when {
+        keyAlgorithm.equals("DES", true) && key.size > 8 -> key.copyOf(8)
+        keyAlgorithm.equals("DESede", true) && key.size > 24 -> key.copyOf(24)
+        else -> key
+    }
 
     fun setIv(iv: ByteArray): SymmetricCryptoAndroid {
         this.iv = iv.copyOf()
@@ -27,7 +39,7 @@ open class SymmetricCryptoAndroid(
     }
 
     private fun cipher(mode: Int): Cipher = Cipher.getInstance(transformation).apply {
-        val iv = iv
+        val iv = this@SymmetricCryptoAndroid.iv
         if (iv == null || transformation.contains("/ECB/", true)) {
             init(mode, secretKey)
         } else {
@@ -70,7 +82,7 @@ open class SymmetricCryptoAndroid(
     }
 
     fun decrypt(data: String): ByteArray {
-        val bytes = if (data.isHex()) {
+        val bytes = if (data.isHex() && data.length % 2 == 0) {
             data.hexToByteArray()
         } else {
             data.base64ToByteArray()

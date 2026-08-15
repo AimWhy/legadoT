@@ -17,9 +17,15 @@ internal fun String.hexToByteArray(): ByteArray {
 
 internal fun ByteArray.toBase64(): String = Base64.getEncoder().encodeToString(this)
 
-internal fun String.base64ToByteArray(): ByteArray = Base64.getDecoder().decode(
-    replace("\\s".toRegex(), "")
-)
+internal fun String.base64ToByteArray(): ByteArray {
+    val normalized = replace("\\s".toRegex(), "")
+    return try {
+        Base64.getDecoder().decode(normalized)
+    } catch (e: IllegalArgumentException) {
+        // hutool 的 Base64 同时接受 URL-safe 字符表(-/_)，书源数据可能使用
+        Base64.getUrlDecoder().decode(normalized)
+    }
+}
 
 internal fun digest(algorithm: String, data: ByteArray): ByteArray =
     MessageDigest.getInstance(algorithm).digest(data)

@@ -8,7 +8,9 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Test
+import java.security.GeneralSecurityException
 import java.security.KeyPairGenerator
 
 class NativeCryptoTest {
@@ -96,6 +98,33 @@ class NativeCryptoTest {
     }
 
     @Test
+    fun desKeyTruncationMatchesHutool() {
+        // hutool 经 DESKeySpec 静默取前 8 字节; 实测书源 DES 密钥字段 base64 解出 24 字节,
+        // 实际只使用前 8 字节做单 DES。原生实现若把全部字节交给 provider 会抛
+        // "DES key too long - should be 8 bytes"
+        val key24 = ByteArray(24) { it.toByte() }
+        val key8 = key24.copyOf(8)
+        val iv = ByteArray(8)
+        val withLongKey = SymmetricCryptoAndroid("DES/CBC/PKCS5Padding", key24).setIv(iv)
+        val withShortKey = SymmetricCryptoAndroid("DES/CBC/PKCS5Padding", key8).setIv(iv)
+        // 24 字节密钥与其前 8 字节产生相同密文, 证明截断语义生效
+        assertEquals(withShortKey.encryptBase64("legado"), withLongKey.encryptBase64("legado"))
+        assertEquals("legado", withLongKey.decryptStr(withLongKey.encryptBase64("legado")))
+    }
+
+    @Test
+    fun desedeKeyTruncationMatchesHutool() {
+        // hutool 经 DESedeKeySpec 静默取前 24 字节
+        val key32 = ByteArray(32) { (it % 24).toByte() }
+        val key24 = key32.copyOf(24)
+        val iv = ByteArray(8)
+        val withLongKey = SymmetricCryptoAndroid("DESede/CBC/PKCS5Padding", key32).setIv(iv)
+        val withShortKey = SymmetricCryptoAndroid("DESede/CBC/PKCS5Padding", key24).setIv(iv)
+        assertEquals(withShortKey.encryptBase64("legado"), withLongKey.encryptBase64("legado"))
+        assertEquals("legado", withLongKey.decryptStr(withLongKey.encryptBase64("legado")))
+    }
+
+    @Test
     fun base64VariantCompatibility() {
         val crypto = SymmetricCryptoAndroid("AES", "0123456789abcdef".toByteArray())
         val plaintext = "legado"
@@ -108,13 +137,32 @@ class NativeCryptoTest {
         val wrapped = standardB64.chunked(4).joinToString("\n")
         assertEquals(plaintext, crypto.decryptStr(wrapped))
 
-        // URL-safe Base64 (- and _ instead of + and /) — NOT automatically handled
-        val urlSafe = standardB64.replace('+', '-').replace('/', '_')
+        // URL-safe Base64(-/_ 代替 +//) — hutool 自动识别, 原生实现需回退
+        // 固定向量: "_-8=" 是字节 [-1, -17] 的 URL-safe 编码, 直接验证回退逻辑
+        assertArrayEquals(byteArrayOf(-1, -17), "_-8=".base64ToByteArray())
+        // 端到端: 找一个密文里真正含 + 或 / 的用例(否则 replace 是空转, 测不出回退)
+        val (urlPlain, urlStandard) = generateSequence(0) { it + 1 }
+            .map { "urlSafe$it" to crypto.encryptBase64("urlSafe$it") }
+            .first { (_, b64) -> b64.contains('+') || b64.contains('/') }
+        assertEquals(
+            urlPlain,
+            crypto.decryptStr(urlStandard.replace('+', '-').replace('/', '_'))
+        )
+    }
+
+    @Test
+    fun oddLengthHexLookingInputFallsBackToBase64() {
+        val crypto = SymmetricCryptoAndroid("AES", "0123456789abcdef".toByteArray())
+        // "abc" 全为 hex 字符但长度是奇数: hutool 的 isHexNumber 要求偶数会回落 base64,
+        // 原生版必须同样回落——base64 解出 2 字节后进入解密, 因填充非法抛 BadPaddingException,
+        // 而不是在 hex 解析处抛 IllegalArgumentException
         try {
-            crypto.decryptStr(urlSafe)
-            // If this passes, URL-safe is supported; if it throws, it's not
-        } catch (e: Exception) {
-            // Expected if URL-safe is NOT auto-detected
+            crypto.decrypt("abc")
+            fail("Expected decryption failure after base64 fallback")
+        } catch (e: GeneralSecurityException) {
+            // 走的是 base64 分支: 进入解密后因块长/填充非法失败, 符合预期
+        } catch (e: IllegalArgumentException) {
+            fail("odd-length hex-looking input must fall back to base64, got: $e")
         }
     }
 
@@ -127,10 +175,13 @@ class NativeCryptoTest {
         val ecbCiphertext = ecb.encryptBase64("legado")
         assertEquals("legado", ecb.decryptStr(ecbCiphertext))
 
-        // CBC with explicit zero IV
+        // CBC with explicit zero IV — 解密必须读取 setIv 存入的字段(回归:
+        // cipher() 曾把 apply 接收者 Cipher.getIV() 当字段,永远为 null 导致
+        // InvalidAlgorithmParameterException: IV must be specified in CBC mode)
         val cbcWithZeroIv = SymmetricCryptoAndroid("AES/CBC/PKCS5Padding", key)
             .setIv(ByteArray(16))
         val ciphertext1 = cbcWithZeroIv.encryptBase64("legado")
+        assertEquals("legado", cbcWithZeroIv.decryptStr(ciphertext1))
 
         // CBC without explicit IV — uses random IV, should differ
         val cbcNoIv = SymmetricCryptoAndroid("AES/CBC/PKCS5Padding", key)
@@ -183,5 +234,23 @@ class NativeCryptoTest {
 
         // AsymmetricCrypto.decode() at line 77 uses all { isDigit() || 'a'..'f' } to detect hex
         assertTrue(hexCiphertext.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' })
+    }
+
+    @Test
+    fun rsaOddLengthHexLookingInputFallsBackToBase64() {
+        val pair = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }.generateKeyPair()
+        val crypto = AsymmetricCrypto("RSA/ECB/PKCS1Padding")
+            .setPublicKey(pair.public.encoded)
+            .setPrivateKey(pair.private.encoded)
+        // 旧 hutool 路径经 SecureUtil.decode(isHexNumber 要求偶数)把 "abc" 当 base64;
+        // 原生版曾把奇数长度 hex 串误判为 hex 直接 require 崩溃
+        try {
+            crypto.decrypt("abc", usePublicKey = false)
+            fail("Expected decryption failure after base64 fallback")
+        } catch (e: GeneralSecurityException) {
+            // base64 分支, 进入解密后因块长/填充非法失败, 符合预期
+        } catch (e: IllegalArgumentException) {
+            fail("odd-length hex-looking input must fall back to base64, got: $e")
+        }
     }
 }

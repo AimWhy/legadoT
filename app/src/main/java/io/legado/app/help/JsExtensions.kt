@@ -492,12 +492,12 @@ interface JsExtensions : JsEncodeUtils {
     /**
      * js实现base64解码,不能删
      */
-    fun base64Decode(str: String?): String {
-        return String(str.orEmpty().base64ToByteArray())
+    fun base64Decode(str: String?): String? {
+        return str?.let { String(it.base64ToByteArray()) }
     }
 
-    fun base64Decode(str: String?, charset: String): String {
-        return String(str.orEmpty().base64ToByteArray(), charset(charset))
+    fun base64Decode(str: String?, charset: String): String? {
+        return str?.let { String(it.base64ToByteArray(), charset(charset)) }
     }
 
     fun base64Decode(str: String, flags: Int): String {
@@ -527,18 +527,18 @@ interface JsExtensions : JsEncodeUtils {
     }
 
     /* HexString 解码为字节数组 */
-    fun hexDecodeToByteArray(hex: String): ByteArray? {
-        return hex.hexToByteArray()
+    fun hexDecodeToByteArray(hex: String?): ByteArray? {
+        return hex?.takeIf(String::isNotEmpty)?.hexToByteArray()
     }
 
     /* hexString 解码为utf8String*/
-    fun hexDecodeToString(hex: String): String? {
-        return String(hex.hexToByteArray(), Charsets.UTF_8)
+    fun hexDecodeToString(hex: String?): String? {
+        return hex?.takeIf(String::isNotEmpty)?.let { String(it.hexToByteArray(), Charsets.UTF_8) }
     }
 
     /* utf8 编码为hexString */
-    fun hexEncodeToString(utf8: String): String? {
-        return utf8.toByteArray().toHexString()
+    fun hexEncodeToString(utf8: String?): String? {
+        return utf8?.toByteArray()?.toHexString()
     }
 
     /**

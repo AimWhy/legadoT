@@ -74,11 +74,12 @@ class AsymmetricCrypto(private val algorithm: String) {
         else -> keySize - 11
     }
 
-    private fun decode(data: String): ByteArray = if (data.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) {
-        data.hexToByteArray()
-    } else {
-        data.base64ToByteArray()
-    }
+    private fun decode(data: String): ByteArray =
+        if (data.length % 2 == 0 && data.all { it.isDigit() || it.lowercaseChar() in 'a'..'f' }) {
+            data.hexToByteArray()
+        } else {
+            data.base64ToByteArray()
+        }
 
     @JvmOverloads
     fun decrypt(data: Any, usePublicKey: Boolean? = true): ByteArray {

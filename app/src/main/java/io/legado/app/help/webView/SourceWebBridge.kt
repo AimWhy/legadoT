@@ -256,10 +256,10 @@ private class JavaBridge(
     fun md5Encode16(value: String): String = source.md5Encode16(value)
 
     @JavascriptInterface
-    fun base64Decode(value: String?): String = source.base64Decode(value)
+    fun base64Decode(value: String?): String? = source.base64Decode(value)
 
     @JavascriptInterface
-    fun base64Decode(value: String?, charset: String): String = source.base64Decode(value, charset)
+    fun base64Decode(value: String?, charset: String): String? = source.base64Decode(value, charset)
 
     @JavascriptInterface
     fun base64Decode(value: String, flags: Int): String = source.base64Decode(value, flags)
@@ -271,10 +271,10 @@ private class JavaBridge(
     fun base64Encode(value: String, flags: Int): String? = source.base64Encode(value, flags)
 
     @JavascriptInterface
-    fun hexDecodeToString(value: String): String? = source.hexDecodeToString(value)
+    fun hexDecodeToString(value: String?): String? = source.hexDecodeToString(value)
 
     @JavascriptInterface
-    fun hexEncodeToString(value: String): String? = source.hexEncodeToString(value)
+    fun hexEncodeToString(value: String?): String? = source.hexEncodeToString(value)
 
     @JavascriptInterface
     fun timeFormatUTC(time: Long, format: String, offset: Int): String? =
