@@ -153,6 +153,15 @@ android {
     }
 }
 
+// 固定 debug 的 versionCode，确保测试包永远可以覆盖安装
+androidComponents {
+    onVariants(selector().withBuildType("debug")) { variant ->
+        variant.outputs.forEach { output ->
+            output.versionCode.set(2100000000)
+        }
+    }
+}
+
 // 设定Room的KSP参数
 ksp {
     arg("room.incremental", "true")
