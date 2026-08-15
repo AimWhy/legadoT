@@ -23,6 +23,7 @@ import io.legado.app.ui.book.read.page.entities.TextPage
 import io.legado.app.ui.book.read.page.entities.column.ImageColumn
 import io.legado.app.ui.book.read.page.entities.column.ReviewColumn
 import io.legado.app.ui.book.read.page.entities.column.TextColumn
+import io.legado.app.utils.ImageStyleParser
 import io.legado.app.utils.dpToPx
 import io.legado.app.utils.fastSum
 import io.legado.app.utils.getTextWidthsCompat
@@ -36,6 +37,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import java.util.LinkedList
+import java.util.regex.Matcher
 import kotlin.math.roundToInt
 
 class TextChapterLayout(
@@ -238,78 +240,78 @@ class TextChapterLayout(
         var isSetTypedImage = false
         contents.forEach { content ->
             currentCoroutineContext().ensureActive()
-            if (isTextImageStyle) {
-                //图片样式为文字嵌入类型
-                var text = content.replace(ChapterProvider.srcReplaceChar, "▣")
-                val srcList = LinkedList<String>()
-                sb.setLength(0)
+            //单图内联样式:行内(TEXT)图片替换为占位符,其余图片保留块级标签
+            var text = content.replace(ChapterProvider.srcReplaceChar, "▣")
+            val srcList = LinkedList<String>()
+            sb.setLength(0)
+            val styleMatcher = AppPattern.imgPattern.matcher(text)
+            while (styleMatcher.find()) {
+                val src = styleMatcher.group(1) ?: continue
+                val inlineStyle = ImageStyleParser.ImageStyle.fromSrc(src)
+                val isInline = inlineStyle == ImageStyleParser.ImageStyle.Text
+                        || (isTextImageStyle && inlineStyle == null)
+                if (isInline) {
+                    srcList.add(src)
+                    styleMatcher.appendReplacement(sb, ChapterProvider.srcReplaceChar)
+                } else {
+                    styleMatcher.appendReplacement(
+                        sb,
+                        Matcher.quoteReplacement(styleMatcher.group())
+                    )
+                }
+            }
+            styleMatcher.appendTail(sb)
+            text = sb.toString()
+
+            if (isSingleImageStyle && isSetTypedImage) {
+                isSetTypedImage = false
+                prepareNextPageIfNeed()
+            }
+            var start = 0
+            if (text.contains("<img")) {
                 val matcher = AppPattern.imgPattern.matcher(text)
                 while (matcher.find()) {
-                    matcher.group(1)?.let { src ->
-                        srcList.add(src)
-                        matcher.appendReplacement(sb, ChapterProvider.srcReplaceChar)
-                    }
-                }
-                matcher.appendTail(sb)
-                text = sb.toString()
-                setTypeText(
-                    book,
-                    text,
-                    contentPaint,
-                    contentPaintTextHeight,
-                    contentPaintFontMetrics,
-                    imageStyle,
-                    srcList = srcList
-                )
-            } else {
-                if (isSingleImageStyle && isSetTypedImage) {
-                    isSetTypedImage = false
-                    prepareNextPageIfNeed()
-                }
-                var start = 0
-                if (content.contains("<img")) {
-                    val matcher = AppPattern.imgPattern.matcher(content)
-                    while (matcher.find()) {
-                        currentCoroutineContext().ensureActive()
-                        val text = content.substring(start, matcher.start())
-                        if (text.isNotBlank()) {
-                            setTypeText(
-                                book,
-                                text,
-                                contentPaint,
-                                contentPaintTextHeight,
-                                contentPaintFontMetrics,
-                                imageStyle,
-                                isFirstLine = start == 0
-                            )
-                        }
-                        setTypeImage(
-                            book,
-                            matcher.group(1)!!,
-                            contentPaintTextHeight,
-                            imageStyle
-                        )
-                        isSetTypedImage = true
-                        start = matcher.end()
-                    }
-                }
-                if (start < content.length) {
-                    if (isSingleImageStyle && isSetTypedImage) {
-                        isSetTypedImage = false
-                        prepareNextPageIfNeed()
-                    }
-                    val text = content.substring(start, content.length)
-                    if (text.isNotBlank()) {
+                    currentCoroutineContext().ensureActive()
+                    val textSegment = text.substring(start, matcher.start())
+                    if (textSegment.isNotBlank()) {
                         setTypeText(
                             book,
-                            text,
+                            textSegment,
                             contentPaint,
                             contentPaintTextHeight,
                             contentPaintFontMetrics,
                             imageStyle,
-                            isFirstLine = start == 0
+                            isFirstLine = start == 0,
+                            srcList = srcList
                         )
                     }
+                    setTypeImage(
+                        book,
+                        matcher.group(1)!!,
+                        contentPaintTextHeight,
+                        imageStyle
+                    )
+                    isSetTypedImage = true
+                    start = matcher.end()
+                }
+            }
+            if (start < text.length) {
+                if (isSingleImageStyle && isSetTypedImage) {
+                    isSetTypedImage = false
+                    prepareNextPageIfNeed()
+                }
+                val textSegment = text.substring(start, text.length)
+                if (textSegment.isNotBlank()) {
+                    setTypeText(
+                        book,
+                        textSegment,
+                        contentPaint,
+                        contentPaintTextHeight,
+                        contentPaintFontMetrics,
+                        imageStyle,
+                        isFirstLine = start == 0,
+                        srcList = srcList
+                    )
                 }
             }
             pendingTextPage.lines.last().isParagraphEnd = true
@@ -348,47 +350,81 @@ class TextChapterLayout(
             prepareNextPageIfNeed(durY)
             var height = size.height
             var width = size.width
-            when (imageStyle?.uppercase()) {
-                Book.imgStyleFull -> {
+            val inlineStyle = ImageStyleParser.ImageStyle.fromSrc(src)
+            if (inlineStyle is ImageStyleParser.ImageStyle.Size) {
+                //显式尺寸:只给宽或高时,另一维按图片原始比例补全
+                val explicitWidth = inlineStyle.widthPercent?.let { visibleWidth * it / 100f }
+                    ?: inlineStyle.widthPx?.dpToPx()
+                val explicitHeight = inlineStyle.heightPercent?.let { visibleHeight * it / 100f }
+                    ?: inlineStyle.heightPx?.dpToPx()
+                when {
+                    explicitWidth != null && explicitWidth > 0f -> {
+                        width = explicitWidth.toInt().coerceAtLeast(1)
+                        height = if (explicitHeight != null && explicitHeight > 0f) {
+                            explicitHeight.toInt().coerceAtLeast(1)
+                        } else {
+                            size.height * width / size.width
+                        }
+                    }
+
+                    explicitHeight != null && explicitHeight > 0f -> {
+                        height = explicitHeight.toInt().coerceAtLeast(1)
+                        width = size.width * height / size.height
+                    }
+                }
+                //与默认样式一致:超出屏幕等比缩小并翻页
+                if (width > visibleWidth) {
+                    height = height * visibleWidth / width
                     width = visibleWidth
-                    height = size.height * visibleWidth / size.width
-                    if (pageAnim != PageAnim.scrollPageAnim && height > visibleHeight - durY) {
+                }
+                if (height > visibleHeight) {
+                    width = width * visibleHeight / height
+                    height = visibleHeight
+                }
+                prepareNextPageIfNeed(durY + height)
+            } else {
+                when ((inlineStyle?.keyword ?: imageStyle)?.uppercase()) {
+                    Book.imgStyleFull -> {
+                        width = visibleWidth
+                        height = size.height * visibleWidth / size.width
+                        if (pageAnim != PageAnim.scrollPageAnim && height > visibleHeight - durY) {
+                            if (height > visibleHeight) {
+                                width = width * visibleHeight / height
+                                height = visibleHeight
+                            }
+                            prepareNextPageIfNeed(durY + height)
+                        }
+                    }
+
+                    Book.imgStyleSingle -> {
+                        width = visibleWidth
+                        height = size.height * visibleWidth / size.width
+                        if (height > visibleHeight) {
+                            width = width * visibleHeight / height
+                            height = visibleHeight
+                        }
+                        if (durY > 0f) {
+                            prepareNextPageIfNeed()
+                        }
+
+                        // 图片竖直方向居中：调整 Y 坐标
+                        if (height < visibleHeight) {
+                            val adjustHeight = (visibleHeight - height) / 2f
+                            durY = adjustHeight // 将 Y 坐标设置为居中位置
+                        }
+                    }
+
+                    else -> {
+                        if (size.width > visibleWidth) {
+                            height = size.height * visibleWidth / size.width
+                            width = visibleWidth
+                        }
                         if (height > visibleHeight) {
                             width = width * visibleHeight / height
                             height = visibleHeight
                         }
                         prepareNextPageIfNeed(durY + height)
                     }
-                }
-
-                Book.imgStyleSingle -> {
-                    width = visibleWidth
-                    height = size.height * visibleWidth / size.width
-                    if (height > visibleHeight) {
-                        width = width * visibleHeight / height
-                        height = visibleHeight
-                    }
-                    if (durY > 0f) {
-                        prepareNextPageIfNeed()
-                    }
-
-                    // 图片竖直方向居中：调整 Y 坐标
-                    if (height < visibleHeight) {
-                        val adjustHeight = (visibleHeight - height) / 2f
-                        durY = adjustHeight // 将 Y 坐标设置为居中位置
-                    }
-                }
-
-                else -> {
-                    if (size.width > visibleWidth) {
-                        height = size.height * visibleWidth / size.width
-                        width = visibleWidth
-                    }
-                    if (height > visibleHeight) {
-                        width = width * visibleHeight / height
-                        height = visibleHeight
-                    }
-                    prepareNextPageIfNeed(durY + height)
                 }
             }
             val textLine = TextLine(isImage = true, reviewTitleOffset = reviewTitleOffset)

@@ -779,6 +779,11 @@ class AnalyzeUrl(
          * webview等待页面加载完毕的延迟时间（毫秒）
          */
         private var webViewDelayTime: Long? = null,
+        /**
+         * 图片样式,仅图片URL生效:
+         * 关键词(DEFAULT/FULL/TEXT/SINGLE,不区分大小写)或CSS尺寸(width:50%、width:200px、height:30%等)
+         */
+        private var style: String? = null,
     ) {
         fun setMethod(value: String?) {
             method = if (value.isNullOrBlank()) null else value
@@ -913,6 +918,10 @@ class AnalyzeUrl(
 
         fun getWebViewDelayTime(): Long? {
             return webViewDelayTime
+        }
+
+        fun getStyle(): String? {
+            return style
         }
 
         private fun toBooleanOrNull(value: Any?): Boolean? {

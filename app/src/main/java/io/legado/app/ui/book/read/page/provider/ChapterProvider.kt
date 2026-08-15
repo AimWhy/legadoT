@@ -30,6 +30,7 @@ import io.legado.app.ui.book.read.page.entities.column.ReviewColumn
 import io.legado.app.ui.book.read.page.entities.column.TextColumn
 import io.legado.app.utils.RealPathUtil
 import io.legado.app.utils.ColorUtils
+import io.legado.app.utils.ImageStyleParser
 import io.legado.app.utils.SvgUtils
 import io.legado.app.utils.buildMainHandler
 import io.legado.app.utils.dpToPx
@@ -44,6 +45,7 @@ import kotlinx.coroutines.CoroutineScope
 import splitties.init.appCtx
 import java.util.LinkedList
 import java.util.Locale
+import java.util.regex.Matcher
 
 /**
  * 解析内容生成章节和页面
@@ -250,90 +252,84 @@ object ChapterProvider {
             durY += titleBottomSpacing
         }
         contents.forEach { content ->
-            if (book.getImageStyle().equals(Book.imgStyleText, true)) {
-                //图片样式为文字嵌入类型
-                var text = content.replace(srcReplaceChar, "▣")
-                val srcList = LinkedList<String>()
-                val sb = StringBuffer()
-                val matcher = AppPattern.imgPattern.matcher(text)
-                while (matcher.find()) {
-                    matcher.group(1)?.let { src ->
-                        srcList.add(src)
-                        matcher.appendReplacement(sb, srcReplaceChar)
-                    }
+            //单图内联样式:行内(TEXT)图片替换为占位符,其余图片保留块级标签
+            var text = content.replace(srcReplaceChar, "▣")
+            val srcList = LinkedList<String>()
+            val sb = StringBuffer()
+            val styleMatcher = AppPattern.imgPattern.matcher(text)
+            while (styleMatcher.find()) {
+                val src = styleMatcher.group(1) ?: continue
+                val inlineStyle = ImageStyleParser.ImageStyle.fromSrc(src)
+                val isInline = inlineStyle == ImageStyleParser.ImageStyle.Text
+                        || (book.getImageStyle().equals(Book.imgStyleText, true)
+                        && inlineStyle == null)
+                if (isInline) {
+                    srcList.add(src)
+                    styleMatcher.appendReplacement(sb, srcReplaceChar)
+                } else {
+                    styleMatcher.appendReplacement(
+                        sb,
+                        Matcher.quoteReplacement(styleMatcher.group())
+                    )
                 }
-                matcher.appendTail(sb)
-                text = sb.toString()
-                setTypeText(
-                    book,
-                    absStartX,
-                    durY,
-                    text,
-                    textPages,
-                    stringBuilder,
-                    contentPaint,
-                    contentPaintTextHeight,
-                    contentPaintFontMetrics,
-                    reviewTitleOffset = chapterReviewTitleOffset,
-                    srcList = srcList
-                ).let {
-                    absStartX = it.first
-                    durY = it.second
-                }
-            } else {
-                val matcher = AppPattern.imgPattern.matcher(content)
-                var start = 0
-                while (matcher.find()) {
-                    val text = content.substring(start, matcher.start())
-                    if (text.isNotBlank()) {
-                        setTypeText(
-                            book,
-                            absStartX,
-                            durY,
-                            text,
-                            textPages,
-                            stringBuilder,
-                            contentPaint,
-                            contentPaintTextHeight,
-                            contentPaintFontMetrics,
-                            reviewTitleOffset = chapterReviewTitleOffset
-                        ).let {
-                            absStartX = it.first
-                            durY = it.second
-                        }
-                    }
-                    setTypeImage(
+            }
+            styleMatcher.appendTail(sb)
+            text = sb.toString()
+
+            val matcher = AppPattern.imgPattern.matcher(text)
+            var start = 0
+            while (matcher.find()) {
+                val textSegment = text.substring(start, matcher.start())
+                if (textSegment.isNotBlank()) {
+                    setTypeText(
                         book,
-                        matcher.group(1)!!,
                         absStartX,
                         durY,
+                        textSegment,
                         textPages,
-                        contentPaintTextHeight,
                         stringBuilder,
-                        book.getImageStyle(),
-                        reviewTitleOffset = chapterReviewTitleOffset
+                        contentPaint,
+                        contentPaintTextHeight,
+                        contentPaintFontMetrics,
+                        reviewTitleOffset = chapterReviewTitleOffset,
+                        srcList = srcList
                     ).let {
                         absStartX = it.first
                         durY = it.second
                     }
-                    start = matcher.end()
                 }
-                if (start < content.length) {
-                    val text = content.substring(start, content.length)
-                    if (text.isNotBlank()) {
-                        setTypeText(
-                            book, absStartX, durY,
-                            text,
-                            textPages,
-                            stringBuilder,
-                            contentPaint,
-                            contentPaintTextHeight,
-                            contentPaintFontMetrics,
-                            reviewTitleOffset = chapterReviewTitleOffset
-                        ).let {
-                            absStartX = it.first
-                            durY = it.second
-                        }
+                setTypeImage(
+                    book,
+                    matcher.group(1)!!,
+                    absStartX,
+                    durY,
+                    textPages,
+                    contentPaintTextHeight,
+                    stringBuilder,
+                    book.getImageStyle(),
+                    reviewTitleOffset = chapterReviewTitleOffset
+                ).let {
+                    absStartX = it.first
+                    durY = it.second
+                }
+                start = matcher.end()
+            }
+            if (start < text.length) {
+                val textSegment = text.substring(start, text.length)
+                if (textSegment.isNotBlank()) {
+                    setTypeText(
+                        book, absStartX, durY,
+                        textSegment,
+                        textPages,
+                        stringBuilder,
+                        contentPaint,
+                        contentPaintTextHeight,
+                        contentPaintFontMetrics,
+                        reviewTitleOffset = chapterReviewTitleOffset,
+                        srcList = srcList
+                    ).let {
+                        absStartX = it.first
+                        durY = it.second
                     }
                 }
             }
@@ -429,7 +425,8 @@ object ChapterProvider {
             }
             var height = size.height
             var width = size.width
-            when (imageStyle?.uppercase(Locale.ROOT)) {
+            val inlineStyle = ImageStyleParser.ImageStyle.fromSrc(src)
+            when ((inlineStyle?.keyword ?: imageStyle)?.uppercase(Locale.ROOT)) {
                 Book.imgStyleFull -> {
                     width = visibleWidth
                     height = size.height * visibleWidth / size.width
@@ -472,8 +469,31 @@ object ChapterProvider {
                 }
 
                 else -> {
-                    if (size.width > visibleWidth) {
-                        height = size.height * visibleWidth / size.width
+                    if (inlineStyle is ImageStyleParser.ImageStyle.Size) {
+                        //显式尺寸:只给宽或高时,另一维按图片原始比例补全
+                        val explicitWidth = inlineStyle.widthPercent?.let { visibleWidth * it / 100f }
+                            ?: inlineStyle.widthPx?.dpToPx()
+                        val explicitHeight =
+                            inlineStyle.heightPercent?.let { visibleHeight * it / 100f }
+                                ?: inlineStyle.heightPx?.dpToPx()
+                        when {
+                            explicitWidth != null && explicitWidth > 0f -> {
+                                width = explicitWidth.toInt().coerceAtLeast(1)
+                                height = if (explicitHeight != null && explicitHeight > 0f) {
+                                    explicitHeight.toInt().coerceAtLeast(1)
+                                } else {
+                                    size.height * width / size.width
+                                }
+                            }
+
+                            explicitHeight != null && explicitHeight > 0f -> {
+                                height = explicitHeight.toInt().coerceAtLeast(1)
+                                width = size.width * height / size.height
+                            }
+                        }
+                    }
+                    if (width > visibleWidth) {
+                        height = height * visibleWidth / width
                         width = visibleWidth
                     }
                     if (height > visibleHeight) {
