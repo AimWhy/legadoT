@@ -17,6 +17,7 @@ import io.legado.app.help.coroutine.Coroutine
 import io.legado.app.model.localBook.LocalBook
 import io.legado.app.model.webBook.WebBook
 import io.legado.app.utils.FileUtils
+import io.legado.app.utils.mergeFilteredOrder
 import io.legado.app.utils.GSON
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
@@ -50,6 +51,20 @@ class BookshelfManageViewModel(application: Application) : BaseViewModel(applica
         execute {
             appDb.bookDao.update(*book)
         }
+    }
+
+    fun resetOrder(visibleBooks: List<Book>) {
+        if (visibleBooks.isEmpty()) return
+        execute {
+            val allBooks = appDb.bookDao.allByOrder
+            val reordered = mergeFilteredOrder(allBooks, visibleBooks) { it.bookUrl }
+            appDb.bookDao.resetOrder(reordered)
+        }
+    }
+
+    fun updateOrder(books: List<Book>) {
+        if (books.isEmpty()) return
+        execute { appDb.bookDao.updateOrder(books) }
     }
 
     fun deleteBook(books: List<Book>, deleteOriginal: Boolean = false) {

@@ -112,6 +112,9 @@ interface BookDao {
     @get:Query("SELECT * FROM books")
     val all: List<Book>
 
+    @get:Query("SELECT * FROM books ORDER BY `order`")
+    val allByOrder: List<Book>
+
     @Query("SELECT * FROM books where type & :type > 0 and type & ${BookType.local} = 0")
     fun getByTypeOnLine(type: Int): List<Book>
 
@@ -136,6 +139,23 @@ interface BookDao {
 
     @get:Query("select min(`order`) from books")
     val minOrder: Int
+
+    @Query("UPDATE books SET `order` = :order WHERE bookUrl = :bookUrl")
+    fun updateOrder(bookUrl: String, order: Int)
+
+    @Transaction
+    fun updateOrder(books: List<Book>) {
+        for (book in books) {
+            updateOrder(book.bookUrl, book.order)
+        }
+    }
+
+    @Transaction
+    fun resetOrder(books: List<Book>) {
+        for ((index, book) in books.withIndex()) {
+            updateOrder(book.bookUrl, index + 1)
+        }
+    }
 
     @get:Query("select max(`order`) from books")
     val maxOrder: Int

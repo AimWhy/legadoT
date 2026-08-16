@@ -305,6 +305,13 @@ interface BookSourceDao {
         }
     }
 
+    @Transaction
+    fun resetOrder(bookSources: List<BookSourcePart>) {
+        for ((index, source) in bookSources.withIndex()) {
+            upOrder(source.bookSourceUrl, index)
+        }
+    }
+
     fun upOrder(bookSource: BookSourcePart) {
         upOrder(bookSource.bookSourceUrl, bookSource.customOrder)
     }

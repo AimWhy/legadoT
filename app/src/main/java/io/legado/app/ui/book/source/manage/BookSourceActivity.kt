@@ -732,6 +732,10 @@ class BookSourceActivity : VMBaseActivity<ActivityBookSourceBinding, BookSourceV
         viewModel.upOrder(items)
     }
 
+    override fun resetOrder(items: List<BookSourcePart>) {
+        viewModel.resetOrder(items, sortAscending)
+    }
+
     override fun enable(enable: Boolean, bookSource: BookSourcePart) {
         viewModel.enable(enable, listOf(bookSource))
     }

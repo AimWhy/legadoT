@@ -62,20 +62,7 @@ class ImportAutoTaskViewModel(app: Application) : BaseViewModel(app) {
                     selectTasks.add(allTasks[index])
                 }
             }
-            val localTasks = AutoTask.getRules().toMutableList()
-            val indexMap = localTasks.mapIndexed { index, task ->
-                task.id to index
-            }.toMap(LinkedHashMap())
-            selectTasks.forEach { task ->
-                val index = indexMap[task.id]
-                if (index == null) {
-                    localTasks.add(task)
-                    indexMap[task.id] = localTasks.lastIndex
-                } else {
-                    localTasks[index] = task
-                }
-            }
-            AutoTask.saveRules(localTasks)
+            AutoTask.upsert(selectTasks)
         }.onFinally {
             finally.invoke()
         }

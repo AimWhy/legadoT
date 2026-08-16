@@ -14,6 +14,7 @@ import io.legado.app.utils.FileUtils
 import io.legado.app.utils.GSON
 import io.legado.app.utils.cnCompare
 import io.legado.app.utils.outputStream
+import io.legado.app.utils.mergeFilteredOrder
 import io.legado.app.utils.splitNotBlank
 import io.legado.app.utils.stackTraceStr
 import io.legado.app.utils.toastOnUi
@@ -64,6 +65,16 @@ class BookSourceViewModel(application: Application) : BaseViewModel(application)
         if (items.isEmpty()) return
         execute {
             appDb.bookSourceDao.upOrder(items)
+        }
+    }
+
+    fun resetOrder(visibleItems: List<BookSourcePart>, ascending: Boolean) {
+        if (visibleItems.isEmpty()) return
+        execute {
+            val orderedVisibleItems = if (ascending) visibleItems else visibleItems.reversed()
+            val allSources = appDb.bookSourceDao.allPart
+            val reordered = mergeFilteredOrder(allSources, orderedVisibleItems) { it.bookSourceUrl }
+            appDb.bookSourceDao.resetOrder(reordered)
         }
     }
 

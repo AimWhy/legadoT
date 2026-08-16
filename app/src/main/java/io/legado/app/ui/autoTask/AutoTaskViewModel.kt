@@ -104,19 +104,17 @@ class AutoTaskViewModel(application: Application) : BaseViewModel(application) {
     }
 
     fun saveOrder(items: List<AutoTaskRule>) {
+        if (items.isEmpty()) return
         execute {
-            AutoTask.saveRules(items, refresh = false)
+            AutoTask.reorder(items)
         }
     }
 
     fun updateEnabled(ids: List<String>, enabled: Boolean) {
         if (ids.isEmpty()) return
         execute {
-            val idSet = ids.toHashSet()
-            val updated = AutoTask.getRules().map {
-                if (idSet.contains(it.id)) it.copy(enable = enabled) else it
-            }
-            AutoTask.saveRules(updated)
+            ids.forEach { id -> AutoTask.update(id) { it.copy(enable = enabled) } }
+            AutoTask.refreshSchedule()
             AutoTask.getRules()
         }.onSuccess {
             _rulesFlow.value = it
@@ -126,11 +124,8 @@ class AutoTaskViewModel(application: Application) : BaseViewModel(application) {
     fun updateCron(ids: List<String>, cron: String) {
         if (ids.isEmpty()) return
         execute {
-            val idSet = ids.toHashSet()
-            val updated = AutoTask.getRules().map {
-                if (idSet.contains(it.id)) it.copy(cron = cron) else it
-            }
-            AutoTask.saveRules(updated)
+            ids.forEach { id -> AutoTask.update(id) { it.copy(cron = cron) } }
+            AutoTask.refreshSchedule()
             AutoTask.getRules()
         }.onSuccess {
             _rulesFlow.value = it

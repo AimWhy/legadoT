@@ -9,6 +9,7 @@ import io.legado.app.service.AutoTaskService
 import io.legado.app.utils.GSON
 import io.legado.app.utils.fromJsonArray
 import io.legado.app.utils.getPrefBoolean
+import io.legado.app.utils.mergeFilteredOrder
 import splitties.init.appCtx
 
 object AutoTask {
@@ -97,27 +98,34 @@ object AutoTask {
     }
 
     @Synchronized
-    fun saveRules(list: List<AutoTaskRule>, refresh: Boolean = true) {
-        appDb.autoTaskRuleDao.deleteAll()
-        if (list.isNotEmpty()) {
-            appDb.autoTaskRuleDao.insert(*list.toTypedArray())
-        }
-        // 清除旧缓存中的副本
-        CacheManager.delete(KEY_RULES)
-        if (refresh) {
-            refreshSchedule()
-        }
+    fun upsert(rule: AutoTaskRule) {
+        upsertRule(rule)
+        refreshSchedule()
     }
 
     @Synchronized
-    fun upsert(rule: AutoTaskRule) {
-        val existing = appDb.autoTaskRuleDao.getById(rule.id)
-        if (existing != null) {
-            appDb.autoTaskRuleDao.update(rule)
-        } else {
-            appDb.autoTaskRuleDao.insert(rule)
-        }
+    fun reorder(orderedRules: List<AutoTaskRule>) {
+        if (orderedRules.isEmpty()) return
+        val allRules = getRules()
+        val reordered = mergeFilteredOrder(allRules, orderedRules) { it.id }
+        appDb.autoTaskRuleDao.resetOrder(reordered)
+    }
+
+    @Synchronized
+    fun upsert(rules: List<AutoTaskRule>) {
+        if (rules.isEmpty()) return
+        rules.forEach(::upsertRule)
         refreshSchedule()
+    }
+
+    private fun upsertRule(rule: AutoTaskRule) {
+        val existing = appDb.autoTaskRuleDao.getById(rule.id)
+        if (existing == null) {
+            val sortOrder = appDb.autoTaskRuleDao.maxOrder + 1
+            appDb.autoTaskRuleDao.insert(rule.copy(sortOrder = sortOrder))
+        } else {
+            appDb.autoTaskRuleDao.update(rule.copy(sortOrder = existing.sortOrder))
+        }
     }
 
     @Synchronized
@@ -137,7 +145,9 @@ object AutoTask {
     /** 迁移旧 CacheManager 中的数据到 Room */
     private fun migrateFromCache(): MutableList<AutoTaskRule>? {
         val json = CacheManager.get(KEY_RULES) ?: return null
-        val rules = GSON.fromJsonArray<AutoTaskRule>(json).getOrNull()?.toMutableList()
+        val rules = GSON.fromJsonArray<AutoTaskRule>(json).getOrNull()
+            ?.mapIndexed { index, rule -> rule.copy(sortOrder = index) }
+            ?.toMutableList()
             ?: return null
         appDb.autoTaskRuleDao.insert(*rules.toTypedArray())
         CacheManager.delete(KEY_RULES)

@@ -20,7 +20,7 @@ class DatabaseV88WiringTest {
     @Test
     fun `database is at version 88 with an auto migration from 87`() {
         val src = readSource("data/AppDatabase.kt")
-        assertTrue("版本号未升到 90", src.contains("version = 90"))
+        assertTrue("版本号未升到 91", src.contains("version = 91"))
         assertTrue("缺 87→88 自动迁移", src.contains("AutoMigration(from = 87, to = 88)"))
     }
 

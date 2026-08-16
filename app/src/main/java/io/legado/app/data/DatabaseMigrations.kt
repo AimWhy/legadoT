@@ -390,6 +390,21 @@ object DatabaseMigrations {
 
     }
 
+    @Suppress("ClassName")
+    class Migration_90_91 : AutoMigrationSpec {
+
+        override fun onPostMigrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                """
+                update auto_task_rules set sortOrder = (
+                    select count(*) - 1 from auto_task_rules as preceding
+                    where preceding.rowid <= auto_task_rules.rowid
+                )
+                """.trimIndent()
+            )
+        }
+    }
+
 
     @Suppress("ClassName")
     @DeleteColumn(

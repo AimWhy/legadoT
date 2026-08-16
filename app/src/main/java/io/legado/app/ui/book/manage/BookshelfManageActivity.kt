@@ -438,6 +438,14 @@ class BookshelfManageActivity :
         viewModel.updateBook(*book)
     }
 
+    override fun resetOrder(books: List<Book>) {
+        viewModel.resetOrder(books)
+    }
+
+    override fun updateOrder(books: List<Book>) {
+        viewModel.updateOrder(books)
+    }
+
     override fun deleteBook(book: Book) {
         alert(titleResource = R.string.draw, messageResource = R.string.sure_del) {
             var checkBox: CheckBox? = null

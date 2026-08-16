@@ -320,28 +320,25 @@ class BookSourceAdapter(
             val srcOrder = srcItem.customOrder
             srcItem.customOrder = targetItem.customOrder
             targetItem.customOrder = srcOrder
-            movedItems.add(srcItem)
-            movedItems.add(targetItem)
+            movedItems[srcItem.bookSourceUrl] = srcItem
+            movedItems[targetItem.bookSourceUrl] = targetItem
         }
         swapItem(srcPosition, targetPosition)
         return true
     }
 
-    private val movedItems = hashSetOf<BookSourcePart>()
+    private val movedItems = linkedMapOf<String, BookSourcePart>()
 
     override fun onClearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
         if (movedItems.isNotEmpty()) {
             val sortNumberSet = hashSetOf<Int>()
-            movedItems.forEach {
+            movedItems.values.forEach {
                 sortNumberSet.add(it.customOrder)
             }
             if (movedItems.size > sortNumberSet.size) {
-                callBack.upOrder(getItems().mapIndexed { index, bookSourcePart ->
-                    bookSourcePart.customOrder = if (callBack.sortAscending) index else -index
-                    bookSourcePart
-                })
+                callBack.resetOrder(getItems())
             } else {
-                callBack.upOrder(movedItems.toList())
+                callBack.upOrder(movedItems.values.toList())
             }
             movedItems.clear()
         }
@@ -378,6 +375,7 @@ class BookSourceAdapter(
         fun searchBook(bookSource: BookSourcePart)
         fun debug(bookSource: BookSourcePart)
         fun upOrder(items: List<BookSourcePart>)
+        fun resetOrder(items: List<BookSourcePart>)
         fun enable(enable: Boolean, bookSource: BookSourcePart)
         fun enableExplore(enable: Boolean, bookSource: BookSourcePart)
         fun upCountView()

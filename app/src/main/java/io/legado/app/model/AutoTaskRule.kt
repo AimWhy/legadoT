@@ -42,5 +42,8 @@ data class AutoTaskRule(
     @SerializedName("lastError")
     var lastError: String? = null,
     @SerializedName("lastLog")
-    var lastLog: String? = null
+    var lastLog: String? = null,
+    @ColumnInfo(defaultValue = "0")
+    @SerializedName("sortOrder")
+    var sortOrder: Int = 0
 )
