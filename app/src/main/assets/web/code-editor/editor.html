@@ -421,6 +421,10 @@
       color: #98c379;
     }
 
+    #syntax-status.paused {
+      color: #d19a66;
+    }
+
     #log-panel {
       position: absolute;
       left: 8px;
@@ -932,9 +936,10 @@
         const SETTINGS_KEY = "legado.codeEditor.formatSettings";
         const TOAST_MS = 1500;
         const LONG_LINE_SCROLL_LIMIT = 2000;
-        // 语法检查仅做"停笔后"兜底:延迟拉长、上限收紧,低端机打字不卡顿
+        // 语法检查仅做"停笔后"兜底:延迟拉长,低端机打字不卡顿
         const LINT_DELAY = 1500;
-        const LINT_MAX_SIZE = 12000;
+        // 超过该字符数才关闭语法检查(#19:12000 对长书源太容易触发,放宽到 120000)
+        const LINT_MAX_SIZE = 120000;
 
         const dom = {
           editorHost: $("editor"),
@@ -2701,6 +2706,16 @@
           }
         }
 
+        function showSyntaxPaused() {
+          dom.syntaxStatus.style.display = "block";
+          dom.syntaxStatus.className = "paused";
+          dom.syntaxStatus.textContent =
+            "⚠ 代码超过 " +
+            LINT_MAX_SIZE.toLocaleString() +
+            " 字符,已暂停自动语法检查";
+          dom.syntaxStatus.onclick = null;
+        }
+
         async function checkSyntax() {
           const plugins = getPrettierPlugins();
           if (!window.prettier || !plugins) return;
@@ -2714,7 +2729,7 @@
           const wrapper = detectWrapper(raw);
           const body = wrapper ? wrapper.body : text;
           if (body.length > LINT_MAX_SIZE) {
-            dom.syntaxStatus.style.display = "none";
+            showSyntaxPaused();
             return;
           }
           const lineOffset = getBodyLineOffset(raw, wrapper);
